@@ -206,7 +206,7 @@ addEventListener("tabshown",()=>{if(editing)stopEdit()});
 document.querySelectorAll("nav button[data-view]").forEach(b=>b.addEventListener("click",()=>editing&&stopEdit()));
 
 /* ---------- Settings > Customize ---------- */
-const PREF="rb-prefs",pref=Object.assign({accent:"",density:"comfy",size:"m",motion:true,start:"overview"},store.get(PREF,{}));
+const PREF="rb-prefs",pref=Object.assign({accent:"",density:"comfy",size:"m",motion:true,pulse:true,start:"overview"},store.get(PREF,{}));
 const ACC=[["","Orange (default)","#ff6a1f"],["#3d8bff","Blue","#3d8bff"],["#2fd27b","Green","#2fd27b"],["#d65cff","Purple","#d65cff"],["#ff4fa0","Pink","#ff4fa0"],["#2fe0c4","Teal","#2fe0c4"]];
 function apply(){const r=document.documentElement;
   if(pref.accent){r.style.setProperty("--accent",pref.accent);r.style.setProperty("--accent-text",pref.accent);r.style.setProperty("--accent-soft",pref.accent+"24");r.style.setProperty("--accent-line",pref.accent+"73")}
@@ -221,7 +221,8 @@ function drawCustom(){const look=$("#cuLook .cu-body"),dash=$("#cuDash .cu-body"
    <div class="cu-row"><b>Highlight colour</b><small>Buttons, active tabs and highlights.</small><div class="cu-seg">${ACC.map(([v,l,c])=>`<button type="button" class="cu-sw" data-acc="${v}" title="${l}" aria-label="${l}" aria-pressed="${pref.accent===v}" style="background:${c}"></button>`).join("")}</div></div>
    <div class="cu-row"><b>Text size</b><small>Makes everything bigger or smaller.</small>${seg("size",[["s","Small"],["m","Normal"],["l","Large"]])}</div>
    <div class="cu-row"><b>Spacing</b><small>Compact fits more on the screen.</small>${seg("density",[["comfy","Roomy"],["compact","Compact"]])}</div>
-   <div class="cu-row"><b>Animations</b><small>Turn off if motion is distracting.</small>${seg("motion",[["true","On"],["false","Off"]])}</div></div>`;
+   <div class="cu-row"><b>Animations</b><small>Turn off if motion is distracting.</small>${seg("motion",[["true","On"],["false","Off"]])}</div>
+   <div class="cu-row"><b>Pulse heartbeat</b><small>A wave of energy across the page: every 8 seconds on Home, every 15 seconds elsewhere.</small>${seg("pulse",[["true","On"],["false","Off"]])}</div></div>`;
   const pages=[["overview","Home"],["calendar","Calendar"],["people","Customers"],["analytics","Insights"],["training","Teach AI"]];
   const saved=[];EDITABLE.forEach(v=>document.querySelectorAll(`#${v} .spane`).forEach(p=>{if(store.get(LKEY(v,p.dataset.pane)))saved.push([v,p.dataset.pane,(document.querySelector(`#${v} .ptabs button[data-tab="${p.dataset.pane}"]`)?.firstChild?.textContent||p.dataset.pane)])}));
   dash.innerHTML=`<div class="cu-grid">
@@ -237,7 +238,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#cuLook button,#
   else if(b.dataset.acc!==undefined)pref.accent=b.dataset.acc;
   else if(b.dataset.reset){const ks=b.dataset.reset==="all"?Object.keys(localStorage).filter(k=>k.startsWith("rb-layout-")):[LKEY(...b.dataset.reset.split("|"))];ks.forEach(k=>{try{localStorage.removeItem(k)}catch{}});location.reload();return}
   else if(b.id==="cuEditHome"||b.id==="cuEditIn"){const v=b.id==="cuEditHome"?"overview":"analytics";document.querySelector(`nav button[data-view="${v}"]:not([data-sub])`).click();setTimeout(()=>startEdit(v),120);return}
-  else if(s?.dataset.k){const k=s.dataset.k;pref[k]=k==="motion"?b.dataset.v==="true":b.dataset.v}
+  else if(s?.dataset.k){const k=s.dataset.k;pref[k]=k==="motion"||k==="pulse"?b.dataset.v==="true":b.dataset.v}
   store.set(PREF,pref);apply();drawCustom();try{toast("Saved on this device.")}catch{}});
 $("#themeBtn")?.addEventListener("click",()=>setTimeout(drawCustom,0));
 addEventListener("tabshown",e=>{if(e.detail.view==="setup"&&(e.detail.tab==="look"||e.detail.tab==="dash"))drawCustom()});drawCustom();
