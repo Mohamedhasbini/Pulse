@@ -1,0 +1,10 @@
+﻿# Pings the Render free instance every 10 minutes so it never sleeps (free plan has 750 h/month: enough for 24/7).
+name: keep-alive
+on:
+  schedule: [{ cron: "*/10 * * * *" }]
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS -m 90 https://pulse-mvqo.onrender.com/login.html -o /dev/null
