@@ -63,7 +63,7 @@ button:focus-visible{outline:2px solid #fff;outline-offset:3px}
       <label for="pw">Password<input id="pw" type="password" autocomplete="current-password" required></label>
     </div>
     <div class="fields" id="step2" hidden>
-      <label for="code">6-digit code from your authenticator app<input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
+      <label for="code">6-digit code from your authenticator app<input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7"></label>
     </div>
     <p id="err" hidden role="alert"></p>
     <button id="go">Sign in</button>
@@ -107,7 +107,7 @@ const $=id=>document.getElementById(id);let ticket=null;
 function swap(){$("step1").classList.add("out");setTimeout(()=>{$("step1").hidden=true;$("step2").hidden=false;$("step2").classList.add("in");$("code").focus()},180)}
 $("f").onsubmit=async e=>{e.preventDefault();const err=$("err");err.hidden=true;
   if(!ticket&&(!$("em").value.trim()||!$("pw").value)){err.textContent="Enter your email and password.";err.hidden=false;return}
-  if(ticket&&!/^\d{6}$/.test($("code").value)){err.textContent="Enter the 6-digit code.";err.hidden=false;return}
+  if(ticket&&!/^\d{6}$/.test($("code").value.replace(/\D/g,""))){err.textContent="Enter the 6-digit code.";err.hidden=false;return}
   $("go").disabled=true;$("go").textContent=ticket?"Checking code…":"Signing in…";
   try{const r=ticket?await fetch("/api/login/code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ticket,code:$("code").value})})
       :await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:$("em").value,password:$("pw").value})});

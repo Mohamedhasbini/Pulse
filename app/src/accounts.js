@@ -55,12 +55,12 @@ function totp(secret, step) {
   const o = h[h.length - 1] & 15;
   return String(((h.readUInt32BE(o) & 0x7fffffff) % 1e6)).padStart(6, '0');
 }
-// Accepts the current code and one step either side, for phone clocks that are a little off.
+// Accepts the current code and two steps either side (about a minute), for phone clocks that are a little off.
 export function checkTotp(secret, code) {
-  const c = String(code || '').replace(/\s/g, '');
+  const c = String(code || '').replace(/\D/g, '');
   if (!/^\d{6}$/.test(c) || !secret) return false;
   const now = Math.floor(Date.now() / 30000);
-  return [-1, 0, 1].some(d => safeEq(totp(secret, now + d), c));
+  return [-2, -1, 0, 1, 2].some(d => safeEq(totp(secret, now + d), c));
 }
 export const totpUrl = (secret, email) => `otpauth://totp/${encodeURIComponent('Pulse:' + email)}?secret=${secret}&issuer=Pulse&digits=6&period=30`;
 

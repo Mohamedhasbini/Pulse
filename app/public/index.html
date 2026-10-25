@@ -945,7 +945,7 @@ $("#vtApply").onclick=async()=>{const key=$("#vtSel").value,tpl=$("#vtTpl").chec
   try{biz=await req("/api/business/vertical","POST",{key,template:tpl});fillSetup();applyTerms();toast(tpl?"Business type and starter template applied.":"Business type changed.");refresh()}catch(err){toast(err.message)}};
 
 // ---------- channels ----------
-async function loadChannels(){const [c,d]=await Promise.all([req("/api/channels"),req("/api/webook-demo")]);const base=location.origin,tg=c.telegram;
+async function loadChannels(){const [c,d]=await Promise.all([req("/api/channels"),req("/api/webook-demo")]);const base=PUB(),tg=c.telegram;
   const row=(icon,name,state,ok,body)=>`<div class="item" style="align-items:flex-start"><div class="grow"><b>${icon} ${name} <span class="tag ${ok?"t-book":"t-faq"}" style="display:inline">${state}</span></b><span style="white-space:normal">${body}</span></div></div>`;
   $("#chList").innerHTML=row("📱","WeBook app","Live",true,`Customers open <b>${base}/webook</b>, find this business, chat with the AI and book. Works on any phone and can be added to the home screen. Use your public address once the tunnel route is added.`)
     +row("✈️","Telegram",tg.running?"Connected @"+tg.bot:tg.configured?"Not connecting":"Not set up",tg.running,(tg.running?`Customers chat with <b><a href="https://t.me/${esc(tg.bot)}" target="_blank" rel="noopener">t.me/${esc(tg.bot)}</a></b> and the AI answers. Staff replies and reminders go there too. The bot uses your business name; set its photo in @BotFather with /setuserpic. <button class="mini" id="tgOff" type="button">Disconnect</button>`
@@ -1215,7 +1215,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!
   document.querySelector(`nav button[data-view="${v}"]`)?.click()});
 // Command bar: Ctrl/Cmd+K, search clients and conversations
 let cmdT;
-document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();document.querySelector('nav button[data-view="overview"]').click();setTimeout(()=>$("#cmdQ").focus(),50)}});
+// Ctrl K: see the command palette in ui.js
 $("#cmdQ").addEventListener("input",()=>{clearTimeout(cmdT);cmdT=setTimeout(async()=>{const q=$("#cmdQ").value.trim(),box=$("#cmdRes");if(q.length<2){box.hidden=true;return}
   const [cs,cv]=await Promise.all([req(`/api/customers?q=${encodeURIComponent(q)}&test=1`).catch(()=>[]),req("/api/conversations").catch(()=>[])]);
   const ql=q.toLowerCase(),convs=(Array.isArray(cv)?cv:[]).filter(c=>`${c.name||""} ${c.phone||""} ${c.last||""}`.toLowerCase().includes(ql)).slice(0,5);
@@ -1293,6 +1293,7 @@ function sidebarState(){document.querySelectorAll("nav .ns").forEach(l=>{let n=l
 // ---------- account, plan, permissions ----------
 let me=null;
 const VIEW_MODULE={overview:"overview",calendar:"calendar",people:"customers",analytics:"insights",training:"teach",demo:"testchat",setup:"setup",website:"website"};
+window.PUB=()=>(typeof me!=="undefined"&&me&&me.public_url)||location.origin;
 async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();const b=me.business,admin=me.user.role==="admin";
   $("#adminNav").hidden=true;$("#labBtn")&&($("#labBtn").hidden=!admin);$("#planBar").hidden=false;
   // Sections this login can't open disappear; sections the plan doesn't include show a lock.
@@ -1325,14 +1326,16 @@ $("#pwBtn").onclick=()=>{document.querySelector('nav button[data-view="setup"]')
 // ---------- security page ----------
 async function loadSecurity(){const on=me.user.totp_enabled;$("#tfState").className="tag "+(on?"t-book":"t-attn");$("#tfState").textContent=on?"On":"Off";
   $("#tfBody").innerHTML=on?`<p class="sub" style="margin:0 0 10px">Signing in needs your password and a 6-digit code from your authenticator app.</p>
-      <form class="form" id="tfOff"><label>Password<input type="password" id="tfPw" required></label><label>Current code<input id="tfOffCode" inputmode="numeric" maxlength="6" required></label><button class="btn ghost full">Turn two-factor off</button></form>`
+      <form class="form" id="tfOff"><label>Password<input type="password" id="tfPw" required></label><label>Current code<input id="tfOffCode" inputmode="numeric" maxlength="7" required></label><button class="btn ghost full">Turn two-factor off</button></form>`
     :`<p class="sub" style="margin:0 0 10px">Protect this dashboard even if your password leaks. You'll need an authenticator app (Google Authenticator, Microsoft Authenticator or 1Password).</p><button class="btn" type="button" id="tfStart">Set up two-factor</button>`;
-  $("#tfStart")&&($("#tfStart").onclick=async()=>{const r=await req("/api/me/2fa/setup","POST");
+  const tfSetup=async fresh=>{const r=await req("/api/me/2fa/setup","POST",{fresh:!!fresh});
     $("#tfBody").innerHTML=`<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center"><div id="tfQr" style="background:#fff;padding:10px;border-radius:12px"></div>
       <div style="flex:1;min-width:240px"><p class="sub" style="margin:0 0 8px">1. Scan this with your authenticator app.<br>Can't scan? Enter this key: <b style="font-variant-numeric:tabular-nums;letter-spacing:.06em;word-break:break-word;user-select:all" id="tfKey">${esc(r.secret.match(/.{1,4}/g).join(" "))}</b></p>
-      <form class="form" id="tfOn" style="grid-template-columns:1fr"><label>2. Type the 6-digit code it shows<input id="tfCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required></label><button class="btn">Turn on</button></form></div></div>`;
+      <form class="form" id="tfOn" style="grid-template-columns:1fr"><label>2. Type the 6-digit code it shows<input id="tfCode" inputmode="numeric" maxlength="7" autocomplete="one-time-code" required></label><p class="sub" id="tfErr" style="color:var(--bad);margin:0" hidden></p><button class="btn">Turn on</button><button class="btn ghost" type="button" id="tfFresh">Start over with a new key</button></form></div></div>`;
     try{new QRCode($("#tfQr"),{text:r.url,width:180,height:180})}catch{$("#tfQr").textContent="QR unavailable: use the key."}
-    $("#tfOn").onsubmit=async e=>{e.preventDefault();try{await req("/api/me/2fa/enable","POST",{code:$("#tfCode").value});toast("Two-factor is on.");await loadMe();loadSecurity()}catch(err){toast(err.message)}}});
+    $("#tfFresh").onclick=()=>tfSetup(true);
+    $("#tfOn").onsubmit=async e=>{e.preventDefault();$("#tfErr").hidden=true;try{await req("/api/me/2fa/enable","POST",{code:$("#tfCode").value});toast("Two-factor is on.");await loadMe();loadSecurity()}catch(err){$("#tfErr").textContent=err.message;$("#tfErr").hidden=false}}};
+  $("#tfStart")&&($("#tfStart").onclick=()=>tfSetup(false));
   $("#tfOff")&&($("#tfOff").onsubmit=async e=>{e.preventDefault();try{await req("/api/me/2fa/disable","POST",{password:$("#tfPw").value,code:$("#tfOffCode").value});toast("Two-factor is off.");await loadMe();loadSecurity()}catch(err){toast(err.message)}});
   const act=await req("/api/me/activity");const NAME={login:"Signed in",login_failed:"Wrong password",login_locked:"Locked after wrong passwords",code_failed:"Wrong two-factor code",password_changed:"Password changed",signout_everywhere:"Signed out everywhere","2fa_on":"Two-factor on","2fa_off":"Two-factor off",denied:"Blocked from a section"};
   $("#myAct").innerHTML=act.length?act.map(a=>`<div class="item"><div class="grow"><b style="font-weight:500">${esc(NAME[a.action]||a.action)}</b><span>${esc(a.at)} · ${esc(a.ip||"")}${a.detail?" · "+esc(a.detail):""}</span></div></div>`).join(""):`<div class="empty">No activity yet.</div>`}
@@ -1342,7 +1345,7 @@ $("#soAll").onclick=async()=>{if(!confirm("Sign out on every device, including t
 // ---------- command center ----------
 let cat=null,ccTab="biz";
 const showSecret=(title,r,extra="")=>{$("#ccDone").hidden=false;$("#ccDone").innerHTML=`<div class="ch"><h2>${title}</h2><button class="mini" type="button" onclick="this.closest('#ccDone').hidden=true">Close</button></div>
-  <div style="font-size:14px;line-height:1.9">Login page: <b>${esc(location.origin)}/login</b><br>Email: <b>${esc(r.email)}</b>${r.password?`<br>Password: <b style="font-family:var(--mono)">${esc(r.password)}</b>`:""}${extra}</div>
+  <div style="font-size:14px;line-height:1.9">Login page: <b>${esc(PUB())}/login</b><br>Email: <b>${esc(r.email)}</b>${r.password?`<br>Password: <b style="font-family:var(--mono)">${esc(r.password)}</b>`:""}${extra}</div>
   <p class="sub" style="margin:8px 0 0;font-size:13px">Copy this now and send it privately. The password is shown only once; they should change it and turn on two-factor.</p>`;scrollTo({top:0,behavior:"smooth"})};
 async function loadAdmin(){
   if(!cat){cat=await req("/api/admin/catalog");
@@ -1379,7 +1382,7 @@ async function loadBizList(){const list=await req("/api/admin/businesses");$("#a
 $("#nbForm").onsubmit=async e=>{e.preventDefault();$("#nbErr").textContent="";$("#nbGo").disabled=true;
   try{const r=await req("/api/admin/businesses","POST",{name:$("#nbName").value,vertical:$("#nbType").value,country:$("#nbCountry").value,city:$("#nbCity").value,currency:$("#nbCur").value,timezone:$("#nbTz").value,plan_key:$("#nbPlan").value,owner_name:$("#nbOwner").value,owner_email:$("#nbEmail").value,
     addons:[...document.querySelectorAll("#nbAddons input:checked")].map(x=>x.value),site_style:$("#nbStyle").value,subdomain:$("#nbSub").value.trim()});
-    showSecret("Business created",r,`<br>Booking page: <b>${esc(location.origin)}/book?b=${r.id}</b>`);$("#nbForm").reset();$("#nbTz").value=Intl.DateTimeFormat().resolvedOptions().timeZone;$("#nbCur").value="USD";loadAdmin()}
+    showSecret("Business created",r,`<br>Booking page: <b>${esc(PUB())}/book?b=${r.id}</b>`);$("#nbForm").reset();$("#nbTz").value=Intl.DateTimeFormat().resolvedOptions().timeZone;$("#nbCur").value="USD";loadAdmin()}
   catch(err){$("#nbErr").textContent=err.message}finally{$("#nbGo").disabled=false}};
 
 async function loadUsers(){if(!$("#nuBiz").options.length)await loadBizList();const list=await req("/api/admin/users");$("#auCount").textContent=list.length+" logins";
@@ -1516,7 +1519,7 @@ function drawLeads(){const f=$("#ldF").value,L=leadData.leads.filter(l=>!f||l.st
     ${l.message?`<small style="white-space:pre-wrap;color:var(--ink2)">“${esc(l.message)}”</small>`:""}
     <input class="ldNote" data-id="${l.id}" value="${esc(l.notes||"")}" placeholder="Your notes" style="margin-top:6px;width:100%"></div>
     <select class="ldSt" data-id="${l.id}" aria-label="Lead status">${Object.entries(LST).map(([k,[t]])=>`<option value="${k}"${l.status===k?" selected":""}>${t}</option>`).join("")}</select></div>`).join("")
-    :`<div class="empty">No leads yet. Share your website: <a href="/pulse" target="_blank" rel="noopener">${location.host}/pulse</a></div>`}
+    :`<div class="empty">No leads yet. Share your website: <a href="${PUB()}/pulse" target="_blank" rel="noopener">${PUB().split("//").pop()}/pulse</a></div>`}
 $("#ldF").onchange=drawLeads;
 $("#ldList").addEventListener("change",async e=>{const el=e.target.closest(".ldSt,.ldNote");if(!el)return;const id=+el.dataset.id,l=leadData.leads.find(x=>x.id===id);
   if(el.classList.contains("ldSt"))l.status=el.value;else l.notes=el.value;await req("/api/admin/leads/"+id,"PUT",{status:l.status,notes:l.notes});toast("Lead updated.");if(el.classList.contains("ldSt"))loadLeads()});

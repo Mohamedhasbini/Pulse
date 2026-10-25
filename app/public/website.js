@@ -69,7 +69,7 @@ async function load(){
   $("#wsLockedMsg").textContent=W.is_admin?"Tick \"Own website\" in this business's plan or add-ons (Command center → Businesses) to switch it on.":"Ask your Pulse team about adding a website to your plan.";
   if(!W.allowed){$("#wsSub").textContent="";$("#wsState").textContent="";return}
   const live=W.custom_domain?`https://${W.custom_domain}`:W.subdomain&&W.sites_domain?`https://${W.subdomain}.${W.sites_domain}`:null;
-  $("#wsOpen").href=s.published&&live?live:`/s/${W.id}`;$("#wsOpen").textContent=s.published&&live?"Open website":"Open preview";
+  $("#wsOpen").href=s.published&&live?live:`${typeof PUB==="function"?PUB():""}/s/${W.id}`;$("#wsOpen").textContent=s.published&&live?"Open website":"Open preview";
   $("#wsState").className="tag "+(s.published?"t-book":"t-faq");$("#wsState").textContent=s.published?"Published":"Not published";
   $("#wsSub").innerHTML=s.published&&live?`Live at <a href="${esc(live)}" target="_blank" rel="noopener">${esc(live.replace("https://",""))}</a>`
     :s.published?(W.is_admin?"Published. Add a subdomain or domain in Address and publishing to give it a web address.":"Published. Your web address is being connected.")

@@ -247,7 +247,9 @@ app.get('/api/me', wrap(async (req, res) => {
   const u = req.user;
   res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, totp_enabled: u.totp_enabled }, business: b,
     features: [...await featuresOf(BIZ())], modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE,
-    edition: process.env.EDITION === 'product' ? 'product' : 'lab', lab: u.role === 'admin' && !BIZ() });
+    edition: process.env.EDITION === 'product' ? 'product' : 'lab', lab: u.role === 'admin' && !BIZ(),
+    // links we show or share must work outside this computer, even when the dashboard is opened on localhost
+    public_url: (process.env.PUBLIC_URL || '').replace(/\/$/, '') || null });
 }));
 app.post('/api/me/password', wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE id=$1', [req.user.id]);
@@ -267,13 +269,16 @@ app.post('/api/me/signout-everywhere', wrap(async (req, res) => {
 // Two-factor: get a secret (shown as a QR code), confirm with a code to switch it on, or switch it off with a code.
 app.post('/api/me/2fa/setup', wrap(async (req, res) => {
   if (req.user.totp_enabled) return res.status(400).json({ error: 'Two-factor is already on.' });
-  const secret = newTotpSecret();
-  await q('UPDATE users SET totp_secret=$1 WHERE id=$2', [secret, req.user.id]);
+  // Keep the key that is waiting to be confirmed, so a second click doesn't break the phone that already scanned it.
+  // "Start over" (fresh: true) makes a new one.
+  const cur = await one('SELECT totp_secret FROM users WHERE id=$1', [req.user.id]);
+  const secret = !req.body?.fresh && cur?.totp_secret ? cur.totp_secret : newTotpSecret();
+  if (secret !== cur?.totp_secret) await q('UPDATE users SET totp_secret=$1 WHERE id=$2', [secret, req.user.id]);
   res.json({ secret, url: totpUrl(secret, req.user.email) });
 }));
 app.post('/api/me/2fa/enable', wrap(async (req, res) => {
   const u = await one('SELECT totp_secret FROM users WHERE id=$1', [req.user.id]);
-  if (!checkTotp(u.totp_secret, req.body.code)) return res.status(400).json({ error: 'That code is not right. Try the newest code.' });
+  if (!checkTotp(u.totp_secret, req.body.code)) { await audit(req, '2fa_code_wrong'); return res.status(400).json({ error: 'That code is not right. Use the newest code for "Pulse" in your app. If you scanned an older QR code, delete that entry and scan this one.' }); }
   await q('UPDATE users SET totp_enabled=true WHERE id=$1', [req.user.id]);
   await audit(req, '2fa_on');
   res.json({ ok: true });
