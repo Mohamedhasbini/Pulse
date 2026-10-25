@@ -90,6 +90,7 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     services: biz.services.map(s => ({ name: s.name, price: Number(s.price), minutes: s.minutes, description: s.description || undefined })),
     availability: availability(biz, bookings, timeOff, 14),
     quick_slots: quickSlots(biz, bookings, timeOff),
+    next_open_days: openDays(biz, bookings, timeOff),
     customer: {
       // One person across WhatsApp, Telegram, WeBook and the booking page: their history below covers all of them.
       channels_used: (await q('SELECT DISTINCT channel FROM conversations WHERE customer_id=$1', [customer.id])).map(r => r.channel),
@@ -361,7 +362,10 @@ const FAST_FLOW = `FAST BOOKING FLOW (overrides any earlier guidance about pacin
 - Move the booking forward in EVERY message. Answer the question AND give the next step in the same message.
 - Once the customer names a service or shows interest, do not ask "would you like to book?". Go straight to times.
 - When a service is chosen, reply in ONE short message: service, minutes and price, then offer exactly the 3 times listed for it in CONTEXT.quick_slots (use their labels, and always write them in the message text too), and say they can name another day or time.
-- Never list more than 3 times. If they ask for a specific day or time, check CONTEXT.availability and offer the 3 closest free times.
+- The 3 quick_slots are on different days and times of day. Always add "Another day" as the last option.
+- "Another day" (or "other day", "next week"): ask which day suits them, with options = CONTEXT.next_open_days (tap a day).
+- When they pick or name a day: offer 3 free times on THAT day from CONTEXT.availability, one morning, one afternoon, one evening when possible (options = those 3 times + "Another day").
+- Never list more than 3 times. If they name a time that is taken, offer the 3 closest free times.
 - When they ask what you offer, list the services in one short message (name and price only) and ask which one; the options are ALL service names (up to 10).
 - Never ask for something you already know (customer.name, phone, earlier answers). Ask any missing booking details together in ONE message, only after the time is chosen.
 - As soon as service, time and the required details are known, book right away (action "book"). Do not ask "shall I confirm?".
@@ -451,22 +455,39 @@ function confirmation(biz, b, aiReply, moved = false) {
   return lines.join('\n');
 }
 
-// The next 3 good times for each service: the soonest, then spread through the day(s), so the AI never lists every slot.
+// 3 good times for each service on 3 different days, at different times of day (morning, afternoon, evening),
+// so the customer sees real choice instead of three slots on the same day.
 function quickSlots(biz, bookings, timeOff) {
-  const out = {};
+  const out = {}, target = [10 * 60, 14 * 60 + 30, 18 * 60];
   for (const s of (biz.services || []).slice(0, 12)) {
-    const free = freeSlots(biz, bookings, timeOff, s.minutes, 40, new Date(), bufferOf(biz, s.id), s.id);
-    const pick = [];
-    for (const f of free) {
-      const t = new Date(f.id);
-      if (!pick.length || (pick.every(p => Math.abs(t - p) >= 150 * 60000))) pick.push(t);
-      if (pick.length === 3) break;
+    const byDay = new Map();
+    for (const f of freeSlots(biz, bookings, timeOff, s.minutes, 400, new Date(), bufferOf(biz, s.id), s.id)) {
+      const t = new Date(f.id), k = localDate(t);
+      if (!byDay.has(k)) byDay.set(k, []);
+      byDay.get(k).push(t);
     }
-    for (const f of free) { if (pick.length === 3) break; const t = new Date(f.id); if (!pick.some(p => +p === +t)) pick.push(t); }
+    const days = [...byDay.values()].slice(0, 3), pick = [];
+    days.forEach((list, i) => {
+      const want = target[i];
+      pick.push(list.reduce((best, t) => Math.abs(t.getHours() * 60 + t.getMinutes() - want) < Math.abs(best.getHours() * 60 + best.getMinutes() - want) ? t : best, list[0]));
+    });
+    // fewer than 3 open days ahead: fill with other times on those days
+    for (const list of days) for (const t of list) { if (pick.length >= 3) break; if (pick.every(p => Math.abs(t - p) >= 120 * 60000)) pick.push(t); }
     pick.sort((a, b) => a - b);
     out[s.name] = pick.map(t => ({ label: slotLabel(t), slot: `${localDate(t)} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}` }));
   }
   return out;
+}
+// The next open days, for "Another day": short labels the customer can tap.
+function openDays(biz, bookings, timeOff) {
+  const days = [];
+  for (const a of availability(biz, bookings, timeOff, 21)) { if (a.free && !/closed|fully booked/.test(a.free) && days.length < 10) days.push(dayLabel(new Date(a.date + 'T12:00'))); }
+  return days;
+}
+function dayLabel(t) {
+  const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d = new Date(t); d.setHours(0, 0, 0, 0);
+  const n = Math.round((d - d0) / 864e5);
+  return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${t.toLocaleDateString('en-GB', { weekday: 'short' })} ${t.getDate()} ${t.toLocaleDateString('en-GB', { month: 'short' })}`;
 }
 // "Today 14:00", "Tomorrow 10:30", "Mon 26 Oct 17:00": short enough for a WhatsApp button.
 function slotLabel(t) {

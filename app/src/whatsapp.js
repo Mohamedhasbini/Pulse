@@ -27,7 +27,7 @@ export async function sendWhatsApp(phoneNumberId, to, text, options = []) {
   const msg = waBody(text, options);
   let res = await post(msg);
   // Buttons refused (old app, test number limits): the same words as plain text, so the customer is never left without a reply.
-  if (!res.ok && msg.type === 'interactive') { console.warn('WhatsApp buttons refused, sending text:', res.status, await res.text()); res = await post({ type: 'text', text: { body: String(text) } }); }
+  if (!res.ok && msg.type === 'interactive') { console.warn('WhatsApp buttons refused, sending text:', res.status, await res.text()); res = await post({ type: 'text', text: { body: String(text) + '\n\n' + options.map(o => '• ' + o).join('\n') } }); }
   if (!res.ok) { const t = await res.text(); console.error('WhatsApp send failed', res.status, t); return { ok: false, reason: `WhatsApp error ${res.status}` }; }
   return { ok: true };
 }
