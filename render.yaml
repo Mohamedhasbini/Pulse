@@ -1,4 +1,4 @@
-# Render free tier: web service sleeps after 15 min idle; free Postgres expires after 30 days.
+# Render free tier: web service sleeps after 15 min idle. Database lives on Neon's free plan (no expiry).
 services:
   - type: web
     name: pulse
@@ -8,8 +8,8 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /
     envVars:
-      - key: DATABASE_URL
-        fromDatabase: { name: pulse-db, property: connectionString }
+      - key: DATABASE_URL # Neon connection string, pasted in Render
+        sync: false
       - key: TZ
         value: Asia/Beirut
       - key: TIMEZONE
@@ -30,9 +30,3 @@ services:
         sync: false
       - key: EMAIL_FROM
         sync: false
-
-databases:
-  - name: pulse-db
-    plan: free
-    databaseName: ringback
-    user: ringback
