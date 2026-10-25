@@ -30,7 +30,7 @@ h1{margin:0;font-size:clamp(30px,4.2vw,44px);line-height:1.08;letter-spacing:-.0
 .signal .g{fill:var(--dot)}
 .signal .b{fill:var(--beat);opacity:0}
 .signal .t{font:500 10px "Geist Mono",ui-monospace,monospace;fill:var(--mute)}
-.signal .now{fill:#7c5cff;transform-box:fill-box;transform-origin:center;animation:ping 2.4s var(--ease) infinite}
+.signal .now{fill:#25d366;transform-box:fill-box;transform-origin:center;animation:ping 2.4s var(--ease) infinite}
 @keyframes ping{0%{opacity:.5;transform:scale(1)}70%,100%{opacity:0;transform:scale(3.2)}}
 /* the form */
 form{width:min(380px,100%);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:14px}
@@ -58,7 +58,7 @@ body.ok form{transition:transform var(--base) var(--ease),opacity var(--base) va
 </head>
 <body>
 <header>
-  <a class="brand" href="/pulse" aria-label="Pulse website"><svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ff6a1f"/><stop offset=".55" stop-color="#ff2e7e"/><stop offset="1" stop-color="#7c5cff"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="13" fill="url(#pg)"/><path d="M8 26h7l3-6 5 13 5-20 4 15 2-2h6" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>pulse</a>
+  <a class="brand" href="/pulse" aria-label="Pulse website"><svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#25d366"/><stop offset="1" stop-color="#1a9e4c"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="13" fill="url(#pg)"/><path d="M8 26h7l3-6 5 13 5-20 4 15 2-2h6" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>pulse</a>
   <a class="back" href="/pulse">Pulse website</a>
 </header>
 <main>
@@ -87,7 +87,7 @@ body.ok form{transition:transform var(--base) var(--ease),opacity var(--base) va
   let g="";for(let c=0;c<C;c++)for(let r=0;r<R;r++){const on=r===beat[c];g+=`<circle class="${on?"b":"g"}" cx="${(c*dx).toFixed(1)}" cy="${(y0+r*dy).toFixed(1)}" r="${on?2.6:1.5}"/>`}
   const tag=(c,txt,up)=>{const x=c*dx,y=y0+beat[c]*dy;return `<line x1="${x}" y1="${y+(up?-6:6)}" x2="${x}" y2="${up?2:H-2}" stroke="var(--dot)" stroke-width="1"/><text class="t" x="${x+6}" y="${up?8:H-2}">${txt}</text>`};
   const pts=beat.map((r,c)=>`${(c*dx).toFixed(1)},${(y0+r*dy).toFixed(1)}`).join(" ");
-  g=`<defs><linearGradient id="tr" x1="0" x2="1"><stop offset="0" stop-color="#ff6a1f"/><stop offset=".55" stop-color="#ff2e7e"/><stop offset="1" stop-color="#7c5cff"/></linearGradient></defs>`+g+`<polyline points="${pts}" fill="none" stroke="url(#tr)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  g=`<defs><linearGradient id="tr" x1="0" x2="1"><stop offset="0" stop-color="#25d366"/><stop offset="1" stop-color="#1a9e4c"/></linearGradient></defs>`+g+`<polyline points="${pts}" fill="none" stroke="url(#tr)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
   g+=tag(12,"09:14  booking confirmed",true)+tag(27,"13:02  question answered",false);
   const last=C-1,lx=last*dx,ly=y0+beat[last]*dy;g+=`<circle class="now" cx="${lx}" cy="${ly}" r="3"/><text class="t" x="${lx-22}" y="${ly-12}">now</text>`;
   svg.innerHTML=g})();

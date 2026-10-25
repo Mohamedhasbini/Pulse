@@ -12,7 +12,7 @@
   --good:#34d399;--good-soft:rgba(52,211,153,.12);--bad:#f43f5e;--bad-soft:rgba(244,63,94,.12);--warn:#f5c84b;
   --bg:var(--ground);--glass:var(--s1);--glass2:var(--s2);--edge:var(--line);
   --card-shadow:none;--r:8px;--r-lg:12px;
-  --x-head:linear-gradient(90deg,var(--signal),#ff2e7e 45%,var(--accent));
+  --x-head:var(--pg,#25d366);
   --x-font:"Geist","Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--x-mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace;
   color-scheme:dark}
 :root[data-theme="light"]{

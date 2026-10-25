@@ -6,7 +6,7 @@
 .pl-ping{transform-box:fill-box;transform-origin:center;animation:pl-ping 3.2s ease-out infinite}
 .pl-dot{animation:pl-dot 3.2s ease-in-out infinite}
 .pl-word{font-family:"Bricolage Grotesque","Instrument Sans",system-ui,sans-serif;font-weight:800;font-size:23px;line-height:1;letter-spacing:-.05em;
-  background:linear-gradient(95deg,var(--pl-ink) 0%,var(--pl-ink) 42%,#ff4f8b 72%,#8a6bff 100%);background-size:200% 100%;background-position:0 0;
+  background:linear-gradient(95deg,var(--pl-ink) 0%,var(--pl-ink) 42%,var(--pg,#25d366) 78%,var(--pg,#25d366) 100%);background-size:200% 100%;background-position:0 0;
   -webkit-background-clip:text;background-clip:text;color:transparent;animation:pl-shine 6.4s ease-in-out infinite;padding-bottom:2px}
 :root,.pl-dark{--pl-ink:#ffffff}
 :root[data-theme="light"]{--pl-ink:#16141f}
