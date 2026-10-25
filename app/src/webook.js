@@ -147,7 +147,7 @@ export function mountWeBook(app) {
     const s = await sessionOf(req);
     if (!s) return res.status(401).json({ error: 'Please start again.' });
     const after = +req.query.after || 0;
-    const msgs = await q(`SELECT m.id, m.role, m.text, to_char(m.created_at,'YYYY-MM-DD"T"HH24:MI') AS at FROM messages m
+    const msgs = await q(`SELECT m.id, m.role, m.text, m.options, to_char(m.created_at,'YYYY-MM-DD"T"HH24:MI') AS at FROM messages m
         JOIN conversations c ON c.id=m.conversation_id WHERE c.customer_id=$1 AND c.channel='webook' AND m.id > $2 ORDER BY m.id LIMIT 300`, [s.customerId, after]);
     const biz = await one('SELECT name, phone, address FROM businesses WHERE id=$1', [s.businessId]);
     const paused = await one(`SELECT ai_paused FROM conversations WHERE customer_id=$1 AND channel='webook' ORDER BY updated_at DESC LIMIT 1`, [s.customerId]);

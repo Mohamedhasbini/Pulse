@@ -409,7 +409,11 @@ function addMsg(m){const box=$("#msgs");if(m.at){const dl=dayLabel(m.at);if(dl!=
   const d=document.createElement("div");d.className="m "+(m.role==="me"?"me":m.role==="staff"?"staff":"ai");
   d.innerHTML=(m.role==="staff"?`<span class="who">${esc(chatBiz.name)} team</span>`:"")+esc(m.text).replace(/\*([^*\n]+)\*/g,"<b>$1</b>")+(m.at?`<time>${m.at.slice(11)}</time>`:"");
   box.appendChild(d);if(m.id)lastId=Math.max(lastId,m.id);$("#vChat").scrollTop=1e9}
+function chips(list){document.querySelectorAll("#msgs .qchips.opt").forEach(x=>x.remove());if(!list||!list.length)return;
+  const c=document.createElement("div");c.className="qchips opt";list.forEach(t=>{const b=document.createElement("button");b.className="qchip";b.type="button";b.textContent=t;b.onclick=()=>{c.remove();send(t)};c.appendChild(b)});
+  $("#msgs").appendChild(c);$("#vChat").scrollTop=1e9}
 async function loadMsgs(){try{const r=await api(`/api/webook/messages?after=${lastId}`,"GET",null,sessions[chatBiz.id]);r.messages.forEach(addMsg);
+    if(r.messages.length){const last=r.messages[r.messages.length-1];chips(last.role!=="me"&&Array.isArray(last.options)?last.options:[])}
     $("#staffbar").hidden=!r.staff;$("#staffbar").textContent=r.staff?`You're chatting with the ${chatBiz.name} team.`:""}catch(e){if(e.status===401){delete sessions[chatBiz.id];S.set("wb:sessions",sessions)}}}
 async function send(text){if(!text||waiting)return;waiting=true;$("#sendBtn").disabled=true;
   const mine=document.createElement("div");mine.className="m me";mine.textContent=text;$("#msgs").appendChild(mine);

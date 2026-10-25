@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-24T17:16:38.000Z",
+  "createdAt": "2026-10-24T11:04:25.447Z",
+  "id": "RingbackRecept01",
   "name": "Ringback Receptionist",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -34,7 +40,7 @@
     },
     {
       "parameters": {
-        "modelName": "models/gemini-3.1-flash-lite",
+        "modelName": "={{ $('Webhook').item.json.body.model || 'models/gemini-3.1-flash-lite' }}",
         "options": {
           "temperature": 0.3
         }
@@ -108,5 +114,38 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "id": "RingbackRecept01"
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "ac7148c9-ab8a-4794-958a-6d8e03fff75b",
+  "activeVersionId": "ac7148c9-ab8a-4794-958a-6d8e03fff75b",
+  "versionCounter": 14,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-24T11:04:25.451Z",
+      "createdAt": "2026-10-24T11:04:25.451Z",
+      "role": "workflow:owner",
+      "workflowId": "RingbackRecept01",
+      "projectId": "aBQQumaX4nfibu7G",
+      "project": {
+        "updatedAt": "2026-08-19T17:34:55.313Z",
+        "createdAt": "2026-08-19T17:34:09.295Z",
+        "id": "aBQQumaX4nfibu7G",
+        "name": "Mohamad hasbini <mhmdhasbini@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "aaab7ba5-aaed-4b5f-8895-9ed6a3a2e59e"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
 }

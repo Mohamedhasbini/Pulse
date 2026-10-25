@@ -332,3 +332,6 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS menu_url TEXT;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS site JSONB;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS subdomain TEXT UNIQUE;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS custom_domain TEXT UNIQUE;
+
+-- Tap-to-answer choices sent with an assistant message (WhatsApp buttons/list, Telegram keyboard, web chips)
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS options JSONB;

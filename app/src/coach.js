@@ -78,7 +78,7 @@ async function understandWithAI(text, current) {
   if (!url) return null;
   try {
     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
-      body: JSON.stringify({ message: text, current: { tone: current.tone, assistant_name: current.assistant_name, rules: (current.rules || []).map(x => x.text || x) } }) });
+      body: JSON.stringify({ model: process.env.AI_MODEL || undefined, message: text, current: { tone: current.tone, assistant_name: current.assistant_name, rules: (current.rules || []).map(x => x.text || x) } }) });
     if (!r.ok) return null;
     let body = await r.json(); body = typeof body === 'string' ? body : body.output ?? body.text ?? body;
     const j = typeof body === 'string' ? JSON.parse((body.match(/\{[\s\S]*\}/) || [body])[0]) : body;

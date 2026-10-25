@@ -31,6 +31,12 @@ try {
   biz.hours = { ...biz.hours, [d.getDay()]: [['12:00', '23:00']] };
   say('Restaurant: 2nd table of a type still free', isFree(biz, bk(1), [], d, end, 0, svc.id));
   say('Restaurant: 3rd table of that type is full', !isFree(biz, bk(2), [], d, end, 0, svc.id));
+  // tap-to-answer choices: 1-3 short ones become WhatsApp buttons, up to 10 a list, otherwise plain text
+  const { waBody } = await import('./whatsapp.js'), { cleanOptions } = await import('./brain.js');
+  say('3 short choices become WhatsApp buttons', waBody('Pick a time', ['Tomorrow 10:00', 'Tomorrow 12:30', 'Another day']).interactive?.type === 'button');
+  say('Up to 10 choices become a WhatsApp list', waBody('Our services', ['Haircut & blow-dry', 'Full colour', 'Balayage', 'Gel manicure', 'Pedicure']).interactive?.type === 'list');
+  say('No choices: plain text', waBody('Hello', []).type === 'text');
+  say('Choices are cleaned (empty, too long, duplicates removed)', JSON.stringify(cleanOptions(['Yes', ' yes ', '', 'x'.repeat(30), 'No'])) === '["Yes","No"]');
   // the admin with no business opened is in the Lab: platform pages only
   const me0 = await fetch(BASE + '/api/me', { headers: as(admin) }).then(r => r.json());
   say('Admin signs in to the Lab, not a business', me0.lab === true && !me0.business);

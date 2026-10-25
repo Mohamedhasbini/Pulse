@@ -15,11 +15,14 @@ export const telegramStatus = bizId => { const b = bots.get(+bizId); return b ? 
 // Our confirmations use *bold*; Telegram's MarkdownV2 is strict, so send plain text with the stars removed.
 const plain = t => String(t || '').replace(/\*([^*\n]+)\*/g, '$1');
 
-export async function sendTelegram(chatId, text, bizId) {
+export async function sendTelegram(chatId, text, bizId, options = []) {
   const token = bots.get(+bizId)?.token;
   if (!token || !chatId) return { ok: false, reason: 'Telegram not connected' };
   try {
-    const j = await call(token, 'sendMessage', { chat_id: chatId, text: plain(text) });
+    const opts = (options || []).filter(Boolean), rows = [];
+    for (let i = 0; i < opts.length; i += opts.length > 4 ? 2 : 1) rows.push(opts.slice(i, i + (opts.length > 4 ? 2 : 1)).map(text => ({ text })));
+    const j = await call(token, 'sendMessage', { chat_id: chatId, text: plain(text),
+      reply_markup: rows.length ? { keyboard: rows, one_time_keyboard: true, resize_keyboard: true } : { remove_keyboard: true } });
     return j.ok ? { ok: true } : { ok: false, reason: 'Telegram: ' + (j.description || 'error') };
   } catch (e) { return { ok: false, reason: 'Telegram: ' + e.message }; }
 }
@@ -50,7 +53,7 @@ async function onMessage(bizId, m) {
   }
   call(bots.get(bizId).token, 'sendChatAction', { chat_id: chatId, action: 'typing' }).catch(() => {});
   const r = await handleMessage({ businessId: bizId, phone: phoneKey, name, text, channel: 'telegram' });
-  if (r.reply) await sendTelegram(chatId, r.reply, bizId);
+  if (r.reply) await sendTelegram(chatId, r.reply, bizId, r.options);
 }
 
 export function stopBot(bizId) { const b = bots.get(bizId); if (b) b.stopped = true; bots.delete(bizId); }

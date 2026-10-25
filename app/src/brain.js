@@ -84,11 +84,12 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
       payment_methods: biz.payment_methods, booking_note: biz.booking_note, languages: biz.languages, tone: biz.tone,
       payment_options: paymentText(biz),
       assistant_name: biz.assistant_name || 'Nora',
-      special_instructions: [biz.vertical === 'restaurant' && 'For every reservation ask how many guests, pick the table type that fits that number, and put the number in booking.guests (a whole number). Put any occasion or allergy in booking.notes.', `Your name is ${biz.assistant_name || 'Nora'}, the assistant of ${biz.name}. Use this name when you greet someone or are asked who you are; never call yourself by any other name.`, ownerRules(biz.ai_rules), biz.ai_instructions, await taughtAnswers(businessId), sendingRules(options), CONFIDENCE].filter(Boolean).join('\n\n'), cancellation_policy: policyText(biz),
+      special_instructions: [FAST_FLOW, biz.vertical === 'restaurant' && 'For every reservation ask how many guests, pick the table type that fits that number, and put the number in booking.guests (a whole number). Put any occasion or allergy in booking.notes.', `Your name is ${biz.assistant_name || 'Nora'}, the assistant of ${biz.name}. Use this name when you greet someone or are asked who you are; never call yourself by any other name.`, ownerRules(biz.ai_rules), biz.ai_instructions, await taughtAnswers(businessId), sendingRules(options), CONFIDENCE].filter(Boolean).join('\n\n'), cancellation_policy: policyText(biz),
       type: (VERTICALS[biz.vertical] || VERTICALS.salon).label, persona: (VERTICALS[biz.vertical] || VERTICALS.salon).persona,
       terms: (VERTICALS[biz.vertical] || VERTICALS.salon).terms },
     services: biz.services.map(s => ({ name: s.name, price: Number(s.price), minutes: s.minutes, description: s.description || undefined })),
     availability: availability(biz, bookings, timeOff, 14),
+    quick_slots: quickSlots(biz, bookings, timeOff),
     customer: {
       // One person across WhatsApp, Telegram, WeBook and the booking page: their history below covers all of them.
       channels_used: (await q('SELECT DISTINCT channel FROM conversations WHERE customer_id=$1', [customer.id])).map(r => r.channel),
@@ -183,19 +184,20 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   }
 
   const source = failed ? (decision.quick ? 'quick' : 'fallback') : decision.quick ? 'quick' : 'ai';
-  await q('INSERT INTO messages (conversation_id, role, text, latency_ms, failed, source, confidence) VALUES ($1,$2,$3,$4,$5,$6,$7)',
-    [conv.id, 'assistant', reply, ms, failed, source, source === 'ai' ? (String(decision.confidence).toLowerCase() === 'low' || decision.unknown_question || decision.action === 'handoff' ? 'low' : 'high') : null]);
+  const choices = bookedNow || failed ? [] : cleanOptions(decision.options);
+  await q('INSERT INTO messages (conversation_id, role, text, latency_ms, failed, source, confidence, options) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+    [conv.id, 'assistant', reply, ms, failed, source, source === 'ai' ? (String(decision.confidence).toLowerCase() === 'low' || decision.unknown_question || decision.action === 'handoff' ? 'low' : 'high') : null, choices.length ? JSON.stringify(choices) : null]);
   await q(`UPDATE conversations SET outcome=$1, updated_at=now(),
       needs_attention = needs_attention OR $2, attention_reason = COALESCE($3, attention_reason) WHERE id=$4`,
     [outcome, !!attention, attention, conv.id]);
-  return { reply, outcome, bookedNow, conversationId: conv.id, failed };
+  return { reply, options: choices, outcome, bookedNow, conversationId: conv.id, failed };
 }
 
 async function askN8n(context, timeout) {
   const res = await fetch(process.env.N8N_WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ context: JSON.stringify(context, null, 1) }),
+    body: JSON.stringify({ context: JSON.stringify(context, null, 1), model: process.env.AI_MODEL || undefined }),
     signal: AbortSignal.timeout(timeout),
   });
   if (!res.ok) throw new Error(`n8n responded ${res.status}`);
@@ -344,6 +346,19 @@ async function taughtAnswers(bizId) {
     ok.map(r => `- Customer: "${r.asked.slice(0, 200)}" → You: "${r.answer}"`).join('\n')}` : '';
 }
 
+// How every conversation should feel: forward in every message, few choices, no repeated questions.
+// It overrides the one-question-at-a-time guidance in the base prompt.
+const FAST_FLOW = `FAST BOOKING FLOW (overrides any earlier guidance about pacing; the customer must never feel slowed down):
+- Move the booking forward in EVERY message. Answer the question AND give the next step in the same message.
+- Once the customer names a service or shows interest, do not ask "would you like to book?". Go straight to times.
+- When a service is chosen, reply in ONE short message: service, minutes and price, then offer exactly the 3 times listed for it in CONTEXT.quick_slots (use their labels, and always write them in the message text too), and say they can name another day or time.
+- Never list more than 3 times. If they ask for a specific day or time, check CONTEXT.availability and offer the 3 closest free times.
+- When they ask what you offer, list the services in one short message (name and price only) and ask which one; the options are ALL service names (up to 10).
+- Never ask for something you already know (customer.name, phone, earlier answers). Ask any missing booking details together in ONE message, only after the time is chosen.
+- As soon as service, time and the required details are known, book right away (action "book"). Do not ask "shall I confirm?".
+- Returning customers: suggest their favourite_service with its first quick slot ("Same as last time? Next free: ...").
+- Keep messages short: at most 3 short lines, WhatsApp style.
+TAP-TO-ANSWER OPTIONS: also add "options" to your JSON: an array of the choices the customer can tap to answer your message, in the order you wrote them. Examples: the 3 times exactly as you wrote them plus "Another day"; service names; "Yes" / "Change time". Each option at most 20 characters. Up to 10 options (3 or fewer is best). Use [] when the customer must type something (a name, an email) or after a booking is confirmed.`;
 const CONFIDENCE = 'CONFIDENCE: also add "confidence": "high" or "low" to your JSON. Use "low" when you are not sure your reply is correct, complete or allowed; the owner will review it.';
 
 // Reminder channels that can really be sent right now (SMS is not connected).
@@ -425,4 +440,37 @@ function confirmation(biz, b, aiReply, moved = false) {
     biz.show_branding !== false && '', biz.show_branding !== false && `_Powered by Pulse_ · ${SITE}/go?b=${biz.id}&s=confirm`,
   ].filter(x => x !== null && x !== undefined && x !== false);
   return lines.join('\n');
+}
+
+// The next 3 good times for each service: the soonest, then spread through the day(s), so the AI never lists every slot.
+function quickSlots(biz, bookings, timeOff) {
+  const out = {};
+  for (const s of (biz.services || []).slice(0, 12)) {
+    const free = freeSlots(biz, bookings, timeOff, s.minutes, 40, new Date(), bufferOf(biz, s.id), s.id);
+    const pick = [];
+    for (const f of free) {
+      const t = new Date(f.id);
+      if (!pick.length || (pick.every(p => Math.abs(t - p) >= 150 * 60000))) pick.push(t);
+      if (pick.length === 3) break;
+    }
+    for (const f of free) { if (pick.length === 3) break; const t = new Date(f.id); if (!pick.some(p => +p === +t)) pick.push(t); }
+    pick.sort((a, b) => a - b);
+    out[s.name] = pick.map(t => ({ label: slotLabel(t), slot: `${localDate(t)} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}` }));
+  }
+  return out;
+}
+// "Today 14:00", "Tomorrow 10:30", "Mon 26 Oct 17:00": short enough for a WhatsApp button.
+function slotLabel(t) {
+  const hm = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+  const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d = new Date(t); d.setHours(0, 0, 0, 0);
+  const days = Math.round((d - d0) / 864e5);
+  if (days === 0) return `Today ${hm}`;
+  if (days === 1) return `Tomorrow ${hm}`;
+  return `${t.toLocaleDateString('en-GB', { weekday: 'short' })} ${t.getDate()} ${t.toLocaleDateString('en-GB', { month: 'short' })} ${hm}`;
+}
+// Choices the customer can tap: short, unique, at most 10; none once a booking is confirmed.
+export function cleanOptions(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  return list.map(o => String(o ?? '').replace(/\s+/g, ' ').trim()).filter(o => o && o.length <= 24 && !seen.has(o.toLowerCase()) && seen.add(o.toLowerCase())).slice(0, 10);
 }

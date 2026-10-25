@@ -41,7 +41,7 @@ app.post('/webhook/whatsapp', async (req, res) => {
       if (!biz) { console.warn('No business for phone number id', m.phoneNumberId); continue; }
       const text = m.text || '(The customer sent a ' + m.type + ' message that cannot be read.)';
       const r = await handleMessage({ businessId: biz.id, phone: m.from, name: m.name, text, waId: m.id });
-      if (!r.duplicate && r.reply) await sendWhatsApp(m.phoneNumberId, m.from, r.reply);
+      if (!r.duplicate && r.reply) await sendWhatsApp(m.phoneNumberId, m.from, r.reply, r.options);
     } catch (e) { console.error('Failed to handle WhatsApp message', e); }
   }
 });
@@ -59,7 +59,7 @@ app.post('/webhook/kapso', async (req, res) => {
       if (!biz) { console.warn('Kapso: no business for phone number id', m.phoneNumberId); continue; }
       const text = m.text || '(The customer sent a ' + m.type + ' message that cannot be read.)';
       const r = await handleMessage({ businessId: biz.id, phone: m.from, name: m.name, text, waId: m.id });
-      if (!r.duplicate && r.reply) await sendWhatsApp(m.phoneNumberId, m.from, r.reply);
+      if (!r.duplicate && r.reply) await sendWhatsApp(m.phoneNumberId, m.from, r.reply, r.options);
     } catch (e) { console.error('Failed to handle Kapso message', e); }
   }
 });
@@ -865,6 +865,7 @@ app.get('/api/live', wrap(async (req, res) => {
       (SELECT count(*) FROM bookings WHERE business_id=$1 AND created_at >= date_trunc('day', now()) AND status <> 'cancelled')::int AS booked_today,
       (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND created_at >= date_trunc('day', now()) AND status <> 'cancelled') AS value_today,
       (SELECT count(*) FROM bookings WHERE business_id=$1 AND starts_at >= date_trunc('day', now()) AND starts_at < date_trunc('day', now()) + interval '1 day' AND status <> 'cancelled')::int AS visits_today,
+      (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND starts_at >= date_trunc('day', now()) AND starts_at < date_trunc('day', now()) + interval '1 day' AND status <> 'cancelled') AS revenue_today,
       (SELECT count(*) FROM bookings WHERE business_id=$1 AND starts_at > now() AND status='confirmed')::int AS upcoming_count,
       (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND starts_at > now() AND status='confirmed') AS upcoming_value,
       (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND status IN ('confirmed','completed') AND starts_at <= now() AND starts_at > now() - make_interval(days => $2)) AS earned,
