@@ -135,3 +135,17 @@ body[data-page="today"]{--pg:#7fd67a;--pg2:#3f9f5e}
 :root[data-theme="light"] .nsub{border-left-color:rgba(0,0,0,.1)}
 nav .navpills{overflow-y:auto;scrollbar-width:none}nav .navpills::-webkit-scrollbar{display:none}
 .nav-gone{display:none!important}
+.nudge-x{all:unset;cursor:pointer;width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;margin-left:4px;font-size:14px;line-height:1;color:var(--ink2);background:var(--gp-nest2)}
+.nudge-x:hover{color:var(--ink);background:var(--gp-nest)}
+/* sidebar: items never squash; the list scrolls instead */
+nav{min-height:0}
+nav .navpills{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:2px}
+nav .navpills>*{flex-shrink:0!important}
+nav button[data-view]{min-height:34px!important;flex-shrink:0!important}
+#labBtn{flex-shrink:0}
+/* calendar: short bookings stay one clean line; initials sit in the corner */
+.cal-b{overflow:hidden!important;padding:4px 30px 4px 9px!important;line-height:1.25!important;font-size:12px!important}
+.cal-b>*{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.cal-b b,.cal-b strong{font-size:12px}
+.sg-mini{float:none!important;position:absolute;top:4px;right:6px;margin:0!important}
+.cal-b.st-cancelled{opacity:.55}

@@ -1297,6 +1297,9 @@ function sidebarState(){document.querySelectorAll("nav .ns").forEach(l=>{let n=l
 let me=null;
 const VIEW_MODULE={overview:"overview",calendar:"calendar",people:"customers",analytics:"insights",training:"teach",demo:"testchat",setup:"setup",website:"website"};
 window.PUB=()=>(typeof me!=="undefined"&&me&&me.public_url)||location.origin;
+// the two-factor reminder can be hidden for good with its ×
+document.addEventListener("click",e=>{if(!e.target.closest("#tfNudgeX"))return;try{localStorage.setItem("rb-2fa-nudge","off")}catch{}$("#tfNudge")?.remove();$("#tfNudgeX")?.remove();if(!$("#planText").textContent.trim())$("#planBar").hidden=true});
+const nudgeOff=()=>{try{return localStorage.getItem("rb-2fa-nudge")==="off"}catch{return false}};
 async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();const b=me.business,admin=me.user.role==="admin";
   $("#adminNav").hidden=true;$("#labBtn")&&($("#labBtn").hidden=!admin);$("#planBar").hidden=false;
   // Sections this login can't open disappear; sections the plan doesn't include show a lock.
@@ -1310,10 +1313,10 @@ async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();cons
    $("#pcSub").textContent=active?"Thank you for being with us":days>0?`${days} day${days===1?"":"s"} left in your free trial`:"Your trial has ended";$("#pcBar").style.width=active?"100%":Math.max(4,Math.min(100,(14-days)/14*100))+"%"}
   if(!me.modules.includes("overview")){const first=document.querySelector("nav button[data-view]:not([hidden])");first&&first.click()}
   const plan=b.plan_status==="active"?"Subscription active":b.plan_status==="paused"?"Paused":b.trial_days_left>0?`Free trial: ${b.trial_days_left} day${b.trial_days_left===1?"":"s"} left`:"Trial ended";
-  if(me.edition==="product"&&!admin){$("#planText").innerHTML=me.user.totp_enabled||me.user.role==="staff"?"":`<a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor sign-in</a>`;$("#planBar").hidden=!$("#tfNudge");$("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});return}
+  if(me.edition==="product"&&!admin){$("#planText").innerHTML=me.user.totp_enabled||me.user.email_2fa||me.user.role==="staff"||nudgeOff()?"":`<a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor sign-in</a><button type="button" class="nudge-x" id="tfNudgeX" aria-label="Hide this reminder" title="Hide this reminder">×</button>`;$("#planBar").hidden=!$("#tfNudge");$("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});return}
   $("#planBar").classList.toggle("adminview",admin);
   $("#planText").innerHTML=(admin?`<span class="tag t-attn">Admin view</span> You're inside <b>${esc(b.name)}</b>'s dashboard. Their logins only ever see their own business, never Businesses or other clients. <a href="#" id="backCC" class="tag" style="text-decoration:none">← Back to Lab</a> · `:"")+`<span class="tag ${b.plan_status==="active"?"t-book":b.trial_days_left>0?"t-faq":"t-hand"}">${esc(b.plan_name||"No plan")} · ${plan}</span> <span style="color:var(--muted)">${esc([b.country,b.currency,b.timezone].filter(Boolean).join(" · "))}</span>`
-    +(me.user.totp_enabled||me.user.role==="staff"?"":` <a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor</a>`);
+    +(me.user.totp_enabled||me.user.email_2fa||me.user.role==="staff"||nudgeOff()?"":` <a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor</a><button type="button" class="nudge-x" id="tfNudgeX" aria-label="Hide this reminder" title="Hide this reminder">×</button>`);
   $("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});$("#backCC")&&($("#backCC").onclick=async e=>{e.preventDefault();await req("/api/admin/lab","POST");location.href="/"})}
 // A section the plan doesn't include shows what it is and how to get it, instead of an error.
 function lockedCard(view){const m=VIEW_MODULE[view],f=me&&me.module_feature[m],sec=$("#"+view);
