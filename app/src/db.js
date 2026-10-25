@@ -3,7 +3,8 @@ import fs from 'node:fs';
 
 export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 // Dates in SQL (daily chart, busy hours) use the business time zone, like the rest of the app.
-pool.on('connect', c => c.query(`SET TIME ZONE '${(process.env.TZ || 'UTC').replace(/'/g, '')}'`));
+// search_path is pinned too: pooled cloud connections (Neon) can carry an empty one left by a pg_dump restore.
+pool.on('connect', c => c.query(`SET TIME ZONE '${(process.env.TZ || 'UTC').replace(/'/g, '')}'; SET search_path TO public`));
 export const q = (text, params) => pool.query(text, params).then(r => r.rows);
 export const one = async (text, params) => (await q(text, params))[0];
 
