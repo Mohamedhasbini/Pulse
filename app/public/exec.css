@@ -198,3 +198,85 @@ th[aria-sort="ascending"]{color:var(--ink)!important}th[aria-sort="ascending"]::
 .kp-none{color:var(--muted);text-align:center;padding:18px;margin:0}
 .kp-foot{display:flex;gap:16px;padding:8px 14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)}
 .kp-foot kbd{margin-right:3px}
+
+/* ======================================================================
+   Page identities: every page has its own colour, ground and character,
+   so Home feels like a briefing, Test chat like a sandbox, Insights like a lab.
+   Static gradients only (no blur), so it stays fast.
+   ====================================================================== */
+body{--pg:var(--accent);--pg2:var(--cyan);--pg-name:"";--pg-glow:transparent}
+body[data-page="today"]   {--pg:#f5b544;--pg2:#ff7a3d;--pg-name:"Briefing";        --pg-glow:rgba(245,181,68,.10)}
+body[data-page="overview"]{--pg:#8b7cff;--pg2:#38d3f5;--pg-name:"Command center";  --pg-glow:rgba(139,124,255,.10)}
+body[data-page="calendar"]{--pg:#2dd4bf;--pg2:#38bdf8;--pg-name:"Schedule";        --pg-glow:rgba(45,212,191,.09)}
+body[data-page="people"]  {--pg:#f472b6;--pg2:#fb923c;--pg-name:"Relationships";   --pg-glow:rgba(244,114,182,.09)}
+body[data-page="training"]{--pg:#ff7a2e;--pg2:#f5c84b;--pg-name:"AI training lab"; --pg-glow:rgba(255,122,46,.10)}
+body[data-page="demo"]    {--pg:#34d399;--pg2:#a3e635;--pg-name:"Sandbox · nothing here reaches customers";--pg-glow:rgba(52,211,153,.09)}
+body[data-page="analytics"]{--pg:#5b9cff;--pg2:#c084fc;--pg-name:"Intelligence";   --pg-glow:rgba(91,156,255,.11)}
+body[data-page="website"] {--pg:#38bdf8;--pg2:#818cf8;--pg-name:"Your website";    --pg-glow:rgba(56,189,248,.09)}
+body[data-page="setup"],body[data-page="security"]{--pg:#cbd5e1;--pg2:#94a3b8;--pg-name:"Administration";--pg-glow:rgba(203,213,225,.05)}
+body[data-page="admin"]   {--pg:#f43f5e;--pg2:#fb923c;--pg-name:"Platform control";--pg-glow:rgba(244,63,94,.09)}
+:root[data-theme="light"] body[data-page="today"]{--pg:#c27803;--pg-glow:rgba(245,181,68,.16)}
+:root[data-theme="light"] body[data-page="setup"],:root[data-theme="light"] body[data-page="security"]{--pg:#334155;--pg2:#64748b}
+:root[data-theme="light"] body[data-page="demo"]{--pg:#059669}
+:root[data-theme="light"] body[data-page="analytics"]{--pg:#2563eb}
+
+/* the page colour drives the accent everywhere on that page */
+body[data-page]{--accent:var(--pg);--accent-text:var(--pg);--accent-soft:color-mix(in srgb,var(--pg) 13%,transparent);--accent-line:color-mix(in srgb,var(--pg) 42%,transparent);--x-head:linear-gradient(90deg,var(--pg),var(--pg2))}
+body[data-page="setup"],body[data-page="security"],body[data-page="today"]{--accent-ink:#111}
+:root[data-theme="light"] body[data-page]{--accent-ink:#fff}
+
+/* ground: a soft static light in the page colour, top right */
+main{background:radial-gradient(900px 420px at 100% -10%,var(--pg-glow),transparent 70%),radial-gradient(700px 360px at -10% 110%,color-mix(in srgb,var(--pg2) 6%,transparent),transparent 70%)!important}
+/* page signature: a thin colour rule and the page's role above every title */
+main{position:relative}
+main::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,var(--pg),var(--pg2) 40%,transparent 80%);pointer-events:none}
+main>section>.top h1::before,.td-hero .td-eyebrow::after{content:var(--pg-name);display:block;font-family:var(--x-mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--pg);margin-bottom:4px}
+.td-hero .td-eyebrow::after{display:none}
+.top h1 b,.td-hero h1 b{background:linear-gradient(90deg,var(--pg),var(--pg2));-webkit-background-clip:text;background-clip:text;color:transparent}
+nav button[data-view][aria-current="true"]::before{background:var(--pg)}
+nav button[data-view][aria-current="true"] svg{stroke:var(--pg)}
+.ptabs button[aria-pressed="true"]::after{background:linear-gradient(90deg,var(--pg),var(--pg2))}
+
+/* ---- Home: a morning briefing, warm and calm ---- */
+body[data-page="today"] .td-hero{background:linear-gradient(135deg,color-mix(in srgb,var(--pg) 16%,var(--s1)),var(--s1) 60%)!important;border-color:color-mix(in srgb,var(--pg) 25%,var(--line))!important}
+body[data-page="today"] .td-hero h1{font-size:28px!important;letter-spacing:-.035em}
+body[data-page="today"] .td-stat b{color:var(--ink)}
+body[data-page="today"] .td-stat:first-child{background:linear-gradient(160deg,color-mix(in srgb,var(--pg) 14%,var(--s1)),var(--s1) 70%)!important}
+
+/* ---- Dashboard: dense, technical, precise ---- */
+body[data-page="overview"] .kpi .v{font-family:var(--x-mono);font-weight:500!important;letter-spacing:-.04em}
+body[data-page="overview"] .card{background:linear-gradient(180deg,color-mix(in srgb,var(--pg) 3%,var(--s1)),var(--s1))!important}
+
+/* ---- Calendar: a time grid ---- */
+body[data-page="calendar"] main{background-image:radial-gradient(900px 420px at 100% -10%,var(--pg-glow),transparent 70%),repeating-linear-gradient(90deg,transparent 0 119px,color-mix(in srgb,var(--pg) 4%,transparent) 119px 120px)!important}
+
+/* ---- Clients: soft and personal, rounder ---- */
+body[data-page="people"] .card,body[data-page="people"] .kpi{border-radius:16px!important}
+body[data-page="people"] tbody tr td:first-child b{color:var(--ink)}
+
+/* ---- Teach AI: a lab bench with a dot grid; drafts look like drafts ---- */
+body[data-page="training"] main{background-image:radial-gradient(900px 420px at 100% -10%,var(--pg-glow),transparent 70%),radial-gradient(circle,color-mix(in srgb,var(--pg) 18%,transparent) 1px,transparent 1.4px)!important;background-size:auto,22px 22px!important}
+body[data-page="training"] .item{border:1px dashed color-mix(in srgb,var(--pg) 28%,var(--line))!important;background:color-mix(in srgb,var(--pg) 4%,var(--s1))!important}
+
+/* ---- Test chat: a sandbox console, monospace and green ---- */
+body[data-page="demo"] main{background-image:radial-gradient(900px 420px at 100% -10%,var(--pg-glow),transparent 70%),linear-gradient(color-mix(in srgb,var(--pg) 5%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--pg) 5%,transparent) 1px,transparent 1px)!important;background-size:auto,28px 28px,28px 28px!important}
+body[data-page="demo"] .card{border-color:color-mix(in srgb,var(--pg) 22%,var(--line))!important}
+body[data-page="demo"] .card h2,body[data-page="demo"] .ch small,body[data-page="demo"] .sub{font-family:var(--x-mono)!important}
+body[data-page="demo"] .phone{border:1px solid color-mix(in srgb,var(--pg) 35%,var(--line2))!important;box-shadow:0 0 0 6px color-mix(in srgb,var(--pg) 6%,transparent)!important}
+
+/* ---- Insights: colourful intelligence; each card gets its own hue ---- */
+body[data-page="analytics"] .card,body[data-page="analytics"] .kpi{position:relative;overflow:hidden}
+body[data-page="analytics"] .card::before,body[data-page="analytics"] .kpi::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:var(--c,var(--pg))}
+body[data-page="analytics"] :is(.card,.kpi):nth-of-type(5n+1){--c:#5b9cff}
+body[data-page="analytics"] :is(.card,.kpi):nth-of-type(5n+2){--c:#c084fc}
+body[data-page="analytics"] :is(.card,.kpi):nth-of-type(5n+3){--c:#2dd4bf}
+body[data-page="analytics"] :is(.card,.kpi):nth-of-type(5n+4){--c:#f5b544}
+body[data-page="analytics"] :is(.card,.kpi):nth-of-type(5n+5){--c:#f472b6}
+body[data-page="analytics"]{--d1:#5b9cff;--d2:#c084fc;--d3:#2dd4bf;--d4:#f5b544}
+
+/* ---- Settings and security: formal, monochrome, quiet ---- */
+body[data-page="setup"] main::before,body[data-page="security"] main::before{background:var(--line2)}
+body[data-page="setup"] .top h1 b,body[data-page="security"] .top h1 b{background:none;color:var(--ink)}
+
+/* ---- Command center: a control room ---- */
+body[data-page="admin"] .card{border-left:2px solid color-mix(in srgb,var(--pg) 50%,var(--line))!important}

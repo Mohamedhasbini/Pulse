@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse Logo Options</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#08090c;--card:#111318;--line:rgba(255,255,255,.08);--ink:#f2f4f8;--mute:#7a8091;--g1:#ff6a1f;--g2:#ff2e7e;--g3:#7c5cff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Geist,system-ui,sans-serif;padding:40px 16px 60px}
+.wrap{max-width:1180px;margin:0 auto}h1{font-size:30px;letter-spacing:-.03em;margin:0 0 6px}p.lead{color:var(--mute);margin:0 0 28px;max-width:720px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.opt{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
+.stage{display:grid;grid-template-columns:1fr 1fr}.stage>div{height:150px;display:flex;align-items:center;justify-content:center;gap:12px}
+.dark{background:#0b0c10}.light{background:#f5f6f8;color:#0d1017}
+.meta{padding:14px 16px;border-top:1px solid var(--line)}.meta b{font-size:15px}.meta .k{font-family:"Geist Mono";font-size:11px;color:var(--g1);letter-spacing:.1em}
+.meta p{margin:6px 0 0;color:var(--mute);font-size:13px;line-height:1.45}
+.word{font-weight:700;font-size:26px;letter-spacing:-.045em}
+svg{display:block}.sizes{display:flex;gap:10px;align-items:end;padding:10px 16px;border-top:1px solid var(--line);background:#0b0c10}
+.sizes span{font-family:"Geist Mono";font-size:10px;color:var(--mute);margin-left:auto}
+</style></head><body><div class="wrap">
+<h1>Pulse: logo directions</h1>
+<p class="lead">Eight directions, each shown on dark and light, plus the small sizes (app icon, favicon). They share the brand colours: orange, magenta and violet. Pick one or two and I'll refine them and put them across the dashboard, sign-in page, website and favicon.</p>
+<div class="grid" id="g"></div></div>
+<svg width="0" height="0" style="position:absolute"><defs>
+<linearGradient id="gr" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ff6a1f"/><stop offset=".55" stop-color="#ff2e7e"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+<linearGradient id="gv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b7cff"/><stop offset="1" stop-color="#38d3f5"/></linearGradient>
+</defs></svg>
+<script>
+const M={
+ // 1. current mark, refined
+ beat:(c)=>`<svg viewBox="0 0 48 48" width="${c}" height="${c}"><rect x="2" y="2" width="44" height="44" rx="13" fill="url(#gr)"/><path d="M8 26h7l3-6 5 13 5-20 4 15 2-2h6" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+ // 2. signal rings: radar/broadcast, a business that is always listening
+ rings:(c)=>`<svg viewBox="0 0 48 48" width="${c}" height="${c}"><circle cx="24" cy="24" r="21" fill="none" stroke="url(#gr)" stroke-width="2.5" opacity=".35"/><circle cx="24" cy="24" r="14" fill="none" stroke="url(#gr)" stroke-width="3" opacity=".7"/><circle cx="24" cy="24" r="6.5" fill="url(#gr)"/></svg>`,
+ // 3. P monogram drawn by the heartbeat line
+ pbeat:(c,ink="#fff")=>`<svg viewBox="0 0 48 48" width="${c}" height="${c}"><path d="M14 42V8h11a10 10 0 0 1 0 20h-4l-3-5-3 9" fill="none" stroke="url(#gr)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+ // 4. data bars: an equaliser, data and voice
+ bars:(c)=>`<svg viewBox="0 0 48 48" width="${c}" height="${c}"><rect x="2" y="2" width="44" height="44" rx="12" fill="#0d0f14"/>${[[10,18],[17,10],[24,4],[31,13],[38,20]].map(([x,y])=>`<rect x="${x-2.5}" y="${y+6}" width="5" height="${36-y-6*2+6}" rx="2.5" fill="url(#gr)"/>`).join("")}</svg>`,
+ // 5. orbit: AI that circles the business, one moving point
+ orbit:(c)=>`<svg viewBox="0 0 48 48" width="${c}" height="${c}"><circle cx="24" cy="24" r="17" fill="none" stroke="url(#gv)" stroke-width="3"/><circle cx="24" cy="24" r="7" fill="url(#gr)"/><circle cx="38.7" cy="15.5" r="4" fill="#38d3f5"/></svg>`,
+ // 6. neural P: nodes and links that form a P
+ node:(c)=>`<svg viewBox="0 0 48 48" width="${c}" height="${c}"><g stroke="url(#gr)" stroke-width="2.6" stroke-linecap="round"><path d="M14 40V9M14 9l14 3M28 12l6 9M34 21l-8 7M26 28H14"/></g>${[[14,40],[14,9],[28,12],[34,21],[26,28],[14,28]].map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${i===3?4.5:3.4}" fill="${i===3?"#fff":"url(#gr)"}" stroke="url(#gr)" stroke-width="${i===3?2.5:0}"/>`).join("")}</svg>`,
+ // 7. the beating dot: a single living point, minimal luxury
+ dot:(c)=>`<svg viewBox="0 0 48 48" width="${c}" height="${c}"><circle cx="24" cy="24" r="20" fill="url(#gr)" opacity=".18"/><circle cx="24" cy="24" r="12" fill="url(#gr)" opacity=".45"/><circle cx="24" cy="24" r="6" fill="url(#gr)"/></svg>`,
+ // 8. split square: a calendar slot being filled, booking as the core act
+ slot:(c)=>`<svg viewBox="0 0 48 48" width="${c}" height="${c}"><rect x="4" y="4" width="18" height="18" rx="5" fill="url(#gr)"/><rect x="26" y="4" width="18" height="18" rx="5" fill="none" stroke="#7c5cff" stroke-width="2.5" opacity=".7"/><rect x="4" y="26" width="18" height="18" rx="5" fill="none" stroke="#ff2e7e" stroke-width="2.5" opacity=".7"/><rect x="26" y="26" width="18" height="18" rx="5" fill="url(#gr)"/></svg>`};
+const O=[
+ ["beat","01 · Refined heartbeat","The current idea, cleaned up: a steadier line and a softer corner. Familiar and safe; reads as health and life, less as data."],
+ ["rings","02 · Signal","Three rings around a core: always listening, always on. Very clear at small sizes and works as a live status dot in the app."],
+ ["pbeat","03 · Pulse P","The letter P drawn by the heartbeat line, so name and idea are one stroke. Ownable and strong as a monogram."],
+ ["bars","04 · Data bars","An equaliser of five bars: voice, data and growth at once. The most \"data company\" of the set."],
+ ["orbit","05 · Orbit","A core with one satellite: the AI working around your business. Calm, premium, tech-forward."],
+ ["node","06 · Neural P","A P made of connected nodes, like a small neural network. The most \"AI company\" of the set."],
+ ["dot","07 · The living dot","One point with two halos. Minimal and luxurious (think Stripe or Linear); relies on the wordmark to carry the name."],
+ ["slot","08 · Slots","Four slots, two filled: bookings landing in a calendar. Tells exactly what the product does."]];
+const word=(dark,v)=>`<span class="word" style="${v==="grad"?`background:linear-gradient(95deg,${dark?"#fff":"#0d1017"} 40%,#ff2e7e 75%,#7c5cff);-webkit-background-clip:text;background-clip:text;color:transparent`:""}">pulse</span>`;
+document.getElementById("g").innerHTML=O.map(([k,t,d],i)=>`<div class="opt"><div class="stage"><div class="dark">${M[k](46)}${word(1,i%2?"":"grad")}</div><div class="light">${M[k](46)}${word(0,i%2?"":"grad")}</div></div>
+ <div class="sizes">${M[k](64)}${M[k](32)}${M[k](20)}${M[k](16)}<span>64 · 32 · 20 · 16 px</span></div>
+ <div class="meta"><div class="k">${t.split(" · ")[0]}</div><b>${t.split(" · ")[1]}</b><p>${d}</p></div></div>`).join("");
+</script></body></html>
