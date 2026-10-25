@@ -239,7 +239,8 @@ app.get('/api/me', wrap(async (req, res) => {
       GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left FROM businesses b LEFT JOIN plans p ON p.key=b.plan_key WHERE b.id=$1`, [BIZ()]);
   const u = req.user;
   res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, totp_enabled: u.totp_enabled }, business: b,
-    features: [...await featuresOf(BIZ())], modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE });
+    features: [...await featuresOf(BIZ())], modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE,
+    edition: process.env.EDITION === 'product' ? 'product' : 'lab' });
 }));
 app.post('/api/me/password', wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE id=$1', [req.user.id]);
@@ -312,8 +313,18 @@ app.get('/api/admin/businesses', adminOnly, wrap(async (_req, res) => res.json(a
     (SELECT count(*) FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.business_id=b.id AND m.role='customer')::int AS questions
     FROM businesses b ORDER BY b.is_demo, b.id`))));
 app.post('/api/admin/businesses', adminOnly, wrap(async (req, res) => {
-  try { const r = await createBusiness(req.body); await audit(req, 'business_created', `${req.body.name} (${r.email})`, r.id); res.json(r); }
-  catch (e) { res.status(400).json({ error: e.message }); }
+  // Checked before creating, so a bad subdomain never leaves a half-made business behind.
+  const sub = String(req.body.subdomain || '').trim().toLowerCase() || null;
+  if (sub && !validSubdomain(sub)) return res.status(400).json({ error: 'Subdomain: 3 to 40 letters, numbers or dashes, and not a reserved word.' });
+  if (sub && await one('SELECT 1 FROM businesses WHERE subdomain=$1', [sub])) return res.status(409).json({ error: 'That subdomain is taken.' });
+  let r;
+  try { r = await createBusiness(req.body); } catch (e) { return res.status(400).json({ error: e.message }); }
+  const known = new Set((await q('SELECT key FROM addons')).map(a => a.key));
+  const addons = (Array.isArray(req.body.addons) ? req.body.addons : []).filter(a => known.has(a));
+  const style = STYLES[req.body.site_style] ? req.body.site_style : null;
+  await q(`UPDATE businesses SET addons=$1, subdomain=$2, site=CASE WHEN $3::text IS NULL THEN site ELSE jsonb_build_object('style', $3::text) END WHERE id=$4`, [JSON.stringify(addons), sub, style, r.id]);
+  await audit(req, 'business_created', `${req.body.name} (${r.email})${addons.length ? ' + ' + addons.join(', ') : ''}`, r.id);
+  res.json(r);
 }));
 app.post('/api/admin/switch', adminOnly, wrap(async (req, res) => {
   const b = await one('SELECT id, name FROM businesses WHERE id=$1', [+req.body.id]);

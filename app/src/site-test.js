@@ -31,8 +31,7 @@ try {
 
   // 1. Every style x language renders cleanly
   const site = { style: 'elegant', langs: Object.keys(LANGS), default_lang: 'en', sections: SECTIONS, published: true, gallery: [],
-    text: { en: { tagline: 'Beauty salon', hero_title: 'Look good, <script>alert(1)</script>', hero_sub: 'Book in seconds', about: 'We love <b>hair</b> & "colour".' },
-            ar: { hero_title: 'صالون التجميل', hero_sub: 'احجزي بثوانٍ' }, es: { hero_title: 'Salón de belleza' } } };
+    text: { en: { tagline: 'Beauty salon', hero_title: 'Look good, <script>alert(1)</script>', hero_sub: 'Book in seconds', about: 'We love <b>hair</b> & "colour".' } } };
   for (const style of Object.keys(STYLES)) for (const lang of Object.keys(LANGS)) {
     await q('UPDATE businesses SET site=$1 WHERE id=$2', [JSON.stringify({ ...site, style }), A.id]);
     const html = renderSite(await siteData(A.id), lang);
@@ -57,7 +56,6 @@ try {
   check('Unpublished: another client cannot preview', (await get(`/s/${A.id}`, { cookie: OWNER_B })).status === 404);
   await q('UPDATE businesses SET site=$1 WHERE id=$2', [JSON.stringify(site), A.id]);
   check('Published: public preview works', (await get(`/s/${A.id}`)).status === 200);
-  check('Arabic chosen by ?lang', (await get(`/s/${A.id}?lang=ar`)).text.includes('dir="rtl"'));
   // 3. Own domain routing
   const dom = `site-test-${stamp}.example`;
   await q('UPDATE businesses SET custom_domain=$1 WHERE id=$2', [dom, A.id]);
@@ -65,7 +63,7 @@ try {
   check('Own domain shows that business', r.status === 200 && r.text.includes(`Site test salon ${stamp}`));
   check('www. on own domain works', (await get('/', { host: 'www.' + dom })).status === 200);
   r = await get('/robots.txt', { host: dom }); check('robots.txt per domain', r.status === 200 && r.text.includes('Sitemap:'));
-  r = await get('/sitemap.xml', { host: dom }); check('sitemap.xml lists each language', r.status === 200 && (r.text.match(/<loc>/g) || []).length === 3);
+  r = await get('/sitemap.xml', { host: dom }); check('sitemap.xml answers', r.status === 200 && (r.text.match(/<loc>/g) || []).length === 1);
   check('Booking page still works on own domain', (await get(`/book?b=${A.id}`, { host: dom })).status === 200);
   check('Unknown domain falls through to Pulse', !(await get('/', { host: 'nobody-' + stamp + '.example' })).text.includes('Site test salon'));
   await q(`UPDATE businesses SET feature_overrides='{"website":false}' WHERE id=$1`, [A.id]);
@@ -93,6 +91,19 @@ try {
   r = await send('/api/site', 'PUT', { gallery: [] }, OWNER_A);
   await new Promise(x => setTimeout(x, 300));
   check('Removing a photo deletes the file', (await get(url)).status === 404);
+  // 6. Admin creates a client with add-ons, website style and address in one step
+  const sub = `new${stamp % 100000}`;
+  r = await send('/api/admin/businesses', 'POST', { name: `Site test created ${stamp}`, vertical: 'barber', owner_email: `site-c-${stamp}@example.test`, timezone: 'Asia/Beirut', currency: 'USD',
+    plan_key: 'starter', addons: ['website_addon', 'not_a_real_addon'], site_style: 'bold', subdomain: sub }, ADMIN);
+  if (r.json.id) made.push(r.json.id);
+  const c = r.json.id && await one('SELECT addons, site, subdomain, plan_key FROM businesses WHERE id=$1', [r.json.id]);
+  check('Admin creates client with plan, add-ons, style and address', !!c && c.plan_key === 'starter' && JSON.stringify(c.addons) === '["website_addon"]' && c.site?.style === 'bold' && c.subdomain === sub);
+  const { hasFeature } = await import('./features.js');
+  check('Website add-on switches the website on', !!c && await hasFeature(r.json.id, 'website'));
+  const n0 = (await one('SELECT count(*)::int n FROM businesses')).n;
+  r = await send('/api/admin/businesses', 'POST', { name: `Site test bad ${stamp}`, vertical: 'salon', owner_email: `site-d-${stamp}@example.test`, timezone: 'Asia/Beirut', subdomain: sub }, ADMIN);
+  check('Taken address refused with nothing half-created', r.status === 409 && (await one('SELECT count(*)::int n FROM businesses')).n === n0);
+  check('Owners cannot create businesses', (await send('/api/admin/businesses', 'POST', { name: 'x', vertical: 'salon', owner_email: `site-e-${stamp}@example.test` }, OWNER_A)).status === 403);
 } catch (e) {
   check('Test ran without errors', false, e.stack);
 } finally {

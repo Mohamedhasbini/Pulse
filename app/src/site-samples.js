@@ -20,10 +20,6 @@ const site = siteOf({ ...biz, site: {
   text: {
     en: { tagline: 'Beauty salon · Hamra, Beirut', hero_title: 'Hair, nails and glow, done beautifully.', hero_sub: 'Colour specialists since 2012. Book online in seconds, or message us any time and our assistant books you in.',
       about_title: 'A salon that feels like home', about: 'Family-run since 2012, we specialise in natural colour, bridal hair and nail care.\n\nEvery visit starts with a consultation, so you leave with exactly the look you wanted.' },
-    ar: { tagline: 'صالون تجميل · الحمرا، بيروت', hero_title: 'شعر وأظافر وإشراقة، بأجمل طريقة.', hero_sub: 'خبراء الصبغة منذ 2012. احجزي أونلاين بثوانٍ، أو راسلينا بأي وقت ومساعدنا يحجز لكِ.',
-      about_title: 'صالون يشعرك وكأنك في البيت', about: 'صالون عائلي منذ 2012، متخصص في الألوان الطبيعية وتسريحات العرائس والعناية بالأظافر.' },
-    es: { tagline: 'Salón de belleza · Hamra, Beirut', hero_title: 'Pelo, uñas y brillo, con todo el cuidado.', hero_sub: 'Especialistas en color desde 2012. Reserva online en segundos o escríbenos cuando quieras.',
-      about_title: 'Un salón que se siente como en casa', about: 'Negocio familiar desde 2012, especializado en color natural, peinados de novia y uñas.' },
   } } });
 const data = { biz, site, rating: { avg: 4.8, n: 126 }, reviews: [
   { stars: 5, text: 'Best colour I have ever had. Layla is an artist.', author: 'Rana K.' },

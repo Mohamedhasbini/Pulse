@@ -1,5 +1,5 @@
 // Client websites: one page per business, built on the server from the business data plus its `site` settings.
-// Styles: elegant, modern, warm, bold. Languages: en, ar (right to left), es. Sections switch on and off per client.
+// Styles: elegant, modern, warm, bold. English. Sections switch on and off per client.
 // Booking, chat and reviews come live from the platform, so the site is never out of date.
 import { q, one } from './db.js';
 import { loadBusiness } from './brain.js';
@@ -16,7 +16,7 @@ export const STYLES = {
     head: '"Space Grotesk", system-ui, sans-serif', body: 'Inter, system-ui, sans-serif', vars: '--bg:#0d0d10;--bg2:#17171c;--card:#1b1b21;--ink:#f6f5f2;--ink2:#a9a8b2;--line:rgba(255,255,255,.12);--r:10px;--hw:700;--ht:uppercase;--hs:-.01em', dark: true },
 };
 export const SECTIONS = ['hero', 'about', 'services', 'booking', 'gallery', 'team', 'reviews', 'hours', 'faq', 'contact'];
-export const LANGS = { en: 'English', ar: 'العربية', es: 'Español' };
+export const LANGS = { en: 'English' }; // client websites are English only
 const RESERVED = new Set(['app', 'www', 'api', 'admin', 'jarvis', 'mail', 'webook', 'pulse', 'static', 'media', 'cdn', 'status', 'help', 'support']);
 export const validSubdomain = s => /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/.test(s) && !RESERVED.has(s);
 export const validDomain = d => /^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/.test(d);
@@ -27,16 +27,6 @@ const T = {
     gallery: 'Gallery', team: 'Our team', reviews: 'What clients say', reviewsN: n => `${n} review${n === 1 ? '' : 's'}`, hours: 'Opening hours', findUs: 'Find us', closed: 'Closed',
     openNow: 'Open now', closedNow: 'Closed now', until: 'until', faq: 'Questions', contact: 'Contact', call: 'Call', directions: 'Get directions', menu: 'See the menu',
     days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], today: 'Today', powered: 'Powered by', privacy: 'Privacy', instagram: 'Instagram', lang: 'Language', skip: 'Skip to content' },
-  ar: { book: 'احجز الآن', bookOnline: 'احجز أونلاين', whatsapp: 'راسلنا على واتساب', chat: 'تحدث مع مساعدنا', about: 'من نحن', services: 'الخدمات', prices: 'الأسعار',
-    min: 'دقيقة', from: 'من', free: 'مجاناً', bookTitle: 'احجز في أقل من دقيقة', bookSub: 'اختر الوقت أونلاين، أو راسلنا وسيحجز لك مساعدنا في أي وقت، ليلاً أو نهاراً.',
-    gallery: 'معرض الصور', team: 'فريقنا', reviews: 'آراء عملائنا', reviewsN: n => `${n} تقييم`, hours: 'ساعات العمل', findUs: 'موقعنا', closed: 'مغلق',
-    openNow: 'مفتوح الآن', closedNow: 'مغلق الآن', until: 'حتى', faq: 'أسئلة شائعة', contact: 'تواصل معنا', call: 'اتصل', directions: 'الاتجاهات', menu: 'القائمة',
-    days: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'], today: 'اليوم', powered: 'بدعم من', privacy: 'الخصوصية', instagram: 'إنستغرام', lang: 'اللغة', skip: 'انتقل إلى المحتوى' },
-  es: { book: 'Reservar', bookOnline: 'Reservar online', whatsapp: 'Escríbenos por WhatsApp', chat: 'Habla con nuestro asistente', about: 'Sobre nosotros', services: 'Servicios', prices: 'Precios',
-    min: 'min', from: 'desde', free: 'Gratis', bookTitle: 'Reserva en menos de un minuto', bookSub: 'Elige tu hora online, o escríbenos y nuestro asistente te reserva, de día o de noche.',
-    gallery: 'Galería', team: 'Nuestro equipo', reviews: 'Lo que dicen nuestros clientes', reviewsN: n => `${n} reseña${n === 1 ? '' : 's'}`, hours: 'Horario', findUs: 'Dónde estamos', closed: 'Cerrado',
-    openNow: 'Abierto ahora', closedNow: 'Cerrado ahora', until: 'hasta', faq: 'Preguntas', contact: 'Contacto', call: 'Llamar', directions: 'Cómo llegar', menu: 'Ver la carta',
-    days: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'], today: 'Hoy', powered: 'Con la tecnología de', privacy: 'Privacidad', instagram: 'Instagram', lang: 'Idioma', skip: 'Saltar al contenido' },
 };
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -165,10 +155,10 @@ ${logo ? `<link rel="icon" href="${esc(logo)}">` : ''}
 ${site.langs.map(l => `<link rel="alternate" hreflang="${l}" href="${base || '/'}?lang=${l}">`).join('')}
 ${preview || !site.published ? '<meta name="robots" content="noindex">' : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${st.fonts}${rtl ? '&family=Tajawal:wght@400;500;700;800' : ''}&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${st.fonts}&display=swap">
 <script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>
 <style>
-:root{${st.vars};--acc:${accent};--head:${rtl ? 'Tajawal, ' : ''}${st.head};--body:${rtl ? 'Tajawal, ' : ''}${st.body};color-scheme:${st.dark ? 'dark' : 'light'}}
+:root{${st.vars};--acc:${accent};--head:${st.head};--body:${st.body};color-scheme:${st.dark ? 'dark' : 'light'}}
 *{box-sizing:border-box}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 img{max-width:100%;display:block}a{color:inherit}

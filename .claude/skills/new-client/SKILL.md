@@ -9,7 +9,7 @@ Pulse is ONE shared multi-tenant system. A new client is a new row in `businesse
 Everything below is done from the running platform (Command center) or with small SQL/API calls. Never copy the app or the n8n workflow per client.
 
 ## 0. Before starting, check the platform is healthy
-- `docker compose ps` (app, db, backup all running) and `docker compose exec app node src/isolation-test.js` → must be all PASS.
+- `docker compose ps` (app, db, backup all running) and `docker compose exec app npm test` → must end with "All 3 test suites passed". Never onboard or release on a failing test.
 - Command center → **Platform** tab: all checks OK (database, AI, WhatsApp provider, daily backup, disk).
 - If anything fails, fix it before onboarding.
 
@@ -30,7 +30,7 @@ Everything below is done from the running platform (Command center) or with smal
 | Consent | Signed agreement; confirmation they may message their customers (WhatsApp policy, GDPR in Spain) |
 
 ## 2. Create it (about 1–2 hours)
-1. **Command center → New business**: name, type (vertical), country, city, currency, time zone, plan, owner email. This creates the business with the type's starter services/FAQs/policies and the owner login (temporary password shown once; send it privately and ask them to turn on two-factor).
+1. **Command center → New business** (the admin ticks everything here first): name, type (vertical), country, city, currency, time zone, **plan**, **add-ons** (e.g. Own website, Remove Pulse branding), **website style** and **free address (subdomain)**, owner email. Fine-tune features later in Command center → Businesses → plan. This creates the business with the type's starter services/FAQs/policies and the owner login (temporary password shown once; send it privately and ask them to turn on two-factor).
 2. **Switch to the business** (Command center → Businesses → open), then **Settings → Setup**:
    - Business details: description, address, links, languages, tone, **assistant name**, team, hours, capacity, step, services (+ "at once" per service for restaurants), policies, FAQs, AI instructions, phone, cancel window, payment methods, confirmation note.
    - Photos and menu: upload logo, cover, menu.
@@ -41,6 +41,13 @@ Everything below is done from the running platform (Command center) or with smal
 5. **Staff logins**: Command center → Logins (needs the Staff logins feature in the plan/add-on).
 6. **Owner alerts**: in Pulse, bell → Alert settings → link Telegram for the owner.
 
+## 2b. Website (if the plan or add-ons include "Own website")
+- Switch to the business → **Website**. Admin tabs: Design (style Elegant/Modern/Warm/Bold, colour, sections and their order), Address and publishing (subdomain, own domain + DNS steps, Published).
+- Texts and Photos: fill the hero title, subtitle, about; upload up to 12 gallery photos. Services, prices, hours, team, FAQs and contact come from Settings automatically.
+- Preview at `/s/<ID>` (phone/computer toggle in the screen). Publish when approved by the client.
+- Client websites are **English only** (user decision 2026-10-25).
+- The client later edits only Texts and Photos; design and address stay with the admin.
+
 ## 3. Test before handing over
 - Settings → Test chat: ask prices, hours, a FAQ, book, change, cancel. Restaurants: "table for 6 tomorrow at 8pm" must ask/record guests and respect table counts.
 - Check the booking appears in Calendar, the confirmation ends with "Powered by Pulse" (unless branding add-on), reminders are on.
@@ -50,6 +57,7 @@ Everything below is done from the running platform (Command center) or with smal
 - Dashboard: https://app.nexfoyz.dev/login
 - Booking page: https://app.nexfoyz.dev/book?b=<ID>
 - WeBook page: https://app.nexfoyz.dev/webook/<ID> (add `?book=1` or `?chat=1`)
+- Website: https://<subdomain>.<SITES_DOMAIN> or their own domain (preview `/s/<ID>`)
 - Their WhatsApp number / Telegram bot link
 
 ## 5. Closing a client
@@ -61,9 +69,13 @@ Command center → Platform → **Export** (download JSON, keep it) → **Close�
 - Tenant separation: every table has `business_id`; the server sets the business from the login (`BIZ()`); test: `app/src/isolation-test.js`. End-to-end: `app/src/smoke-test.js`.
 - Ops: `app/src/ops.js` (encryption via `DATA_KEY`, uploads in the `uploads` volume, usage/cost, export/close, health monitor + Telegram alerts via `ALERT_BOT_TOKEN`/`ALERT_CHAT_ID`).
 - Backups: `backup` service in `docker-compose.yml` → `./backups` daily, 14 days. Restore: `sh scripts/restore.sh backups/<file>.sql.gz`.
+- Client websites: `app/src/sitegen.js` (styles, sections, rendering, host routing, `/s/:id` preview), editor `app/public/website.js`, tests `app/src/site-test.js`, visual samples `app/src/site-samples.js`.
+- Editions: `EDITION=product` in `.env` on the product server hides plans, add-ons, locks and upsells from clients; the Lab (no EDITION) shows everything. Showcase salon: `node src/demo-salon.js` (subdomain layla-demo).
+- All tests: `docker compose exec app npm test`.
 - AI: one n8n workflow (`n8n/ringback-receptionist.json`, Gemini Flash-Lite) receives each business's context per message.
 
 ## Go-live checklist (platform, not per client)
+- [ ] Product server `.env`: `EDITION=product`, `SITES_DOMAIN=<your sites domain>`; Cloudflare: wildcard `*.<SITES_DOMAIN>` to the app (tunnel ingress + DNS), custom hostnames for client domains.
 - [ ] Move from the home PC to a server (Hetzner, EU) with Docker Compose; copy `.env` (incl. `DATA_KEY`) and restore the latest backup there; point the Cloudflare tunnel to it.
 - [ ] Copy `./backups` off the machine daily (Backblaze B2 / Cloudflare R2 / another disk). Keep `DATA_KEY` in a password manager.
 - [ ] Set `ALERT_BOT_TOKEN` + `ALERT_CHAT_ID` in `.env` (create a bot with @BotFather, message it, get the chat id from `https://api.telegram.org/bot<token>/getUpdates`).
