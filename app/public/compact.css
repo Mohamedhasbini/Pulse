@@ -155,3 +155,4 @@ nav .ns{font-size:10.5px!important;margin:10px 8px 3px!important}
 .cm-card{flex-direction:row!important;justify-content:flex-start!important}.cm-card input{width:16px!important;height:16px;flex:none;margin:0}
 .cm-acts a.btn,.ccmain a.btn{text-decoration:none}
 .cm-feat label,.cm-grid2 select{width:100%}
+#planBar.adminview .item{border:1px solid color-mix(in srgb,var(--bad) 45%,transparent)!important;background:color-mix(in srgb,var(--bad) 8%,transparent)!important}

@@ -1302,9 +1302,10 @@ async function loadMe(){me=await req("/api/me");const b=me.business,admin=me.use
   if(!me.modules.includes("overview")){const first=document.querySelector("nav button[data-view]:not([hidden])");first&&first.click()}
   const plan=b.plan_status==="active"?"Subscription active":b.plan_status==="paused"?"Paused":b.trial_days_left>0?`Free trial: ${b.trial_days_left} day${b.trial_days_left===1?"":"s"} left`:"Trial ended";
   if(me.edition==="product"&&!admin){$("#planText").innerHTML=me.user.totp_enabled||me.user.role==="staff"?"":`<a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor sign-in</a>`;$("#planBar").hidden=!$("#tfNudge");$("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});return}
-  $("#planText").innerHTML=(admin?`Viewing <b>${esc(b.name)}</b> · `:"")+`<span class="tag ${b.plan_status==="active"?"t-book":b.trial_days_left>0?"t-faq":"t-hand"}">${esc(b.plan_name||"No plan")} · ${plan}</span> <span style="color:var(--muted)">${esc([b.country,b.currency,b.timezone].filter(Boolean).join(" · "))}</span>`
+  $("#planBar").classList.toggle("adminview",admin);
+  $("#planText").innerHTML=(admin?`<span class="tag t-attn">Admin view</span> You're inside <b>${esc(b.name)}</b>'s dashboard. Their logins only ever see their own business, never Businesses or other clients. <a href="#" id="backCC" class="tag" style="text-decoration:none">← Back to Command center</a> · `:"")+`<span class="tag ${b.plan_status==="active"?"t-book":b.trial_days_left>0?"t-faq":"t-hand"}">${esc(b.plan_name||"No plan")} · ${plan}</span> <span style="color:var(--muted)">${esc([b.country,b.currency,b.timezone].filter(Boolean).join(" · "))}</span>`
     +(me.user.totp_enabled||me.user.role==="staff"?"":` <a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor</a>`);
-  $("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()})}
+  $("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});$("#backCC")&&($("#backCC").onclick=e=>{e.preventDefault();$("#adminNav").click()})}
 // A section the plan doesn't include shows what it is and how to get it, instead of an error.
 function lockedCard(view){const m=VIEW_MODULE[view],f=me&&me.module_feature[m],sec=$("#"+view);
   sec.querySelectorAll(".lockCard,.adminNote").forEach(x=>x.remove());[...sec.children].forEach(x=>x.style.display="");

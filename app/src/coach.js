@@ -76,7 +76,9 @@ async function understandWithAI(text, current) {
     const changes = (Array.isArray(j.changes) ? j.changes : []).filter(c =>
       (c.type === 'rule' && clean(c.text)) || (c.type === 'tone' && TONES[c.value]) || (c.type === 'name' && clean(c.value)) || (c.type === 'remove_rule' && Number.isInteger(c.index) && current.rules?.[c.index]))
       .map(c => c.type === 'rule' ? { type: 'rule', text: sentence(c.text).slice(0, 300) } : c.type === 'tone' ? { ...c, text: TONES[c.value] } : c.type === 'remove_rule' ? { ...c, text: current.rules[c.index].text || current.rules[c.index] } : { type: 'name', value: clean(c.value).slice(0, 40) });
-    return { reply: clean(j.reply) || 'Here is what I would change:', changes, ai: true };
+    // Our own wording when there are changes: nothing is saved until the owner presses Apply.
+    const reply = changes.length ? (changes.length === 1 ? "Got it. Here's the change:" : `Got it. Here are ${changes.length} changes:`) : clean(j.reply) || 'Could you say a bit more?';
+    return { reply, changes, ai: true };
   } catch { return null; }
 }
 
