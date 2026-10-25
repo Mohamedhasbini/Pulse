@@ -64,3 +64,19 @@ main>section{isolation:isolate;position:relative}
 .p-hitme{position:relative}
 .p-hitme::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;z-index:2;
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pg) 70%,transparent),inset 0 0 30px -6px color-mix(in srgb,var(--pg) 38%,transparent);animation:p-hit .9s ease-out var(--hd,0s) forwards}
+
+/* ---- Three colours for the whole product: Home green, Teach AI orange, Insights violet ---- */
+:root{--p-green:#25d366;--p-orange:#ff7a2e;--p-violet:#8b7bff}
+:root[data-theme="light"]{--p-green:#12a150;--p-orange:#e8641a;--p-violet:#6a55f0}
+/* green: the live business; orange: teaching and people; violet: intelligence and administration */
+body[data-page="today"],body[data-page="overview"],body[data-page="calendar"],body[data-page="demo"]{--pg:var(--p-green);--pg2:var(--p-violet)}
+body[data-page="training"],body[data-page="people"],body[data-page="website"]{--pg:var(--p-orange);--pg2:var(--p-green)}
+body[data-page="analytics"],body[data-page="setup"],body[data-page="security"],body[data-page="admin"]{--pg:var(--p-violet);--pg2:var(--p-orange)}
+:root[data-theme="light"] body[data-page]{--gp-on:#fff}
+/* every chart and data palette draws from the same three */
+body,body[data-page]{--c-green:var(--p-green);--c-orange:var(--p-orange);--c-blue:var(--p-violet);--c-pink:var(--p-violet);--c-teal:var(--p-green);--c-yellow:var(--p-orange);
+  --d1:var(--pg);--d2:var(--p-violet);--d3:var(--p-orange);--d4:var(--p-green);--good:var(--p-green);--warn:var(--p-orange);--blue:var(--p-violet)}
+.t-faq,.t-hand,.t-test,.t-live{background:color-mix(in srgb,var(--p-violet) 22%,var(--gp-nest2))!important}
+.t-attn{background:color-mix(in srgb,var(--p-orange) 25%,var(--gp-nest2))!important}
+.td-mem:nth-child(3n+1) .td-av{background:var(--p-green)!important}.td-mem:nth-child(3n+2) .td-av{background:var(--p-orange)!important}.td-mem:nth-child(3n) .td-av{background:var(--p-violet)!important}
+.td-av{color:#111!important}

@@ -9,7 +9,7 @@ const get=async p=>{const r=await fetch(p);if(!r.ok)throw new Error(r.status);re
 const per=()=>typeof days!=="undefined"?days:30;
 const pct=(a,b)=>b?Math.round(a/b*100):0;
 const ini=n=>String(n||"?").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
-const HUES=["#d4ff3a","#8b7bff","#ff7ab6","#4fe3c1","#ffb547","#5cc8ff"];
+const HUES=["#25d366","#ff7a2e","#8b7bff","#1f9e52","#c45a1f","#6a55c9"]; // the three product colours, each in a full and a deep tone
 const ARROW=`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 17 17 7M9 7h8v8"/></svg>`;
 
 // A tab of our own inside a page's tab bar. It hides whenever one of the page's own panes shows.
