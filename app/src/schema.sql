@@ -341,3 +341,7 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS custom_domain TEXT UNIQUE;
 
 -- Tap-to-answer choices sent with an assistant message (WhatsApp buttons/list, Telegram keyboard, web chips)
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS options JSONB;
+
+-- Uploaded photos and menus live in the database too, so a server whose disk is wiped (cloud hosting) keeps them.
+CREATE TABLE IF NOT EXISTS media (business_id int NOT NULL, file text NOT NULL, mime text NOT NULL, data bytea NOT NULL, created_at timestamptz DEFAULT now(), PRIMARY KEY (business_id, file));
+

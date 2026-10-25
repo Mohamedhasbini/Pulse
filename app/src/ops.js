@@ -39,8 +39,39 @@ export function mountMedia(app) {
   app.get('/media/:biz/:file', (req, res) => {
     const biz = String(+req.params.biz), file = path.basename(req.params.file);
     if (!/^\d+$/.test(biz) || !/^[\w.-]+$/.test(file)) return res.status(404).end();
-    res.set('Cache-Control', 'public, max-age=86400').sendFile(path.join(UPLOADS, biz, file), err => err && !res.headersSent && res.status(404).end());
+    res.set('Cache-Control', 'public, max-age=86400');
+    const disk = path.join(UPLOADS, biz, file);
+    if (fs.existsSync(disk)) return res.sendFile(disk, err => err && !res.headersSent && res.status(404).end());
+    // not on disk (wiped cloud disk): serve the database copy and cache it back to disk
+    one('SELECT mime, data FROM media WHERE business_id=$1 AND file=$2', [+biz, file]).then(m => {
+      if (!m) return res.status(404).end();
+      try { fs.mkdirSync(path.dirname(disk), { recursive: true }); fs.writeFileSync(disk, m.data); } catch {}
+      res.type(m.mime).send(m.data);
+    }).catch(() => res.status(500).end());
   });
+}
+const MIME = Object.fromEntries(Object.entries(TYPES).map(([m, e]) => [e, m]));
+async function storeMedia(biz, name, buf) {
+  const dir = path.join(UPLOADS, String(biz));
+  fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, name), buf);
+  await q('INSERT INTO media (business_id, file, mime, data) VALUES ($1,$2,$3,$4) ON CONFLICT (business_id, file) DO UPDATE SET data=EXCLUDED.data',
+    [biz, name, MIME[name.split('.').pop()] || 'application/octet-stream', buf]);
+}
+function dropMedia(biz, name) {
+  fs.rm(path.join(UPLOADS, String(biz), name), { force: true }, () => {});
+  q('DELETE FROM media WHERE business_id=$1 AND file=$2', [biz, name]).catch(() => {});
+}
+// Files uploaded before media lived in the database are copied in once at startup.
+export async function backfillMedia() {
+  if (!fs.existsSync(UPLOADS)) return;
+  for (const biz of fs.readdirSync(UPLOADS)) {
+    if (!/^\d+$/.test(biz)) continue;
+    for (const file of fs.readdirSync(path.join(UPLOADS, biz))) {
+      if (await one('SELECT 1 FROM media WHERE business_id=$1 AND file=$2', [+biz, file])) continue;
+      if (!(await one('SELECT 1 FROM businesses WHERE id=$1', [+biz]))) continue;
+      await storeMedia(+biz, file, fs.readFileSync(path.join(UPLOADS, biz, file)));
+    }
+  }
 }
 // Signed-in owners upload to their own business only (BIZ comes from the login).
 export function mountUploads(app, BIZ, audit) {
@@ -51,13 +82,12 @@ export function mountUploads(app, BIZ, audit) {
       if (!col) return res.status(400).json({ error: 'Unknown upload.' });
       if (!ext || !Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'Upload a JPG, PNG, WEBP image or a PDF (max 8 MB).' });
       if (req.params.kind !== 'menu' && ext === 'pdf') return res.status(400).json({ error: 'Use an image for the logo and cover.' });
-      const biz = BIZ(), dir = path.join(UPLOADS, String(biz)), name = `${req.params.kind}-${Date.now()}.${ext}`;
-      fs.mkdirSync(dir, { recursive: true });
+      const biz = BIZ(), name = `${req.params.kind}-${Date.now()}.${ext}`;
       const old = (await one(`SELECT ${col} AS u FROM businesses WHERE id=$1`, [biz]))?.u;
-      fs.writeFileSync(path.join(dir, name), req.body);
+      await storeMedia(biz, name, req.body);
       const url = `/media/${biz}/${name}`;
       await q(`UPDATE businesses SET ${col}=$1 WHERE id=$2`, [url, biz]);
-      if (old?.startsWith(`/media/${biz}/`)) fs.rm(path.join(dir, path.basename(old)), { force: true }, () => {});
+      if (old?.startsWith(`/media/${biz}/`)) dropMedia(biz, path.basename(old));
       await audit(req, 'upload', `${req.params.kind} ${Math.round(req.body.length / 1024)} KB`);
       res.json({ ok: true, url });
     } catch (e) { next(e); }
@@ -67,7 +97,7 @@ export function mountUploads(app, BIZ, audit) {
       const col = KINDS[req.params.kind]; if (!col) return res.status(400).json({ error: 'Unknown upload.' });
       const biz = BIZ(), old = (await one(`SELECT ${col} AS u FROM businesses WHERE id=$1`, [biz]))?.u;
       await q(`UPDATE businesses SET ${col}=NULL WHERE id=$1`, [biz]);
-      if (old?.startsWith(`/media/${biz}/`)) fs.rm(path.join(UPLOADS, String(biz), path.basename(old)), { force: true }, () => {});
+      if (old?.startsWith(`/media/${biz}/`)) dropMedia(biz, path.basename(old));
       res.json({ ok: true });
     } catch (e) { next(e); }
   });
@@ -116,6 +146,7 @@ export async function closeBusiness(id) {
     for (const t of ['requests', 'reviews', 'bookings', 'learning', 'notifications', 'campaigns', 'coupons', 'time_off', 'conversations', 'customers', 'services'])
       await c.query(`DELETE FROM ${t} WHERE business_id=$1`, [id]);
     await c.query('DELETE FROM users WHERE business_id=$1', [id]);
+    await c.query('DELETE FROM media WHERE business_id=$1', [id]);
     const r = await c.query('DELETE FROM businesses WHERE id=$1 RETURNING name', [id]);
     await c.query('COMMIT');
     fs.rm(path.join(UPLOADS, String(id)), { recursive: true, force: true }, () => {});
@@ -173,13 +204,13 @@ async function galleryUpload(req, res, biz, audit) {
   if (!ext || ext === 'pdf' || !Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'Upload a JPG, PNG or WEBP photo (max 8 MB).' });
   const b = await one('SELECT site FROM businesses WHERE id=$1', [biz]), site = b?.site || {}, gallery = Array.isArray(site.gallery) ? site.gallery : [];
   if (gallery.length >= 12) return res.status(400).json({ error: 'The gallery holds 12 photos. Remove one first.' });
-  const dir = path.join(UPLOADS, String(biz)), name = `gallery-${Date.now()}.${ext}`;
-  fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, name), req.body);
+  const name = `gallery-${Date.now()}.${ext}`;
+  await storeMedia(biz, name, req.body);
   const url = `/media/${biz}/${name}`;
   await q(`UPDATE businesses SET site = jsonb_set(COALESCE(site,'{}'::jsonb), '{gallery}', COALESCE(site->'gallery','[]'::jsonb) || to_jsonb($1::text)) WHERE id=$2`, [url, biz]);
   await audit(req, 'upload', `gallery ${Math.round(req.body.length / 1024)} KB`);
   res.json({ ok: true, url });
 }
 export function removeMedia(biz, urls) {
-  for (const u of urls) if (String(u).startsWith(`/media/${biz}/`)) fs.rm(path.join(UPLOADS, String(biz), path.basename(u)), { force: true }, () => {});
+  for (const u of urls) if (String(u).startsWith(`/media/${biz}/`)) dropMedia(biz, path.basename(u));
 }
