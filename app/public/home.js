@@ -144,7 +144,7 @@ $("#tdNotes").addEventListener("click",e=>{const n=e.target.closest(".td-note");
 function go(where){const nav=v=>document.querySelector(`nav button[data-view="${v}"]:not([data-sub])`);
   const pane=(v,p)=>{const b=document.querySelector(`nav button[data-view="${v}"][data-sub="${p}"]`);if(b)b.click();else{nav(v)?.click();setTimeout(()=>window.tabsOf?.[v]?.(p),30)}};
   if(where==="newbooking"){nav("calendar")?.click();setTimeout(()=>$("#calNew")?.click(),350)}
-  else if(where==="dash"){pane("overview","summary")}
+  else if(where==="dash"){window.openDashboard?window.openDashboard():pane("overview","summary")}
   else if(where==="conversations"||where==="approvals"||where==="health")pane("overview",where==="health"?"live":where);
   else if(where==="team"){nav("setup")?.click();setTimeout(()=>window.tabsOf?.setup?.("details"),30)}
   else nav(where)?.click()}

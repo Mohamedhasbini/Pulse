@@ -127,3 +127,11 @@ body[data-page="today"]{--pg:#7fd67a;--pg2:#3f9f5e}
 .td-card .td-h{position:sticky;top:-14px;background:var(--gp-card);z-index:1;padding-top:2px}
 .tf-h{font-size:13px!important;font-weight:600;margin:14px 0 6px;color:var(--ink2)}
 .tf-h:first-of-type{margin-top:4px}
+/* sidebar: the open page lists its tabs underneath */
+.nsub{display:flex;flex-direction:column;gap:1px;margin:2px 0 6px 22px;padding-left:10px;border-left:1px solid rgba(255,255,255,.1)}
+.nsub button{all:unset;cursor:pointer;font-size:12.5px;color:var(--ink2);padding:5px 10px;border-radius:999px;transition:background-color .14s,color .14s}
+.nsub button:hover{background:var(--gp-card);color:var(--ink)}
+.nsub button[aria-current="true"]{color:var(--pg);font-weight:600;background:color-mix(in srgb,var(--pg) 12%,transparent)}
+:root[data-theme="light"] .nsub{border-left-color:rgba(0,0,0,.1)}
+nav .navpills{overflow-y:auto;scrollbar-width:none}nav .navpills::-webkit-scrollbar{display:none}
+.nav-gone{display:none!important}

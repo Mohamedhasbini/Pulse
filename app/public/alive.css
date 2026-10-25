@@ -5,6 +5,7 @@ body[data-page="today"]{--pg:#25d366;--pg2:#00f07a}
 :root{--beat:1.6s;--ease-out:cubic-bezier(.22,1,.36,1)}
 /* lub-dub: two quick swells, then rest */
 @keyframes p-beat{0%,100%{transform:scale(1)}10%{transform:scale(1.07)}20%{transform:scale(1)}30%{transform:scale(1.04)}42%{transform:scale(1)}}
+@keyframes p-ring20{0%{transform:scale(.6);opacity:.55}6%,100%{transform:scale(2.2);opacity:0}}
 @keyframes p-ring{0%{transform:scale(.6);opacity:.55}70%,100%{transform:scale(2.2);opacity:0}}
 @keyframes p-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes p-rise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
@@ -18,7 +19,7 @@ body[data-page="today"]{--pg:#25d366;--pg2:#00f07a}
 
 /* primary actions breathe: a ring of energy leaves the button on each beat */
 .btn:not(.ghost),.td-btn:not(.ghost){position:relative;isolation:isolate}
-.btn:not(.ghost)::after,.td-btn:not(.ghost)::after{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--pg);z-index:-1;animation:p-ring calc(var(--beat)*1.5) var(--ease-out) infinite;pointer-events:none}
+.btn:not(.ghost)::after,.td-btn:not(.ghost)::after{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--pg);z-index:-1;animation:p-ring20 20s var(--ease-out) infinite;pointer-events:none}
 .btn:active,.td-btn:active,.td-go:active,.td-link:active,.sg-row:active,.qp:active,nav button:active,.ptabs button:active{transform:scale(.96)!important}
 .btn,.td-btn,.td-go,.td-link,.qp,.ptabs button,nav button[data-view]{transition:transform .14s var(--ease-out),background-color .16s var(--ease-out),color .16s var(--ease-out)!important}
 
