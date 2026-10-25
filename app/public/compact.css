@@ -156,3 +156,6 @@ nav .ns{font-size:10.5px!important;margin:10px 8px 3px!important}
 .cm-acts a.btn,.ccmain a.btn{text-decoration:none}
 .cm-feat label,.cm-grid2 select{width:100%}
 #planBar.adminview .item{border:1px solid color-mix(in srgb,var(--bad) 45%,transparent)!important;background:color-mix(in srgb,var(--bad) 8%,transparent)!important}
+#labBtn{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;margin:0 2px 10px;padding:8px 10px;border-radius:9px;font-size:13px;font-weight:600;
+  background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 16px -8px var(--accent-line)}
+#labBtn:hover{filter:brightness(1.08)}#labBtn[hidden]{display:none}
