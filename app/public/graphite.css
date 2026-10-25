@@ -125,3 +125,5 @@ body[data-page="today"]{--pg:#7fd67a;--pg2:#3f9f5e}
 /* cards scroll quietly: no visible track */
 .td-card{scrollbar-width:none}.td-card::-webkit-scrollbar{display:none}
 .td-card .td-h{position:sticky;top:-14px;background:var(--gp-card);z-index:1;padding-top:2px}
+.tf-h{font-size:13px!important;font-weight:600;margin:14px 0 6px;color:var(--ink2)}
+.tf-h:first-of-type{margin-top:4px}

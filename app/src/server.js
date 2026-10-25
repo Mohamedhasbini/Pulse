@@ -2,13 +2,14 @@ import express from 'express';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { hashPassword, checkPassword, newPassword, signSession, readSession, signTicket, readTicket, newTotpSecret, checkTotp, totpUrl, weakPassword, ensureAdmin, createBusiness } from './accounts.js';
+import { hashPassword, checkPassword, newPassword, signSession, readSession, signTicket, readTicket, newTotpSecret, checkTotp, totpUrl, newEmailCode, hashCode, weakPassword, ensureAdmin, createBusiness } from './accounts.js';
 import { MODULES, FEATURES, MODULE_FEATURE, featuresOf, hasFeature, canOpen, moduleOf, seedPlans } from './features.js';
 import { q, one, migrate, withBusinessLock } from './db.js';
 import { handleMessage, loadBusiness, aiHealth } from './brain.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
 import { sendWhatsApp, validSignature, parseIncoming, validKapsoSignature, parseKapso, whatsappReady } from './whatsapp.js';
 import { mountPublic } from './public.js';
+import { sendEmail, emailEnabled } from './email.js';
 import { mountWeBook } from './webook.js';
 import { mountSite, mountSiteAdmin } from './site.js';
 import { mountMedia, mountUploads, usage, exportBusiness, closeBusiness, health, startMonitor, sealExistingSecrets, removeMedia } from './ops.js';
@@ -102,6 +103,26 @@ function startSession(req, res, u) {
   res.set('Set-Cookie', `rb_session=${signSession(u.id, u.session_version)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${12 * 3600}${secureCookie(req)}`);
 }
 
+// Email two-factor: mail a fresh 6-digit code (valid 10 minutes, 5 tries), at most one every 30 seconds.
+const maskEmail = e => String(e || '').replace(/^(.)[^@]*(@.*)$/, (_m, a, b) => a + '•••' + b);
+async function mailCode(u, why = 'sign in') {
+  if (u.email_code_sent && Date.now() - new Date(u.email_code_sent) < 30000) return { ok: false, reason: 'A code was just sent. Wait 30 seconds before asking for another.' };
+  const code = newEmailCode();
+  await q(`UPDATE users SET email_code_hash=$1, email_code_exp=now() + interval '10 minutes', email_code_tries=0, email_code_sent=now() WHERE id=$2`, [hashCode(u.id, code), u.id]);
+  return sendEmail(u.email, `${code} is your Pulse code`, `Your Pulse code to ${why} is:
+
+*${code}*
+
+It works for 10 minutes. If you didn't try to ${why}, change your password and tell your administrator.`, 'Pulse');
+}
+async function emailCodeOk(u, code) {
+  const r = await one('SELECT email_code_hash, email_code_exp > now() AS live, email_code_tries FROM users WHERE id=$1', [u.id]);
+  if (!r?.email_code_hash || !r.live || r.email_code_tries >= 5) return false;
+  if (r.email_code_hash !== hashCode(u.id, code)) { await q('UPDATE users SET email_code_tries=email_code_tries+1 WHERE id=$1', [u.id]); return false; }
+  await q('UPDATE users SET email_code_hash=NULL, email_code_exp=NULL WHERE id=$1', [u.id]);
+  return true;
+}
+
 app.get('/login', (_req, res) => res.sendFile(PUBLIC + '/login.html'));
 app.post('/api/login', wrap(async (req, res) => {
   const ip = ipOf(req), a = attempts.get(ip) || { n: 0, until: 0 };
@@ -122,7 +143,12 @@ app.post('/api/login', wrap(async (req, res) => {
   }
   attempts.delete(ip);
   await q('UPDATE users SET failed_logins=0, locked_until=NULL WHERE id=$1', [u.id]);
-  if (u.totp_enabled) return res.json({ need_code: true, ticket: signTicket(u.id) });
+  if (u.totp_enabled || u.email_2fa) {
+    let sent = null;
+    if (u.email_2fa && !u.totp_enabled) sent = await mailCode(u);
+    return res.json({ need_code: true, ticket: signTicket(u.id), app: !!u.totp_enabled, email: u.email_2fa ? maskEmail(u.email) : null,
+      sent: sent ? sent.ok : false, send_error: sent && !sent.ok ? sent.reason : null });
+  }
   await q('UPDATE users SET last_login_at=now() WHERE id=$1', [u.id]);
   await audit(req, 'login', null, u.business_id, u);
   startSession(req, res, u);
@@ -135,7 +161,7 @@ app.post('/api/login/code', wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE id=$1 AND NOT disabled', [uid]);
   const ip = ipOf(req), a = attempts.get('code' + ip) || { n: 0, until: 0 };
   if (a.until > Date.now()) return res.status(429).json({ error: 'Too many wrong codes. Wait 15 minutes and sign in again.' });
-  if (!u || !checkTotp(u.totp_secret, req.body.code)) {
+  if (!u || !((u.totp_enabled && checkTotp(u.totp_secret, req.body.code)) || (u.email_2fa && await emailCodeOk(u, req.body.code)))) {
     a.n++; if (a.n >= 6) { a.n = 0; a.until = Date.now() + 15 * 60000; }
     attempts.set('code' + ip, a);
     if (u) await audit(req, 'code_failed', null, u.business_id, u);
@@ -147,6 +173,16 @@ app.post('/api/login/code', wrap(async (req, res) => {
   startSession(req, res, u);
   res.json({ ok: true });
 }));
+// Sign-in step 2: mail a code (first time for app users who prefer email, or a new one).
+app.post('/api/login/email-code', wrap(async (req, res) => {
+  const uid = readTicket(req.body.ticket);
+  if (!uid) return res.status(401).json({ error: 'That took too long. Sign in again.' });
+  const u = await one('SELECT * FROM users WHERE id=$1 AND NOT disabled', [uid]);
+  if (!u?.email_2fa) return res.status(400).json({ error: 'Email codes are not switched on for this login.' });
+  const r = await mailCode(u);
+  if (!r.ok) return res.status(400).json({ error: r.reason });
+  res.json({ ok: true, email: maskEmail(u.email) });
+}));
 app.post('/api/logout', (_req, res) => { res.set('Set-Cookie', 'rb_session=; Path=/; Max-Age=0').json({ ok: true }); });
 
 // Who is signed in, and which business this request is about. Owners and staff only ever get their own business;
@@ -155,7 +191,7 @@ const ctx = new AsyncLocalStorage();
 const BIZ = () => ctx.getStore().biz;
 app.use(wrap(async (req, res, next) => {
   const s = readSession(req.get('cookie'));
-  const user = s && await one('SELECT id, email, name, role, business_id, permissions, totp_enabled, session_version FROM users WHERE id=$1 AND NOT disabled', [s.uid]);
+  const user = s && await one('SELECT id, email, name, role, business_id, permissions, totp_enabled, email_2fa, session_version FROM users WHERE id=$1 AND NOT disabled', [s.uid]);
   if (!user || user.session_version !== s.version) {
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Please sign in again.' });
     return res.redirect('/login');
@@ -245,7 +281,7 @@ app.get('/api/me', wrap(async (req, res) => {
   const b = await one(`SELECT b.id, b.name, b.plan_status, b.trial_ends_at, b.country, b.currency, b.timezone, b.plan_key, p.name AS plan_name,
       GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left FROM businesses b LEFT JOIN plans p ON p.key=b.plan_key WHERE b.id=$1`, [BIZ()]);
   const u = req.user;
-  res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, totp_enabled: u.totp_enabled }, business: b,
+  res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, totp_enabled: u.totp_enabled, email_2fa: u.email_2fa }, email_ready: emailEnabled(), business: b,
     features: [...await featuresOf(BIZ())], modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE,
     edition: process.env.EDITION === 'product' ? 'product' : 'lab', lab: u.role === 'admin' && !BIZ(),
     // links we show or share must work outside this computer, even when the dashboard is opened on localhost
@@ -281,6 +317,29 @@ app.post('/api/me/2fa/enable', wrap(async (req, res) => {
   if (!checkTotp(u.totp_secret, req.body.code)) { await audit(req, '2fa_code_wrong'); return res.status(400).json({ error: 'That code is not right. Use the newest code for "Pulse" in your app. If you scanned an older QR code, delete that entry and scan this one.' }); }
   await q('UPDATE users SET totp_enabled=true WHERE id=$1', [req.user.id]);
   await audit(req, '2fa_on');
+  res.json({ ok: true });
+}));
+// Email codes: send a test code to the login's email, then switch on with that code.
+app.post('/api/me/2fa/email/start', wrap(async (req, res) => {
+  if (!emailEnabled()) return res.status(400).json({ error: 'Email sending is not connected yet. Ask your Pulse administrator to connect it.' });
+  const u = await one('SELECT * FROM users WHERE id=$1', [req.user.id]);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(u.email)) return res.status(400).json({ error: 'This login has no email address to send codes to.' });
+  const r = await mailCode(u, 'switch on email codes');
+  if (!r.ok) return res.status(400).json({ error: r.reason });
+  res.json({ ok: true, email: maskEmail(u.email) });
+}));
+app.post('/api/me/2fa/email/enable', wrap(async (req, res) => {
+  const u = await one('SELECT * FROM users WHERE id=$1', [req.user.id]);
+  if (!await emailCodeOk(u, req.body.code)) return res.status(400).json({ error: 'That code is not right or has expired. Send a new one.' });
+  await q('UPDATE users SET email_2fa=true WHERE id=$1', [u.id]);
+  await audit(req, '2fa_email_on');
+  res.json({ ok: true });
+}));
+app.post('/api/me/2fa/email/disable', wrap(async (req, res) => {
+  const u = await one('SELECT password_hash FROM users WHERE id=$1', [req.user.id]);
+  if (!checkPassword(req.body.password, u.password_hash)) return res.status(400).json({ error: 'Password is not right.' });
+  await q('UPDATE users SET email_2fa=false, email_code_hash=NULL WHERE id=$1', [req.user.id]);
+  await audit(req, '2fa_email_off');
   res.json({ ok: true });
 }));
 app.post('/api/me/2fa/disable', wrap(async (req, res) => {
@@ -393,7 +452,7 @@ app.post('/api/admin/users/:id/reset', adminOnly, wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE id=$1', [+req.params.id]);
   if (!u) return res.status(404).json({ error: 'Login not found.' });
   const out = { email: u.email };
-  if (req.body.what === '2fa') await q('UPDATE users SET totp_enabled=false, totp_secret=NULL, session_version=session_version+1 WHERE id=$1', [u.id]);
+  if (req.body.what === '2fa') await q('UPDATE users SET totp_enabled=false, totp_secret=NULL, email_2fa=false, email_code_hash=NULL, session_version=session_version+1 WHERE id=$1', [u.id]);
   else { out.password = newPassword(); await q('UPDATE users SET password_hash=$1, failed_logins=0, locked_until=NULL, session_version=session_version+1 WHERE id=$2', [hashPassword(out.password), u.id]); }
   await audit(req, req.body.what === '2fa' ? '2fa_reset' : 'password_reset', u.email, u.business_id);
   res.json(out);

@@ -53,3 +53,19 @@ body[data-page="today"]{--pg:#25d366;--pg2:#00f07a}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
 html.nomotion *,html.nomotion *::before,html.nomotion *::after{animation:none!important}
+
+/* Home heartbeat: every 3 seconds a green wave grows out from the centre behind the cards,
+   and each card's edge lights up as the wave passes it. Transform and opacity only. */
+@keyframes p-wave{0%{transform:translate(-50%,-50%) scale(.15);opacity:0}12%{opacity:.55}100%{transform:translate(-50%,-50%) scale(1.6);opacity:0}}
+@keyframes p-hit{0%,22%{opacity:0}32%{opacity:1}60%,100%{opacity:0}}
+#today{position:relative;isolation:isolate}
+#today::before{content:"";position:absolute;left:50%;top:50%;width:120vmax;height:120vmax;border-radius:50%;z-index:-1;pointer-events:none;
+  background:radial-gradient(circle,transparent 38%,color-mix(in srgb,var(--pg) 30%,transparent) 46%,transparent 54%);animation:p-wave 3s cubic-bezier(.3,.6,.3,1) infinite}
+#today .td-grid{position:relative}
+#today .td-card,#today .td-stat{position:relative}
+#today .td-card::after,#today .td-stat::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pg) 70%,transparent),inset 0 0 28px -6px color-mix(in srgb,var(--pg) 35%,transparent);animation:p-hit 3s linear infinite}
+/* cards nearer the centre are hit first */
+#today .td-stat::after,#today .td-todo::after{animation-delay:0s}
+#today .td-hero::after,#today .td-next::after,#today .td-team::after{animation-delay:.25s}
+#today .td-cal::after,#today .td-notes::after,#today .td-health::after{animation-delay:.45s}

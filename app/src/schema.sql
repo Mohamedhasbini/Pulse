@@ -263,6 +263,12 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB;             -- sta
 ALTER TABLE users ADD COLUMN IF NOT EXISTS disabled BOOLEAN DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT false;
+-- Two-factor by email: a 6-digit code mailed at each sign-in (stored only as a keyed hash, valid 10 minutes, 5 tries)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_2fa BOOLEAN DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_code_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_code_exp TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_code_tries INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_code_sent TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_logins INT DEFAULT 0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS session_version INT DEFAULT 1;

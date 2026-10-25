@@ -43,6 +43,7 @@ button{font:inherit;font-weight:600;border:0;border-radius:999px;padding:12px;ba
 button:hover{opacity:.88}button:active{transform:scale(.98)}button:disabled{opacity:.55;cursor:default}
 button:focus-visible,.back:focus-visible,.brand:focus-visible{outline:2px solid var(--soft-ink);outline-offset:3px}
 #err{margin:0;font-size:13.5px;color:var(--bad)}
+.linkbtn{background:none!important;color:var(--ink2)!important;padding:4px!important;font-weight:500;text-decoration:underline;text-underline-offset:3px}.linkbtn:hover{color:var(--ink)!important;opacity:1}
 .foot{margin:0;font-size:13px;color:var(--mute);line-height:1.45}
 .trust{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .trust span{font-size:12.5px;color:var(--ink2);background:var(--field);padding:5px 11px;border-radius:999px}
@@ -70,9 +71,9 @@ body.ok form{transition:transform var(--base) var(--ease),opacity var(--base) va
       <label for="pw">Password<input id="pw" type="password" autocomplete="current-password" required></label>
     </div>
     <div class="fields step" id="step2" hidden>
-      <label for="code">6-digit code from your authenticator app<input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7"></label>
+      <label for="code"><span id="codeLbl">6-digit code</span><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7"></label>
     </div>
-    <p id="title" hidden></p><p id="lead" hidden></p>
+    <p id="title" hidden></p><p id="lead" hidden></p><button type="button" class="linkbtn" id="mailBtn" hidden>Email me a code instead</button>
     <p id="err" hidden role="alert"></p>
     <button id="go">Sign in</button>
     <p class="foot">Forgot your password or lost your phone? Ask your administrator. They confirm who you are before resetting anything.</p>
@@ -102,9 +103,16 @@ $("f").onsubmit=async e=>{e.preventDefault();const err=$("err");err.hidden=true;
       :await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:$("em").value,password:$("pw").value})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok){if(ticket&&/took too long/.test(j.error||"")){ticket=null;$("step2").hidden=true;$("step1").hidden=false;$("step1").classList.remove("out")}throw new Error(j.error||"Couldn't sign in. Try again.")}
-    if(j.need_code){ticket=j.ticket;swap();$("title").textContent="Two-factor check";$("lead").textContent="Open your authenticator app and enter the current code.";$("lead").hidden=false;$("lead").className="foot";$("go").textContent="Verify and sign in";$("go").disabled=false;return}
+    if(j.need_code){ticket=j.ticket;swap();$("title").textContent="Two-factor check";
+      const mailed=j.email&&!j.app;$("codeLbl").textContent=mailed?"6-digit code from your email":"6-digit code from your authenticator app";
+      $("lead").textContent=mailed?(j.sent?`We emailed a code to ${j.email}. It works for 10 minutes.`:(j.send_error||"We couldn't send the email.")+" Try sending it again."):"Open your authenticator app and enter the current code.";
+      $("mailBtn").hidden=!j.email;$("mailBtn").textContent=mailed?"Send a new code":"Email me a code instead";$("lead").hidden=false;$("lead").className="foot";$("go").textContent="Verify and sign in";$("go").disabled=false;return}
     document.body.classList.add("ok");$("go").textContent="Signed in";setTimeout(()=>location.href="/",650)}
   catch(x){err.textContent=x.message;err.hidden=false;$("go").textContent=ticket?"Verify and sign in":"Sign in";$("go").disabled=false}};
+$("mailBtn").onclick=async()=>{const err=$("err");err.hidden=true;$("mailBtn").disabled=true;
+  try{const r=await fetch("/api/login/email-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ticket})}),j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||"Couldn't send the code.");$("codeLbl").textContent="6-digit code from your email";$("lead").textContent=`We emailed a code to ${j.email}. It works for 10 minutes.`;$("lead").hidden=false;$("mailBtn").textContent="Send a new code";$("code").focus()}
+  catch(x){err.textContent=x.message;err.hidden=false}finally{setTimeout(()=>$("mailBtn").disabled=false,30000)}};
 </script>
 </body>
 </html>

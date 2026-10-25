@@ -28,6 +28,9 @@ export function readSession(cookie) {
   if (!uid || !ver || !exp || !s || +exp < Date.now()) return null;
   return safeEq(s, sig(`${uid}.${ver}.${exp}`)) ? { uid: +uid, version: +ver } : null;
 }
+// Email sign-in codes: 6 random digits; only a keyed hash is stored.
+export const newEmailCode = () => String(crypto.randomInt(0, 1e6)).padStart(6, '0');
+export const hashCode = (uid, code) => sig(`email-code.${uid}.${String(code || '').replace(/\D/g, '')}`);
 // Short-lived proof that the password was right, while we wait for the two-factor code.
 export const signTicket = uid => { const s = `2fa.${uid}.${Date.now() + 5 * 60000}`; return `${s}.${sig(s)}`; };
 export function readTicket(t) {

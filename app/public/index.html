@@ -366,7 +366,7 @@
 
     <section class="wrap" id="security" hidden>
       <div class="top"><div><h1>Account <b>security</b></h1><p class="sub">Your login, two-factor protection and recent activity.</p></div></div>
-      <div class="card glass"><div class="ch"><h2>Two-factor sign-in</h2><span class="tag" id="tfState"></span></div><div id="tfBody"></div></div>
+      <div class="card glass"><div class="ch"><h2>Two-factor sign-in</h2><span class="tag" id="tfState"></span></div><h3 class="tf-h">Code by email</h3><div id="efBody"></div><h3 class="tf-h">Authenticator app</h3><div id="tfBody"></div></div>
       <div class="card glass"><div class="ch"><h2>Change password</h2><small>at least 10 characters, letters and numbers; signs out your other devices</small></div>
         <form class="form" id="pwForm" autocomplete="off"><label>Current password<input type="password" id="pwCur" autocomplete="current-password" required></label><label>New password<input type="password" id="pwNew" autocomplete="new-password" required></label>
           <p class="full sub" id="pwErr" style="margin:0;color:var(--bad)"></p><button class="btn full">Change password</button></form></div>
@@ -1327,7 +1327,19 @@ function lockedCard(view){const m=VIEW_MODULE[view],f=me&&me.module_feature[m],s
 $("#pwBtn").onclick=()=>{document.querySelector('nav button[data-view="setup"]').click();setTimeout(()=>tabsOf.setup("s2fa"),20)};
 
 // ---------- security page ----------
-async function loadSecurity(){const on=me.user.totp_enabled;$("#tfState").className="tag "+(on?"t-book":"t-attn");$("#tfState").textContent=on?"On":"Off";
+// Two-factor by email: a code is mailed at every sign-in.
+function loadEmail2fa(){const box=$("#efBody");if(!box)return;const on=me.user.email_2fa;
+  if(on){box.innerHTML=`<p class="sub" style="margin:0 0 10px">On. Every sign-in asks for a 6-digit code we email to <b>${esc(me.user.email)}</b>.</p>
+    <form class="form" id="efOff" style="grid-template-columns:1fr"><label>Password to switch it off<input type="password" id="efPw" required></label><p class="sub" id="efErr" style="color:var(--bad);margin:0" hidden></p><button class="btn ghost">Turn email codes off</button></form>`;
+    $("#efOff").onsubmit=async e=>{e.preventDefault();try{await req("/api/me/2fa/email/disable","POST",{password:$("#efPw").value});toast("Email codes are off.");await loadMe();loadSecurity()}catch(err){$("#efErr").textContent=err.message;$("#efErr").hidden=false}};return}
+  if(!me.email_ready){box.innerHTML=`<p class="sub" style="margin:0">Get a 6-digit code by email each time you sign in. Email sending isn't connected on this platform yet, so this can't be switched on.</p>`;return}
+  box.innerHTML=`<p class="sub" style="margin:0 0 10px">Get a 6-digit code by email at <b>${esc(me.user.email)}</b> each time you sign in. No app needed.</p><button class="btn" type="button" id="efStart">Send me a code to switch it on</button>`;
+  $("#efStart").onclick=async()=>{try{const r=await req("/api/me/2fa/email/start","POST");
+    box.innerHTML=`<p class="sub" style="margin:0 0 10px">We sent a code to <b>${esc(r.email)}</b>. It works for 10 minutes.</p><form class="form" id="efOn" style="grid-template-columns:1fr"><label>Code from the email<input id="efCode" inputmode="numeric" maxlength="7" autocomplete="one-time-code" required></label><p class="sub" id="efErr" style="color:var(--bad);margin:0" hidden></p><button class="btn">Turn on email codes</button><button class="btn ghost" type="button" id="efAgain">Send a new code</button></form>`;
+    $("#efAgain").onclick=()=>{loadEmail2fa();$("#efStart")?.click()};
+    $("#efOn").onsubmit=async e=>{e.preventDefault();try{await req("/api/me/2fa/email/enable","POST",{code:$("#efCode").value});toast("Email codes are on.");await loadMe();loadSecurity()}catch(err){$("#efErr").textContent=err.message;$("#efErr").hidden=false}}}
+  catch(err){toast(err.message)}}}
+async function loadSecurity(){const on=me.user.totp_enabled,any=on||me.user.email_2fa;$("#tfState").className="tag "+(any?"t-book":"t-attn");$("#tfState").textContent=any?"On":"Off";loadEmail2fa();
   $("#tfBody").innerHTML=on?`<p class="sub" style="margin:0 0 10px">Signing in needs your password and a 6-digit code from your authenticator app.</p>
       <form class="form" id="tfOff"><label>Password<input type="password" id="tfPw" required></label><label>Current code<input id="tfOffCode" inputmode="numeric" maxlength="7" required></label><button class="btn ghost full">Turn two-factor off</button></form>`
     :`<p class="sub" style="margin:0 0 10px">Protect this dashboard even if your password leaks. You'll need an authenticator app (Google Authenticator, Microsoft Authenticator or 1Password).</p><button class="btn" type="button" id="tfStart">Set up two-factor</button>`;
