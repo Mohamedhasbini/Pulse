@@ -48,6 +48,13 @@ button:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .trust{display:flex;gap:16px;font-size:.75rem;color:var(--muted);margin:0;padding-top:14px;border-top:1px solid var(--line)}
 @media (max-width:860px){.layout{grid-template-columns:1fr;align-content:end;gap:24px;padding-top:96px}.pitch{display:none}form{background:rgba(16,20,30,.7)}}
 @media (prefers-reduced-motion:reduce){.fields.in,.fields.out{animation:none;transition:none}}
+/* true-black flat, matching the dashboard: white pill action, card by lightness, no blur */
+body{background:#000!important}
+form{background:#111!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-radius:16px!important}
+input{background:#000!important;border:1px solid #262626!important}
+input:focus{border-color:#fff!important;box-shadow:0 0 0 3px rgba(255,255,255,.12)!important}
+button{background:#fff!important;color:#000!important;border-radius:999px!important}
+button:hover{background:#e6e6e6!important;filter:none!important}
 </style>
 </head>
 <body>

@@ -280,3 +280,76 @@ body[data-page="setup"] .top h1 b,body[data-page="security"] .top h1 b{backgroun
 
 /* ---- Command center: a control room ---- */
 body[data-page="admin"] .card{border-left:2px solid color-mix(in srgb,var(--pg) 50%,var(--line))!important}
+
+/* ======================================================================
+   Style: true-black flat (tasteskill app sheet, seed 513208598).
+   Elevation by lightness alone; no gradients, glows or card borders;
+   buttons are white pills; nav marks the current page by its label.
+   Page identity = the ground's temperature + the page's one data hue.
+   ====================================================================== */
+:root,:root[data-theme="dark"]{--tb-ground:#000;--tb-card:#111;--tb-nest:#1c1c1c;--tb-rule:#1a1a1a;--tb-text:#f5f5f5;--tb-2:#b4b4b4;--tb-meta:#949494}
+body{--ground:var(--tb-ground);--s1:var(--tb-card);--s2:var(--tb-nest);--s3:#2a2a2a;--solid:#0a0a0a;--line:var(--tb-rule);--line2:#262626;--ink:var(--tb-text);--ink2:var(--tb-2);--muted:var(--tb-meta)}
+/* the ground's temperature per page (never navy or slate) */
+body[data-page="today"]   {--tb-ground:#0e0c09;--tb-card:#181512;--tb-nest:#221e1a}
+body[data-page="overview"]{--tb-ground:#09090b;--tb-card:#141417;--tb-nest:#1e1e22}
+body[data-page="calendar"]{--tb-ground:#070b0b;--tb-card:#111716;--tb-nest:#1a2120}
+body[data-page="people"]  {--tb-ground:#0c090b;--tb-card:#171215;--tb-nest:#211b1f}
+body[data-page="training"]{--tb-ground:#0f0a07;--tb-card:#1a1410;--tb-nest:#241c17}
+body[data-page="demo"]    {--tb-ground:#060b08;--tb-card:#0f1611;--tb-nest:#18211a}
+body[data-page="analytics"]{--tb-ground:#07090d;--tb-card:#10141a;--tb-nest:#191e26}
+body[data-page="website"] {--tb-ground:#070a0d;--tb-card:#101519;--tb-nest:#192026}
+body[data-page="setup"],body[data-page="security"]{--tb-ground:#000;--tb-card:#111;--tb-nest:#1c1c1c}
+body[data-page="admin"]   {--tb-ground:#0d0707;--tb-card:#181111;--tb-nest:#221a1a}
+/* one data hue per page: charts, figures that changed, the page label, focus */
+body[data-page]{--d1:var(--pg);--d2:color-mix(in srgb,var(--pg) 55%,#888);--d3:color-mix(in srgb,var(--pg) 30%,#666);--d4:#555;--x-head:var(--pg)}
+html,body,main,nav{background:var(--ground)!important}
+main{background-image:none!important}
+main::before{display:none!important}
+nav{border-right:1px solid var(--line)!important}
+/* surfaces: lightness steps, no borders, no shadows */
+.card,.card.glass,.glass,.kpi,.kpi.glass,.cm-detail,.cm-list,.setnav,.cm-card,.wsprev,.co-card,.td-card,.td-stat,.td-hero,
+#setup .card,#setup .card.glass,.ccmain .card,.ccmain .card.glass,.plancard{background:var(--s1)!important;border:0!important;box-shadow:none!important;border-radius:12px!important}
+.item,.td-note,.td-mem,.td-time,.td-ic,.feed-item:hover{background:var(--s2)!important}
+body[data-page="training"] .item{border:1px dashed color-mix(in srgb,var(--pg) 30%,transparent)!important;background:var(--s2)!important}
+.kpi:first-child::before,.td-hero::before,.td-stat:first-child::before,body[data-page="analytics"] .card::before,body[data-page="analytics"] .kpi::before{display:none!important}
+body[data-page="today"] .td-hero,body[data-page="today"] .td-stat:first-child,body[data-page="overview"] .card{background:var(--s1)!important}
+body[data-page="admin"] .card{border-left:0!important}
+body[data-page="people"] .card,body[data-page="people"] .kpi{border-radius:12px!important}
+body[data-page="demo"] .card{border:0!important}
+body[data-page="demo"] .phone{border:0!important;box-shadow:none!important;background:var(--s2)!important}
+body[data-page="demo"] .card h2,body[data-page="demo"] .ch small,body[data-page="demo"] .sub{font-family:var(--x-font)!important}
+/* headings: no gradient text; the page's role sits above the title in its hue */
+.top h1 b,.td-hero h1 b{background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;color:var(--ink)!important}
+main>section>.top h1::before{font-family:var(--x-font)!important;font-size:12.5px!important;font-weight:500!important;letter-spacing:0!important;text-transform:none!important}
+.card h2,.ch h2,.td-h h2{font-size:14px!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink)!important}
+.kpi .k-l,thead th{letter-spacing:0!important;text-transform:none!important;font-size:12.5px!important;font-weight:500!important}
+.td-eyebrow{font-family:var(--x-font)!important;letter-spacing:0!important;text-transform:none!important;font-size:12.5px!important}
+/* KPIs are type: label, figure, baseline; figure in ink, at regular weight */
+.kpi .v{font-family:var(--x-font)!important;font-weight:500!important;font-size:26px!important;letter-spacing:-.02em!important}
+/* navigation recedes: the current page is its label in white */
+nav button[data-view]{color:#bbb!important}
+nav button[data-view][aria-current="true"]{background:transparent!important;color:#fff!important;font-weight:600!important}
+nav button[data-view][aria-current="true"]::before{display:none!important}
+nav button[data-view][aria-current="true"] svg{stroke:#fff!important}
+nav button[data-view]:hover{background:var(--s1)!important;color:#fff!important}
+nav .ns{text-transform:none!important;letter-spacing:0!important;font-size:12px!important;font-weight:500!important}
+/* tabs: the selection is a 1px white line as wide as its label */
+.ptabs button[aria-pressed="true"]::after{background:#fff!important;height:1px!important;left:14px!important;right:14px!important}
+.tabs:not(.ptabs) button[aria-pressed="true"]{background:var(--s3)!important}
+/* the primary control is a white pill; everything else is quiet */
+.btn,.td-btn{background:#fff!important;color:#000!important;border-radius:999px!important;border:0!important;filter:none!important}
+.btn:hover,.td-btn:hover{background:#e6e6e6!important}
+.btn.ghost,.mini,.td-btn.ghost{background:transparent!important;color:var(--ink)!important;border:1px solid #333!important;border-radius:999px!important}
+.btn.ghost:hover,.mini:hover,.td-btn.ghost:hover{background:var(--s2)!important}
+.pc-bar i{background:var(--pg,#fff)!important}
+input:focus,select:focus,textarea:focus{border-color:var(--pg)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--pg) 18%,transparent)!important}
+/* tables: rules and alignment, numbers right-aligned */
+thead th{background:var(--ground)!important;border-bottom:1px solid var(--line2)!important;color:var(--muted)!important}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+/* light theme keeps the same rules on white */
+:root[data-theme="light"] body{--tb-ground:#fff;--tb-card:#f5f5f5;--tb-nest:#ececec;--tb-rule:#f0f0f0;--tb-text:#0a0a0a;--tb-2:#555;--tb-meta:#6b6b6b}
+:root[data-theme="light"] nav button[data-view]{color:#555!important}
+:root[data-theme="light"] nav button[data-view][aria-current="true"],:root[data-theme="light"] nav button[data-view]:hover{color:#000!important}
+:root[data-theme="light"] nav button[data-view][aria-current="true"] svg{stroke:#000!important}
+:root[data-theme="light"] .btn,:root[data-theme="light"] .td-btn{background:#000!important;color:#fff!important}
+:root[data-theme="light"] .ptabs button[aria-pressed="true"]::after{background:#000!important}
