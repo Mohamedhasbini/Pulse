@@ -1,5 +1,4 @@
 /* Pulse brand: a living heartbeat mark (the signal traces, the dot pings, the glow breathes) and a gradient wordmark. */
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&display=swap");
 .pl-brand{display:inline-flex!important;align-items:center;gap:10px;text-decoration:none!important;color:inherit;flex-direction:row!important}
 .pl-mark{width:38px;height:38px;flex:none;display:block;border-radius:13px;animation:pl-breathe 3.2s ease-in-out infinite;will-change:filter}
 .pl-mark svg{width:100%;height:100%;display:block;overflow:visible}

@@ -1,0 +1,182 @@
+/* Pulse executive layer. Loaded last, so it decides the look.
+   Solid surfaces, hairline borders, one signal colour, precise numbers. No blur, no looping motion:
+   every page fits the screen, and its detail sits one tab away. */
+:root,:root[data-theme="dark"]{
+  --ground:#08090c;--solid:#0f1116;--s1:#13161c;--s2:#181b23;--s3:#1f232d;
+  --line:rgba(255,255,255,.065);--line2:rgba(255,255,255,.11);
+  --ink:#f2f4f8;--ink2:#a7adbb;--muted:#6d7383;
+  --accent:#8b7cff;--accent-ink:#fff;--accent-text:#a99dff;--accent-soft:rgba(139,124,255,.13);--accent-line:rgba(139,124,255,.42);
+  --signal:#ff6a1f;--cyan:#38d3f5;
+  --c-orange:#ff7a2e;--c-yellow:#f5c84b;--c-green:#34d399;--c-blue:#5b9cff;--c-pink:#f472b6;--c-teal:#2dd4bf;
+  --d1:var(--accent);--d2:var(--cyan);--d3:var(--c-orange);--d4:var(--c-green);
+  --good:#34d399;--good-soft:rgba(52,211,153,.12);--bad:#f43f5e;--bad-soft:rgba(244,63,94,.12);--warn:#f5c84b;
+  --bg:var(--ground);--glass:var(--s1);--glass2:var(--s2);--edge:var(--line);
+  --card-shadow:none;--r:8px;--r-lg:12px;
+  --x-head:linear-gradient(90deg,var(--signal),#ff2e7e 45%,var(--accent));
+  --x-font:"Geist","Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--x-mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:dark}
+:root[data-theme="light"]{
+  --ground:#f4f5f7;--solid:#ffffff;--s1:#ffffff;--s2:#f7f8fa;--s3:#eef0f4;
+  --line:rgba(15,18,30,.08);--line2:rgba(15,18,30,.14);
+  --ink:#0d1017;--ink2:#4a5161;--muted:#7a8091;
+  --accent:#5b45ff;--accent-ink:#fff;--accent-text:#4a35e6;--accent-soft:rgba(91,69,255,.09);--accent-line:rgba(91,69,255,.38);
+  --good:#059669;--good-soft:rgba(5,150,105,.1);--bad:#e11d48;--bad-soft:rgba(225,29,72,.09);--warn:#b7791f;
+  color-scheme:light}
+/* one signal colour on every page */
+body[data-page]{--accent:inherit}
+body[data-page="training"],body[data-page="setup"],body[data-page="security"]{--accent:#8b7cff;--accent-ink:#fff;--accent-text:#a99dff;--accent-soft:rgba(139,124,255,.13);--accent-line:rgba(139,124,255,.42)}
+:root[data-theme="light"] body[data-page="training"],:root[data-theme="light"] body[data-page="setup"],:root[data-theme="light"] body[data-page="security"]{--accent:#5b45ff;--accent-text:#4a35e6;--accent-soft:rgba(91,69,255,.09)}
+
+/* ---------- speed: nothing blurs, nothing loops ---------- */
+*,*::before,*::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+body::before,body::after,.g-field,.td-blob{display:none!important}
+.pl-mark,.pl-trace,.pl-ping,.pl-dot,.pl-word,.hud,.hud *{animation:none!important}
+.pl-trace{stroke-dashoffset:0!important}.pl-ping{opacity:0}.pl-mark{filter:none!important}
+.card,.kpi,.td-card,.td-stat,.cm-card,.item,.btn,button{transition:background-color .12s,border-color .12s,color .12s!important}
+.card:hover,.kpi:hover,.td-card:hover,.td-stat:hover,.cm-card:hover{transform:none!important}
+
+/* ---------- ground and type ---------- */
+html,body{background:var(--ground)!important}
+body{font-family:var(--x-font)!important;color:var(--ink);font-size:13.5px;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01","cv11"}
+h1,h2,h3,.td-hero h1{font-family:var(--x-font)!important;letter-spacing:-.02em}
+main h1,.top h1,main>section.wrap>.top h1{font-size:20px!important;font-weight:600!important;letter-spacing:-.025em}
+.top h1 b{font-weight:600;color:var(--ink)}
+.sub{color:var(--muted)}
+.kpi .v,.td-stat b,.micro b,.cm-stats b,.statrow b,.lstats b,.mny b,#tchStats b,table td.num,.up span,.up time b{font-family:var(--x-font);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.shell,main{background:transparent!important}
+
+/* ---------- sidebar ---------- */
+.shell{grid-template-columns:224px minmax(0,1fr)!important}
+nav{background:var(--solid)!important;border-right:1px solid var(--line)!important;padding:14px 10px!important}
+nav .pl-brand{padding:2px 8px 16px!important}
+nav .pl-brand .pl-mark{width:30px;height:30px}
+.pl-word{font-family:var(--x-font)!important;font-weight:700!important;font-size:19px!important;letter-spacing:-.04em!important;animation:none!important;background-position:0 0!important}
+nav .ns{font-size:10px!important;font-weight:600!important;letter-spacing:.12em!important;text-transform:uppercase;color:var(--muted)!important;margin:14px 10px 4px!important}
+nav button[data-view]{position:relative;color:var(--ink2)!important;background:transparent!important;border:0!important;box-shadow:none!important;font-weight:500!important}
+nav button[data-view]:hover{background:var(--s2)!important;color:var(--ink)!important}
+nav button[data-view][aria-current="true"]{background:var(--s3)!important;color:var(--ink)!important}
+nav button[data-view][aria-current="true"]::before{content:"";position:absolute;left:-10px;top:7px;bottom:7px;width:2px;border-radius:2px;background:var(--accent)}
+nav button[data-view][aria-current="true"] svg{stroke:var(--accent)}
+.plancard{background:var(--s1)!important;border:1px solid var(--line)!important;box-shadow:none!important;border-radius:10px!important}
+.pc-bar i{background:var(--x-head)!important}
+.navfoot button{background:transparent!important;border:1px solid var(--line)!important;box-shadow:none!important}
+.navfoot button:hover{background:var(--s2)!important}
+
+/* ---------- page head and tabs ---------- */
+main{padding:14px 22px 16px!important}
+.top{padding-bottom:2px}
+.ptabs,.ptabs.glass{display:flex!important;gap:2px!important;padding:0!important;background:transparent!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;box-shadow:none!important;flex:none}
+.ptabs button{position:relative;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:6px 6px 0 0!important;padding:9px 14px 10px!important;color:var(--muted)!important;font-weight:500!important;font-size:13px!important}
+.ptabs button:hover{color:var(--ink)!important;background:var(--s1)!important}
+.ptabs button[aria-pressed="true"]{color:var(--ink)!important;font-weight:600!important}
+.ptabs button[aria-pressed="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:2px;background:var(--accent)}
+.tabs:not(.ptabs),.tabs.glass:not(.ptabs),.td-tabs{background:var(--s1)!important;border:1px solid var(--line)!important;box-shadow:none!important}
+.tabs:not(.ptabs) button{color:var(--muted)!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.tabs:not(.ptabs) button[aria-pressed="true"]{background:var(--s3)!important;color:var(--ink)!important;font-weight:600}
+
+/* ---------- surfaces ---------- */
+.card,.card.glass,.glass,.kpi,.kpi.glass,.cm-detail,.cm-list,.setnav,.cm-card,.wsprev,.co-card,.bellPanel,.modal .glass,.wx-box,.wbar,
+#setup .card,#setup .card.glass,.ccmain .card,.ccmain .card.glass{
+  background:var(--s1)!important;border:1px solid var(--line)!important;box-shadow:none!important;border-radius:12px!important}
+.card>.ch,.ch{border-bottom:0}
+.card h2,.ch h2{font-size:11px!important;font-weight:600!important;letter-spacing:.09em!important;text-transform:uppercase;color:var(--ink2)!important}
+.ch small{color:var(--muted)}
+.bellPanel{box-shadow:0 24px 60px -20px rgba(0,0,0,.6)!important}
+/* KPIs: label above, a large precise number, a thin signal line at the top of the first */
+.kpis{gap:10px!important}
+.kpi{position:relative;overflow:hidden;padding:14px 16px!important}
+.kpi .k-l{font-size:10.5px!important;font-weight:600!important;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)!important}
+.kpi .v{font-size:26px!important;font-weight:600!important;color:var(--ink)!important;line-height:1.15}
+.kpi:first-child::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:var(--x-head)}
+.item,.td-note,.td-mem,.td-time,.td-ic{background:var(--s2)!important;border:1px solid transparent!important;box-shadow:none!important}
+.item:hover,.td-note:hover{background:var(--s3)!important}
+.chip,.tag,.pill{box-shadow:none!important}
+.pill.glass{background:var(--s1)!important;border:1px solid var(--line)!important}
+
+/* tables: hairlines, sticky head, no pills */
+table{border-collapse:collapse!important;border-spacing:0!important}
+thead th{position:sticky;top:0;z-index:1;background:var(--s1)!important;color:var(--muted)!important;font-size:10.5px!important;font-weight:600!important;letter-spacing:.08em;text-transform:uppercase;border:0!important;border-bottom:1px solid var(--line2)!important;border-radius:0!important}
+tbody tr td{background:transparent!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important}
+tbody tr:hover td{background:var(--s2)!important}
+tr.click{cursor:pointer}
+
+/* controls */
+.btn{background:var(--accent)!important;color:var(--accent-ink)!important;border:1px solid transparent!important;box-shadow:none!important;font-weight:600}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost,.mini{background:transparent!important;color:var(--ink)!important;border:1px solid var(--line2)!important;box-shadow:none!important}
+.btn.ghost:hover,.mini:hover{background:var(--s2)!important}
+input,select,textarea{background:var(--solid)!important;border:1px solid var(--line2)!important;color:var(--ink)!important;box-shadow:none!important}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--accent-soft)!important;outline:none}
+.cmd{background:var(--s1)!important;border:1px solid var(--line2)!important;box-shadow:none!important}
+.cmd input{background:transparent!important;border:0!important;box-shadow:none!important}
+.cmd kbd{font-family:var(--x-mono);background:var(--s3);border:1px solid var(--line2);border-radius:5px;color:var(--muted)}
+.cmd-res{background:var(--solid)!important;border:1px solid var(--line2)!important;box-shadow:0 20px 50px -20px rgba(0,0,0,.6)!important}
+.qp{background:var(--s1)!important;border:1px solid var(--line)!important;box-shadow:none!important}
+.qp:hover{border-color:var(--line2)!important;background:var(--s2)!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+
+/* chart tooltip */
+.g-tip{position:fixed;z-index:200;pointer-events:none;padding:6px 9px;border-radius:7px;font-size:12px;font-weight:500;line-height:1.35;max-width:260px;
+  background:var(--solid);color:var(--ink);border:1px solid var(--line2);box-shadow:0 10px 30px -10px rgba(0,0,0,.6);opacity:0}
+.g-tip.on{opacity:1}
+svg [data-tip],.hgrid [data-tip],.heat [data-tip],.capsules [data-tip]{cursor:crosshair}
+svg:hover [data-tip]{opacity:.5}svg [data-tip]:hover{opacity:1!important}
+
+/* ---------- Today: an executive briefing that fits one screen ---------- */
+.today{--td-bg:var(--ground);--td-card:var(--s1);--td-ink:var(--ink);--td-ink2:var(--ink2);--td-mute:var(--muted);--td-line:var(--line);--td-soft:var(--s2);--td-r:12px}
+@media (min-width:1201px) and (min-height:640px){
+  main>section.today:not([hidden]){overflow:hidden!important;display:flex;flex-direction:column}
+  .td-grid{flex:1;min-height:0;height:100%;grid-template-rows:auto auto minmax(0,1fr) minmax(0,1fr);gap:10px!important;padding-bottom:0!important}
+  .td-grid>.td-card{min-height:0;overflow:auto}
+  .td-notes{grid-row:2 / span 3!important;display:flex;flex-direction:column}
+}
+.td-card{box-shadow:none!important;padding:14px 16px!important}
+.td-h h2{font-size:11px!important;font-weight:600!important;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2)!important}
+.td-hero{min-height:0!important;padding:18px 20px!important;background:var(--s1)!important;border:1px solid var(--line)!important;position:relative}
+.td-hero::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:var(--x-head)}
+.td-hero h1{font-size:24px!important;font-weight:600!important}
+.td-eyebrow{font-family:var(--x-mono);font-size:11px!important;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)!important}
+.td-sub{color:var(--ink2)!important}
+.td-logo{width:56px!important;height:56px!important;border-radius:14px!important;box-shadow:none!important;border:1px solid var(--line2)!important}
+.td-btn{background:var(--accent)!important;color:#fff!important;border-radius:8px!important;padding:8px 14px!important}
+.td-btn.ghost{background:transparent!important;color:var(--ink)!important;border:1px solid var(--line2)}
+.td-stat{background:var(--s1)!important;border:1px solid var(--line)!important;box-shadow:none!important;border-radius:12px!important}
+.td-stat:first-child{background:var(--s1)!important;position:relative;overflow:hidden}
+.td-stat:first-child::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:var(--x-head)}
+.td-pill{background:var(--s3)!important;color:var(--ink2)!important}
+
+@media (max-width:820px){.shell{grid-template-columns:1fr!important}main{padding:10px 12px 80px!important}nav button[data-view][aria-current="true"]::before{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* Today: team as a compact row of avatars, health as a two-column checklist, so both fit their card */
+#tdTeam>div{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(78px,1fr))!important;gap:6px!important}
+.td-mem{padding:6px 2px!important;gap:3px!important;border-radius:10px!important}
+.td-mem .td-av{width:30px!important;height:30px!important;font-size:12px!important}
+.td-mem small,.td-mem span{font-size:11px!important;line-height:1.25}
+#tdHealth{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}
+#tdHealth .td-row{padding:6px 0!important}
+.td-mem small:first-of-type{display:none}
+
+/* ---------- patterns from the UI dictionary, kept to the professional ones ---------- */
+/* Data table: sortable column names with a direction caret */
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+th.sortable:hover{color:var(--ink)!important}
+th.sortable::after{content:"";display:inline-block;margin-left:6px;width:0;height:0;border:4px solid transparent;border-top-color:currentColor;opacity:0;vertical-align:-2px}
+th.sortable:hover::after{opacity:.35}
+th[aria-sort="descending"]{color:var(--ink)!important}th[aria-sort="descending"]::after{opacity:1;border-top-color:var(--accent)}
+th[aria-sort="ascending"]{color:var(--ink)!important}th[aria-sort="ascending"]::after{opacity:1;border-top-color:transparent;border-bottom-color:var(--accent);vertical-align:2px}
+/* Timeline: the live feed reads as one dated line of events */
+.feed-item{position:relative;border-radius:8px!important;animation:none!important}
+.feed-item::before{content:"";position:absolute;left:13.5px;top:20px;bottom:-12px;width:1px;background:var(--line2)}
+.feed-item:last-child::before{display:none}
+.feed-item i{position:relative;z-index:1;box-shadow:0 0 0 3px var(--s1)}
+.feed-item.book{background:transparent!important}.feed-item.book p{color:var(--good)}
+.feed-item .who span{font-family:var(--x-mono);font-size:10.5px}
+/* Status dot (presence): a ring that separates the dot from what it sits on */
+.td-dot,.chip i{box-shadow:0 0 0 2px var(--s1),0 0 0 3px color-mix(in srgb,currentColor 0%,transparent)}
+/* Inline banner: the plan strip is a quiet notice, not a floating pill */
+#planBar .item{border-radius:8px!important;background:var(--s1)!important;border:1px solid var(--line)!important}
+/* Hover highlight (never lift): rows and list items tint on hover */
+.cm-row:hover,.feed-item:hover,.up:hover{background:var(--s2)!important}
+/* Skeleton-free empty states: centred, muted, one line */
+.empty,.td-empty{color:var(--muted)!important;text-align:center}

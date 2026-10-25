@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pulse</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="app.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/glossy.css">
 <link rel="stylesheet" href="/theme.css">
 <link rel="stylesheet" href="/compact.css">
-<link rel="stylesheet" href="/glass.css">
 <link rel="stylesheet" href="/brand.css">
+<link rel="stylesheet" href="/exec.css">
 <link rel="icon" href="/pulse-logo.svg" type="image/svg+xml">
 <style>body{margin:0}[hidden]{display:none!important}</style>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("rb-theme")||"dark"}catch{document.documentElement.dataset.theme="dark"}</script>
@@ -546,7 +546,7 @@ async function refresh(){if(typeof canSee==="function"&&!canSee("overview"))retu
     syncNow(s.now);
     if(lastStats&&s.ai_bookings>lastStats.ai_bookings)toast("New booking from the AI");
     if(lastStats&&s.attention.length>lastStats.attention.length)toast("A customer needs you");
-    lastStats=s;convs=c;render(s)}
+    const sig=JSON.stringify([{...s,now:0},c,days]);if(sig===refresh.sig)return;refresh.sig=sig;lastStats=s;convs=c;render(s)}
   catch(e){if(e.message!=="Signed out")setPill("bad","Dashboard offline",e.message)}}
 function setPill(k,t,title=""){const p=$("#aiPill");p.className="pill glass "+k;p.querySelector("span").textContent=t;p.title=title}
 function render(s){
@@ -1043,6 +1043,7 @@ function canSee(m){try{return !me||me.modules.includes(m)}catch{return true}}
 // A login without access to a section never asks for its data (staff with limited access).
 window.addEventListener("unhandledrejection",e=>{if(/don.t have access|not in your plan|Load failed|access control checks|aborted|Failed to fetch|NetworkError/i.test(e.reason?.message||""))e.preventDefault()});
 async function loadLive(){if(!canSee("overview"))return;let d;try{d=await req("/api/live?days="+days)}catch{return}
+  {const sig=JSON.stringify([{...d,server_time:0},days]);if(sig===loadLive.sig){$("#ldClock").textContent="updated "+hhmm(d.server_time);return}loadLive.sig=sig}
   const n=d.now;
   $("#ldTitle").textContent=d.ai.ok===false?"Your receptionist can't reach the AI":n.active_now?`Talking with ${n.active_now} ${n.active_now===1?"person":"people"} right now`:"Your receptionist is live";
   $("#ldSub").textContent=d.ai.ok===false?"Customers still get instant answers from your FAQs and a note that you'll reply.":`${n.msgs_today} message${n.msgs_today===1?"":"s"} today${n.waiting?` · ${n.waiting} waiting for you`:""}${n.avg_ms?` · ${(n.avg_ms/1000).toFixed(1)}s average reply`:""}`;
@@ -1226,10 +1227,7 @@ $("#cmdQ").addEventListener("keydown",e=>{if(e.key==="Escape"){$("#cmdRes").hidd
 (function hud(){const el=$("#hud"),w=$("#hudWave");if(!el||!w)return;const N=36;let t=0,boost=0;
   w.innerHTML=[...Array(N)].map((_,i)=>{const a=i/N*Math.PI*2;return `<line x1="${100+28*Math.cos(a)}" y1="${100+28*Math.sin(a)}" x2="${100+30*Math.cos(a)}" y2="${100+30*Math.sin(a)}"/>`}).join("");
   const lines=[...w.children],still=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  (function f(){if(crystalKick){boost=1;crystalKick=0;el.classList.remove("flare");void el.offsetWidth;el.classList.add("flare")}boost*=.97;t+=.05+boost*.25;
-    if(!$("#overview").hidden&&!document.hidden&&!still)lines.forEach((l,i)=>{const a=i/N*Math.PI*2,amp=3+5*Math.abs(Math.sin(t+i*.55))*(.5+Math.sin(t*.7+i)*.5)+boost*10;
-      l.setAttribute("x2",100+(30+amp)*Math.cos(a));l.setAttribute("y2",100+(30+amp)*Math.sin(a))});
-    el.style.setProperty("--spin",1+boost*4);requestAnimationFrame(f)})()})();
+  lines.forEach((l,i)=>{const a=i/N*Math.PI*2,amp=4+4*Math.abs(Math.sin(i*.55));l.setAttribute("x2",100+(30+amp)*Math.cos(a));l.setAttribute("y2",100+(30+amp)*Math.sin(a))})})();
 
 // ---------- notification center ----------
 let notifLast=0,notifPerm=false;
@@ -1530,6 +1528,7 @@ setInterval(()=>{if(!document.hidden){refresh();loadApprovals();pollTestChat();i
 <script src="/admin.js"></script>
 <script src="/coach-ui.js"></script>
 <script src="/home.js"></script>
-<script src="/motion.js"></script>
+<script src="/tip.js"></script>
+<script src="/ui.js"></script>
 </body>
 </html>
