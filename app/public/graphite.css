@@ -103,3 +103,25 @@ main svg polyline,main svg path[fill="none"]{filter:none!important}
 .td-day.now b,.td-day.now *{color:var(--gp-on)!important}
 /* gauges and rings: the arc that holds a value is neon */
 .gauge [stroke-dasharray]:not([stroke-dasharray="none"]){stroke:var(--pg)}
+
+/* ---- Home polish: nature green, real buttons, readable notes ---- */
+body[data-page="today"]{--pg:#7fd67a;--pg2:#3f9f5e}
+:root[data-theme="light"] body[data-page="today"]{--pg:#2f8f4e;--gp-on:#fff}
+/* the small actions (Open, Settings, Edit, Calendar) are proper pills */
+.td-go,.td-link{display:inline-flex!important;align-items:center;gap:4px;padding:7px 14px!important;border-radius:999px!important;font-size:12.5px!important;font-weight:600!important;background:var(--gp-nest2)!important;color:var(--ink)!important;border:1px solid rgba(255,255,255,.08)!important;transition:background-color .16s cubic-bezier(.22,1,.36,1),color .16s cubic-bezier(.22,1,.36,1)}
+.td-go:hover,.td-link:hover{background:var(--pg)!important;color:#0f1a0f!important;border-color:transparent!important}
+/* the notification filter: a pill track whose selected pill fits its label */
+.td-tabs{display:inline-flex!important;gap:2px!important;border:0!important;padding:4px!important;border-radius:999px!important;background:var(--gp-nest)!important;margin-bottom:8px!important;align-self:flex-start}
+.td-tabs button{padding:6px 14px!important;border-radius:999px!important;box-shadow:none!important;white-space:nowrap;color:var(--ink2)!important}
+.td-tabs button[aria-pressed=true]{background:var(--pg)!important;color:#0f1a0f!important;box-shadow:none!important}
+/* notifications: title on its own line, details under it */
+.td-note .tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.td-note .tx b{display:block;font-weight:600}
+.td-note .tx small{display:block;color:var(--ink2);line-height:1.4}
+.td-note{padding:12px 14px!important;align-items:flex-start}
+/* empty states span the whole card instead of a narrow column */
+#tdTeam>.td-empty,#tdTeam .td-empty{grid-column:1/-1;text-align:left!important;max-width:none}
+#tdTeam:has(.td-empty)>div{display:block!important}
+/* cards scroll quietly: no visible track */
+.td-card{scrollbar-width:none}.td-card::-webkit-scrollbar{display:none}
+.td-card .td-h{position:sticky;top:-14px;background:var(--gp-card);z-index:1;padding-top:2px}
