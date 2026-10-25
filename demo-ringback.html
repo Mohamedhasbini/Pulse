@@ -1,0 +1,404 @@
+<title>Ringback Front Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: dark-first glass app shell. Left rail, main view swaps Command center / Try assistant / Setup */
+:root{
+  --bg:#0b0d12; --glow1:rgba(255,122,48,.18); --glow2:rgba(70,110,255,.16);
+  --glass:rgba(255,255,255,.045); --glass2:rgba(255,255,255,.08); --edge:rgba(255,255,255,.09);
+  --ink:#eef0f5; --muted:#8b92a3; --accent:#ff7a30; --accent-soft:rgba(255,122,48,.16);
+  --blue:#5b7cff; --good:#3dd68c; --good-soft:rgba(61,214,140,.14); --warn:#f5c04a; --bad:#ff5d6c; --bad-soft:rgba(255,93,108,.14);
+  --grid:rgba(255,255,255,.06); --chat:#0f121a; --me:#2a3352; --ai:#171b26;
+  --display:"Bricolage Grotesque",Georgia,serif; --body:"Figtree",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#eef0f4; --glow1:rgba(255,122,48,.14); --glow2:rgba(70,110,255,.10);
+  --glass:rgba(255,255,255,.72); --glass2:rgba(255,255,255,.95); --edge:rgba(20,24,40,.08);
+  --ink:#141824; --muted:#636b7d; --accent-soft:rgba(255,122,48,.14); --good:#13a866; --good-soft:rgba(19,168,102,.12);
+  --bad:#e03a4b; --bad-soft:rgba(224,58,75,.1); --grid:rgba(20,24,40,.07); --chat:#f6f7fa; --me:#dfe5ff; --ai:#ffffff; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#eef0f4; --glow1:rgba(255,122,48,.14); --glow2:rgba(70,110,255,.10);
+  --glass:rgba(255,255,255,.72); --glass2:rgba(255,255,255,.95); --edge:rgba(20,24,40,.08);
+  --ink:#141824; --muted:#636b7d; --accent-soft:rgba(255,122,48,.14); --good:#13a866; --good-soft:rgba(19,168,102,.12);
+  --bad:#e03a4b; --bad-soft:rgba(224,58,75,.1); --grid:rgba(20,24,40,.07); --chat:#f6f7fa; --me:#dfe5ff; --ai:#ffffff; color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);background-image:radial-gradient(900px 500px at 85% -10%,var(--glow1),transparent 60%),radial-gradient(800px 600px at -10% 110%,var(--glow2),transparent 60%);background-attachment:fixed;color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5}
+.glass{background:var(--glass);border:1px solid var(--edge);border-radius:18px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.shell{display:grid;grid-template-columns:76px 1fr;min-height:100vh}
+nav{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 0;border-right:1px solid var(--edge)}
+.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#ffb36b);display:grid;place-items:center;color:#1a0d04;font-family:var(--display);font-weight:700;font-size:20px;margin-bottom:14px}
+nav button{all:unset;cursor:pointer;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--muted)}
+nav button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+nav button:hover{background:var(--glass2);color:var(--ink)}
+nav button[aria-current="true"]{background:var(--accent-soft);color:var(--accent)}
+nav .sp{flex:1}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:22px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:500;font-size:30px;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1 b{font-weight:700}
+.sub{color:var(--muted);margin:2px 0 0}
+.tabs{display:flex;gap:4px;padding:4px;border-radius:99px}
+.tabs button{all:unset;cursor:pointer;padding:7px 14px;border-radius:99px;color:var(--muted);font-size:13px;font-weight:500}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.live{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--good);padding:7px 12px;border-radius:99px}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 var(--good);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(61,214,140,.6)}100%{box-shadow:0 0 0 10px rgba(61,214,140,0)}}
+.k-l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:12px}
+.kpi{padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.kpi .v{font-family:var(--display);font-size:28px;font-weight:500;line-height:1.1}
+.delta{font-size:12px;color:var(--good)} .delta.neg{color:var(--bad)}
+.hero{background:linear-gradient(140deg,var(--accent),#ff9f5a 55%,#ffcf8a);color:#1d0e04;border:0;position:relative;overflow:hidden}
+.hero .k-l,.hero .delta{color:rgba(29,14,4,.7)}
+.hero .v{font-size:38px;font-weight:700}
+.hero::after{content:"";position:absolute;right:-30px;bottom:-40px;width:140px;height:140px;border-radius:50%;border:22px solid rgba(255,255,255,.22)}
+.spark{height:28px;width:100%}
+.row{display:grid;gap:12px}
+.r1{grid-template-columns:2fr 1fr}
+.r2{grid-template-columns:1.25fr 1fr 1fr}
+.r3{grid-template-columns:1.6fr 1fr}
+.card{padding:18px;min-width:0}
+.ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
+.ch h2{font-size:14px;font-weight:600;margin:0}
+.ch small{color:var(--muted)}
+svg text{fill:var(--muted);font-family:var(--body);font-size:10.5px}
+.flow svg{width:100%;height:auto;display:block}
+.node rect{fill:var(--glass2);stroke:var(--edge)}
+.node text.t{fill:var(--ink);font-size:12px;font-weight:600}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--c)}
+/* AI panel */
+.ai{display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg,var(--accent-soft),transparent 40%),var(--glass)}
+.ai .badge{font-size:11px;font-family:var(--mono);color:var(--accent)}
+.ins{display:flex;gap:10px;padding:10px;border-radius:12px;background:var(--glass2);border:1px solid var(--edge);font-size:13px}
+.ins b{display:block;font-size:13px}
+.dot{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--c)}
+.ask{display:flex;gap:8px}
+.answer{font-size:13px;padding:12px;border-radius:12px;background:var(--glass2);border:1px solid var(--edge);white-space:pre-line;min-height:44px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{all:unset;cursor:pointer;font-size:12px;padding:5px 10px;border-radius:99px;border:1px solid var(--edge);color:var(--muted)}
+.chips button:hover{color:var(--accent);border-color:var(--accent)}
+input,textarea{font:inherit;color:var(--ink);background:var(--glass2);border:1px solid var(--edge);border-radius:12px;padding:10px 12px;width:100%}
+.btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:10px 16px;background:var(--accent);color:#1d0e04;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--edge)}
+/* heatmap */
+.heat{display:grid;grid-template-columns:34px repeat(12,1fr);gap:3px;font-size:10px;color:var(--muted)}
+.heat i{aspect-ratio:1.4;border-radius:4px;background:var(--accent);max-width:100%}
+.heat span{display:flex;align-items:center}
+/* funnel */
+.fun{display:flex;flex-direction:column;gap:10px}
+.fun .lbl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.fun .bar{height:10px;border-radius:99px;background:var(--grid);overflow:hidden}
+.fun .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--accent))}
+/* table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;padding:8px}
+td{padding:10px 8px;border-top:1px solid var(--edge);white-space:nowrap}
+.tag{font-size:11.5px;padding:3px 9px;border-radius:99px;font-weight:600}
+.t-book{background:var(--good-soft);color:var(--good)} .t-faq{background:var(--glass2);color:var(--muted)} .t-hand{background:var(--accent-soft);color:var(--accent)} .t-lost{background:var(--bad-soft);color:var(--bad)}
+.sent{display:inline-block;width:52px;height:6px;border-radius:99px;background:var(--grid);overflow:hidden;vertical-align:middle;margin-right:6px}
+.sent i{display:block;height:100%;background:var(--c)}
+tr.new td{animation:flash 2.4s ease}
+@keyframes flash{from{background:var(--accent-soft)}to{background:transparent}}
+.toast{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:12px 16px;font-size:13px;max-width:320px;transform:translateY(20px);opacity:0;transition:.35s;pointer-events:none;background:var(--glass2)}
+.toast.on{transform:none;opacity:1}
+/* demo */
+.demo{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:16px;align-items:start}
+.phone{overflow:hidden;display:flex;flex-direction:column;height:620px;background:var(--chat)}
+.ph-top{padding:14px 16px;display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--edge)}
+.av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ffb36b);display:grid;place-items:center;font-weight:700;color:#1d0e04}
+.ph-top small{display:block;color:var(--good);font-size:12px}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.m{max-width:82%;padding:9px 12px;border-radius:14px;font-size:14px;white-space:pre-line}
+.m.ai{background:var(--ai);border:1px solid var(--edge);align-self:flex-start;border-top-left-radius:4px}
+.m.me{background:var(--me);align-self:flex-end;border-top-right-radius:4px}
+.m.sys{align-self:center;color:var(--muted);font-size:12px}
+.typing{align-self:flex-start;color:var(--muted);font-size:13px}
+.quick{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 8px}
+.quick button{all:unset;cursor:pointer;font-size:13px;padding:6px 10px;border-radius:99px;border:1px solid var(--edge);background:var(--glass2)}
+.quick button:hover{border-color:var(--accent);color:var(--accent)}
+form.send{display:flex;gap:8px;padding:10px;border-top:1px solid var(--edge)}
+.side{display:flex;flex-direction:column;gap:12px}
+.step{display:flex;gap:12px;font-size:14px;margin-top:8px}
+.step b{font-family:var(--mono);font-size:12px;color:var(--accent);min-width:22px}
+.log{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--glass2);border-radius:12px;padding:12px;min-height:90px;white-space:pre-line;margin-top:10px}
+/* setup */
+.form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:500}
+.form .full{grid-column:1/-1}
+.svc{display:grid;grid-template-columns:1fr 100px 100px;gap:8px}
+.int{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.int .card{display:flex;flex-direction:column;gap:8px}
+.int small{color:var(--muted)}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.kpis .hero{grid-column:1/-1}.r1,.r2,.r3{grid-template-columns:1fr}}
+@media (max-width:700px){
+  .shell{grid-template-columns:1fr}
+  nav{flex-direction:row;justify-content:center;border-right:0;border-bottom:1px solid var(--edge);padding:10px}
+  .logo{margin:0 auto 0 0}.sp{display:none}
+  .kpis{grid-template-columns:repeat(2,1fr)}.demo,.form,.int{grid-template-columns:1fr}.tabs{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="shell">
+  <nav aria-label="Main">
+    <div class="logo">R</div>
+    <button data-view="overview" aria-current="true" title="Command center" aria-label="Command center"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg></button>
+    <button data-view="demo" title="Try the assistant" aria-label="Try the assistant"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></button>
+    <button data-view="setup" title="Business setup" aria-label="Business setup"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <div class="sp"></div>
+    <button id="themeBtn" title="Switch light or dark" aria-label="Switch light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+  </nav>
+
+  <main>
+    <!-- COMMAND CENTER -->
+    <section class="wrap" id="overview">
+      <div class="top">
+        <div><h1>Good evening, <b id="bizName">Layla Beauty Salon</b></h1><p class="sub">Your AI front desk handled <b class="num" id="todayConv">0</b> conversations today. Example data.</p></div>
+        <div class="tabs glass" role="group" aria-label="Period"><button aria-pressed="false" data-p="0.04">Today</button><button aria-pressed="false" data-p="0.25">Week</button><button aria-pressed="true" data-p="1">Month</button></div>
+        <span class="live glass"><i></i>Live · AI online</span>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi glass hero"><span class="k-l">Revenue recovered</span><span class="v num" id="kVal">$0</span><span class="delta" id="kRoi">—</span></div>
+        <div class="kpi glass"><span class="k-l">Conversations</span><span class="v num" id="kConv">0</span><svg class="spark" id="sp1" viewBox="0 0 100 28" preserveAspectRatio="none"></svg></div>
+        <div class="kpi glass"><span class="k-l">Missed calls saved</span><span class="v num" id="kMiss">0</span><span class="delta">↑ 14% vs last month</span></div>
+        <div class="kpi glass"><span class="k-l">Bookings</span><span class="v num" id="kBook">0</span><span class="delta" id="kRate">—</span></div>
+        <div class="kpi glass"><span class="k-l">Avg. reply time</span><span class="v num">4.2s</span><span class="delta">Staff average was 38 min</span></div>
+      </div>
+
+      <div class="row r1">
+        <div class="card glass flow">
+          <div class="ch"><h2>Live conversation flow</h2><small id="flowNote">Watching all channels</small></div>
+          <svg id="flow" viewBox="0 0 760 250" role="img" aria-label="Live flow from channels through the AI to outcomes"></svg>
+          <div class="legend"><span style="--c:var(--good)">Booked</span><span style="--c:var(--blue)">Answered</span><span style="--c:var(--accent)">Sent to staff</span><span style="--c:var(--bad)">Lost</span></div>
+        </div>
+        <div class="card glass ai">
+          <div class="ch"><h2>AI insights</h2><span class="badge">updated 2 min ago</span></div>
+          <div class="ins"><span class="dot" style="--c:var(--bad)"></span><div><b>Lunch hour is your weak spot</b>41% of calls between 12–2 pm arrive while every stylist is busy. The AI saved 31 of them.</div></div>
+          <div class="ins"><span class="dot" style="--c:var(--good)"></span><div><b>Hair colour is trending</b>Questions about colour rose 38% this month. It's your highest-value service at $90.</div></div>
+          <div class="ins"><span class="dot" style="--c:var(--warn)"></span><div><b>9 no-shows</b>All were booked more than 5 days ahead. Turn on a second reminder the day before.</div></div>
+          <div class="ask"><input id="askIn" placeholder="Ask your front desk…" aria-label="Ask your front desk"><button class="btn" id="askBtn" type="button">Ask</button></div>
+          <div class="chips" id="askChips"></div>
+          <div class="answer" id="answer">Try: "Which service is asked about most?"</div>
+          <button class="btn ghost" id="reportBtn" type="button">Generate October report</button>
+        </div>
+      </div>
+
+      <div class="row r2">
+        <div class="card glass">
+          <div class="ch"><h2>Conversations vs bookings</h2><small>Oct 1–24</small></div>
+          <svg id="area" viewBox="0 0 520 200" width="100%" role="img" aria-label="Daily conversations and bookings"></svg>
+          <div class="legend"><span style="--c:var(--blue)">Conversations</span><span style="--c:var(--accent)">Bookings</span></div>
+        </div>
+        <div class="card glass">
+          <div class="ch"><h2>When customers reach out</h2><small>no staff free = darker</small></div>
+          <div class="heat" id="heat"></div>
+        </div>
+        <div class="card glass">
+          <div class="ch"><h2>Channels</h2><small>share of conversations</small></div>
+          <svg id="donut" viewBox="0 0 200 200" width="150" style="display:block;margin:0 auto" role="img" aria-label="Channel share"></svg>
+          <div class="legend" style="justify-content:center;margin-top:10px"><span style="--c:var(--accent)">WhatsApp 48%</span><span style="--c:var(--blue)">Calls 31%</span><span style="--c:var(--good)">Missed → text 21%</span></div>
+        </div>
+      </div>
+
+      <div class="row r3">
+        <div class="card glass">
+          <div class="ch"><h2>Latest conversations</h2><small>new ones appear live</small></div>
+          <div class="tw"><table><thead><tr><th>Time</th><th>Customer</th><th>Channel</th><th>Mood</th><th>Outcome</th><th>Value</th></tr></thead><tbody id="feed"></tbody></table></div>
+        </div>
+        <div class="card glass">
+          <div class="ch"><h2>Booking funnel</h2><small>this month</small></div>
+          <div class="fun" id="fun"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEMO -->
+    <section class="wrap" id="demo" hidden>
+      <div class="top"><div><h1>Try the <b>assistant</b></h1><p class="sub">You are the customer. Each booking you make shows up on the command center.</p></div></div>
+      <div class="demo">
+        <div class="phone glass">
+          <div class="ph-top"><div class="av">L</div><div><b id="phName">Layla Beauty Salon</b><small>AI assistant · replies instantly</small></div></div>
+          <div class="msgs" id="msgs" aria-live="polite"></div>
+          <div class="quick" id="quick"></div>
+          <form class="send" id="sendForm"><input id="msgIn" placeholder="Type a message…" autocomplete="off" aria-label="Message"><button class="btn">Send</button></form>
+        </div>
+        <div class="side">
+          <div class="card glass">
+            <div class="ch"><h2>Simulate a missed call</h2></div>
+            <p class="sub" style="margin:0">A customer calls while every stylist is busy. Ringback texts them back on WhatsApp and books them.</p>
+            <button class="btn ghost" id="missBtn" type="button" style="margin-top:12px">Simulate missed call</button>
+            <div class="log" id="log">Waiting for a call…</div>
+          </div>
+          <div class="card glass">
+            <div class="ch"><h2>What happens in the real product</h2></div>
+            <div class="step"><b>01</b><span>A call or WhatsApp message comes in to the business number.</span></div>
+            <div class="step"><b>02</b><span>The AI answers by voice or text using the business's own services, prices and hours.</span></div>
+            <div class="step"><b>03</b><span>It checks the calendar and books, or hands off to staff for anything unusual.</span></div>
+            <div class="step"><b>04</b><span>The booking and its value land on the command center.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETUP -->
+    <section class="wrap" id="setup" hidden>
+      <div class="top"><div><h1>Business <b>setup</b></h1><p class="sub">This is everything the assistant knows. Change it and try the assistant again.</p></div></div>
+      <div class="card glass">
+        <form class="form" id="setupForm">
+          <label>Business name<input id="fName"></label>
+          <label>Opening hours<input id="fHours"></label>
+          <label class="full">Address<input id="fAddr"></label>
+          <div class="full"><div class="k-l" style="margin-bottom:8px">Services · price · minutes</div><div id="svcList" style="display:flex;flex-direction:column;gap:8px"></div></div>
+          <label class="full">Other answers (parking, payment, policies)<textarea id="fFaq" rows="3"></textarea></label>
+          <div class="full"><button class="btn">Save</button></div>
+        </form>
+      </div>
+      <div class="int">
+        <div class="card glass"><b>WhatsApp Business</b><small>Replies to messages on your business number.</small><span class="tag t-book" style="align-self:start">Connected</span></div>
+        <div class="card glass"><b>Phone line</b><small>Answers calls or texts back missed calls.</small><span class="tag t-book" style="align-self:start">Connected</span></div>
+        <div class="card glass"><b>Google Calendar</b><small>Checks free slots and adds bookings.</small><span class="tag t-hand" style="align-self:start">Demo only</span></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast glass" id="toast" role="status"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const biz={name:"Layla Beauty Salon",hours:"Mon–Sat 10:00–20:00, closed Sunday",addr:"14 Hamra Street, Beirut",
+  faq:"Free parking behind the building. We accept cash, card and Apple Pay. Please cancel at least 4 hours ahead.",
+  services:[{n:"Haircut & blow-dry",p:35,m:45},{n:"Hair colour",p:90,m:120},{n:"Manicure",p:20,m:30},{n:"Facial",p:55,m:60}]};
+const base={conv:412,miss:87,book:96,val:5310};let stats={...base},period=1,today=17;
+const names=["Rana K.","Omar H.","Maya S.","Nour A.","Lina F.","Hadi M.","Sara T.","Ziad R.","Yara N.","Karim B.","Dana J.","Rita C."];
+const chans=["WhatsApp","Phone call","Missed → text"];
+let feed=[["7:42 pm","Rana K.",2,.9,"book","Booked · Hair colour",90],["6:15 pm","Omar H.",0,.7,"faq","Asked about parking",0],["5:58 pm","Hadi M.",1,.25,"lost","Hung up before answer",0],
+ ["1:20 pm","Maya S.",1,.85,"book","Booked · Facial",55],["12:48 pm","Nour A.",2,.8,"book","Booked · Haircut",35],["11:05 am","Lina F.",0,.2,"hand","Sent to staff · complaint",0]];
+const fmt=n=>"$"+Math.round(n).toLocaleString();
+
+// count-up
+function tween(el,to,f=v=>Math.round(v).toLocaleString()){const from=+el.dataset.v||0;el.dataset.v=to;const t0=performance.now();
+  const step=t=>{const k=Math.min(1,(t-t0)/700),e=1-Math.pow(1-k,3);el.textContent=f(from+(to-from)*e);if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
+function renderKpis(){const p=period;
+  tween($("#kVal"),stats.val*p,fmt);tween($("#kConv"),stats.conv*p);tween($("#kMiss"),stats.miss*p);tween($("#kBook"),stats.book*p);
+  $("#kRoi").textContent=Math.round(stats.val/79)+"× the $79 plan cost";$("#kRate").textContent=Math.round(stats.book/stats.conv*100)+"% became bookings";
+  $("#todayConv").textContent=today}
+function renderFeed(){const col={book:"var(--good)",faq:"var(--blue)",hand:"var(--accent)",lost:"var(--bad)"};
+  $("#feed").innerHTML=feed.slice(0,7).map(r=>`<tr class="${r[7]?'new':''}"><td>${r[0]}</td><td>${r[1]}</td><td>${chans[r[2]]}</td><td><span class="sent"><i style="width:${r[3]*100}%;--c:${r[3]>.6?'var(--good)':r[3]>.4?'var(--warn)':'var(--bad)'}"></i></span></td><td><span class="tag t-${r[4]}">${r[5]}</span></td><td class="num">${r[6]?fmt(r[6]):"—"}</td></tr>`).join("");
+  feed.forEach(r=>r[7]=false)}
+
+// charts
+const conv=[14,18,12,21,19,25,9,16,20,15,22,24,27,8,17,19,23,18,21,26,10,15,20,13],book=conv.map((c,i)=>Math.round(c*(.2+((i*7)%5)/30)));
+function area(){const W=520,H=200,l=26,b=22,t=10,max=30,X=i=>l+i*(W-l-8)/(conv.length-1),Y=v=>H-b-v/max*(H-b-t);
+  const path=a=>a.map((v,i)=>{if(!i)return`M${X(0)},${Y(v)}`;const x0=X(i-1),x1=X(i),c=(x1-x0)/2;return`C${x0+c},${Y(a[i-1])} ${x1-c},${Y(v)} ${x1},${Y(v)}`}).join("");
+  let s=`<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--blue)" stop-opacity=".35"/><stop offset="1" stop-color="var(--blue)" stop-opacity="0"/></linearGradient><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".45"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>`;
+  [0,10,20,30].forEach(v=>s+=`<line x1="${l}" x2="${W-8}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${l-6}" y="${Y(v)+4}" text-anchor="end">${v}</text>`);
+  [0,6,12,18,23].forEach(i=>s+=`<text x="${X(i)}" y="${H-5}" text-anchor="middle">Oct ${i+1}</text>`);
+  s+=`<path d="${path(conv)}L${X(23)},${Y(0)}L${X(0)},${Y(0)}Z" fill="url(#ga)"/><path d="${path(conv)}" fill="none" stroke="var(--blue)" stroke-width="2"/>`;
+  s+=`<path d="${path(book)}L${X(23)},${Y(0)}L${X(0)},${Y(0)}Z" fill="url(#gb)"/><path d="${path(book)}" fill="none" stroke="var(--accent)" stroke-width="2.2"/>`;
+  s+=`<line x1="${X(12)}" x2="${X(12)}" y1="${t}" y2="${H-b}" stroke="var(--muted)" stroke-dasharray="3 3"/><circle cx="${X(12)}" cy="${Y(conv[12])}" r="4" fill="var(--blue)"/><circle cx="${X(12)}" cy="${Y(book[12])}" r="4" fill="var(--accent)"/>`;
+  s+=`<rect x="${X(12)+8}" y="${Y(conv[12])-8}" width="92" height="38" rx="8" fill="var(--glass2)" stroke="var(--edge)"/><text x="${X(12)+16}" y="${Y(conv[12])+7}" style="fill:var(--ink);font-weight:600">Oct 13 · ${conv[12]} chats</text><text x="${X(12)+16}" y="${Y(conv[12])+22}">${book[12]} bookings</text>`;
+  $("#area").innerHTML=s;
+  const sp=conv.slice(-12),mx=Math.max(...sp);$("#sp1").innerHTML=`<polyline points="${sp.map((v,i)=>`${i*100/11},${26-v/mx*24}`).join(" ")}" fill="none" stroke="var(--blue)" stroke-width="2" vector-effect="non-scaling-stroke"/>`}
+function heat(){const days=["Mon","Tue","Wed","Thu","Fri","Sat"],hrs=["10","11","12","1","2","3","4","5","6","7","8","9"];let s="<span></span>"+hrs.map(h=>`<span style="justify-content:center">${h}</span>`).join("");
+  days.forEach((d,di)=>{s+=`<span>${d}</span>`;hrs.forEach((h,hi)=>{let v=.12+((di*5+hi*3)%7)/18;if(hi===2||hi===3)v+=.45;if(hi>=9)v+=.3;if(di===5)v+=.15;v=Math.min(1,v);s+=`<i title="${d} ${h}:00 · ${Math.round(v*14)} contacts" style="opacity:${v.toFixed(2)}"></i>`})});$("#heat").innerHTML=s}
+function donut(){const d=[[48,"var(--accent)"],[31,"var(--blue)"],[21,"var(--good)"]],r=78,C=2*Math.PI*r;let o=0,s="";
+  d.forEach(([p,c])=>{s+=`<circle cx="100" cy="100" r="${r}" fill="none" stroke="${c}" stroke-width="20" stroke-dasharray="${p/100*C-4} ${C}" stroke-dashoffset="${-o/100*C}" transform="rotate(-90 100 100)" stroke-linecap="round"/>`;o+=p});
+  s+=`<text x="100" y="98" text-anchor="middle" style="fill:var(--ink);font-size:30px;font-family:var(--display)">24/7</text><text x="100" y="118" text-anchor="middle">always answered</text>`;$("#donut").innerHTML=s}
+function funnel(){const f=[["Contacted",stats.conv],["Asked about a service",Math.round(stats.conv*.62)],["Offered a time",Math.round(stats.conv*.37)],["Booked",stats.book],["Showed up",stats.book-9]];
+  $("#fun").innerHTML=f.map(([n,v])=>`<div><div class="lbl"><span>${n}</span><b class="num">${v}</b></div><div class="bar"><i style="width:${v/f[0][1]*100}%"></i></div></div>`).join("")}
+
+// live flow
+const flowNodes={src:[["WhatsApp",50],["Phone call",125],["Missed call",200]],out:[["Booked",50,"var(--good)"],["Answered",125,"var(--blue)"],["Sent to staff",200,"var(--accent)"]]};
+function flowDraw(){let s="";const ax=380,ay=125;
+  flowNodes.src.forEach(([n,y])=>s+=`<path id="ps${y}" d="M140,${y} C260,${y} 260,${ay} ${ax-60},${ay}" fill="none" stroke="var(--edge)" stroke-width="2"/>`);
+  flowNodes.out.forEach(([n,y,c])=>s+=`<path id="po${y}" d="M${ax+60},${ay} C500,${ay} 500,${y} 620,${y}" fill="none" stroke="${c}" stroke-opacity=".35" stroke-width="2" stroke-dasharray="4 5"/>`);
+  flowNodes.src.forEach(([n,y])=>s+=`<g class="node"><rect x="20" y="${y-20}" width="120" height="40" rx="12"/><text class="t" x="80" y="${y+4}" text-anchor="middle">${n}</text></g>`);
+  flowNodes.out.forEach(([n,y,c])=>s+=`<g class="node"><rect x="620" y="${y-20}" width="120" height="40" rx="12"/><circle cx="638" cy="${y}" r="4" fill="${c}"/><text class="t" x="688" y="${y+4}" text-anchor="middle">${n}</text></g>`);
+  s+=`<circle cx="${ax}" cy="${ay}" r="62" fill="var(--accent-soft)"/><circle cx="${ax}" cy="${ay}" r="46" fill="var(--glass2)" stroke="var(--accent)" stroke-width="1.5"/><text x="${ax}" y="${ay-2}" text-anchor="middle" style="fill:var(--ink);font-family:var(--display);font-size:15px;font-weight:700">AI desk</text><text x="${ax}" y="${ay+15}" text-anchor="middle" id="aiCount">0 live</text><g id="dots"></g>`;
+  $("#flow").innerHTML=s}
+let live=0;
+function shoot(srcI,outI){const NS="http://www.w3.org/2000/svg",g=$("#dots");if(!g)return;const col=flowNodes.out[outI][2];
+  const run=(pid,c,done)=>{const p=document.getElementById(pid),L=p.getTotalLength(),d=document.createElementNS(NS,"circle");d.setAttribute("r","5");d.setAttribute("fill",c);g.appendChild(d);const t0=performance.now();
+    const f=t=>{const k=Math.min(1,(t-t0)/1300),pt=p.getPointAtLength(k*L);d.setAttribute("cx",pt.x);d.setAttribute("cy",pt.y);if(k<1)requestAnimationFrame(f);else{d.remove();done&&done()}};requestAnimationFrame(f)};
+  live++;$("#aiCount").textContent=live+" live";
+  run("ps"+flowNodes.src[srcI][1],"var(--muted)",()=>setTimeout(()=>run("po"+flowNodes.out[outI][1],col,()=>{live--;$("#aiCount").textContent=live+" live"}),400))}
+
+// live simulation
+function tick(){const src=Math.floor(Math.random()*3),r=Math.random(),out=r<.38?0:r<.85?1:2;shoot(src,out);
+  setTimeout(()=>{const nm=names[Math.floor(Math.random()*names.length)],now=new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+    stats.conv++;today++;if(src===2)stats.miss++;let row;
+    if(out===0){const s=biz.services[Math.floor(Math.random()*4)];stats.book++;stats.val+=s.p;row=[now,nm,src,.75+Math.random()*.2,"book","Booked · "+s.n,s.p,true];toast(`New booking: ${nm} · ${s.n} · ${fmt(s.p)}`)}
+    else if(out===1)row=[now,nm,src,.55+Math.random()*.3,"faq",["Asked about prices","Asked opening hours","Asked about parking"][Math.floor(Math.random()*3)],0,true];
+    else row=[now,nm,src,.2+Math.random()*.2,"hand","Sent to staff",0,true];
+    feed.unshift(row);renderKpis();renderFeed();funnel()},2100)}
+let tm;function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("on");clearTimeout(tm);tm=setTimeout(()=>e.classList.remove("on"),2600)}
+
+// ask AI (demo answers from the dashboard's own data; the real product sends this data to an AI model)
+const qa=[[/service|popular|most/,()=>"Hair colour is asked about most this month (34% of service questions), then haircuts (29%). Colour also brings the most revenue per booking at $90."],
+ [/miss|lost|lose/,()=>`You missed ${stats.miss} calls this month. The AI texted all of them back and ${Math.round(stats.miss*.47)} became bookings. Most misses happen 12–2 pm.`],
+ [/staff|hire|busy/,()=>"Tuesday and Saturday 12–2 pm are the busiest times with no one free. One extra person on Saturday lunch would cover about 18% of your missed calls."],
+ [/revenue|money|earn|roi/,()=>`The AI front desk brought in ${fmt(stats.val)} this month from bookings that would likely have been missed. That's ${Math.round(stats.val/79)}× the plan cost.`],
+ [/no.?show|cancel/,()=>"9 no-shows this month, all booked 5+ days ahead. Adding a reminder the day before typically cuts no-shows by about half."]];
+function ask(q){const a=$("#answer");a.textContent="Thinking…";setTimeout(()=>{const hit=qa.find(([r])=>r.test(q.toLowerCase()));a.textContent=hit?hit[1]():"I can answer questions about services, missed calls, staffing, revenue and no-shows from your front-desk data."},700)}
+$("#askChips").innerHTML=["Which service is asked about most?","How many calls did we miss?","When do I need more staff?"].map(q=>`<button type="button">${q}</button>`).join("");
+$("#askChips").onclick=e=>{if(e.target.tagName==="BUTTON"){$("#askIn").value=e.target.textContent;ask(e.target.textContent)}};
+$("#askBtn").onclick=()=>ask($("#askIn").value);$("#askIn").onkeydown=e=>{if(e.key==="Enter")ask(e.target.value)};
+$("#reportBtn").onclick=()=>{$("#answer").textContent=`October report · ${biz.name}\n\n• ${stats.conv} conversations, ${stats.book} bookings (${Math.round(stats.book/stats.conv*100)}%)\n• ${fmt(stats.val)} revenue recovered, ${Math.round(stats.val/79)}× plan cost\n• ${stats.miss} missed calls texted back\n• Top service: Hair colour\n• Action: add a second reminder to cut no-shows\n\nIn the full product this is emailed as a PDF every month.`};
+
+// period tabs
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));period=+b.dataset.p;renderKpis()});
+// theme
+$("#themeBtn").onclick=()=>{const r=document.documentElement,cur=r.dataset.theme||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");r.dataset.theme=cur==="dark"?"light":"dark"};
+// nav
+document.querySelectorAll("nav button[data-view]").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button[data-view]").forEach(x=>x.setAttribute("aria-current",x===b));
+  ["overview","demo","setup"].forEach(v=>$("#"+v).hidden=v!==b.dataset.view);
+  if(b.dataset.view==="demo"&&!$("#msgs").children.length)greet()});
+
+// assistant demo
+let ctx={};const msgs=$("#msgs");
+function add(text,who){const d=document.createElement("div");d.className="m "+who;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight}
+function quick(list){$("#quick").innerHTML="";list.forEach(q=>{const b=document.createElement("button");b.type="button";b.textContent=q;b.onclick=()=>userSays(q);$("#quick").appendChild(b)})}
+function reply(text,q){const t=document.createElement("div");t.className="typing";t.textContent="typing…";msgs.appendChild(t);msgs.scrollTop=msgs.scrollHeight;setTimeout(()=>{t.remove();add(text,"ai");quick(q||[])},650)}
+function greet(){ctx={};reply(`Hi! You've reached ${biz.name} 👋 I'm the virtual assistant. I can book an appointment, share prices, or answer questions. How can I help?`,["Book an appointment","Prices","Opening hours","Where are you?"])}
+const slots=["Tomorrow 11:00","Tomorrow 15:30","Saturday 12:00"];
+function findSvc(t){return biz.services.find(s=>t.includes(s.n.toLowerCase().split(" ")[0].replace(/[^a-z]/g,"")))}
+function brain(raw){const t=raw.toLowerCase();
+  if(ctx.step==="slot"){const s=slots.find(x=>t.includes(x.toLowerCase()))||(/11|first/.test(t)?slots[0]:/15|3:30|second/.test(t)?slots[1]:/sat|12|third/.test(t)?slots[2]:null);
+    if(!s)return reply("Which time works for you?",slots);ctx.slot=s;ctx.step="name";return reply(`${s} for ${ctx.svc.n} it is. What name should I put the booking under?`)}
+  if(ctx.step==="name"){ctx.name=raw.trim().split(" ").map(w=>w[0]?w[0].toUpperCase()+w.slice(1):"").join(" ");ctx.step=null;return confirmBooking()}
+  if(/book|appointment|reserve|available/.test(t)||ctx.step==="svc"){const s=findSvc(t);if(!s){ctx.step="svc";return reply("Happy to book you in. Which service would you like?",biz.services.map(x=>x.n))}
+    ctx.svc=s;ctx.step="slot";return reply(`Great choice. ${s.n} takes about ${s.m} minutes and costs $${s.p}. I have these times free:`,slots)}
+  const s=findSvc(t);if(s){ctx.svc=s;ctx.step="slot";return reply(`${s.n} is $${s.p} and takes about ${s.m} minutes. Want me to book it? Free times:`,slots)}
+  if(/price|cost|how much|menu/.test(t))return reply("Here are our prices:\n"+biz.services.map(x=>`• ${x.n} — $${x.p}`).join("\n"),["Book an appointment"]);
+  if(/hour|open|close/.test(t))return reply(`We're open ${biz.hours}.`,["Book an appointment"]);
+  if(/where|address|location|park/.test(t))return reply(`We're at ${biz.addr}. ${biz.faq.split(".")[0]}.`,["Book an appointment"]);
+  if(/pay|card|cash|cancel/.test(t))return reply(biz.faq,["Book an appointment"]);
+  if(/human|person|staff|manager|complain|call me/.test(t)){addFeed("hand","Sent to staff",0,.3);return reply("No problem, I've passed your message to the team. Someone will call you back within 15 minutes.")}
+  if(/thank|bye/.test(t))return reply("You're welcome! See you soon 💛");
+  if(/^(hi|hello|hey|salam|marhaba)/.test(t))return greet();
+  reply("I'm not sure about that one, so I've noted it for the team. Meanwhile, I can book you in or share prices.",["Book an appointment","Prices","Talk to a person"])}
+function confirmBooking(){reply(`You're booked ✅\n${ctx.svc.n}\n${ctx.slot}\nName: ${ctx.name}\n${biz.addr}\n\nI'll send a reminder 2 hours before. Reply CANCEL anytime.`);
+  stats.book++;stats.val+=ctx.svc.p;addFeed("book","Booked · "+ctx.svc.n,ctx.svc.p,.9,ctx.name);setTimeout(()=>add("Added to the command center: +1 booking, +$"+ctx.svc.p,"sys"),900)}
+function addFeed(kind,label,val,mood,name){stats.conv++;today++;feed.unshift([new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}),name||"You (demo)",ctx.missed?2:0,mood,kind,label,val,true]);renderKpis();renderFeed();funnel()}
+function userSays(text){if(!text.trim())return;add(text,"me");quick([]);brain(text)}
+$("#sendForm").onsubmit=e=>{e.preventDefault();userSays($("#msgIn").value);$("#msgIn").value=""};
+$("#missBtn").onclick=()=>{msgs.innerHTML="";ctx={missed:true};stats.miss++;const L=$("#log");const lines=["📞 Incoming call from +961 71 •• •• 42","… ringing 25 s, all staff busy","✗ Missed call detected","→ WhatsApp text-back sent (4 s)"];
+  L.textContent="";lines.forEach((l,i)=>setTimeout(()=>{L.textContent+=(i?"\n":"")+l;if(i===3){add("Missed call · just now","sys");reply(`Hi, sorry we missed your call at ${biz.name}! I'm the assistant and can help right away. Would you like to book an appointment?`,["Yes, book a haircut","What are your prices?","Call me back"])}},i*700))};
+
+// setup
+function fillSetup(){$("#fName").value=biz.name;$("#fHours").value=biz.hours;$("#fAddr").value=biz.addr;$("#fFaq").value=biz.faq;
+  $("#svcList").innerHTML=biz.services.map((s,i)=>`<div class="svc"><input id="sn${i}" value="${s.n}" aria-label="Service name"><input id="sp${i}" type="number" value="${s.p}" aria-label="Price"><input id="sm${i}" type="number" value="${s.m}" aria-label="Minutes"></div>`).join("")}
+$("#setupForm").onsubmit=e=>{e.preventDefault();biz.name=$("#fName").value;biz.hours=$("#fHours").value;biz.addr=$("#fAddr").value;biz.faq=$("#fFaq").value;
+  biz.services.forEach((s,i)=>{s.n=$("#sn"+i).value;s.p=+$("#sp"+i).value;s.m=+$("#sm"+i).value});$("#bizName").textContent=$("#phName").textContent=biz.name;msgs.innerHTML="";toast("Saved. The assistant uses this now.")};
+
+renderKpis();renderFeed();area();heat();donut();funnel();flowDraw();fillSetup();
+setTimeout(tick,1200);setInterval(tick,5200);
+</script>

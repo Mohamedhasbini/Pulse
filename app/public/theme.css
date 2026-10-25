@@ -1,0 +1,277 @@
+/* Ringback theme, from the owner's references (Vaulto, Hynex, Fitness, Analytics, Lifestats, OpsPulse, Vyniq).
+   Dark: near-black ground, a large orange and deep-teal glow behind frosted glass, orange as the signal, vivid data colours.
+   Light: white frosted glass over a soft yellow and sky glow (OpsPulse). Loaded last; it decides colour and components. */
+:root,:root[data-theme="dark"]{
+  --ground:#08080a; --s1:rgba(255,255,255,.045); --s2:rgba(255,255,255,.07); --s3:rgba(255,255,255,.11); --solid:#121215;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --ink:#fafafa; --ink2:#a6a6b0; --muted:#74747e;
+  --bg:var(--ground); --glass:var(--s1); --glass2:var(--s2); --edge:var(--line);
+  --accent:#ff6a1f; --accent-ink:#ffffff; --accent-text:#ff8a4c; --accent-soft:rgba(255,106,31,.14); --accent-line:rgba(255,106,31,.45);
+  --c-orange:#ff6a1f; --c-yellow:#ffc93c; --c-green:#2fd27b; --c-blue:#3d8bff; --c-pink:#ff4fa0; --c-teal:#2fe0c4;
+  --d1:var(--c-orange); --d2:var(--c-blue); --d3:var(--c-pink); --d4:var(--c-yellow);
+  --good:#2fd27b; --good-soft:rgba(47,210,123,.14); --bad:#ff3b5c; --bad-soft:rgba(255,59,92,.14); --warn:#ffc93c;
+  --glow1:rgba(255,106,31,.28); --glow2:rgba(20,140,130,.30); --glow3:rgba(61,139,255,.16);
+  --card-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 24px 48px -28px rgba(0,0,0,.9);
+  --r:12px; --r-lg:24px; color-scheme:dark}
+:root[data-theme="light"]{
+  --ground:#eceef2; --s1:rgba(255,255,255,.62); --s2:rgba(255,255,255,.78); --s3:rgba(255,255,255,.95); --solid:#ffffff;
+  --line:rgba(17,17,26,.07); --line2:rgba(17,17,26,.13);
+  --ink:#111118; --ink2:#4a4a57; --muted:#6e6e7a;
+  --accent:#f2600c; --accent-ink:#ffffff; --accent-text:#d4520a; --accent-soft:rgba(242,96,12,.11); --accent-line:rgba(242,96,12,.4);
+  --c-orange:#f2600c; --c-yellow:#f5b400; --c-green:#16a34a; --c-blue:#2563eb; --c-pink:#e0397f; --c-teal:#0d9488;
+  --good:#16a34a; --good-soft:rgba(22,163,74,.12); --bad:#e11d48; --bad-soft:rgba(225,29,72,.1); --warn:#c27c00;
+  --glow1:rgba(255,214,77,.75); --glow2:rgba(150,205,255,.7); --glow3:rgba(255,255,255,.9);
+  --card-shadow:inset 0 1px 0 rgba(255,255,255,1),0 18px 40px -24px rgba(40,40,70,.35); color-scheme:light}
+body[data-page="training"]{--accent:#ffc93c;--accent-ink:#1a1300;--accent-text:#ffd469;--accent-soft:rgba(255,201,60,.14);--accent-line:rgba(255,201,60,.45)}
+:root[data-theme="light"] body[data-page="training"]{--accent:#e39a00;--accent-ink:#fff;--accent-text:#a86f00}
+body[data-page="setup"],body[data-page="security"]{--accent:#e4e4e7;--accent-ink:#111;--accent-text:#e4e4e7;--accent-soft:rgba(255,255,255,.08);--accent-line:rgba(255,255,255,.3)}
+:root[data-theme="light"] body[data-page="setup"],:root[data-theme="light"] body[data-page="security"]{--accent:#18181b;--accent-ink:#fff;--accent-text:#18181b}
+
+/* Ground: big soft glows behind everything, so the glass has something to frost */
+body{background:var(--ground)}
+body::before{content:"";position:fixed;inset:-15vmax;z-index:-1;pointer-events:none;filter:blur(60px);
+  background:radial-gradient(38vmax 30vmax at 88% 8%,var(--glow1),transparent 70%),radial-gradient(44vmax 36vmax at 12% 92%,var(--glow2),transparent 70%),radial-gradient(30vmax 24vmax at 50% 50%,var(--glow3),transparent 70%)}
+.desk-light{display:none}
+
+/* Sidebar (Hynex / Vaulto) */
+.shell{grid-template-columns:248px minmax(0,1fr)}
+nav{padding:18px 14px;gap:4px;background:rgba(255,255,255,.025);border-right:1px solid var(--line);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+:root[data-theme="light"] nav{background:rgba(255,255,255,.5)}
+nav .brand{flex-direction:row;justify-content:flex-start;gap:10px;padding:2px 8px 18px;font-size:1.05rem;font-weight:600;color:var(--ink)}
+.logo,.brand .logo{width:34px;height:34px;border-radius:10px;background:var(--accent);color:var(--accent-ink)}
+.ns{margin:14px 10px 6px;font-size:.6875rem;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.navpills{gap:2px}
+nav button{flex-direction:row;justify-content:flex-start;gap:12px;padding:10px 12px;border-radius:12px;font-size:.875rem;font-weight:500;color:var(--ink2);text-align:left}
+nav button svg{width:18px;height:18px;flex:none}
+nav button:hover{background:var(--s2);color:var(--ink)}
+nav button[aria-current="true"]{background:linear-gradient(90deg,var(--accent-soft),transparent);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line2)}
+nav button[aria-current="true"] svg{stroke:var(--accent-text)}
+nav button[data-view="training"] svg{stroke:var(--c-yellow)}
+nav .badge-n{position:static;margin-left:auto}
+nav .navfoot{display:flex;gap:6px;padding-top:8px}
+nav .navfoot button{flex:1;justify-content:center;padding:10px 0;width:auto;background:var(--s1);border:1px solid var(--line)}
+nav .navfoot button span{display:none}
+#bellBtn .badge-n{position:absolute;top:2px;right:6px;margin:0}
+.plancard{display:flex;flex-direction:column;gap:4px;margin:8px 0 6px;padding:14px;border-radius:16px;background:linear-gradient(140deg,var(--accent-soft),var(--s1));border:1px solid var(--line2)}
+.plancard b{font-size:.875rem}.plancard small{color:var(--ink2);font-size:.75rem}
+.pc-bar{height:6px;border-radius:99px;background:var(--line2);overflow:hidden;margin-top:6px}.pc-bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px}
+
+/* Glass cards everywhere (large radius, bright rim) */
+.glass,.card.glass,.desk2 .card.glass{background:var(--s1);border:1px solid var(--line2);border-radius:var(--r-lg);box-shadow:var(--card-shadow);
+  backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%)}
+.item,.ins,.statrow div,.answer,.up,.su,.lstats div{background:var(--s2);border-color:var(--line)}
+.item:hover,.su:hover{background:var(--s3)}
+.kpi .v,.micro b,.statrow b,.lstats b{color:var(--ink);font-weight:600}
+:root .hero,:root[data-theme] .hero{background:linear-gradient(150deg,var(--accent-soft),var(--s1) 60%);border:1px solid var(--accent-line);box-shadow:var(--card-shadow)}
+.hero .delta{color:var(--accent-text)}
+
+/* Pills: buttons, tabs, quick actions, status (Lifestats / OpsPulse) */
+.btn{border-radius:99px;padding:10px 18px;background:var(--accent);color:var(--accent-ink);box-shadow:0 10px 24px -12px var(--accent-line)}
+.btn.ghost{background:var(--s2);color:var(--ink);border:1px solid var(--line2);box-shadow:none}
+.mini{border-radius:99px;background:var(--s2);border-color:var(--line2)}
+.tabs,.tabs.glass{border-radius:99px;padding:4px;background:var(--s1);border:1px solid var(--line2);backdrop-filter:blur(20px)}
+.tabs button{border-radius:99px;padding:7px 14px}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--ground);box-shadow:none}
+.qp{border-radius:99px;background:var(--s1);border-color:var(--line2);backdrop-filter:blur(20px)}
+.qp svg{stroke:var(--accent-text)}
+.qp:first-child{background:var(--accent);color:var(--accent-ink);border-color:transparent}.qp:first-child svg{stroke:var(--accent-ink)}
+.cmd{border-radius:99px;background:var(--s1);border-color:var(--line2);backdrop-filter:blur(20px)}
+.cmd-res{background:var(--solid)}
+input,textarea,select{background:var(--s1);border-color:var(--line2)}
+:root[data-theme="light"] input,:root[data-theme="light"] textarea,:root[data-theme="light"] select{background:rgba(255,255,255,.85)}
+select option{background:var(--solid)}
+.tag{border-radius:99px;padding:3px 10px;font-weight:600}
+.t-book{background:var(--c-green);color:#04210f}
+.t-live{background:rgba(47,210,123,.16);color:var(--c-green)}
+.t-attn{background:var(--bad);color:#fff}
+.t-hand{background:var(--accent-soft);color:var(--accent-text)}
+.t-faq,.tag.t-test{background:var(--s3);color:var(--ink2)}
+.badge-n{background:var(--bad)}
+
+/* AI card: a teal crystal (Hynex) on a dark glass tile */
+.aicard{background:radial-gradient(120% 90% at 0% 0%,rgba(47,224,196,.14),transparent 55%),var(--s1)!important}
+.live-dot{color:var(--c-teal)}.live-dot i{background:var(--c-teal);box-shadow:0 0 0 4px rgba(47,224,196,.15)}
+:root[data-theme="light"] .live-dot{color:var(--c-teal)}
+
+/* Charts pick up the vivid set */
+.cap .tube{background:var(--s2);border-color:var(--line)}
+.cap .tube i{background:linear-gradient(180deg,#ffd27a,var(--c-orange))}
+.cap.today .tube{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.cap.today .tube i{background:linear-gradient(180deg,#ffe08a,var(--c-yellow))}
+.cap.today em,.cap.today small{color:var(--c-yellow)}
+.su-bar i,.pc-bar i{background:linear-gradient(90deg,var(--c-yellow),var(--c-orange))}
+.su.done i{background:var(--c-green);border-color:var(--c-green);color:#04210f}
+.mh em.up{color:var(--c-green)}.mh em.down{color:var(--bad)}
+.chip i{border-radius:50%}
+::selection{background:color-mix(in srgb,var(--accent) 35%,transparent)}
+:focus-visible{outline:2px solid var(--accent)}
+a{color:var(--accent-text)}
+.toast{background:var(--solid);border:1px solid var(--line2)}
+.modal .glass,.bellPanel{background:var(--solid)!important}
+
+@media (max-width:1100px){.shell{grid-template-columns:76px minmax(0,1fr)}nav button span,.ns,.plancard,nav .brand span{display:none}nav button{justify-content:center}nav .navfoot{flex-direction:column}}
+@media (max-width:820px){.shell{grid-template-columns:1fr}}
+nav button{width:auto;align-self:stretch;box-sizing:border-box}
+nav{overflow-x:hidden}
+:root[data-theme="light"] body::before{filter:blur(40px);opacity:1}
+:root[data-theme="light"]{--glow1:rgba(255,206,60,.85);--glow2:rgba(120,190,255,.75);--glow3:rgba(255,170,90,.35)}
+.ch{flex-wrap:wrap;gap:4px 12px}
+
+/* HUD (Iron-Man style assistant): vector rings at different speeds around a glowing core */
+.aicard{grid-template-columns:160px minmax(0,1fr)}
+.hud{--hud:#2fe0c4;--spin:1;width:160px;height:160px;grid-row:1;filter:drop-shadow(0 0 12px color-mix(in srgb,var(--hud) 45%,transparent))}
+.hud[data-state="wait"]{--hud:#ffc93c}.hud[data-state="down"]{--hud:#ff3b5c}
+.hud svg{width:100%;height:100%;overflow:visible}
+.hud .h-faint{fill:none;stroke:var(--hud);stroke-opacity:.15;stroke-width:1}
+.hud .h-ticks{fill:none;stroke:var(--hud);stroke-opacity:.6;stroke-width:6;stroke-dasharray:1 4.6}
+.hud .h-seg{fill:none;stroke:var(--hud);stroke-width:3;stroke-dasharray:60 20 12 20 90 30 40 205;stroke-linecap:round}
+.hud .h-seg2{fill:none;stroke:var(--hud);stroke-opacity:.35;stroke-width:1}
+.hud .h-dash{fill:none;stroke:var(--hud);stroke-opacity:.7;stroke-width:1.5;stroke-dasharray:3 6}
+.hud .h-arc{fill:none;stroke:var(--hud);stroke-width:2.5;stroke-linecap:round}
+.hud .h-ring{fill:color-mix(in srgb,var(--hud) 8%,transparent);stroke:var(--hud);stroke-opacity:.5;stroke-width:1}
+.hud .h-wave line{stroke:var(--hud);stroke-width:2;stroke-linecap:round;stroke-opacity:.9}
+.hud .h-dot{fill:#fff}
+.hud g{transform-origin:100px 100px;transform-box:view-box}
+@media (prefers-reduced-motion:no-preference){
+  .hud .h-r1{animation:hspin calc(40s / var(--spin)) linear infinite}
+  .hud .h-r2{animation:hspin calc(14s / var(--spin)) linear infinite reverse}
+  .hud .h-r3{animation:hspin calc(22s / var(--spin)) linear infinite}
+  .hud .h-r4{animation:hspin calc(6s / var(--spin)) linear infinite reverse}
+  .hud .h-core{animation:hcore 2.4s ease-in-out infinite;transform-origin:100px 100px;transform-box:view-box}
+  .hud.flare{animation:hflare .9s cubic-bezier(.23,1,.32,1)}
+}
+@keyframes hspin{to{transform:rotate(360deg)}}
+@keyframes hcore{50%{transform:scale(1.18);opacity:.8}}
+@keyframes hflare{0%{filter:drop-shadow(0 0 30px var(--hud)) brightness(1.6)}100%{filter:drop-shadow(0 0 12px color-mix(in srgb,var(--hud) 45%,transparent))}}
+:root[data-theme="light"] .hud{--hud:#0d9488}
+:root[data-theme="light"] .hud .h-dot{fill:#0d9488}
+@media (max-width:820px){.hud{width:110px;height:110px}.aicard{grid-template-columns:110px minmax(0,1fr)}}
+
+/* Phones: tabs always available; one clean bottom bar with every section */
+@media (max-width:700px){
+  .tabs,.tabs.glass{display:flex!important;overflow-x:auto;max-width:100%;scrollbar-width:none}
+  .tabs button{flex:none;white-space:nowrap}
+}
+@media (max-width:820px){
+  .shell{grid-template-columns:1fr}
+  nav{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;z-index:50;flex-direction:row;align-items:stretch;gap:2px;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));
+    overflow-x:auto;overflow-y:hidden;border:0;border-top:1px solid var(--line2);background:color-mix(in srgb,var(--solid) 88%,transparent);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav .brand,nav .ns,nav .plancard,nav .sp{display:none!important}
+  .navpills,nav .navfoot{display:flex;flex-direction:row;flex:none;gap:2px;padding:0;margin:0}
+  nav button,nav .navfoot button{flex:none;flex-direction:column;justify-content:center;align-items:center;gap:3px;min-width:62px;padding:7px 4px;border-radius:12px;font-size:10.5px;background:none;border:0}
+  nav button span{display:block!important;font-size:10.5px}
+  nav button svg{width:20px;height:20px}
+  nav button[aria-current="true"]{background:var(--accent-soft);box-shadow:none}
+  nav .badge-n{position:absolute;top:2px;right:10px}
+  main{padding-bottom:96px}
+  .bellPanel{left:12px;right:12px;width:auto;bottom:88px}
+}
+
+/* Home: sub-tabs, needs-attention list, money */
+.subtabs{align-self:flex-start;margin:2px 0 4px}
+.subtabs button{display:inline-flex;align-items:center;gap:6px}
+.subtabs .badge-n{position:static;font-size:10px;padding:1px 6px}
+.hpane{display:flex;flex-direction:column;gap:16px}
+.hpane[hidden]{display:none}
+.gc7{grid-column:span 7}.gc8{grid-column:span 8}
+.ulist{display:flex;flex-direction:column;gap:8px}
+.urow{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--s2);border:1px solid var(--line);transition:background-color .15s,transform .16s}
+.urow:hover{background:var(--s3)}.urow:active{transform:scale(.99)}
+.urow i{width:10px;height:10px;border-radius:50%}
+.urow span{display:flex;flex-direction:column;min-width:0}.urow b{font-weight:600}.urow small{color:var(--ink2);font-size:.8125rem}
+.urow em{font-style:normal;font-size:.8125rem;color:var(--ink2);border:1px solid var(--line2);border-radius:99px;padding:4px 12px}
+.u-bad i{background:var(--bad);box-shadow:0 0 0 4px var(--bad-soft)}.u-bad{border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.u-warn i{background:var(--c-yellow);box-shadow:0 0 0 4px rgba(255,201,60,.15)}
+.u-info i{background:var(--c-blue)}.u-live i{background:var(--c-teal);box-shadow:0 0 0 4px rgba(47,224,196,.15)}
+.allclear{display:flex;flex-direction:column;gap:4px;padding:18px;border-radius:14px;background:var(--good-soft)}.allclear b{color:var(--good)}
+.mny{display:flex;flex-direction:column;gap:14px}
+.mbig{display:flex;flex-direction:column;gap:2px}
+.mbig span,.mrow span{font-size:.8125rem;color:var(--ink2)}
+.mbig b{font-size:2.5rem;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.mbig em{font-style:normal;font-size:.8125rem;font-weight:600}.mbig em.up{color:var(--good)}.mbig em.down{color:var(--bad)}
+.mbig small,.mrow small{color:var(--muted);font-size:.75rem}
+.mrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border-radius:14px;overflow:hidden}
+.mrow div{background:var(--s2);padding:12px;display:flex;flex-direction:column;gap:2px}
+.mrow b{font-size:1.25rem;font-weight:600;font-variant-numeric:tabular-nums}
+@media (max-width:1280px){.gc7,.gc8{grid-column:span 12}}
+@media (max-width:700px){.mrow{grid-template-columns:1fr}}
+.top>div{min-width:0;max-width:100%}
+.tabs{max-width:100%;overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;white-space:nowrap}
+
+/* ---------- Fit to screen: the page never scrolls; each view fills the window and long lists scroll inside their card ---------- */
+@media (min-width:821px){
+  html,body{height:100%;overflow:hidden}
+  .shell{height:100vh;height:100dvh;min-height:0}
+  main{height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:14px 20px 16px}
+  #planBar{flex:none;padding:0}
+  #planBar .item{padding:6px 12px;min-height:0}
+  main>section.wrap:not([hidden]){flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;max-width:none;width:100%;margin:0}
+  main>section.wrap>.top{flex:none;margin:0}
+  main>section.wrap>.top h1{font-size:1.5rem}
+  .ptabs{flex:none;align-self:flex-start}
+  .spane{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;overflow:auto}
+  .spane[hidden]{display:none}
+  .spane>.g12,.spane>.row,.spane>.fit2,.spane>.fit3,.spane>.fit-side,.spane>.sumgrid,.spane>.secgrid{flex:1;min-height:0}
+  .spane>.kpis,.spane>.g12:has(.micro){flex:none}
+  .spane>.card{flex:1;min-height:0}
+  .spane>.statrow{flex:none}
+  /* cards fill their cell and scroll their own content when needed */
+  .spane .card{min-height:0;overflow:auto;display:flex;flex-direction:column}
+  .spane .card>.ch{flex:none}
+  .spane .row>.card,.spane .g12>.card{height:auto}
+  .cmdrow{flex:none}
+}
+/* Home layouts */
+.sumgrid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,4fr) minmax(0,3fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.sumgrid .a-urgent{grid-row:1/3;grid-column:1}
+.sumgrid .a-money{grid-row:1;grid-column:2}
+.sumgrid .a-up{grid-row:1;grid-column:3}
+.sumgrid .a-ai{grid-row:2;grid-column:2/4}
+.fit2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px}
+.fit3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr);gap:16px}
+.fit-side{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:16px}
+.secgrid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto minmax(0,1fr);gap:16px}
+.secgrid>.card:nth-child(4){grid-column:2;grid-row:1/3}
+.r-big{flex:1.4!important}
+.r-full .card{height:100%}
+.spane .feed-list,.spane .uplist,.spane .ulist,.spane .tw,.spane .list,.spane #rvList,.spane .msgs{overflow:auto;min-height:0}
+.desk-feed{max-height:none!important}
+/* Setup's long form uses three columns on wide screens */
+@media (min-width:1300px){.wideform .form{grid-template-columns:repeat(3,minmax(0,1fr))}.wideform .form .full{grid-column:1/-1}}
+/* Calendar, Teach AI, Test chat, Command center and Account security fill the window */
+@media (min-width:821px){
+  #calendar>.card{flex:1;min-height:0;overflow:auto}
+  #training>#tchReview,#training>#tchQuestions,#training>#tchRules{flex:1;min-height:0;overflow:auto}
+  #training>.card:last-child{display:none}
+  #demo>.demo{flex:1;min-height:0}
+  #demo .phone{height:100%;display:flex;flex-direction:column}#demo .phone .msgs{flex:1;min-height:0;overflow:auto}
+  #admin>#ccBiz,#admin>#ccUsers,#admin>#ccPlans,#admin>#ccAudit,#admin>#ccNew{flex:1;min-height:0;overflow:auto}
+  #admin>#ccDone{flex:none}
+  #security>.secgrid{flex:1;min-height:0}
+  #security .secgrid .card{overflow:auto}
+}
+@media (max-width:1200px){.sumgrid{grid-template-columns:1fr 1fr;grid-template-rows:auto}.sumgrid .a-urgent{grid-row:auto;grid-column:1/-1}.sumgrid .a-ai{grid-column:1/-1}.fit3,.fit2,.fit-side{grid-template-columns:1fr}}
+
+/* Long lists: the card fills the area, its header stays, only the list scrolls */
+@media (min-width:821px){
+  #ccBiz,#ccUsers,#ccAudit,#tchReview,#tchQuestions{display:flex;flex-direction:column;gap:14px;overflow:hidden!important}
+  #ccBiz[hidden],#ccUsers[hidden],#ccAudit[hidden],#tchReview[hidden],#tchQuestions[hidden],#ccNew[hidden]{display:none}
+  #ccBiz>.card,#ccUsers>.card:last-child,#ccAudit>.card{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+  #ccUsers>.card:first-child{flex:none}
+  #abList,#auList,#adList{flex:1;min-height:0;overflow:auto}
+  #rvList,#trList{flex:1;min-height:0;overflow:auto;padding-right:4px}
+  #tchReview>.tabs,#tchQuestions>div:first-child{flex:none}
+  /* plans and add-ons side by side in one row that scrolls sideways if there are many */
+  #ccPlans{display:flex;flex-direction:column;overflow:hidden!important}
+  #plList{flex:1;min-height:0;display:grid!important;grid-auto-flow:column;grid-auto-columns:minmax(280px,1fr);grid-template-columns:none!important;overflow-x:auto;overflow-y:hidden}
+  #plList>.card{overflow:auto}
+}
+
+@media (max-height:800px) and (min-width:821px){#ccNew .card{padding:16px}#ccNew .form{gap:10px}}
+
+/* contents keep their natural size; the card scrolls instead of squeezing them */
+.spane .card>*{flex-shrink:0}
+.spane .card>.feed-list,.spane .card>.tw,.spane .card>.list:only-of-type,.spane .card>.uplist,.spane .card>.ulist{flex-shrink:1}
+.desk-feed{position:static!important;top:auto!important;margin:0!important}

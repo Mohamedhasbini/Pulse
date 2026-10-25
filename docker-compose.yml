@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ringback
+      POSTGRES_USER: ringback
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ringback"]
+      interval: 5s
+      retries: 10
+
+  app:
+    build: ./app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://ringback:${DB_PASSWORD}@db:5432/ringback
+      TZ: ${TIMEZONE:-Asia/Beirut}
+    ports:
+      - "3100:3100"
+    volumes:
+      - uploads:/data/uploads
+      - ./backups:/backups:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Daily database backup into ./backups (kept 14 days). Restore: scripts/restore.sh <file>
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backups:/backups
+      - uploads:/data/uploads:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          ts=$$(date +%Y-%m-%d_%H%M)
+          if pg_dump -h db -U ringback -d ringback --no-owner | gzip > /backups/ringback-$$ts.sql.gz.part; then
+            mv /backups/ringback-$$ts.sql.gz.part /backups/ringback-$$ts.sql.gz
+            tar -czf /backups/uploads-$$ts.tar.gz -C /data uploads 2>/dev/null || true
+            echo "backup ok $$ts"
+          else
+            rm -f /backups/ringback-$$ts.sql.gz.part; echo "backup FAILED $$ts"
+          fi
+          find /backups -name '*.gz' -mtime +$$KEEP_DAYS -delete
+          sleep 86400
+        done
+
+volumes:
+  dbdata:
+  uploads:

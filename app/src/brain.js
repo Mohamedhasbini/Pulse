@@ -1,0 +1,428 @@
+// Handles one incoming customer message: stores it, asks the n8n receptionist
+// workflow what to say, carries out any booking/handoff, and returns the reply.
+import { q, one, withBusinessLock } from './db.js';
+import { VERTICALS } from './verticals.js';
+import { quickAnswer, smallTalk } from './quick.js';
+import { emailEnabled, sendEmail } from './email.js';
+import { notify } from './notify.js';
+import { unify } from './customers.js';
+import { hasFeature } from './features.js';
+import { availability, isFree, freeSlots, bufferOf, label, hoursText, localDate, parseLocal } from './slots.js';
+
+const FALLBACK = 'Thanks for your message! A team member will get back to you shortly.';
+const SLOW = "Sorry, I'm a bit slow right now. Could you send that again in a moment? 🙏";
+
+// Last result of talking to the AI, shown on the dashboard.
+export const aiHealth = { ok: null, at: null, ms: null, error: null };
+
+export async function loadBusiness(id) {
+  const biz = await one('SELECT * FROM businesses WHERE id=$1', [id]);
+  if (biz) biz.services = await q('SELECT * FROM services WHERE business_id=$1 AND active ORDER BY id', [id]);
+  if (biz) biz.show_branding = !(await hasFeature(id, 'remove_branding'));
+  return biz;
+}
+
+async function openConversation(bizId, customerId, channel) {
+  const recent = await one(
+    `SELECT * FROM conversations WHERE business_id=$1 AND customer_id=$2 AND channel=$3 AND updated_at > now() - interval '24 hours'
+     ORDER BY updated_at DESC LIMIT 1`, [bizId, customerId, channel]);
+  if (recent) return recent;
+  return one('INSERT INTO conversations (business_id, customer_id, channel) VALUES ($1,$2,$3) RETURNING *', [bizId, customerId, channel]);
+}
+
+export async function handleMessage({ businessId, phone, name, text, channel = 'whatsapp', waId = null }) {
+  const biz = await loadBusiness(businessId);
+  const customer = await one(
+    `INSERT INTO customers (business_id, phone, name) VALUES ($1,$2,$3)
+     ON CONFLICT (business_id, phone) DO UPDATE SET name = COALESCE(customers.name, EXCLUDED.name) RETURNING *`,
+    [businessId, phone, name || null]);
+  // Same phone or email as an existing client: one client, every channel's history together.
+  Object.assign(customer, await unify(businessId, customer.id) || {});
+  const conv = await openConversation(businessId, customer.id, channel);
+  if (waId && await one('SELECT 1 FROM messages WHERE wa_id=$1', [waId])) return { duplicate: true };
+  await q('INSERT INTO messages (conversation_id, role, text, wa_id) VALUES ($1,$2,$3,$4)', [conv.id, 'customer', text, waId]);
+
+  // Staff took over this chat: the AI stays quiet and the owner is alerted.
+  if (conv.ai_paused) {
+    await q(`UPDATE conversations SET updated_at=now(), needs_attention=true, attention_reason='Customer replied, waiting for you (you took over this chat)' WHERE id=$1`, [conv.id]);
+    await notify(businessId, 'handoff', `${customer.name || 'A customer'} replied in a chat you took over`, text.slice(0, 200), { conversationId: conv.id });
+    return { reply: null, paused: true, outcome: conv.outcome, conversationId: conv.id };
+  }
+
+  const kw = text.trim().toLowerCase().replace(/[.!]+$/, '');
+  if (/^(stop|unsubscribe|stop offers|no more offers|ستوب|الغاء العروض|إلغاء العروض)$/.test(kw) || /^(offers|yes offers|subscribe|العروض|اشترك)$/.test(kw)) {
+    const on = !/^(stop|unsubscribe|stop offers|no more offers|ستوب|الغاء العروض|إلغاء العروض)$/.test(kw), ar = AR.test(text);
+    await q('UPDATE customers SET marketing_ok=$1, marketing_at=now() WHERE id=$2', [on, customer.id]);
+    const reply = on ? (ar ? 'تم! سنرسل لك عروضنا الخاصة. أرسل STOP في أي وقت لإيقافها.' : "Done! You'll get our special offers. Send STOP anytime to stop them.")
+      : (ar ? 'تم إيقاف العروض. لن نرسل لك رسائل تسويقية بعد الآن. ستبقى تذكيرات مواعيدك كما هي.' : "You won't get offers from us anymore. Appointment reminders still arrive as usual.");
+    await q("INSERT INTO messages (conversation_id, role, text, source) VALUES ($1,'assistant',$2,'quick')", [conv.id, reply]);
+    await q('UPDATE conversations SET updated_at=now() WHERE id=$1', [conv.id]);
+    return { reply, outcome: conv.outcome, conversationId: conv.id };
+  }
+
+  const history = await q('SELECT role, text FROM messages WHERE conversation_id=$1 ORDER BY id DESC LIMIT 20', [conv.id]);
+  const bookings = await q(`SELECT * FROM bookings WHERE business_id=$1 AND ends_at > now() AND status <> 'cancelled'`, [businessId]);
+  const timeOff = await q('SELECT * FROM time_off WHERE business_id=$1 AND ends_at > now()', [businessId]);
+  const theirs = await q(`SELECT b.id, b.starts_at, s.name service FROM bookings b JOIN services s ON s.id=b.service_id
+      WHERE b.customer_id=$1 AND b.starts_at > now() AND b.status='confirmed' ORDER BY b.starts_at`, [customer.id]);
+
+  // What we already know about this person, so the AI treats regulars like regulars and never re-asks.
+  const [hist] = await q(`SELECT count(*) FILTER (WHERE b.status IN ('completed','confirmed') AND b.starts_at < now())::int AS visits,
+      to_char(max(b.starts_at) FILTER (WHERE b.status IN ('completed','confirmed') AND b.starts_at < now()), 'YYYY-MM-DD') AS last_visit,
+      (SELECT s.name FROM bookings b2 JOIN services s ON s.id=b2.service_id WHERE b2.customer_id=$1 AND b2.status <> 'cancelled'
+         GROUP BY s.name ORDER BY count(*) DESC, max(b2.starts_at) DESC LIMIT 1) AS favourite_service,
+      count(*) FILTER (WHERE b.status='no_show')::int AS no_shows
+      FROM bookings b WHERE b.customer_id=$1`, [customer.id]);
+  const phoneKnown = !/^(test|e2e|walk-in|tg-)/.test(customer.phone) || !!customer.contact_phone;
+  const options = reminderOptions(channel);
+  const needEmail = customer.reminder_channel === 'email' && !customer.email;
+
+  const context = {
+    business: { name: biz.name, description: biz.description, address: biz.address, maps_url: biz.maps_url, website: biz.website, instagram: biz.instagram,
+      phone: biz.phone, currency: biz.currency, opening_hours: hoursText(biz), team: biz.team, policies: biz.policies,
+      faq: [biz.faq, ...(biz.faqs || []).filter(f => f.q && f.a).map(f => `Q: ${f.q}\nA: ${f.a}`)].filter(Boolean).join('\n\n'),
+      payment_methods: biz.payment_methods, booking_note: biz.booking_note, languages: biz.languages, tone: biz.tone,
+      payment_options: paymentText(biz),
+      assistant_name: biz.assistant_name || 'Nora',
+      special_instructions: [biz.vertical === 'restaurant' && 'For every reservation ask how many guests, pick the table type that fits that number, and put the number in booking.guests (a whole number). Put any occasion or allergy in booking.notes.', `Your name is ${biz.assistant_name || 'Nora'}, the assistant of ${biz.name}. Use this name when you greet someone or are asked who you are; never call yourself by any other name.`, ownerRules(biz.ai_rules), biz.ai_instructions, await taughtAnswers(businessId), sendingRules(options), CONFIDENCE].filter(Boolean).join('\n\n'), cancellation_policy: policyText(biz),
+      type: (VERTICALS[biz.vertical] || VERTICALS.salon).label, persona: (VERTICALS[biz.vertical] || VERTICALS.salon).persona,
+      terms: (VERTICALS[biz.vertical] || VERTICALS.salon).terms },
+    services: biz.services.map(s => ({ name: s.name, price: Number(s.price), minutes: s.minutes, description: s.description || undefined })),
+    availability: availability(biz, bookings, timeOff, 14),
+    customer: {
+      // One person across WhatsApp, Telegram, WeBook and the booking page: their history below covers all of them.
+      channels_used: (await q('SELECT DISTINCT channel FROM conversations WHERE customer_id=$1', [customer.id])).map(r => r.channel),
+      returning: hist.visits > 0, visits: hist.visits, last_visit: hist.last_visit, favourite_service: hist.favourite_service,
+      name: customer.name, phone_known: phoneKnown, email: customer.email, reminder_channel_set: !!customer.reminder_channel && hist.visits + theirs.length > 0,
+      reminder_channel: customer.reminder_channel, staff_notes: customer.staff_notes || undefined,
+      reminder_options: options,
+      missing_for_booking: [!customer.name && 'name', !phoneKnown && 'phone',
+        needEmail ? 'email (REQUIRED: they chose email reminders; ask for it now)' : biz.ask_email && emailEnabled() && !customer.email && 'email (optional, they may skip)',
+        !(hist.visits + theirs.length) && options.length > 1 && `reminder preference (${options.map(o => CHANNEL[o][0]).join(' or ')})`].filter(Boolean),
+      upcoming_bookings: theirs.map(b => ({ ref: ref(b.id), when: label(new Date(b.starts_at)), service: b.service,
+        can_change_by_chat: hoursUntil(b.starts_at) >= (biz.cancel_hours ?? 24) })) },
+    now: `${label(new Date())} (today is ${localDate(new Date())})`,
+    conversation: history.reverse(),
+  };
+
+  let decision, failed = false;
+  const t0 = Date.now();
+  try {
+    const chit = smallTalk(text);
+    if (chit) decision = { reply: chit, action: 'none', quick: true };
+    else try { decision = await askN8n(context, +process.env.AI_TIMEOUT_MS || 15000); }
+    catch (first) { console.warn('AI slow or failed, retrying once:', first.message); decision = await askN8n(context, 15000); }
+    if (!chit) Object.assign(aiHealth, { ok: true, at: new Date(), ms: Date.now() - t0, error: null });
+  } catch (e) {
+    console.error('n8n call failed:', e.message);
+    Object.assign(aiHealth, { ok: false, at: new Date(), ms: Date.now() - t0, error: e.message });
+    failed = true;
+    // Safety net: answer basic questions straight from the setup so the customer is never stuck.
+    const quick = quickAnswer(biz, text);
+    decision = quick ? { reply: quick, action: 'none', quick: true } : { reply: SLOW, action: 'handoff' };
+  }
+  const ms = Date.now() - t0;
+
+  let reply = decision.reply || FALLBACK;
+  let outcome = conv.outcome === 'booked' ? 'booked' : 'answered';
+  let attention = null, bookedNow = false;
+
+  // Save whatever profile details the customer gave in this message (before booking, so the booking uses them).
+  await saveProfile(customer, decision, text, channel);
+  Object.assign(customer, await unify(biz.id, customer.id) || {});
+
+  // Email reminders need an email address: never book (or promise one) without it.
+  if (decision.action === 'book' && customer.reminder_channel === 'email' && !customer.email) {
+    decision = { ...decision, action: 'none' };
+    reply = AR.test(text) ? 'ما هو بريدك الإلكتروني لنرسل لك التذكير؟' : "What's your email address, so we can send you the reminder?";
+  }
+  if (decision.action === 'book' && decision.booking) {
+    const result = await withBusinessLock(biz.id, async () => createBooking(biz, customer, conv, decision.booking,
+      await q(`SELECT * FROM bookings WHERE business_id=$1 AND ends_at > now() AND status <> 'cancelled'`, [biz.id]), timeOff));
+    if (result.ok) {
+      outcome = 'booked'; bookedNow = true;
+      // The confirmation is built from the saved booking, so every detail is exactly what was stored.
+      result.booking.contact = { ...await one('SELECT phone, contact_phone, email, reminder_channel FROM customers WHERE id=$1', [customer.id]), channel };
+      reply = confirmation(biz, result.booking, decision.reply);
+      if (result.booking.contact.email && emailEnabled()) {
+        const sent = await sendEmail(result.booking.contact.email, `Booking confirmed: ${biz.name}`, reply, biz.name);
+        if (!sent.ok) console.warn('Confirmation email not sent:', sent.reason);
+      }
+      if (result.booking.notes) await q(`INSERT INTO requests (business_id, booking_id, conversation_id, type, details) VALUES ($1,$2,$3,'extra',$4)`,
+        [biz.id, result.booking.id, conv.id, result.booking.notes]);
+    }
+    else reply = result.message;
+  } else if ((decision.action === 'cancel' || decision.action === 'reschedule') && theirs.length) {
+    const r = await withBusinessLock(biz.id, () => changeBooking(biz, customer, conv, theirs, decision, timeOff));
+    reply = r.message;
+    if (r.booking) { outcome = 'booked'; bookedNow = true; }
+  } else if (/cancel|الغ|إلغاء|بلغي/i.test(text) && theirs.length
+      && theirs.every(b => hoursUntil(b.starts_at) < (biz.cancel_hours ?? 24)) && decision.action !== 'book') {
+    // Policy is enforced by the app, not left to the AI: a late cancellation always becomes an approval request.
+    const r = await changeBooking(biz, customer, conv, theirs, { ...decision, action: 'cancel' }, timeOff);
+    reply = r.message;
+  } else if (decision.action === 'handoff') {
+    if (outcome !== 'booked') outcome = 'handoff';
+    attention = failed ? 'The AI did not respond; please reply' : decision.unknown_question ? "The AI didn't know the answer; please reply" : 'Customer needs a person';
+    // Questions the AI couldn't answer go to AI Training, so staff can teach it once.
+    if (failed || decision.unknown_question) {
+      const exists = await one(`SELECT id FROM learning WHERE conversation_id=$1 AND status='open' AND question=$2`, [conv.id, text]);
+      if (!exists) await q(`INSERT INTO learning (business_id, conversation_id, question, reason) VALUES ($1,$2,$3,$4)`,
+        [biz.id, conv.id, text.slice(0, 1000), failed ? 'ai_failed' : 'unknown']);
+    }
+  }
+  const who = customer.name || 'A customer';
+  if (bookedNow && decision.action === 'book') await notify(biz.id, 'booking', `${who} booked by chat`, reply.split('\n').filter(l => /Date|Time|Service|التاريخ|الوقت|الخدمة/.test(l)).join(' ').replace(/[•*]/g, '').trim(), { conversationId: conv.id });
+  else if (bookedNow) await notify(biz.id, 'booking', `${who} moved a booking`, null, { conversationId: conv.id });
+  if (/cancelled|تم إلغاء/.test(reply) && !bookedNow) await notify(biz.id, 'cancel', `${who} cancelled a booking`, null, { conversationId: conv.id });
+  if (/sent for approval|already with the manager|للموافقة/.test(reply) || /waiting for manager approval|بانتظار موافقة/.test(reply)) await notify(biz.id, 'approval', `${who} needs your approval`, null, { conversationId: conv.id });
+  if (attention) await notify(biz.id, 'handoff', `${who}: ${attention.toLowerCase()}`, text.slice(0, 200), { conversationId: conv.id });
+  else if (!failed && !decision.quick && String(decision.confidence).toLowerCase() === 'low') await notify(biz.id, 'unsure', `The AI wasn't sure how to answer ${who}`, text.slice(0, 200), { conversationId: conv.id });
+  if (decision.customer_name && !customer.name) {
+    await q('UPDATE customers SET name=$1 WHERE id=$2', [decision.customer_name, customer.id]);
+  }
+
+  const source = failed ? (decision.quick ? 'quick' : 'fallback') : decision.quick ? 'quick' : 'ai';
+  await q('INSERT INTO messages (conversation_id, role, text, latency_ms, failed, source, confidence) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+    [conv.id, 'assistant', reply, ms, failed, source, source === 'ai' ? (String(decision.confidence).toLowerCase() === 'low' || decision.unknown_question || decision.action === 'handoff' ? 'low' : 'high') : null]);
+  await q(`UPDATE conversations SET outcome=$1, updated_at=now(),
+      needs_attention = needs_attention OR $2, attention_reason = COALESCE($3, attention_reason) WHERE id=$4`,
+    [outcome, !!attention, attention, conv.id]);
+  return { reply, outcome, bookedNow, conversationId: conv.id, failed };
+}
+
+async function askN8n(context, timeout) {
+  const res = await fetch(process.env.N8N_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ context: JSON.stringify(context, null, 1) }),
+    signal: AbortSignal.timeout(timeout),
+  });
+  if (!res.ok) throw new Error(`n8n responded ${res.status}`);
+  const body = await res.json();
+  const raw = typeof body === 'string' ? body : body.output ?? body.text ?? body;
+  return typeof raw === 'string' ? parseJson(raw) : raw;
+}
+
+// The model is asked for JSON; accept it with or without ```json fences.
+function parseJson(text) {
+  const m = text.match(/\{[\s\S]*\}/);
+  try { return JSON.parse(m ? m[0] : text); } catch { return { reply: text.trim(), action: 'none' }; }
+}
+
+function findService(biz, name) {
+  const n = String(name || '').toLowerCase().trim();
+  return biz.services.find(s => s.name.toLowerCase() === n)
+    || biz.services.find(s => n && (s.name.toLowerCase().includes(n) || n.includes(s.name.toLowerCase().split(/[ &]/)[0])));
+}
+
+async function createBooking(biz, customer, conv, req, bookings, timeOff) {
+  const svc = findService(biz, req.service);
+  // The AI sends "YYYY-MM-DD HH:MM" in the business's time zone; ISO with Z also works.
+  const start = /Z|[+-]\d\d:?\d\d$/.test(String(req.slot)) ? new Date(req.slot) : parseLocal(req.slot);
+  if (!svc || isNaN(start)) return { ok: false, message: 'Sorry, I could not complete that booking. Which service and time would you like?' };
+  // The customer already has exactly this booking (e.g. they said "ok" after the confirmation): don't book it twice.
+  const same = await one(`SELECT id FROM bookings WHERE customer_id=$1 AND service_id=$2 AND starts_at=$3 AND status <> 'cancelled'`, [customer.id, svc.id, start]);
+  if (same) return { ok: false, message: 'You\x27re already booked for that, no need to do anything else. See you then! 😊', already: true };
+  const end = new Date(start.getTime() + svc.minutes * 60000);
+  if (start < new Date() || !isFree(biz, bookings, timeOff, start, end, bufferOf(biz, svc.id), svc.id)) {
+    const alt = freeSlots(biz, bookings, timeOff, svc.minutes, 3, start < new Date() ? new Date() : new Date(start.getTime() - 3 * 3600000), bufferOf(biz, svc.id), svc.id)
+      .map(s => s.label).join(', ');
+    return { ok: false, message: alt ? `Sorry, that time isn't available for ${svc.name}. I can offer: ${alt}. Which one suits you?`
+      : `Sorry, that time isn't available for ${svc.name}. Which other day works for you?` };
+  }
+  // Discount codes are checked here against the owner's list; the AI never decides a discount.
+  let price = Number(svc.price), coupon = null;
+  const code = String(req.coupon || '').trim().toUpperCase();
+  if (code) {
+    const c = await checkCoupon(biz.id, code);
+    if (!c.ok) return { ok: false, message: `${c.reason} Would you like me to book ${svc.name} at the normal price of ${price} ${biz.currency || 'USD'}?` };
+    coupon = c.coupon;
+    const off = coupon.kind === 'percent' ? price * Number(coupon.value) / 100 : Number(coupon.value);
+    price = Math.max(0, Math.round((price - off) * 100) / 100);
+  }
+  if (req.name) await q('UPDATE customers SET name=$1 WHERE id=$2', [req.name, customer.id]);
+  const notes = String(req.notes || '').trim() || null, guests = Math.min(Math.max(parseInt(req.guests ?? req.party_size, 10) || 0, 0), 500) || null;
+  const saved = await one(`INSERT INTO bookings (business_id, customer_id, service_id, conversation_id, starts_at, ends_at, price, list_price, coupon_code, source, notes, party_size)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'ai',$10,$11) RETURNING id`, [biz.id, customer.id, svc.id, conv.id, start, end, price, svc.price, coupon?.code || null, notes, guests]);
+  if (coupon) await q('UPDATE coupons SET uses = uses + 1 WHERE id=$1', [coupon.id]);
+  await q('UPDATE conversations SET value = value + $1 WHERE id=$2', [price, conv.id]);
+  return { ok: true, booking: { id: saved.id, start, end, service: svc, price, listPrice: Number(svc.price), coupon: coupon?.code, name: req.name || customer.name, notes, guests } };
+}
+
+export async function checkCoupon(bizId, code) {
+  const c = await one('SELECT * FROM coupons WHERE business_id=$1 AND upper(code)=upper($2)', [bizId, code]);
+  if (!c || !c.active) return { ok: false, reason: `Sorry, the code ${code} isn't valid.` };
+  if (c.expires_on && new Date(c.expires_on) < new Date(localDate(new Date()))) return { ok: false, reason: `Sorry, the code ${code} has expired.` };
+  if (c.max_uses && c.uses >= c.max_uses) return { ok: false, reason: `Sorry, the code ${code} has already been fully used.` };
+  return { ok: true, coupon: c };
+}
+
+const AR = /[\u0600-\u06FF]/;
+const ref = id => 'RB-' + String(id).padStart(4, '0');
+const hoursUntil = t => (new Date(t) - Date.now()) / 3600000;
+function policyText(biz) {
+  const h = biz.cancel_hours ?? 24;
+  return `Customers can cancel or reschedule in this chat up to ${h} hours before the appointment. Within ${h} hours a cancellation or time change is sent to the manager for approval (use the same cancel/reschedule action; the system handles it). Discount codes go in booking.coupon and are checked by the system.`;
+}
+
+// Cancel or move one of the customer's own upcoming bookings, following the business's policy.
+async function changeBooking(biz, customer, conv, theirs, decision, timeOff) {
+  const want = String(decision.booking?.ref || '').toUpperCase().replace(/\s/g, '');
+  const target = theirs.find(b => ref(b.id) === want) || (theirs.length === 1 ? theirs[0] : null);
+  const ar = AR.test(decision.reply || '');
+  if (!target) return { message: ar ? 'أي حجز تريد تغييره؟ ' + theirs.map(b => `${ref(b.id)} (${label(new Date(b.starts_at))} ${b.service})`).join('، ')
+    : 'Which booking do you mean? ' + theirs.map(b => `${ref(b.id)} (${label(new Date(b.starts_at))}, ${b.service})`).join(', ') };
+  const h = biz.cancel_hours ?? 24;
+  const late = hoursUntil(target.starts_at) < h;
+  const full = await one('SELECT * FROM bookings WHERE id=$1', [target.id]);
+  const pending = await one(`SELECT id FROM requests WHERE booking_id=$1 AND status='pending' AND type IN ('cancel','reschedule')`, [target.id]);
+  if (late && pending) return { tooLate: true, message: ar
+    ? `طلبك بخصوص الحجز ${ref(target.id)} قيد المراجعة لدى الإدارة. سنرسل لك الرد هنا قريباً.`
+    : `Your request for booking ${ref(target.id)} is already with the manager. We'll message you here as soon as they reply.` };
+  if (late && decision.action === 'cancel') {
+    // Inside the cancellation window the manager decides; the booking stays until then.
+    await q(`INSERT INTO requests (business_id, booking_id, conversation_id, type, details) VALUES ($1,$2,$3,'cancel',$4)`,
+      [biz.id, target.id, conv.id, `Cancel ${target.service} on ${label(new Date(target.starts_at))} (less than ${h}h before)`]);
+    return { tooLate: true, request: true, message: ar
+      ? `*⏳ تم إرسال طلب الإلغاء للموافقة*\n\n• رقم الحجز: ${ref(target.id)}\n• الموعد: ${label(new Date(target.starts_at))}، ${target.service}\n\nلأن الموعد بعد أقل من ${h} ساعة، يحتاج الإلغاء إلى موافقة الإدارة. سنرسل لك الرد هنا. حجزك يبقى قائماً حتى ذلك الحين.`
+      : `*⏳ Cancellation sent for approval*\n\n• Booking ref: ${ref(target.id)}\n• Appointment: ${label(new Date(target.starts_at))}, ${target.service}\n\nBecause it's less than ${h} hours away, the manager needs to approve this. We'll message you here with their answer. Your booking stays in place until then.` };
+  }
+  if (decision.action === 'cancel') {
+    await q("UPDATE bookings SET status='cancelled', cancelled_by='customer' WHERE id=$1", [target.id]);
+    await q('UPDATE conversations SET value = GREATEST(value - $1, 0) WHERE id=$2', [full.price, full.conversation_id || 0]);
+    return { message: ar
+      ? `*❌ تم إلغاء حجزك*\n\n• رقم الحجز: ${ref(target.id)}\n• كان: ${label(new Date(target.starts_at))}، ${target.service}\n\nنتمنى رؤيتك قريباً! إذا أردت موعداً جديداً، أخبرني فقط.`
+      : `*❌ Your booking is cancelled*\n\n• Booking ref: ${ref(target.id)}\n• Was: ${label(new Date(target.starts_at))}, ${target.service}\n\nHope to see you soon! Just tell me if you'd like a new time.` };
+  }
+  // reschedule: same service, new time, same booking ref
+  const start = parseLocal(decision.booking?.slot);
+  const svc = await one('SELECT * FROM services WHERE id=$1', [full.service_id]);
+  if (isNaN(start)) return { message: ar ? 'إلى أي يوم ووقت تريد نقل الحجز؟' : 'Which day and time would you like instead?' };
+  const end = new Date(start.getTime() + svc.minutes * 60000);
+  const others = await q(`SELECT * FROM bookings WHERE business_id=$1 AND ends_at > now() AND status <> 'cancelled' AND id <> $2`, [biz.id, full.id]);
+  if (start < new Date() || !isFree(biz, others, timeOff, start, end, bufferOf(biz, svc.id), svc.id)) {
+    const alt = freeSlots(biz, others, timeOff, svc.minutes, 3, new Date(Math.max(Date.now(), start.getTime() - 3 * 3600000)), bufferOf(biz, svc.id), svc.id).map(s => s.label).join(', ');
+    return { message: (ar ? 'هذا الوقت غير متاح. ' : "That time isn't available. ") + (alt ? (ar ? 'المتاح: ' : 'I can offer: ') + alt : '') };
+  }
+  if (late) {
+    await q(`INSERT INTO requests (business_id, booking_id, conversation_id, type, details, new_start) VALUES ($1,$2,$3,'reschedule',$4,$5)`,
+      [biz.id, full.id, conv.id, `Move ${svc.name} from ${label(new Date(full.starts_at))} to ${label(start)} (less than ${h}h before)`, start]);
+    return { tooLate: true, request: true, message: ar
+      ? `*⏳ تم إرسال طلب تغيير الموعد للموافقة*\n\n• رقم الحجز: ${ref(full.id)}\n• الموعد الحالي: ${label(new Date(full.starts_at))}\n• الموعد المطلوب: ${label(start)}\n\nلأن الموعد بعد أقل من ${h} ساعة، يحتاج التغيير إلى موافقة الإدارة. سنرسل لك الرد هنا.`
+      : `*⏳ Time change sent for approval*\n\n• Booking ref: ${ref(full.id)}\n• Current: ${label(new Date(full.starts_at))}\n• Requested: ${label(start)}\n\nBecause it's less than ${h} hours away, the manager needs to approve this. We'll message you here with their answer.` };
+  }
+  await q('UPDATE bookings SET starts_at=$1, ends_at=$2 WHERE id=$3', [start, end, full.id]);
+  const booking = { id: full.id, start, end, service: svc, price: Number(full.price), name: customer.name, notes: full.notes };
+  return { booking, message: confirmation(biz, booking, decision.reply, true) };
+}
+
+const CHANNEL = { whatsapp: ['WhatsApp', 'واتساب'], sms: ['SMS', 'رسالة SMS'], email: ['Email', 'البريد الإلكتروني'], chat: ['In this chat', 'في هذه المحادثة'], telegram: ['Telegram', 'تيليجرام'] };
+
+// Only options the owner switched on; online payment is not connected yet, so "now" and "deposit" never apply until it is.
+function paymentText(biz) {
+  const opts = [biz.pay_later && 'pay at the appointment'];
+  const live = !!process.env.PAYMENTS_LIVE;
+  if (live && biz.pay_now) opts.push('pay online now when booking');
+  if (live && biz.pay_deposit && +biz.deposit_amount > 0) opts.push(`a reservation fee of ${+biz.deposit_amount} ${biz.currency || 'USD'} to hold the booking`);
+  return opts.filter(Boolean).length ? `Offer only these payment options: ${opts.filter(Boolean).join('; ')}. Never ask for card details in chat.` : 'Do not discuss online payment; never ask for card details.';
+}
+
+// The owner's strict rules come first in every request and override everything except safety.
+function ownerRules(rules) {
+  const list = (Array.isArray(rules) ? rules : []).map(r => String(r.text || r).trim()).filter(Boolean);
+  return list.length ? `OWNER'S STRICT RULES (always follow these exactly; they override any other instruction except SAFETY):\n${list.map((r, i) => `${i + 1}. ${r}`).join('\n')}` : '';
+}
+
+// Answers the owner corrected or approved in Teach AI: the AI answers similar questions the same way.
+async function taughtAnswers(bizId) {
+  const rows = await q(`SELECT (SELECT c.text FROM messages c WHERE c.conversation_id=m.conversation_id AND c.role='customer' AND c.id < m.id ORDER BY c.id DESC LIMIT 1) AS asked,
+      COALESCE(m.corrected_text, m.text) AS answer FROM messages m JOIN conversations cv ON cv.id=m.conversation_id
+      WHERE cv.business_id=$1 AND m.review IN ('corrected','approved') ORDER BY (m.review='corrected') DESC, m.reviewed_at DESC LIMIT 25`, [bizId]);
+  const ok = rows.filter(r => r.asked && r.answer && r.answer.length < 700);
+  return ok.length ? `ANSWERS THE OWNER TAUGHT YOU (when a customer asks something similar, answer the same way, adapted to the conversation):\n${
+    ok.map(r => `- Customer: "${r.asked.slice(0, 200)}" → You: "${r.answer}"`).join('\n')}` : '';
+}
+
+const CONFIDENCE = 'CONFIDENCE: also add "confidence": "high" or "low" to your JSON. Use "low" when you are not sure your reply is correct, complete or allowed; the owner will review it.';
+
+// Reminder channels that can really be sent right now (SMS is not connected).
+// WhatsApp customers always get WhatsApp, Telegram customers Telegram; other chats only if WhatsApp sending is set up.
+function reminderOptions(convChannel) {
+  return [convChannel === 'telegram' && 'telegram', (convChannel === 'whatsapp' || process.env.WA_ACCESS_TOKEN) && 'whatsapp', emailEnabled() && 'email'].filter(Boolean);
+}
+
+// Told to the AI every time, so it never promises something the app can't send.
+function sendingRules(options) {
+  return `WHAT YOU CAN SEND: you can only send messages in this chat. ${emailEnabled()
+    ? 'Booking confirmations are emailed automatically if the customer gave an email.'
+    : 'Email is NOT available: never offer or promise to email anything, and do not ask for an email address.'} SMS is NOT available.`
+    + ` Reminder options right now: ${options.length ? options.join(', ') : 'none besides this chat (reminders appear in this chat; do not ask for a preference)'}.`
+    + (emailEnabled() ? ' If the customer chooses email reminders and customer.email is empty, ask for their email address before booking, and put it in customer.email.' : '')
+    + ' Never say you have sent or will send something unless the system does it.';
+}
+function contactLines(biz, c, ar) {
+  if (!c) return [];
+  const phone = /^(test|e2e|walk-in|tg-)/.test(c.phone) ? c.contact_phone : c.phone;
+  const ch = c.channel === 'telegram' && c.reminder_channel !== 'email' ? CHANNEL.telegram : CHANNEL[c.reminder_channel] || (CHANNEL[reminderOptions(c.channel)[0]] || CHANNEL.chat), h = biz.reminder_hours || 24;
+  return [
+    phone && `• ${ar ? 'الهاتف' : 'Phone'}: ${phone}`,
+    c.email && `• ${ar ? 'البريد' : 'Email'}: ${c.email}`,
+    biz.reminders_enabled !== false && `• ${ar ? 'التذكير' : 'Reminder'}: ${ar ? ch[1] : ch[0]}, ${h} ${ar ? 'ساعة قبل الموعد' : 'hours before'}`,
+  ].filter(Boolean);
+}
+
+// Stores name / phone / email / reminder preference the AI picked up, after checking they look right.
+async function saveProfile(customer, decision, text, conversationChannel) {
+  const p = decision.customer || {};
+  const name = String(p.name || decision.customer_name || decision.booking?.name || '').trim();
+  const email = String(p.email || '').trim().toLowerCase();
+  const phone = String(p.phone || '').replace(/[^\d+]/g, '');
+  const wanted = String(p.reminder_channel || '').toLowerCase();
+  const channel = reminderOptions(conversationChannel).includes(wanted) && wanted !== 'telegram' ? wanted : null;
+  const sets = [], vals = [];
+  const set = (col, v) => { vals.push(v); sets.push(`${col}=$${vals.length}`); };
+  if (name.length >= 2 && name.length <= 60 && name !== customer.name) set('name', name);
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) && email !== customer.email) set('email', email);
+  if (phone.replace(/\D/g, '').length >= 7 && /^(test|e2e|walk-in|tg-)/.test(customer.phone)) set('contact_phone', phone);
+  if (channel && channel !== customer.reminder_channel) set('reminder_channel', channel);
+  set('language', AR.test(text) ? 'ar' : 'en');
+  vals.push(customer.id);
+  await q(`UPDATE customers SET ${sets.join(', ')} WHERE id=$${vals.length}`, vals);
+  Object.assign(customer, await one('SELECT * FROM customers WHERE id=$1', [customer.id]));
+}
+
+const SITE = (process.env.PUBLIC_URL || 'https://app.nexfoyz.dev').replace(/\/$/, '');
+function confirmation(biz, b, aiReply, moved = false) {
+  const ar = AR.test(aiReply || '');
+  const lang = ar ? 'ar' : 'en-GB';
+  const date = b.start.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const t = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const cur = biz.currency || 'USD';
+  const money = b.coupon && b.listPrice !== b.price
+    ? `${b.price} ${cur} (${ar ? 'بدلاً من' : 'was'} ${b.listPrice}, ${ar ? 'كود' : 'code'} ${b.coupon})` : `${b.price} ${cur}`;
+  const ref = 'RB-' + String(b.id).padStart(4, '0');
+  const L = ar
+    ? [moved ? '🔄 تم تغيير موعدك' : '✅ تم تأكيد حجزك', 'التاريخ', 'الوقت', 'الاسم', 'الخدمة', 'المدة', 'السعر', 'الدفع', 'العنوان', 'رقم الحجز', 'طلب إضافي', 'بانتظار موافقة المدير', 'دقيقة']
+    : [moved ? '🔄 Your booking has been moved' : '✅ Your booking is confirmed', 'Date', 'Time', 'Name', 'Service', 'Duration', 'Price', 'Payment', 'Address', 'Booking ref', 'Extra request', 'waiting for manager approval', 'min'];
+  const lines = [
+    `*${L[0]}*`, '',
+    `• ${L[1]}: ${date}`,
+    `• ${L[2]}: ${t(b.start)} – ${t(b.end)}`,
+    `• ${L[3]}: ${b.name || '-'}`,
+    `• ${L[4]}: ${b.service.name}`,
+    b.guests && `• ${ar ? 'عدد الأشخاص' : 'Guests'}: ${b.guests}`,
+    `• ${L[5]}: ${b.service.minutes} ${L[12]}`,
+    `• ${L[6]}: ${money}`,
+    biz.payment_methods && `• ${L[7]}: ${biz.payment_methods}`,
+    biz.address && `• ${L[8]}: ${biz.address}`,
+    `• ${L[9]}: ${ref}`,
+    b.notes && `• ${L[10]}: ${b.notes} (${L[11]})`,
+    ...contactLines(biz, b.contact, ar),
+    '', ar ? `يمكنك الإلغاء أو التغيير هنا حتى ${biz.cancel_hours ?? 24} ساعة قبل الموعد. بعد ذلك يحتاج أي تغيير إلى موافقة الإدارة.`
+      : `You can cancel or change this booking here up to ${biz.cancel_hours ?? 24} hours before. After that, changes need the manager's approval.`,
+    biz.booking_note,
+    biz.show_branding !== false && '', biz.show_branding !== false && `_Powered by Pulse_ · ${SITE}/go?b=${biz.id}&s=confirm`,
+  ].filter(x => x !== null && x !== undefined && x !== false);
+  return lines.join('\n');
+}

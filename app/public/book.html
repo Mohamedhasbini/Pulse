@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Book an appointment</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#eef1f4;--card:#fff;--soft:#f4f6f9;--edge:rgba(16,24,40,.08);--ink:#121820;--muted:#6f7987;--blue:#0a6cb5;--blue-soft:rgba(10,108,181,.09);
+  --green:#10a35a;--green-soft:rgba(16,163,90,.1);--bad:#d9434f;--shadow:0 1px 2px rgba(16,24,40,.04),0 10px 30px -14px rgba(16,24,40,.16);color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#14181e;--card:#1b2028;--soft:#232a34;--edge:rgba(255,255,255,.08);--ink:#e8edf3;--muted:#8a94a3;--blue:#4fa3e3;--blue-soft:rgba(79,163,227,.14);
+  --green:#3ccf86;--green-soft:rgba(60,207,134,.13);--bad:#ef6f7a;--shadow:0 10px 30px -14px rgba(0,0,0,.6);color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Figtree,system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:640px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;gap:12px}
+.logo{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--green));color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px;flex:none}
+h1{font-size:22px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0;font-size:13.5px}
+.card{background:var(--card);border:1px solid var(--edge);border-radius:22px;box-shadow:var(--shadow);padding:18px}
+.card h2{font-size:15px;margin:0 0 12px;display:flex;gap:10px;align-items:center}
+.step{width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--card);font-size:12px;display:grid;place-items:center;flex:none}
+.card.done .step{background:var(--green)}
+.card.locked{opacity:.5;pointer-events:none}
+.svcs{display:grid;gap:8px}
+.svc{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 14px;border-radius:14px;background:var(--soft);border:1.5px solid transparent}
+.svc b{display:block;font-weight:600}.svc small{color:var(--muted)}
+.svc .pr{font-weight:700;color:var(--green);white-space:nowrap}
+.svc[aria-pressed="true"]{border-color:var(--blue);background:var(--blue-soft)}
+.days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory}
+.day{all:unset;cursor:pointer;flex:none;width:62px;padding:10px 0;border-radius:14px;background:var(--soft);text-align:center;scroll-snap-align:start;border:1.5px solid transparent}
+.day small{display:block;color:var(--muted);font-size:11.5px}.day b{display:block;font-size:19px}.day i{display:block;font-style:normal;font-size:10.5px;color:var(--green)}
+.day[aria-pressed="true"]{background:var(--ink);color:var(--card)}.day[aria-pressed="true"] small,.day[aria-pressed="true"] i{color:inherit;opacity:.8}
+.day:disabled{opacity:.35;cursor:default}
+.times{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;margin-top:6px}
+.time{all:unset;cursor:pointer;text-align:center;padding:10px 0;border-radius:12px;background:var(--soft);font-weight:600;font-variant-numeric:tabular-nums;border:1.5px solid transparent}
+.time[aria-pressed="true"]{background:var(--blue);color:#fff}
+.svc:focus-visible,.day:focus-visible,.time:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form .full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:500}
+input,textarea{font:inherit;color:var(--ink);background:var(--soft);border:1px solid var(--edge);border-radius:12px;padding:11px 12px;width:100%}
+.coupon{display:flex;gap:8px}
+.btn{font:inherit;font-weight:600;border:0;border-radius:99px;padding:13px 20px;background:var(--ink);color:var(--card);cursor:pointer;width:100%}
+.btn.ghost{background:var(--soft);color:var(--ink);width:auto}
+.btn.green{background:var(--green);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.sum{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.sum div{display:flex;justify-content:space-between;gap:12px}.sum span{color:var(--muted)}.sum b{text-align:right}
+.total{border-top:1px dashed var(--edge);padding-top:10px;font-size:16px}
+.err{color:var(--bad);font-size:14px;margin:0}
+.ok{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:10px 0 4px}
+.tick{width:58px;height:58px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-size:28px}
+.ref{font-family:ui-monospace,monospace;background:var(--soft);padding:4px 10px;border-radius:8px}
+.note{font-size:13px;color:var(--muted);background:var(--soft);border-radius:12px;padding:10px 12px}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+.hp{position:absolute;left:-9999px}
+.foot{text-align:center;font-size:12px;color:var(--muted)}
+@media (max-width:480px){.form{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="logo" id="logo">·</div><div><h1 id="bizName">Book an appointment</h1><p class="sub" id="bizAddr"></p></div></header>
+
+  <!-- BOOKING FLOW -->
+  <div id="flow">
+    <section class="card" id="c1"><h2><span class="step">1</span><span id="t1">Choose a service</span></h2><div class="svcs" id="svcs"><div class="empty">Loading…</div></div></section>
+    <section class="card locked" id="c2" style="margin-top:14px"><h2><span class="step">2</span>Pick a day and time</h2>
+      <div class="days" id="days"></div><div class="times" id="times"></div></section>
+    <section class="card locked" id="c3" style="margin-top:14px"><h2><span class="step">3</span>Your details</h2>
+      <form class="form" id="f" novalidate>
+        <label>Full name<input id="name" autocomplete="name" required></label>
+        <label>Phone (WhatsApp)<input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+961 70 123 456" required></label>
+        <label class="full">Email (optional)<input id="email" type="email" autocomplete="email"></label>
+        <label class="full">Remind me before my appointment by<select id="remind" style="font:inherit;color:var(--ink);background:var(--soft);border:1px solid var(--edge);border-radius:12px;padding:11px 12px"><option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="email">Email</option></select></label>
+        <label class="full">Anything we should know? (optional)<textarea id="notes" rows="2" placeholder="A special request needs the salon's approval"></textarea></label>
+        <label class="full">Discount code (optional)<span class="coupon"><input id="code" autocapitalize="characters"><button class="btn ghost" type="button" id="apply">Apply</button></span></label>
+        <label class="full" style="flex-direction:row;align-items:center;gap:8px;font-weight:400"><input type="checkbox" id="offers" style="width:auto"> Send me special offers. I can stop them anytime by replying STOP.</label>
+        <input class="hp" id="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="full sum" id="sum"></div>
+        <p class="full err" id="err" hidden></p>
+        <div class="full"><button class="btn green" id="go" disabled>Confirm booking</button></div>
+      </form>
+    </section>
+  </div>
+
+  <!-- CONFIRMATION / MANAGE -->
+  <section class="card" id="done" hidden></section>
+
+  <p class="foot" id="policy"></p>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const L=s=>{const[d,t="00:00"]=s.split("T"),[y,m,dd]=d.split("-").map(Number),[h,mi]=t.split(":").map(Number);return new Date(y,m-1,dd,h,mi)};
+const longDate=d=>d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+const B=new URLSearchParams(location.search).get("b");
+async function api(p,method="GET",body){if(B)p+=(p.includes("?")?"&":"?")+"b="+encodeURIComponent(B);const r=await fetch(p,{method,headers:{"Content-Type":"application/json"},body:body&&JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||"Something went wrong. Please try again."),{status:r.status});return j}
+let info,svc=null,day=null,time=null,coupon=null;
+const money=n=>`${Number(n).toLocaleString(undefined,{maximumFractionDigits:2})} ${info.currency}`;
+
+async function start(){
+  info=await api("/api/public/info");
+  if(info.branding){$("#pwrd").hidden=false;$("#pwrdA").href="/go?b="+info.id+"&s=book"}
+  if(info.color)document.documentElement.style.setProperty("--green",info.color);
+  if(info.intro){const p=document.createElement("p");p.className="note";p.textContent=info.intro;$("header").after(p)}
+  const T=info.terms||{};if(T.service){$("#t1").textContent=`Choose a ${T.service}`}
+  document.title=`Book · ${info.name}`;$("#bizName").textContent=info.name;$("#logo").textContent=info.name.trim()[0]||"·";
+  $("#bizAddr").textContent=[info.address,info.phone].filter(Boolean).join(" · ");
+  $("#policy").textContent=`Free cancellation up to ${info.cancel_hours} hours before your appointment.`+(info.payment_methods?` Payment: ${info.payment_methods}.`:"");
+  const m=location.pathname.match(/^\/booking\/([\w-]+)/);if(m)return manage(m[1]);
+  if(!info.enabled){$("#flow").innerHTML=`<section class="card"><h2>Online booking is closed</h2><p class="sub">Please contact us${info.phone?" on "+esc(info.phone):""} to book.</p></section>`;return}
+  if(info.title)$("#bizName").textContent=info.title;
+  $("#svcs").innerHTML=info.services.map(s=>`<button class="svc" type="button" data-id="${s.id}" aria-pressed="false"><span><b>${esc(s.name)}</b><small>${s.minutes} min</small></span>${info.show_prices?`<span class="pr">${money(s.price)}</span>`:""}</button>`).join("")||`<div class="empty">No services are open for booking right now.</div>`}
+
+$("#svcs").onclick=async e=>{const b=e.target.closest(".svc");if(!b)return;
+  document.querySelectorAll(".svc").forEach(x=>x.setAttribute("aria-pressed",x===b));svc=info.services.find(s=>s.id===+b.dataset.id);
+  $("#c1").classList.add("done");$("#c2").classList.remove("locked");time=null;coupon=null;$("#code").value="";lock3();
+  const days=await api(`/api/public/days?service_id=${svc.id}`);
+  $("#days").innerHTML=days.map(d=>{const dt=L(d.date+"T00:00");return`<button class="day" type="button" data-d="${d.date}" ${d.free?"":"disabled"} aria-pressed="false" aria-label="${longDate(dt)}${d.free?"":" (no times)"}">
+    <small>${dt.toLocaleDateString("en-GB",{weekday:"short"})}</small><b>${dt.getDate()}</b><i>${d.free?d.free+" free":d.open?"full":"closed"}</i></button>`}).join("");
+  const first=$("#days .day:not(:disabled)");if(first)first.click();else $("#times").innerHTML=`<div class="empty">No free times in the next 30 days. Please call us.</div>`;
+  $("#c2").scrollIntoView({behavior:"smooth",block:"start"})};
+
+$("#days").onclick=async e=>{const b=e.target.closest(".day");if(!b||b.disabled)return;
+  document.querySelectorAll(".day").forEach(x=>x.setAttribute("aria-pressed",x===b));day=b.dataset.d;time=null;lock3();
+  $("#times").innerHTML=`<div class="empty">Loading times…</div>`;
+  const t=await api(`/api/public/slots?service_id=${svc.id}&date=${day}`);
+  $("#times").innerHTML=t.length?t.map(x=>`<button class="time" type="button" data-t="${x}" aria-pressed="false">${x}</button>`).join(""):`<div class="empty">This day just filled up. Pick another day.</div>`};
+
+$("#times").onclick=e=>{const b=e.target.closest(".time");if(!b)return;
+  document.querySelectorAll(".time").forEach(x=>x.setAttribute("aria-pressed",x===b));time=b.dataset.t;
+  $("#c2").classList.add("done");$("#c3").classList.remove("locked");summary();check();
+  setTimeout(()=>$("#c3").scrollIntoView({behavior:"smooth",block:"start"}),50)};
+
+function lock3(){$("#c2").classList.remove("done");$("#c3").classList.add("locked");$("#go").disabled=true}
+function summary(){if(!svc||!day||!time){$("#sum").innerHTML="";return}
+  const s=L(`${day}T${time}`),e=new Date(s.getTime()+svc.minutes*60000);
+  $("#sum").innerHTML=`<div><span>Service</span><b>${esc(svc.name)}</b></div><div><span>Date</span><b>${longDate(s)}</b></div>
+    <div><span>Time</span><b>${time} – ${pad(e.getHours())}:${pad(e.getMinutes())}</b></div>
+    <div class="total"><span>Price</span><b>${coupon?`<s style="color:var(--muted);font-weight:400">${money(coupon.was)}</s> ${money(coupon.price)} <small style="color:var(--green)">(${esc(coupon.code)})</small>`:money(svc.price)}</b></div>`}
+function check(){$("#go").disabled=!(svc&&day&&time&&$("#name").value.trim().length>1&&$("#phone").value.replace(/\D/g,"").length>=7)}
+["name","phone"].forEach(id=>$("#"+id).addEventListener("input",check));
+
+$("#apply").onclick=async()=>{const code=$("#code").value.trim();$("#err").hidden=true;if(!code||!svc){coupon=null;return summary()}
+  try{coupon=await api("/api/public/coupon","POST",{code,service_id:svc.id});summary()}catch(e){coupon=null;summary();$("#err").textContent=e.message;$("#err").hidden=false}};
+
+$("#f").onsubmit=async e=>{e.preventDefault();$("#err").hidden=true;$("#go").disabled=true;$("#go").textContent="Booking…";
+  try{const r=await api("/api/public/book","POST",{service_id:svc.id,start:`${day}T${time}`,name:$("#name").value,phone:$("#phone").value,email:$("#email").value.trim(),
+      notes:$("#notes").value,reminder_channel:$("#remind").value,coupon:coupon?coupon.code:$("#code").value.trim(),website:$("#website").value,offers:$("#offers").checked});
+    history.replaceState(null,"",`/booking/${r.token}`);manage(r.token,true)}
+  catch(err){$("#err").textContent=err.message;$("#err").hidden=false;$("#go").textContent="Confirm booking";check();
+    if(err.status===409){const d=document.querySelector(".day[aria-pressed=true]");if(d)d.click()}}};
+
+async function manage(token,fresh){
+  $("#flow").hidden=true;const box=$("#done");box.hidden=false;box.innerHTML=`<div class="empty">Loading your booking…</div>`;
+  try{const b=await api(`/api/public/booking/${token}`);const s=L(b.start),e=L(b.end);
+    const state=b.status==="cancelled"?["✕","Booking cancelled","var(--bad)"]:b.cancel_request==="pending"?["⏳","Cancellation waiting for approval","var(--blue)"]:b.past?["✓","Appointment done","var(--green)"]:["✓",fresh?"You're booked!":"Your booking","var(--green)"];
+    box.innerHTML=`<div class="ok"><div class="tick" style="color:${state[2]}">${state[0]}</div><h1>${state[1]}</h1><p class="sub">Booking ref <span class="ref">${b.ref}</span></p></div>
+      <div class="sum" style="margin-top:14px"><div><span>Name</span><b>${esc(b.name)}</b></div><div><span>Service</span><b>${esc(b.service)}</b></div>
+      <div><span>Date</span><b>${longDate(s)}</b></div><div><span>Time</span><b>${b.start.slice(11)} – ${b.end.slice(11)}</b></div>
+      <div><span>Duration</span><b>${b.minutes} min</b></div>
+      <div class="total"><span>Price</span><b>${b.coupon_code&&b.list_price!==b.price?`<s style="color:var(--muted);font-weight:400">${money(b.list_price)}</s> `:""}${money(b.price)}${b.coupon_code?` <small style="color:var(--green)">(${esc(b.coupon_code)})</small>`:""}</b></div>
+      ${info.payment_methods?`<div><span>Payment</span><b>${esc(info.payment_methods)}</b></div>`:""}${info.address?`<div><span>Address</span><b>${esc(info.address)}</b></div>`:""}
+      ${b.notes?`<div><span>Your request</span><b>${esc(b.notes)} <small style="color:var(--muted)">(the salon will confirm)</small></b></div>`:""}</div>
+      ${info.booking_note&&b.status==="confirmed"?`<p class="note" style="margin-top:14px">${esc(info.booking_note)}</p>`:""}
+      ${fresh?`<p class="note">Save this page to view or cancel your booking later: <a href="${location.href}">${location.host}${location.pathname}</a></p>`:""}
+      <div id="actions" style="display:flex;flex-direction:column;gap:8px;margin-top:14px"></div>`;
+    const a=$("#actions");
+    if(b.status==="confirmed"&&!b.past&&b.cancel_request!=="pending"){
+      a.innerHTML=`<button class="btn ghost" id="cx" style="width:100%">${b.can_cancel?"Cancel booking":"Request cancellation"}</button>
+        ${b.can_cancel?"":`<p class="sub" style="text-align:center">It's less than ${info.cancel_hours} hours away, so the salon needs to approve a cancellation.</p>`}`;
+      $("#cx").onclick=()=>{a.innerHTML=`<p style="margin:0;text-align:center">${b.can_cancel?"Cancel this booking?":"Send a cancellation request to the salon?"}</p>
+        <button class="btn" id="cxYes" style="background:var(--bad);color:#fff">${b.can_cancel?"Yes, cancel":"Yes, send request"}</button><button class="btn ghost" id="cxNo" style="width:100%">Keep my booking</button>`;
+        $("#cxNo").onclick=()=>manage(token);
+        $("#cxYes").onclick=async()=>{try{await api(`/api/public/booking/${token}/cancel`,"POST");manage(token)}catch(err){a.innerHTML=`<p class="err">${esc(err.message)}</p>`}}}}
+    if(b.status!=="confirmed"||b.past)a.innerHTML=`<a class="btn" href="/book" style="text-align:center;text-decoration:none">Book again</a>`;
+  }catch(err){box.innerHTML=`<p class="err">${esc(err.message)}</p><a class="btn" href="/book" style="display:block;text-align:center;text-decoration:none;margin-top:12px">Make a new booking</a>`}}
+start();
+</script>
+<p id="pwrd" hidden style="text-align:center;font-size:12px;margin:18px 0 24px"><a id="pwrdA" target="_blank" rel="noopener" style="color:inherit;opacity:.6;text-decoration:none">Powered by <b>Pulse</b></a></p>
+<p style="text-align:center;font-size:12px;margin:-14px 0 24px"><a href="/privacy" style="color:inherit;opacity:.5">Privacy</a></p>
+</body>
+</html>

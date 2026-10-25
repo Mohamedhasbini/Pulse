@@ -1,0 +1,9 @@
+.env
+node_modules/
+.mcp.json
+# secrets and local data
+backups/
+a.txt
+o.txt
+tid.txt
+.claude/settings.local.json

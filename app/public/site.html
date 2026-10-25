@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pulse · The AI front desk that never misses a customer</title>
+<meta name="description" content="Pulse answers your customers on WhatsApp and Telegram, books appointments, sends reminders and shows you every number that matters. Set up in a day.">
+<meta property="og:title" content="Pulse · Never miss a customer again">
+<meta property="og:description" content="An AI assistant that answers, books and follows up with your customers, day and night.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+:root{--bg:#08080a;--s1:rgba(255,255,255,.045);--s2:rgba(255,255,255,.08);--line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.16);--ink:#fafafa;--ink2:#b3b3bd;--muted:#7c7c86;
+  --acc:#ff6a1f;--acc2:#ffb15c;--good:#2fd27b;--blue:#3d8bff;--r:18px;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Instrument Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-20vmax;z-index:-1;pointer-events:none;filter:blur(70px);
+  background:radial-gradient(40vmax 30vmax at 85% 5%,rgba(255,106,31,.30),transparent 70%),radial-gradient(44vmax 34vmax at 8% 70%,rgba(20,140,130,.26),transparent 70%)}
+a{color:inherit}
+h1,h2,h3{font-family:"Bricolage Grotesque",sans-serif;letter-spacing:-.02em;line-height:1.08;margin:0}
+.wrap{width:min(1160px,100% - 32px);margin:0 auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;padding:13px 22px;font:600 15px/1 inherit;cursor:pointer;text-decoration:none;transition:transform .15s,background .15s}
+.btn:active{transform:scale(.97)}.btn.pri{background:var(--acc);color:#fff}.btn.pri:hover{background:#ff7f3d}
+.btn.gho{background:var(--s2);color:var(--ink);border:1px solid var(--line2)}.btn.gho:hover{background:rgba(255,255,255,.13)}
+.glass{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.tag{display:inline-flex;gap:8px;align-items:center;font-size:13px;color:var(--ink2);border:1px solid var(--line2);border-radius:999px;padding:6px 12px;background:var(--s1)}
+.tag i{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 rgba(47,210,123,.6);animation:ping 1.8s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 8px rgba(47,210,123,0)}100%{box-shadow:0 0 0 0 rgba(47,210,123,0)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+/* nav */
+header{position:sticky;top:0;z-index:10;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:rgba(8,8,10,.6);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:20px;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;text-decoration:none}
+.logo b{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#fff;font-size:15px}
+header nav{display:flex;gap:22px;margin-left:auto;font-size:15px;color:var(--ink2)}header nav a{text-decoration:none}header nav a:hover{color:var(--ink)}
+header .btn{padding:10px 16px;font-size:14px}
+@media (max-width:760px){header nav{display:none}header .signin{margin-left:auto}}
+/* hero */
+.hero{padding:80px 0 60px;display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.hero h1{font-size:clamp(40px,6vw,72px);margin:18px 0 18px}.hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{font-size:19px;color:var(--ink2);max-width:540px;margin:0 0 28px}
+.hero .ctas{display:flex;gap:12px;flex-wrap:wrap}.hero small{display:block;margin-top:14px;color:var(--muted);font-size:14px}
+.phone{padding:16px;border-radius:30px;max-width:380px;margin-left:auto;width:100%}
+.ph-top{display:flex;gap:10px;align-items:center;padding:6px 6px 14px;border-bottom:1px solid var(--line)}
+.ph-top .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#e86fa8,#ffb15c);display:grid;place-items:center;font-weight:700}
+.ph-top small{display:block;color:var(--good);font-size:12px}
+.msgs{display:flex;flex-direction:column;gap:8px;padding:14px 4px;min-height:330px}
+.m{max-width:82%;padding:9px 13px;border-radius:16px;font-size:14.5px;line-height:1.45;opacity:0;transform:translateY(6px);animation:in .4s forwards}
+.m.c{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:5px}.m.a{align-self:flex-start;background:var(--s2);border-bottom-left-radius:5px}
+.m.ok{background:rgba(47,210,123,.14);border:1px solid rgba(47,210,123,.35)}
+.m .p{display:block;margin-top:6px;font-size:11.5px;color:var(--muted);font-style:italic}
+@keyframes in{to{opacity:1;transform:none}}
+@media (max-width:900px){.hero{grid-template-columns:1fr;padding-top:48px}.phone{margin:0 auto}}
+/* sections */
+section{padding:70px 0}
+.sh{max-width:680px;margin-bottom:36px}.sh .k{color:var(--acc);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase}.sh h2{font-size:clamp(30px,4vw,46px);margin:10px 0}.sh p{color:var(--ink2);margin:0;font-size:17px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stats div{padding:22px}.stats b{display:block;font:800 36px/1 "Bricolage Grotesque";background:linear-gradient(90deg,var(--ink),var(--ink2));-webkit-background-clip:text;background-clip:text;color:transparent}.stats span{color:var(--ink2);font-size:14px}
+@media (max-width:760px){.stats{grid-template-columns:1fr 1fr}}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.steps>div{padding:26px}.steps i{font:800 15px/1 "Bricolage Grotesque";color:var(--acc);display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,106,31,.5);margin-bottom:14px}
+.steps h3{font-size:21px;margin-bottom:8px}.steps p{color:var(--ink2);margin:0}
+.feat{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feat>div{padding:24px;transition:border-color .2s,transform .2s}.feat>div:hover{border-color:var(--line2);transform:translateY(-2px)}
+.feat svg{width:26px;height:26px;stroke:var(--acc);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-bottom:12px}
+.feat h3{font-size:19px;margin-bottom:6px}.feat p{color:var(--ink2);margin:0;font-size:15px}
+@media (max-width:900px){.steps,.feat{grid-template-columns:1fr 1fr}}@media (max-width:600px){.steps,.feat{grid-template-columns:1fr}}
+/* demos */
+.demos{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.demo{padding:20px;text-decoration:none;display:flex;flex-direction:column;gap:6px;transition:border-color .2s,transform .2s}.demo:hover{border-color:var(--acc);transform:translateY(-2px)}
+.demo b{font-size:17px}.demo span{color:var(--ink2);font-size:14px}.demo em{font-style:normal;color:var(--acc);font-weight:600;font-size:14px;margin-top:6px}
+/* pricing */
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.plan{padding:28px;display:flex;flex-direction:column;gap:14px}.plan.hot{border-color:rgba(255,106,31,.6);background:linear-gradient(180deg,rgba(255,106,31,.10),var(--s1) 50%)}
+.plan h3{font-size:22px;display:flex;justify-content:space-between;align-items:center}.plan h3 small{font:600 12px "Instrument Sans";color:var(--acc);border:1px solid rgba(255,106,31,.5);border-radius:999px;padding:3px 9px}
+.plan .pr{font:800 44px/1 "Bricolage Grotesque"}.plan .pr small{font:500 15px "Instrument Sans";color:var(--muted)}
+.plan ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;color:var(--ink2);font-size:15px;flex:1}.plan li::before{content:"✓";color:var(--good);margin-right:9px;font-weight:700}
+.addons{margin-top:18px;padding:20px 24px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}.addons b{margin-right:6px}.addons span{font-size:14px;border:1px solid var(--line2);border-radius:999px;padding:6px 12px;color:var(--ink2)}
+/* form */
+.cta{display:grid;grid-template-columns:.9fr 1.1fr;gap:40px;align-items:start}
+.form{padding:28px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:5px;margin-bottom:20px}
+.seg button{border:0;border-radius:10px;padding:11px;background:none;color:var(--ink2);font:600 15px inherit;cursor:pointer}.seg button[aria-pressed=true]{background:var(--acc);color:#fff}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fg .full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--ink2)}
+input,select,textarea{font:inherit;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}select option{background:#151518}
+.err{color:#ff5c77;font-size:14px;margin:4px 0 0;min-height:1em}
+.done{text-align:center;padding:40px 10px}.done b{font:800 28px "Bricolage Grotesque";display:block;margin:10px 0}
+.ref{font-size:14px;color:var(--ink2);border:1px dashed var(--line2);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+@media (max-width:900px){.cta{grid-template-columns:1fr}}@media (max-width:520px){.fg{grid-template-columns:1fr}}
+.list{display:flex;flex-direction:column;gap:14px;margin-top:22px}.list div{display:flex;gap:12px;color:var(--ink2)}.list b{color:var(--ink)}
+.list svg{flex:none;width:22px;height:22px;stroke:var(--good);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+footer{border-top:1px solid var(--line);padding:44px 0 30px;color:var(--muted);font-size:14px}.fcols{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:28px}.fcols>div{display:flex;flex-direction:column;gap:8px}.fcols b{color:var(--ink);font-size:14px}footer a{text-decoration:none}footer a:hover{color:var(--ink)}@media (max-width:760px){.fcols{grid-template-columns:1fr 1fr}.fcols>div:first-child{grid-column:1/-1}}
+.faq details{padding:18px 22px;margin-bottom:10px}.faq summary{cursor:pointer;font-weight:600;font-size:17px;list-style:none;display:flex;justify-content:space-between}.faq summary::after{content:"+";color:var(--acc);font-size:22px;line-height:1}.faq details[open] summary::after{content:"−"}.faq p{color:var(--ink2);margin:10px 0 0}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a class="logo" href="/pulse"><b>P</b>Pulse</a>
+  <nav><a href="#how">How it works</a><a href="#features">Features</a><a href="#demo">Live demo</a><a href="#pricing">Pricing</a><a href="/webook">WeBook app</a></nav>
+  <a class="btn gho signin" href="/login">Sign in</a><a class="btn pri" href="#start" data-kind="signup">Get started</a>
+</div></header>
+
+<main>
+<div class="wrap hero">
+  <div>
+    <span class="tag"><i></i>Answering customers right now</span>
+    <h1>Never miss a <em>customer</em> again.</h1>
+    <p class="lead">Pulse is an AI assistant that answers your customers on WhatsApp and Telegram, books their appointments, sends reminders and brings them back. Day and night, in their language.</p>
+    <div class="ctas"><a class="btn pri" href="#start" data-kind="signup">Start with Pulse</a><a class="btn gho" href="#start" data-kind="demo">Book a free demo</a></div>
+    <small>Set up in one day · No new app for your customers · Cancel any time</small>
+  </div>
+  <div class="phone glass" aria-label="Example conversation">
+    <div class="ph-top"><div class="av">N</div><div><b>Nora · Glow Beauty</b><small>online</small></div></div>
+    <div class="msgs" id="chat"></div>
+  </div>
+</div>
+
+<section style="padding-top:20px"><div class="wrap stats">
+  <div class="glass"><b>24/7</b><span>answers, even at 2am</span></div>
+  <div class="glass"><b>&lt;5s</b><span>average reply time</span></div>
+  <div class="glass"><b>3</b><span>languages: English, Arabic, Spanish</span></div>
+  <div class="glass"><b>1 day</b><span>from sign-up to live</span></div>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <div class="sh"><span class="k">How it works</span><h2>Your new front desk, ready tomorrow.</h2><p>No training, no new phone. Tell Pulse about your business once and it handles the rest.</p></div>
+  <div class="steps">
+    <div class="glass"><i>1</i><h3>Tell us about your business</h3><p>Services, prices, opening hours, policies. Or pick your business type and start from a ready template.</p></div>
+    <div class="glass"><i>2</i><h3>Connect your WhatsApp</h3><p>Customers message the number they already know. Your assistant answers, books and confirms instantly.</p></div>
+    <div class="glass"><i>3</i><h3>Watch it in Pulse</h3><p>Every chat, booking and dollar, live. Step in any time, or let the AI do it all.</p></div>
+  </div>
+</div></section>
+
+<section id="features"><div class="wrap">
+  <div class="sh"><span class="k">Features</span><h2>Everything a great receptionist does. And more.</h2></div>
+  <div class="feat">
+    <div class="glass"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><h3>Answers every message</h3><p>Prices, hours, location, "do you have time today?". Instant, accurate replies from your own information.</p></div>
+    <div class="glass"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><h3>Books appointments</h3><p>Checks real availability, books, moves and cancels. Never double-books, respects your buffers and staff.</p></div>
+    <div class="glass"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></svg><h3>Reminders that cut no-shows</h3><p>Automatic reminders before every visit, with an easy way to confirm or reschedule.</p></div>
+    <div class="glass"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><h3>Your business, live</h3><p>Pulse shows bookings, revenue, busiest hours and what customers ask. Click any chart for every detail.</p></div>
+    <div class="glass"><svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5zM6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/></svg><h3>Learns your way</h3><p>Correct a reply once and it remembers. Set strict rules it always follows. Name it whatever you like.</p></div>
+    <div class="glass"><svg viewBox="0 0 24 24"><path d="M4 12h3l8-6v12l-8-6"/><path d="M18 9a4 4 0 0 1 0 6"/></svg><h3>Brings customers back</h3><p>Offers to customers who haven't visited in a while, discount codes, and a booking page for your website.</p></div>
+  </div>
+</div></section>
+
+<section id="demo"><div class="wrap">
+  <div class="sh"><span class="k">Live demo</span><h2>Try it yourself. Right now.</h2><p>Pick a demo business and chat with its assistant like a real customer. Ask for a price, book a time, change your mind.</p></div>
+  <div class="demos" id="demos"><a class="demo glass" href="/webook"><b>Open the demo app</b><span>See real businesses running on Pulse.</span><em>Try it →</em></a></div>
+</div></section>
+
+<section id="pricing"><div class="wrap">
+  <div class="sh"><span class="k">Pricing</span><h2>Simple monthly plans.</h2><p>Pay less than one missed booking a week. Your customers never pay anything.</p></div>
+  <div class="plans" id="plans"></div>
+  <div class="addons glass" id="addons" hidden></div>
+</div></section>
+
+<section class="faq"><div class="wrap" style="max-width:820px">
+  <div class="sh"><span class="k">Questions</span><h2>Good to know</h2></div>
+  <details class="glass"><summary>Do my customers need to download anything?</summary><p>No. They message your WhatsApp or Telegram like they always do. Pulse answers there.</p></details>
+  <details class="glass"><summary>What if the AI doesn't know the answer?</summary><p>It says so politely and hands the chat to you, with an alert on your phone. You can reply from Pulse and teach it the right answer for next time.</p></details>
+  <details class="glass"><summary>Which languages does it speak?</summary><p>It replies in the customer's language, including English, Arabic (and Lebanese) and Spanish.</p></details>
+  <details class="glass"><summary>Can I keep using my calendar and team?</summary><p>Yes. Add your team, opening hours and breaks. Bookings you add yourself are respected by the AI.</p></details>
+  <details class="glass"><summary>Is there a contract?</summary><p>No. Monthly subscription, cancel any time.</p></details>
+</div></section>
+
+<section id="start"><div class="wrap cta">
+  <div>
+    <div class="sh" style="margin:0"><span class="k">Get started</span><h2>Let's get your assistant live.</h2><p>Leave your details and we'll set everything up with you, usually within a day.</p></div>
+    <div class="list">
+      <div><svg viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"/></svg><span><b>We set it up with you.</b> Services, hours and your WhatsApp, done together.</span></div>
+      <div><svg viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"/></svg><span><b>Free demo first.</b> See it answer your real questions before you pay.</span></div>
+      <div><svg viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"/></svg><span><b>No contract.</b> Monthly, cancel any time.</span></div>
+    </div>
+  </div>
+  <div class="form glass" id="formBox">
+    <div class="seg" role="tablist"><button type="button" data-k="signup" aria-pressed="true">Start with Pulse</button><button type="button" data-k="demo" aria-pressed="false">Book a demo</button></div>
+    <div class="ref" id="refNote" hidden></div>
+    <form id="lead" class="fg" novalidate>
+      <label>Your name<input name="name" autocomplete="name" required></label>
+      <label>Business name<input name="business" autocomplete="organization" required></label>
+      <label>Business type<select name="business_type"><option>Beauty salon</option><option>Barber</option><option>Clinic or dentist</option><option>Spa or massage</option><option>Fitness or gym</option><option>Restaurant or café</option><option>Nails</option><option>Other</option></select></label>
+      <label>Country<select name="country"><option>Lebanon</option><option>Spain</option><option>Other</option></select></label>
+      <label>WhatsApp number<input name="phone" inputmode="tel" autocomplete="tel" placeholder="+961 …"></label>
+      <label>Email<input name="email" type="email" autocomplete="email"></label>
+      <label class="full" id="msgL">Anything we should know? (optional)<textarea name="message" rows="3" placeholder="e.g. 3 chairs, busy on weekends, we get lots of WhatsApp messages"></textarea></label>
+      <div class="full"><button class="btn pri" style="width:100%" id="go">Start with Pulse</button><p class="err" id="err"></p></div>
+    </form>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap fcols">
+  <div><a class="logo" href="/pulse" style="font-size:15px"><b style="width:24px;height:24px;font-size:12px">P</b>Pulse</a><p style="margin:10px 0 0;max-width:280px">The AI front desk that never misses a customer.</p></div>
+  <div><b>Product</b><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#demo">Live demo</a><a href="#start" data-kind="demo">Book a demo</a></div>
+  <div><b>For customers</b><a href="/webook">WeBook marketplace</a><a href="/webook" data-install>Get the app</a></div>
+  <div><b>For businesses</b><a href="/login">Sign in to Pulse</a><a href="#start" data-kind="signup">Get started</a><a href="/privacy">Privacy</a></div>
+  </div><div class="wrap" style="margin-top:24px;border-top:1px solid var(--line);padding-top:18px"><span>© <span id="yr"></span> Pulse. Never miss a beat.</span></div></footer>
+
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+$("#yr").textContent=new Date().getFullYear();
+const P=new URLSearchParams(location.search),ref=P.get("ref"),src=P.get("s")||"direct";
+
+// Hero chat plays like a real conversation
+const SCRIPT=[["c","Hi! Do you have time for a haircut tomorrow?"],["a","Hi, I'm Nora 👋 Tomorrow I have 11:00, 14:30 or 17:00. Which suits you?"],["c","14:30 please"],["a","Done! Haircut & blow-dry, tomorrow at 14:30, $35. Can I have your name?"],["c","Rana"],["a ok","✅ Your booking is confirmed, Rana. Tomorrow 14:30. I'll remind you the day before.<span class='p'>Powered by Pulse</span>"]];
+function play(){const box=$("#chat");box.innerHTML="";SCRIPT.forEach(([k,t],i)=>setTimeout(()=>{const d=document.createElement("div");d.className="m "+k;d.innerHTML=t;box.append(d)},600+i*1300));setTimeout(play,600+SCRIPT.length*1300+5000)}
+play();
+
+// Demo businesses from the WeBook app
+fetch("/api/webook/businesses").then(r=>r.ok?r.json():[]).then(list=>{list=(Array.isArray(list)?list:list.businesses||[]).slice(0,6);if(!list.length)return;
+  $("#demos").innerHTML=list.map(b=>`<a class="demo glass" href="/webook/${b.id}?chat=1"><b>${esc(b.name)}</b><span>${esc([b.emoji,b.type,b.city].filter(Boolean).join(" · "))}</span><em>Chat with the assistant →</em></a>`).join("")}).catch(()=>{});
+
+// Pricing from the live plans
+const FEAT={booking_page:"Online booking page",webook_listing:"Listed in the WeBook app",reminders:"Appointment reminders",teach:"Teach the AI your answers",insights:"Insights and reports",coupons:"Discount codes",telegram:"Your own Telegram bot",staff_logins:"Staff logins",marketing:"Marketing campaigns",remove_branding:"Your brand only (no Pulse badge)"};
+const sym=c=>c==="EUR"?"€":"$";
+fetch("/api/public/pricing").then(r=>r.json()).then(({plans,addons})=>{
+  $("#plans").innerHTML=plans.map((p,i)=>`<div class="plan glass${i===1?" hot":""}"><h3>${esc(p.name)}${i===1?"<small>Most popular</small>":""}</h3><div class="pr">${sym(p.currency)}${+p.price}<small> / month</small></div>
+    <ul><li>AI assistant on WhatsApp, 24/7</li><li>Pulse dashboard</li>${(p.features||[]).map(f=>FEAT[f]?`<li>${FEAT[f]}</li>`:"").join("")}</ul>
+    <a class="btn ${i===1?"pri":"gho"}" href="#start" data-kind="signup" data-plan="${esc(p.name)}">Choose ${esc(p.name)}</a></div>`).join("");
+  if(addons.length){$("#addons").hidden=false;$("#addons").innerHTML=`<b>Add-ons:</b>`+addons.map(a=>`<span>${esc(a.name)} · ${sym(a.currency)}${+a.price}/mo</span>`).join("")}}).catch(()=>{$("#pricing").hidden=true});
+
+// Lead form: sign up or demo
+let kind="signup",plan="";
+function setKind(k){kind=k;document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===k));$("#go").textContent=k==="demo"?"Book my free demo":"Start with Pulse"}
+document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>setKind(b.dataset.k));
+document.addEventListener("click",e=>{const a=e.target.closest("a[data-kind]");if(a){setKind(a.dataset.kind);plan=a.dataset.plan||plan}});
+if(ref)fetch("/api/public/info?b="+encodeURIComponent(ref)).then(r=>r.ok?r.json():null).then(i=>{if(i&&i.name){$("#refNote").hidden=false;$("#refNote").innerHTML=`You found us through <b>${esc(i.name)}</b>. Welcome! 👋`}}).catch(()=>{});
+$("#lead").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));$("#err").textContent="";
+  if(!f.name.trim()||!f.business.trim())return $("#err").textContent="Add your name and your business name.";
+  if(!f.phone.trim()&&!f.email.trim())return $("#err").textContent="Add a WhatsApp number or an email so we can reach you.";
+  if(plan)f.message=(f.message?f.message+"\n":"")+"Interested in plan: "+plan;
+  $("#go").disabled=true;
+  try{const r=await fetch("/api/public/lead",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...f,kind,ref,source:src})}),d=await r.json();
+    if(!r.ok)throw new Error(d.error||"Something went wrong. Try again.");
+    $("#formBox").innerHTML=`<div class="done"><div style="font-size:44px">🎉</div><b>${kind==="demo"?"Your demo request is in!":"You're on your way!"}</b><p style="color:var(--ink2);margin:0">We'll message you on ${f.phone?"WhatsApp":"email"} within one working day${kind==="demo"?" to pick a time":" to set everything up"}.</p></div>`}
+  catch(err){$("#err").textContent=err.message;$("#go").disabled=false}};
+</script>
+</body>
+</html>

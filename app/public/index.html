@@ -1,0 +1,1504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pulse</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/glossy.css">
+<link rel="stylesheet" href="/theme.css">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("rb-theme")||"dark"}catch{document.documentElement.dataset.theme="dark"}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<div class="shell">
+  <nav aria-label="Main">
+    <div class="brand"><div class="logo">P</div><span>Pulse</span></div>
+    <div class="navpills">
+    <p class="ns">Main</p>
+    <button data-view="overview" aria-current="true" title="Home" aria-label="Home"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span>Home</span></button>
+    <button data-view="overview" data-sub="live" title="Live now" aria-label="Live now"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg><span>Live now</span></button>
+    <button data-view="overview" data-sub="conversations" title="Conversations" aria-label="Conversations"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8 11h8M8 14h5"/></svg><span>Conversations</span></button>
+    <button data-view="overview" data-sub="approvals" title="Approvals" aria-label="Approvals"><svg viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"/></svg><span>Approvals</span></button>
+    <button data-view="calendar" title="Calendar" aria-label="Calendar"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>Calendar</span></button>
+    <button data-view="people" title="Customers" aria-label="Customers"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.8.8 3 2.6 3.5 5.4"/></svg><span data-term="Customers">Customers</span></button>
+    <button data-view="people" data-sub="offers" title="Offers" aria-label="Offers"><svg viewBox="0 0 24 24"><path d="M4 12h3l8-6v12l-8-6"/><path d="M18 9a4 4 0 0 1 0 6"/></svg><span>Offers</span></button>
+    <p class="ns">AI receptionist</p>
+    <button data-view="training" title="Teach AI" aria-label="Teach AI"><svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5zM6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/></svg><span>Teach AI</span><b class="badge-n" id="trN" hidden style="margin-left:2px"></b></button>
+    <button data-view="demo" title="Test chat" aria-label="Test chat"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>Test chat</span></button>
+    <p class="ns">Business</p>
+    <button data-view="analytics" title="Insights" aria-label="Insights"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Insights</span></button>
+    <button data-view="setup" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Settings</span></button>
+    <button data-view="admin" id="adminNav" hidden title="All businesses" aria-label="All businesses"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg><span>Businesses</span></button>
+    </div><div class="sp"></div>
+    <div class="plancard" id="planCard"><b id="pcTitle">Your plan</b><small id="pcSub"></small><span class="pc-bar"><i id="pcBar"></i></span></div>
+    <div class="navfoot">
+    <button id="bellBtn" title="Notifications" aria-label="Notifications" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></svg><b class="badge-n" id="bellN" hidden></b></button>
+    <button id="themeBtn" title="Switch light or dark" aria-label="Switch light or dark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg></button>
+    <button id="logoutBtn" title="Sign out" aria-label="Sign out"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg></button>
+    </div>
+  </nav>
+
+  <div id="bellPanel" class="bellPanel" hidden role="dialog" aria-label="Notifications">
+    <div class="bp-head"><b>Notifications</b><span style="flex:1"></span><button class="mini" type="button" id="bellAll">Mark all read</button><button class="mini" type="button" id="bellCfg">Alert settings</button></div>
+    <div id="bellSettings" hidden class="bp-set"></div>
+    <div id="bellList" class="bp-list"></div>
+  </div>
+  <main>
+    <div class="wrap" id="planBar" hidden style="padding-bottom:0"><div class="item" style="justify-content:flex-start;gap:12px;flex-wrap:wrap"><span id="planText"></span><span class="sp" style="flex:1"></span><button class="mini" type="button" id="pwBtn">Account security</button></div></div>
+    <!-- OVERVIEW -->
+    <section class="wrap" id="overview">
+      <div class="top">
+        <div><h1><span id="greet">Hello</span>, <b id="bizName">…</b></h1><p class="sub" id="subline">Loading…</p></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <label class="switch"><input type="checkbox" id="incTest" checked> Include test chats</label>
+          <div class="tabs glass" role="group" aria-label="Period"><button aria-pressed="false" data-d="1">Today</button><button aria-pressed="false" data-d="7">7 days</button><button aria-pressed="true" data-d="30">30 days</button><button aria-pressed="false" data-d="90">90 days</button><button aria-pressed="false" data-d="365">12 months</button></div>
+          <span class="pill glass idle" id="aiPill" title=""><i></i><span>AI: no messages yet</span></span>
+        </div>
+      </div>
+
+      <div class="desk2">
+        <div class="desk-light" aria-hidden="true"></div>
+        <div class="cmdrow">
+          <div class="cmd" role="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="cmdQ" placeholder="Search clients, conversations and bookings" aria-label="Search clients, conversations and bookings" autocomplete="off"><kbd>Ctrl K</kbd>
+            <div class="cmd-res" id="cmdRes" hidden></div></div>
+          <div class="qpills">
+            <button type="button" class="qp" data-go="newbooking"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New booking</button>
+            <button type="button" class="qp" data-go="approvals"><svg viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"/></svg>Approvals <b id="qpAppr" hidden></b></button>
+            <button type="button" class="qp" data-go="people"><svg viewBox="0 0 24 24"><path d="M4 12h3l8-6v12l-8-6"/></svg>Send an offer</button>
+            <button type="button" class="qp" data-go="demo"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Test the AI</button>
+          </div>
+        </div>
+
+        <div class="g12">
+          <div class="card glass gx gc5 aicard">
+            <div class="hud" id="hud" aria-hidden="true"><svg viewBox="0 0 200 200">
+              <defs><radialGradient id="hudCore"><stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="var(--hud)"/><stop offset="1" stop-color="var(--hud)" stop-opacity="0"/></radialGradient></defs>
+              <circle cx="100" cy="100" r="96" class="h-faint"/>
+              <g class="h-r1"><circle cx="100" cy="100" r="88" class="h-ticks"/></g>
+              <g class="h-r2"><circle cx="100" cy="100" r="76" class="h-seg"/><circle cx="100" cy="100" r="76" class="h-seg2"/></g>
+              <g class="h-r3"><circle cx="100" cy="100" r="62" class="h-dash"/></g>
+              <g class="h-r4"><path d="M100 46 A54 54 0 0 1 154 100" class="h-arc"/><path d="M100 154 A54 54 0 0 1 46 100" class="h-arc"/></g>
+              <circle cx="100" cy="100" r="44" class="h-ring"/>
+              <g class="h-wave" id="hudWave"></g>
+              <circle cx="100" cy="100" r="22" fill="url(#hudCore)" class="h-core"/>
+              <circle cx="100" cy="100" r="9" class="h-dot"/>
+            </svg></div>
+            <div class="ai-text"><span class="live-dot" id="ldDot"><i></i>Live</span><h2 id="ldTitle">Your receptionist is getting ready</h2><p class="sub" id="ldSub">Waiting for the first message.</p></div>
+            <div class="lstats" id="ldStats"></div>
+          </div>
+          <div class="card glass gx gc3"><div class="ch"><h2>Today's capacity</h2></div><svg class="gauge" id="ldGauge" viewBox="0 0 200 118" role="img" aria-label="Share of today's open hours that are booked"></svg><p class="sub center" id="ldGaugeSub"></p></div>
+          <div class="card glass gx gc4"><div class="ch"><h2>Bookings by channel</h2><small class="plabel">last 30 days</small></div><div class="donutwrap"><svg class="donut" id="ldDonut" viewBox="0 0 120 120" role="img" aria-label="Bookings by channel"></svg><div class="dlegend" id="ldLegend"></div></div></div>
+        </div>
+
+        <div class="card glass gx setupcard" id="ldSetup" hidden></div>
+
+        <div class="g12">
+          <div class="card glass gx gc3 micro"><div class="mh"><span>Messages, 24 h</span><em id="mMsgD"></em></div><b id="mMsg">0</b><svg id="mMsgC" viewBox="0 0 240 54" preserveAspectRatio="none"></svg></div>
+          <div class="card glass gx gc3 micro"><div class="mh"><span>Bookings, <span class="plabel">last 30 days</span></span><em id="mBkD"></em></div><b id="mBk">0</b><svg id="mBkC" viewBox="0 0 240 54" preserveAspectRatio="none"></svg></div>
+          <div class="card glass gx gc3 micro"><div class="mh"><span>Value booked, <span class="plabel">last 30 days</span></span><em id="mValD"></em></div><b id="mVal">0</b><svg id="mValC" viewBox="0 0 240 54" preserveAspectRatio="none"></svg></div>
+          <div class="card glass gx gc3 micro"><div class="mh"><span>AI reply time</span><em id="mMsD"></em></div><b id="mMs">—</b><svg id="mMsC" viewBox="0 0 240 54" preserveAspectRatio="none"></svg></div>
+        </div>
+
+        <div class="g12">
+          <div class="card glass gx gc5"><div class="ch"><h2>This week</h2><small>how full each day is</small></div><div class="capsules" id="ldWeek"></div></div>
+          <div class="card glass gx gc4"><div class="ch"><h2>From channel to result</h2><small class="plabel">last 30 days</small></div><svg class="flow" id="ldFlow" viewBox="0 0 320 170" role="img" aria-label="Conversations by channel and how they ended"></svg></div>
+          <div class="card glass gx gc3"><div class="ch"><h2>Busiest moments</h2><small class="plabel">last 30 days</small></div><div class="hgrid" id="ldHeat"></div></div>
+        </div>
+
+        <div class="g12">
+          <div class="card glass gx gc5"><div class="ch"><h2>Conversations</h2><small><span class="plabel">last 30 days</span>, needing you first</small></div><div class="tw"><table class="dtable"><colgroup><col style="width:34%"><col style="width:22%"><col style="width:22%"><col></colgroup><thead><tr><th>Client</th><th>Channel</th><th>Status</th><th>Last message</th></tr></thead><tbody id="ldActive"></tbody></table></div></div>
+          <div class="card glass gx gc3"><div class="ch"><h2>Coming up</h2><small>next confirmed</small></div><div class="uplist" id="ldUp"></div></div>
+          <aside class="card glass gx gc4 desk-feed" aria-label="Live activity"><div class="ch"><h2>Happening now</h2><small id="ldClock"></small></div><div class="feed-list" id="ldFeed" aria-live="polite"></div></aside>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi glass hero"><span class="k-l">Booked automatically</span><span class="v num" id="kVal">$0</span><span class="delta" id="kValSub">—</span></div>
+        <div class="kpi glass"><span class="k-l">Conversations</span><span class="v num" id="kConv">0</span><span class="k-sub" id="kConvSub">—</span><svg class="spark" id="sp1" viewBox="0 0 100 28" preserveAspectRatio="none"></svg></div>
+        <div class="kpi glass"><span class="k-l">Booking rate</span><span class="v num" id="kRate">—</span><span class="k-sub" id="kRateSub">—</span></div>
+        <div class="kpi glass"><span class="k-l">AI reply time</span><span class="v num" id="kMs">—</span><span class="k-sub" id="kMsSub">—</span></div>
+      </div>
+
+      <div class="card glass" id="apprCard">
+        <div class="ch"><h2>Approvals <span class="badge-n" id="apprN" hidden></span></h2>
+          <div class="tabs" role="group" aria-label="Approval status" id="apprTabs"><button aria-pressed="true" data-s="pending">Waiting</button><button aria-pressed="false" data-s="approved">Approved</button><button aria-pressed="false" data-s="rejected">Rejected</button></div></div>
+        <div class="list" id="approvals"></div>
+      </div>
+
+      <div class="row r1">
+        <div class="card glass">
+          <div class="ch"><h2>Needs you <span class="badge-n" id="attnN" hidden></span></h2><small>chats the AI handed to staff</small></div>
+          <div class="list" id="attention"></div>
+        </div>
+        <div class="card glass">
+          <div class="ch"><h2 id="todayTitle">Today</h2><small id="todaySub"></small></div>
+          <div class="list" id="today"></div>
+          <div class="ch" style="margin:16px 0 8px"><h2>Next up</h2></div>
+          <div class="list" id="upcoming"></div>
+        </div>
+      </div>
+
+      <div class="row r2">
+        <div class="card glass">
+          <div class="ch"><h2>Conversations and automatic bookings per day</h2><small id="areaNote"></small></div>
+          <svg id="area" viewBox="0 0 520 200" role="img" aria-label="Daily conversations and bookings"></svg>
+          <div class="legend"><span style="--c:var(--blue)">Conversations</span><span style="--c:var(--good)">Booked by chat or online</span></div>
+        </div>
+        <div class="card glass">
+          <div class="ch"><h2>From chat to visit</h2><small>this period</small></div>
+          <div class="fun" id="fun"></div>
+          <div class="statrow" id="outcomes"></div>
+        </div>
+      </div>
+
+      <div class="row r3">
+        <div class="card glass">
+          <div class="ch"><h2>When customers message</h2><small id="heatNote">darker = more messages</small></div>
+          <div class="heat" id="heat"></div>
+        </div>
+        <div class="card glass">
+          <div class="ch"><h2>Services booked</h2><small>all bookings</small></div>
+          <div class="fun" id="svcBars"></div>
+        </div>
+        <div class="card glass">
+          <div class="ch"><h2>Insights</h2><small>from your numbers</small></div>
+          <div class="list" id="insights"></div>
+        </div>
+      </div>
+
+      <div class="card glass">
+        <div class="ch"><h2>Conversations</h2><input id="search" placeholder="Search name, phone or message" aria-label="Search conversations"></div>
+        <div class="tw"><table><thead><tr><th>Updated</th><th>Customer</th><th>Channel</th><th>Result</th><th>Value</th><th>Last message</th></tr></thead><tbody id="feed"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section class="wrap" id="calendar" hidden>
+      <div class="top"><div><h1><span data-term="Booking">Booking</span> <b>calendar</b></h1><p class="sub" id="calSum">Loading…</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="calBlock" type="button">Block time</button><button class="btn" id="calNew" type="button">New booking</button></div></div>
+      <div class="card glass">
+        <div class="ch"><div style="display:flex;gap:6px;align-items:center"><button class="btn ghost" id="calPrev" type="button" aria-label="Previous week">‹</button><button class="btn ghost" id="calToday" type="button">This week</button><button class="btn ghost" id="calNext" type="button" aria-label="Next week">›</button></div><h2 id="calRange"></h2></div>
+        <div class="cal-wrap"><div class="cal"><div class="cal-head" id="calHead"></div><div class="cal-grid" id="calGrid"></div></div></div>
+        <div class="legend" style="margin-top:10px"><span style="--c:var(--blue)">Confirmed</span><span style="--c:var(--good)">Came</span><span style="--c:var(--bad)">No-show</span><span style="--c:var(--muted)">Striped = closed or blocked</span></div>
+        <p class="sub" style="margin:6px 0 0;font-size:13px">Click an empty spot to add a booking. Click a booking to move it, cancel it, or mark whether the customer came. <span class="tzline" id="calTz"></span></p>
+      </div>
+    </section>
+
+    <!-- TEST CHAT -->
+    <section class="wrap" id="people" hidden>
+      <div class="top"><div><h1><span data-term="Customer">Customer</span> <b>profiles</b></h1><p class="sub" id="pplSub">Everyone who booked or chatted. The AI uses these profiles to treat regulars like regulars.</p></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label class="switch"><input type="checkbox" id="pplTest"> Include test customers</label><input id="pplQ" placeholder="Search name, phone or email" aria-label="Search customers" style="width:260px"></div></div>
+      <div class="kpis" id="pplKpis"></div>
+      <div class="card glass"><div class="tw"><table><thead><tr><th>Customer</th><th>Phone</th><th>Email</th><th>Visits</th><th>Upcoming</th><th>Spent</th><th>No-shows</th><th>Last booking</th><th>Reminder by</th><th>Offers</th></tr></thead><tbody id="pplRows"></tbody></table></div></div>
+      <div class="card glass" id="mkCard">
+        <div class="ch"><h2>Send an offer</h2><small>only to clients who agreed to receive offers</small></div>
+        <div class="form">
+          <label>Who gets it<select id="mkType"><option value="all">Everyone who agreed</option><option value="inactive">Haven't booked recently</option><option value="service">Booked a specific service</option><option value="regulars">Regulars</option><option value="new">New clients</option></select></label>
+          <label id="mkDaysL">Days<input type="number" id="mkDays" value="60" min="7" max="730"></label>
+          <label id="mkSvcL" hidden>Service<select id="mkSvc"></select></label>
+          <label id="mkMinL" hidden>At least this many visits<input type="number" id="mkMin" value="3" min="2" max="50"></label>
+          <label class="full">Campaign name<input id="mkName" placeholder="Autumn facial offer" maxlength="80"></label>
+          <label class="full">Message<textarea id="mkMsg" rows="3" maxlength="900" placeholder="This week only: 20% off facials with code GLOW20. Reply to book your time."></textarea></label>
+          <p class="full sub" id="mkInfo" style="margin:0;font-size:13px"></p>
+          <div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" type="button" id="mkPrev">Check who it reaches</button><button class="btn" type="button" id="mkSend">Send offer</button></div>
+        </div>
+        <div class="list" id="mkPast" style="margin-top:14px"></div>
+      </div>
+    </section>
+
+    <section class="wrap" id="analytics" hidden>
+      <div class="top"><div><h1>Business <b>insights</b></h1><p class="sub" id="inSub">What sells, when you're busy, and what your customers keep asking.</p></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn ghost" type="button" id="inSample" hidden>Preview with sample data</button>
+          <div class="tabs glass" role="group" aria-label="Insights period" id="inTabs"><button aria-pressed="false" data-d="7">7 days</button><button aria-pressed="true" data-d="30">30 days</button><button aria-pressed="false" data-d="90">90 days</button><button aria-pressed="false" data-d="365">12 months</button></div></div></div>
+      <div class="card glass" id="inBanner" hidden style="border:1.5px dashed var(--blue)"><div class="ch" style="margin:0"><h2>You're looking at sample data</h2><button class="btn ghost" type="button" id="inReal">Back to my real numbers</button></div><p class="sub" style="margin:6px 0 0">These numbers are made up to show what this page looks like for a busy business. Nothing here is real.</p></div>
+      <div class="kpis" id="inKpis"></div>
+      <div class="row r2">
+        <div class="card glass"><div class="ch"><h2>Revenue and bookings over time</h2><small id="inTrendNote"></small></div><svg id="inTrend" role="img" aria-label="Revenue and bookings over time" style="display:block;width:100%;height:240px"></svg>
+          <div class="legend"><span style="--c:#d65cff">Revenue</span><span style="--c:#3ee0ff">Bookings</span><span style="--c:#e0a400">Conversations</span></div></div>
+        <div class="card glass"><div class="ch"><h2>Already booked</h2><small>money in the calendar</small></div><div id="inAhead"></div></div>
+      </div>
+      <div class="card glass"><div class="ch"><h2>What to do next</h2><small>based on your numbers</small></div><div class="list" id="inRecs"></div></div>
+      <div class="row r1">
+        <div class="card glass"><div class="ch"><h2>When you're busy</h2><small>booked hours by day and time · darker = busier</small></div><div class="heat" id="inHeat"></div></div>
+        <div class="card glass"><div class="ch"><h2>Revenue by day of the week</h2><small>best day in green</small></div><div id="inDays"></div></div>
+      </div>
+      <div class="card glass"><div class="ch"><h2 data-term="Services">Services</h2><small>what sells, what gets cancelled, what people ask about</small></div>
+        <div class="tw"><table><thead><tr><th>Service</th><th>Bookings</th><th>Revenue</th><th>Share of revenue</th><th>Avg price</th><th>Cancelled</th><th>No-show</th><th>Asked about</th></tr></thead><tbody id="inSvc"></tbody></table></div></div>
+      <div class="row r1">
+        <div class="card glass"><div class="ch"><h2>AI receptionist performance</h2><small>from chat to booking</small></div><div class="fun" id="inAi"></div><div class="statrow" id="inAiStats"></div></div>
+        <div class="card glass"><div class="ch"><h2>Asked but didn't book</h2><small>warm leads worth a follow-up</small></div><div class="list" id="inLost"></div></div>
+      </div>
+      <div class="card glass"><div class="ch"><h2>What customers ask about</h2><small>similar messages grouped · click an example to read the chat</small></div><div class="list" id="inTopics"></div></div>
+      <div class="row r3">
+        <div class="card glass"><div class="ch"><h2>How far ahead they book</h2></div><div class="fun" id="inLead"></div></div>
+        <div class="card glass"><div class="ch"><h2>Where bookings come from</h2></div><div class="fun" id="inChan"></div></div>
+        <div class="card glass"><div class="ch"><h2>Customer value</h2></div><div id="inCust"></div></div>
+      </div>
+      <div class="row r3">
+        <div class="card glass"><div class="ch"><h2>Top customers</h2><small>all time</small></div><div class="list" id="inTop"></div></div>
+        <div class="card glass"><div class="ch"><h2>Haven't come back</h2><small>2+ visits, none in 45 days</small></div><div class="list" id="inRisk"></div></div>
+        <div class="card glass"><div class="ch"><h2>Repeated no-shows</h2><small>missed 2+ times</small></div><div class="list" id="inNoShow"></div></div>
+      </div>
+    </section>
+
+    <section class="wrap" id="training" hidden>
+      <div class="top"><div><h1>Teach your <b>AI</b></h1><p class="sub">You're the boss of your assistant. Check its replies, fix anything it got wrong, and set rules it must always follow. Every correction makes it better.</p></div></div>
+      <div class="statrow" id="tchStats"></div>
+      <div class="tabs glass" role="group" aria-label="Teach AI section" id="tchMode" style="margin-bottom:14px"><button aria-pressed="true" data-m="review">Review replies</button><button aria-pressed="false" data-m="questions">Unanswered questions</button><button aria-pressed="false" data-m="rules">Strict rules</button></div>
+      <div id="tchReview">
+        <div class="tabs" role="group" aria-label="Reply filter" id="rvTabs" style="margin-bottom:12px"><button aria-pressed="true" data-f="todo">To review</button><button aria-pressed="false" data-f="approved">Good</button><button aria-pressed="false" data-f="corrected">Corrected</button><button aria-pressed="false" data-f="wrong">Wrong</button></div>
+        <div class="list" id="rvList"></div>
+      </div>
+      <div id="tchRules" hidden>
+        <div class="card glass"><div class="ch"><h2>Rules the AI must always follow</h2><small>checked before every reply</small></div>
+          <p class="sub" style="margin:0 0 12px;font-size:13px">Write them like you'd tell a new receptionist. Examples: "Never give discounts." "Always offer the 10:00 slot first on Saturdays." "Only answer in Arabic." "Don't book colour for new clients without a patch test."</p>
+          <div class="list" id="ruList"></div>
+          <form id="ruForm" style="display:flex;gap:8px;margin-top:12px"><input id="ruIn" placeholder="Add a rule, e.g. Never promise a specific stylist" style="flex:1" maxlength="400"><button class="btn">Add rule</button></form>
+        </div>
+      </div>
+      <div id="tchQuestions" hidden>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <div class="tabs glass" role="group" aria-label="Question status" id="trTabs"><button aria-pressed="true" data-s="open">To answer</button><button aria-pressed="false" data-s="answered">Answered</button><button aria-pressed="false" data-s="dismissed">Dismissed</button></div></div>
+      <div class="list" id="trList"></div>
+      </div>
+      <div class="card glass"><div class="ch"><h2>What the AI already knows</h2><small>from Business setup</small></div><div class="statrow" id="trKnows" style="margin:0"></div>
+        <p class="sub" style="font-size:13px;margin:12px 0 0">The more you fill in Setup (services with descriptions, FAQs, policies, team), the fewer questions end up here. Even when the AI is down, prices, durations, hours, address and FAQs are still answered instantly.</p></div>
+    </section>
+
+    <section class="wrap" id="demo" hidden>
+      <div class="top"><div><h1>Test <b>chat</b></h1><p class="sub">Write as a customer. It uses the real AI, real availability and real bookings, exactly like WhatsApp.</p></div></div>
+      <div class="demo">
+        <div class="phone glass">
+          <div class="ph-top"><div class="av">R</div><div><b id="phName">…</b><small id="phState">AI assistant</small></div></div>
+          <div class="msgs" id="msgs" aria-live="polite"></div>
+          <form class="send" id="sendForm"><input id="msgIn" placeholder="Write as a customer…" autocomplete="off" aria-label="Message"><button class="btn" id="sendBtn">Send</button></form>
+        </div>
+        <div class="side">
+          <div class="card glass">
+            <div class="ch"><h2>Test controls</h2></div>
+            <p class="sub" style="margin:0">Start again as a new customer to test a conversation from the beginning.</p>
+            <button class="btn ghost" id="resetBtn" type="button" style="margin-top:12px">New customer</button>
+            <div class="log" id="log">Try: "Hi, can I book a haircut on Monday morning?"</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETUP -->
+    <section class="wrap" id="admin" hidden>
+      <div class="top"><div><h1>Command <b>center</b></h1><p class="sub">Every business, every login, every plan. Changes apply on the next click. Only you see this.</p></div></div>
+      <div class="tabs glass" role="group" aria-label="Command center section" id="ccTabs" style="margin-bottom:14px"><button aria-pressed="true" data-c="biz">Businesses</button><button aria-pressed="false" data-c="users">Logins</button><button aria-pressed="false" data-c="plans">Plans and add-ons</button><button aria-pressed="false" data-c="audit">Audit log</button><button aria-pressed="false" data-c="leads">Leads</button></div>
+      <div id="ccDone" hidden class="card glass" style="border:1px solid var(--accent)"></div>
+
+      <div id="ccBiz">
+        <div class="card glass">
+          <div class="ch"><h2>New business</h2><small>14-day trial, starter services for its type, owner login</small></div>
+          <form class="form" id="nbForm" autocomplete="off">
+            <label>Business name<input id="nbName" required></label>
+            <label>Type<select id="nbType"></select></label>
+            <label>Country<input id="nbCountry" list="nbCountries" placeholder="Lebanon"></label>
+            <label>City<input id="nbCity" placeholder="Beirut"></label>
+            <label>Currency<input id="nbCur" list="nbCurs" maxlength="3" placeholder="USD"></label>
+            <label>Time zone<input id="nbTz" list="nbTzs" placeholder="Asia/Beirut"></label>
+            <label>Plan<select id="nbPlan"></select></label>
+            <label>Owner name<input id="nbOwner"></label>
+            <label class="full">Owner email (their login)<input id="nbEmail" type="email" required></label>
+            <p class="full sub" id="nbErr" style="margin:0;color:var(--bad)"></p>
+            <button class="btn full" id="nbGo">Create business and owner login</button>
+          </form>
+          <datalist id="nbCurs"><option>USD</option><option>EUR</option><option>GBP</option><option>AED</option><option>SAR</option><option>QAR</option><option>KWD</option><option>EGP</option><option>JOD</option><option>TRY</option><option>LBP</option><option>MAD</option></datalist>
+          <datalist id="nbCountries"><option>Lebanon</option><option>Spain</option><option>United Arab Emirates</option><option>Saudi Arabia</option><option>Qatar</option><option>Kuwait</option><option>Jordan</option><option>Egypt</option><option>France</option><option>United Kingdom</option><option>United States</option><option>Germany</option><option>Turkey</option><option>Morocco</option></datalist>
+          <datalist id="nbTzs"></datalist>
+        </div>
+        <div class="card glass"><div class="ch"><h2>Businesses</h2><small id="abCount"></small></div><div class="list" id="abList"></div></div>
+      </div>
+
+      <div id="ccUsers" hidden>
+        <div class="card glass">
+          <div class="ch"><h2>New login</h2><small>owners see everything in their business; staff see only what you tick</small></div>
+          <form class="form" id="nuForm" autocomplete="off">
+            <label>Business<select id="nuBiz"></select></label>
+            <label>Role<select id="nuRole"><option value="staff">Staff</option><option value="owner">Owner</option></select></label>
+            <label>Name<input id="nuName"></label>
+            <label>Email (their login)<input id="nuEmail" type="email" required></label>
+            <div class="full" id="nuPerms" style="display:flex;flex-wrap:wrap;gap:8px 16px"></div>
+            <p class="full sub" id="nuErr" style="margin:0;color:var(--bad)"></p>
+            <button class="btn full">Create login</button>
+          </form>
+        </div>
+        <div class="card glass"><div class="ch"><h2>All logins</h2><small id="auCount"></small></div><div class="list" id="auList"></div></div>
+      </div>
+
+      <div id="ccPlans" hidden>
+        <p class="sub" style="margin:0 0 12px">Plans are what a business subscribes to; add-ons switch extra features on for one business. Tick what each one includes. Businesses update instantly.</p>
+        <div class="grid2" id="plList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px"></div>
+        <div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" type="button" id="plNew">New plan</button><button class="btn ghost" type="button" id="adNew">New add-on</button></div>
+      </div>
+
+      <div id="ccLeads" hidden>
+        <div class="kpis" id="ldKpis"></div>
+        <div class="row r1">
+          <div class="card glass"><div class="ch"><h2>Leads from the website</h2><span style="display:flex;gap:8px;flex-wrap:wrap"><select id="ldF" aria-label="Filter leads"><option value="">All</option><option value="new">New</option><option value="contacted">Contacted</option><option value="demo_booked">Demo booked</option><option value="won">Won</option><option value="lost">Lost</option></select><a class="btn ghost" href="/pulse" target="_blank" rel="noopener">Open website</a></span></div><div class="list" id="ldList"></div></div>
+          <div class="card glass"><div class="ch"><h2>"Powered by Pulse" clicks</h2><small>which businesses send you visitors</small></div><div class="list" id="ldRefs"></div></div>
+        </div>
+      </div>
+      <div id="ccAudit" hidden>
+        <div class="card glass"><div class="ch"><h2>Audit log</h2><input id="adQ" placeholder="Filter: email, business or action" style="width:260px"></div><div class="list" id="adList"></div></div>
+      </div>
+    </section>
+
+    <section class="wrap" id="security" hidden>
+      <div class="top"><div><h1>Account <b>security</b></h1><p class="sub">Your login, two-factor protection and recent activity.</p></div></div>
+      <div class="card glass"><div class="ch"><h2>Two-factor sign-in</h2><span class="tag" id="tfState"></span></div><div id="tfBody"></div></div>
+      <div class="card glass"><div class="ch"><h2>Change password</h2><small>at least 10 characters, letters and numbers; signs out your other devices</small></div>
+        <form class="form" id="pwForm" autocomplete="off"><label>Current password<input type="password" id="pwCur" autocomplete="current-password" required></label><label>New password<input type="password" id="pwNew" autocomplete="new-password" required></label>
+          <p class="full sub" id="pwErr" style="margin:0;color:var(--bad)"></p><button class="btn full">Change password</button></form></div>
+      <div class="card glass"><div class="ch"><h2>Devices</h2></div><p class="sub" style="margin:0 0 10px">Lost a phone or used a shared computer? Sign out everywhere, including here.</p><button class="btn ghost" type="button" id="soAll">Sign out everywhere</button></div>
+      <div class="card glass"><div class="ch"><h2>Recent activity on your login</h2></div><div class="list" id="myAct"></div></div>
+    </section>
+
+    <section class="wrap" id="setup" hidden>
+      <div class="top"><div><h1>Business <b>setup</b></h1><p class="sub">The assistant and the booking page only know what you write here.</p></div></div>
+      <div class="card glass" id="toolsCard">
+        <div class="ch"><h2>Tools</h2><small>what the AI is allowed to use when it books</small></div>
+        <div class="form">
+          <label>Buffer between bookings<select id="tlBuf"><option value="0">None</option><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option></select></label>
+          <p class="sub full" style="margin:-6px 0 0;font-size:13px">Time kept free after every booking for cleaning, setup or travel. The AI, the booking page and the calendar all respect it. Set a different buffer per service below.</p>
+          <div class="full" id="tlSvc" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px"></div>
+          <div class="full" style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px"><h2 style="margin:0 0 4px">Payment options the AI may offer</h2><p class="sub" style="margin:0 0 10px;font-size:13px" id="tlPayNote"></p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <label class="switch"><input type="checkbox" id="tlLater"> Pay at the appointment</label>
+              <label class="switch"><input type="checkbox" id="tlNow"> Pay online when booking</label>
+              <label class="switch"><input type="checkbox" id="tlDep"> Reservation fee to hold the booking</label>
+              <label style="max-width:220px">Reservation fee amount<input type="number" min="0" step="1" id="tlDepAmt"></label>
+            </div></div>
+          <button class="btn full" type="button" id="tlSave">Save tools</button>
+        </div>
+      </div>
+      <div class="card glass">
+        <div class="ch"><h2>Business type</h2><small>changes the wording, the AI's style and the starter template</small></div>
+        <div class="form" style="grid-template-columns:1fr auto;align-items:end">
+          <label>This business is a<select id="vtSel"></select></label>
+          <button class="btn" type="button" id="vtApply">Apply</button>
+          <label class="switch full"><input type="checkbox" id="vtTpl"> Also load the starter services, FAQs and policies for this type (replaces your current services list; past bookings stay)</label>
+          <p class="full sub" id="vtNote" style="margin:0;font-size:13px"></p>
+        </div>
+      </div>
+      <div class="card glass">
+        <form class="form" id="setupForm">
+          <label>Business name<input id="fName" required></label>
+          <label>Address<input id="fAddr"></label>
+          <label class="full">About the business (the AI uses this to describe you)<textarea id="fDesc" rows="3" placeholder="Family-run salon since 2012, specialised in natural colours and bridal hair. Women and men welcome."></textarea></label>
+          <label>Google Maps link<input id="fMaps" placeholder="https://maps.app.goo.gl/…"></label>
+          <label>Instagram<input id="fInsta" placeholder="@laylabeauty"></label>
+          <label>Website<input id="fWeb" placeholder="https://…"></label>
+          <label>Languages the AI should speak<input id="fLang" placeholder="Arabic, English, French"></label>
+          <label>Your assistant's name<input id="fAsst" maxlength="40" placeholder="Nora"><small style="color:var(--muted)">Customers see this name in every chat. Pick any name you like.</small></label>
+          <label>Tone of voice<select id="fTone"><option value="warm">Warm and friendly</option><option value="professional">Professional and polite</option><option value="playful">Fun and playful</option></select></label>
+          <label class="switch" style="align-self:end"><input type="checkbox" id="fAskEmail"> Ask new customers for their email (optional for them)</label>
+          <label class="full">Team (names and specialities, one per line)<textarea id="fTeam" rows="3" placeholder="Layla – colour specialist&#10;Rami – men's cuts and beard&#10;Sara – nails and facials"></textarea></label>
+          <div class="full"><div class="k-l" style="margin-bottom:8px">Opening hours · add a break with a comma, e.g. 10:00-14:00, 15:00-20:00</div><div id="fHours" class="hrs"></div>
+            <p class="tzline" id="fTz" style="margin:8px 0 0"></p></div>
+          <label>Customers at the same time<input id="fCap" type="number" min="1" max="50"><small style="color:var(--muted)">e.g. 3 if you have 3 chairs or staff</small></label>
+          <label>Booking times start every<select id="fStep"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option></select></label>
+          <div class="full"><div class="k-l" style="margin-bottom:8px"><span data-term="Services">Services</span> · price · minutes · how many at once (optional, e.g. number of tables of that size)</div><div id="svcList" style="display:flex;flex-direction:column;gap:8px"></div>
+            <button class="btn ghost" type="button" id="addSvc" style="margin-top:8px">Add service</button></div>
+          <label class="full">Policies (late arrival, deposits, children, pets…)<textarea id="fPol" rows="3" placeholder="More than 15 minutes late may need to be rescheduled. Children welcome with a parent. Deposit of 20 USD for bridal packages."></textarea></label>
+          <div class="full"><div class="k-l" style="margin-bottom:8px">Frequently asked questions · the AI answers these exactly as you write them</div><div id="faqList" style="display:flex;flex-direction:column;gap:8px"></div>
+            <button class="btn ghost" type="button" id="addFaq" style="margin-top:8px">Add question</button></div>
+          <label class="full">Other notes for customers (parking, payment, anything else)<textarea id="fFaq" rows="2"></textarea></label>
+          <label class="full">Special instructions for the AI (how to behave, what to always or never say)<textarea id="fAi" rows="3" placeholder="Always suggest a hair mask with colour. Never book colour for under-16s. Call women customers 'habibti' only if they write in Lebanese."></textarea></label>
+          <label>Business phone (customers call this to change late bookings)<input id="fPhone" inputmode="tel" placeholder="+961 1 234 567"></label>
+          <label>Customers can cancel or move by chat until<select id="fCancel"><option value="0">any time before</option><option value="2">2 hours before</option><option value="12">12 hours before</option><option value="24">24 hours before</option><option value="48">48 hours before</option></select></label>
+          <label>Payment methods (shown in every confirmation)<input id="fPay" placeholder="Cash, card or Apple Pay at the salon"></label>
+          <label>Note at the end of every confirmation<input id="fNote" placeholder="Please arrive 5 minutes early…"></label>
+          <label class="full">WhatsApp phone number ID (from Meta)<input id="fWa" placeholder="e.g. 123456789012345"></label>
+          <div class="full"><div class="k-l" style="margin-bottom:8px">Photos and menu · shown on WeBook and your booking page (JPG, PNG or WEBP; menu can be a PDF; max 8 MB)</div>
+            <div class="upl" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+              <div class="item" style="flex-direction:column;align-items:stretch;gap:8px" data-up="logo"><b>Logo</b><div class="upv"></div><div style="display:flex;gap:6px"><label class="btn ghost" style="flex:1;text-align:center;cursor:pointer">Upload<input type="file" accept="image/jpeg,image/png,image/webp" hidden></label><button class="btn ghost upx" type="button" hidden>Remove</button></div></div>
+              <div class="item" style="flex-direction:column;align-items:stretch;gap:8px" data-up="cover"><b>Cover photo</b><div class="upv"></div><div style="display:flex;gap:6px"><label class="btn ghost" style="flex:1;text-align:center;cursor:pointer">Upload<input type="file" accept="image/jpeg,image/png,image/webp" hidden></label><button class="btn ghost upx" type="button" hidden>Remove</button></div></div>
+              <div class="item" style="flex-direction:column;align-items:stretch;gap:8px" data-up="menu"><b>Menu or price list</b><div class="upv"></div><div style="display:flex;gap:6px"><label class="btn ghost" style="flex:1;text-align:center;cursor:pointer">Upload<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" hidden></label><button class="btn ghost upx" type="button" hidden>Remove</button></div></div>
+            </div></div>
+          <div class="full"><button class="btn">Save</button></div>
+        </form>
+      </div>
+      <div class="card glass">
+        <div class="ch"><h2>Reminders</h2><label class="switch"><input type="checkbox" id="rmOn"> Send reminders</label></div>
+        <form class="form" id="rmForm">
+          <label>Send the reminder<select id="rmHours"><option value="2">2 hours before</option><option value="12">12 hours before</option><option value="24">24 hours before</option><option value="48">48 hours before</option></select></label>
+          <div></div>
+          <label class="full">Message (use {name}, {service}, {when}, {date}, {time}, {ref}, {business})<textarea id="rmText" rows="3"></textarea></label>
+          <div class="full"><div class="k-l" style="margin-bottom:6px">Preview</div><div class="m ai" id="rmPreview" style="max-width:100%"></div></div>
+          <p class="full sub" style="margin:0;font-size:13px">Reminders go out on WhatsApp once it's connected (test chats get them in Test chat). If the customer replies to change their booking inside the ${"cancel window"}, it goes to Approvals.</p>
+          <div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn">Save reminders</button><button class="btn ghost" type="button" id="rmRun">Check for due reminders now</button></div>
+        </form>
+      </div>
+      <div class="card glass">
+        <div class="ch"><h2>Channels</h2><small>where customers can reach the AI</small></div>
+        <div class="list" id="chList"></div>
+      </div>
+      <div class="card glass" id="blCard">
+        <div class="ch"><h2>Online booking page <span class="tag t-faq" style="display:inline">Add-on</span></h2><label class="switch"><input type="checkbox" id="bkOn"> Turned on</label></div>
+        <p class="sub" style="margin:0 0 12px;font-size:13px">Optional extra for businesses without a booking page. The AI on WhatsApp works with or without it.</p>
+        <form class="form" id="bkForm">
+          <label>Page title<input id="bkTitle" placeholder="Book at Layla Beauty Salon"></label>
+          <label>Button and price colour<input id="bkColor" type="color" style="height:44px;padding:4px"></label>
+          <label class="full">Welcome text (optional)<input id="bkIntro" placeholder="Book in 30 seconds. We'll send a reminder the day before."></label>
+          <label>Customers must book at least<select id="bkNotice"><option value="0">no minimum</option><option value="1">1 hour ahead</option><option value="2">2 hours ahead</option><option value="12">12 hours ahead</option><option value="24">1 day ahead</option></select></label>
+          <label>Show days up to<select id="bkAhead"><option value="7">1 week ahead</option><option value="14">2 weeks ahead</option><option value="30">1 month ahead</option><option value="60">2 months ahead</option></select></label>
+          <label class="switch full"><input type="checkbox" id="bkPrices"> Show prices on the page</label>
+          <div class="full"><button class="btn">Save booking page</button></div>
+        </form>
+        <div id="bkLink">
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="blUrl" readonly style="flex:1;min-width:220px" aria-label="Booking link"><button class="btn" type="button" id="blCopy">Copy link</button><a class="btn ghost" id="blOpen" target="_blank" rel="noopener" style="text-decoration:none">Open</a></div>
+        <p class="sub" style="margin:14px 0 6px;font-size:13px">Add a <b>Book now</b> button to the business's website (paste this into the site):</p>
+        <div style="display:flex;gap:8px;align-items:flex-start"><textarea id="blEmbed" readonly rows="3" style="flex:1;font-family:var(--mono);font-size:12px" aria-label="Website button code"></textarea><button class="btn ghost" type="button" id="blCopy2">Copy code</button></div>
+        <p class="sub" style="margin:10px 0 0;font-size:13px">Also share it on Instagram bio, Google Maps and WhatsApp status. Bookings appear here instantly, marked <b>Online</b>.</p>
+        </div>
+      </div>
+      <div class="card glass">
+        <div class="ch"><h2>Discount codes</h2><small>the AI applies valid codes automatically</small></div>
+        <form class="form" id="cpForm" style="grid-template-columns:repeat(5,minmax(0,1fr));align-items:end">
+          <label>Code<input id="cpCode" placeholder="WELCOME10" required></label>
+          <label>Type<select id="cpKind"><option value="percent">% off</option><option value="amount">Amount off</option></select></label>
+          <label>Value<input id="cpVal" type="number" min="1" step="0.5" placeholder="10" required></label>
+          <label>Expires (optional)<input id="cpExp" type="date"></label>
+          <label>Max uses (optional)<input id="cpMax" type="number" min="1" placeholder="Unlimited"></label>
+          <div class="full"><button class="btn">Add code</button></div>
+        </form>
+        <div class="list" id="coupons" style="margin-top:14px"></div>
+      </div>
+      <div class="card glass"><div class="ch"><h2>Test data</h2></div><p class="sub" style="margin:0 0 12px">Delete every conversation and booking made from Test chat, so the dashboard shows only real customers.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn ghost" id="clearBtn" type="button">Delete test data</button><span id="clearAsk" hidden>This can't be undone. <button class="btn" id="clearYes" type="button">Yes, delete</button> <button class="btn ghost" id="clearNo" type="button">Keep it</button></span></div></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast glass" id="toast" role="status"></div>
+<div class="modal" id="bModal" hidden><div class="glass"><div class="ch"><h2 id="bTitle">Booking</h2><button class="btn ghost" id="bClose" type="button">Close</button></div>
+  <form class="form" id="bForm"><label>Customer name<input id="bName"></label><label>Phone (optional)<input id="bPhone" inputmode="tel"></label>
+  <label class="full">Service<select id="bService"></select></label><label>Date<input id="bDate" type="date" required></label><label>Time<input id="bTime" type="time" step="300" required></label>
+  <label class="full" id="bStatusWrap">Status<select id="bStatus"><option value="confirmed">Confirmed</option><option value="completed">Came</option><option value="no_show">No-show</option><option value="cancelled">Cancelled</option></select></label>
+  <p class="full sub" id="bInfo" style="margin:0"></p>
+  <p class="full" id="bErr" style="color:var(--bad);margin:0" hidden></p>
+  <div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn">Save</button><button class="btn ghost" id="bForce" type="button" hidden>Book anyway</button><button class="btn ghost" id="bChat" type="button" hidden>Open chat</button><button class="btn ghost" id="bCancel" type="button" style="color:var(--bad)">Cancel booking</button></div></form></div></div>
+<div class="modal" id="oModal" hidden><div class="glass"><div class="ch"><h2 id="oTitle">Block time</h2><button class="btn ghost" id="oClose" type="button">Close</button></div>
+  <form class="form" id="oForm"><label>From<input id="oStart" type="datetime-local" required></label><label>Until<input id="oEnd" type="datetime-local" required></label>
+  <label class="full">Reason (only you see it)<input id="oReason" placeholder="Holiday, staff training…"></label><p class="full" id="oErr" style="color:var(--bad);margin:0" hidden></p>
+  <div class="full" style="display:flex;gap:8px"><button class="btn" id="oSave">Block this time</button><button class="btn ghost" id="oDelete" type="button" style="color:var(--bad)">Remove block</button></div></form></div></div>
+<div class="modal" id="pModal" hidden><div class="glass" style="width:min(640px,100%)"><div class="ch"><h2 id="pTitle">Customer</h2><button class="btn ghost" id="pClose" type="button">Close</button></div>
+  <div class="statrow" id="pStats" style="margin:0 0 14px"></div>
+  <form class="form" id="pForm"><label>Name<input id="pName" required></label><label>Phone<input id="pPhone" readonly></label>
+  <label>Email<input id="pEmail" type="email"></label><label>Remind by<select id="pRemind"><option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="email">Email</option></select></label>
+  <label class="full">Private staff notes (the AI uses them but never shows them, e.g. "allergic to ammonia", "prefers Layla")<textarea id="pNotes" rows="3"></textarea></label>
+  <p class="full" id="pErr" style="color:var(--bad);margin:0" hidden></p><div class="full"><button class="btn">Save profile</button></div></form>
+  <div class="ch" style="margin:18px 0 8px"><h2>Bookings</h2></div><div class="list" id="pBook"></div>
+  <div class="ch" style="margin:18px 0 8px"><h2>Conversations</h2></div><div class="list" id="pConv"></div></div></div>
+<div class="modal" id="modal" hidden><div class="glass"><div class="ch"><h2 id="mTitle">Conversation</h2><div style="display:flex;gap:6px"><button class="btn ghost" id="mResolve" type="button" hidden>Mark handled</button><button class="btn ghost" id="mClose" type="button">Close</button></div></div><div class="msgs" id="mMsgs" style="padding:0;max-height:52vh;overflow-y:auto"></div>
+  <div id="mBar" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--edge)">
+    <span id="mAiState" class="tag t-faq"></span><button class="btn ghost" type="button" id="mAiToggle"></button></div>
+  <form id="mReply" style="display:flex;gap:8px;margin-top:10px"><textarea id="mText" rows="2" placeholder="Write your reply to the customer…" aria-label="Reply to the customer" style="flex:1;resize:vertical"></textarea><button class="btn" id="mSend">Send</button></form>
+  <p class="sub" id="mHint" style="font-size:12px;margin:6px 0 0">Sending a reply pauses the AI in this chat so you can talk to the customer yourself. Hand it back to the AI when you're done.</p></div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=n=>"$"+Math.round(n||0).toLocaleString();
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const pad=n=>String(n).padStart(2,"0");
+// All dates from the server are the business's local time, "YYYY-MM-DDTHH:MM". Parse them as plain
+// local values so the dashboard shows business time whatever the viewer's time zone is.
+const L=s=>{const[d,t="00:00"]=s.split("T"),[y,m,dd]=d.split("-").map(Number),[h,mi]=t.split(":").map(Number);return new Date(y,m-1,dd,h,mi)};
+const stamp=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const dayKey=d=>stamp(d).slice(0,10),hm=d=>stamp(d).slice(11);
+const nice=(d,o)=>d.toLocaleString("en-GB",o);
+let bizOffset=0;const bizNow=()=>new Date(Date.now()+bizOffset);
+function syncNow(s){if(s)bizOffset=L(s)-Date.now()+new Date().getSeconds()*1000}
+
+async function req(p,method="GET",body){const r=await fetch(p,{method,headers:{"Content-Type":"application/json"},body:body&&JSON.stringify(body)});
+  if(r.status===401){location.href="/login";throw new Error("Signed out")}
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||"Something went wrong."),{status:r.status});return j}
+let tm;function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("on");clearTimeout(tm);tm=setTimeout(()=>e.classList.remove("on"),2800)}
+function tween(el,to,f=v=>Math.round(v).toLocaleString()){const from=+el.dataset.v||0;el.dataset.v=to;const t0=performance.now();
+  const st=t=>{const k=Math.min(1,(t-t0)/600),e=1-Math.pow(1-k,3);el.textContent=f(from+(to-from)*e);if(k<1)requestAnimationFrame(st)};requestAnimationFrame(st)}
+const ago=s=>{const m=Math.round((bizNow()-L(s))/60000);return m<1?"just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":nice(L(s),{day:"numeric",month:"short"})};
+
+let biz=null,days=30,lastStats=null,convs=[];
+const testQ=()=>$("#incTest").checked?"":"&test=0";
+
+// ---------- overview ----------
+async function refresh(){if(typeof canSee==="function"&&!canSee("overview"))return;
+  try{const [s,c]=await Promise.all([req(`/api/stats?days=${days}${testQ()}`),req(`/api/conversations?x=1${testQ()}`)]);
+    syncNow(s.now);
+    if(lastStats&&s.ai_bookings>lastStats.ai_bookings)toast("New booking from the AI");
+    if(lastStats&&s.attention.length>lastStats.attention.length)toast("A customer needs you");
+    lastStats=s;convs=c;render(s)}
+  catch(e){if(e.message!=="Signed out")setPill("bad","Dashboard offline",e.message)}}
+function setPill(k,t,title=""){const p=$("#aiPill");p.className="pill glass "+k;p.querySelector("span").textContent=t;p.title=title}
+function render(s){
+  const h=bizNow().getHours();$("#greet").textContent=h<12?"Good morning":h<18?"Good afternoon":"Good evening";
+  $("#bizName").textContent=s.business.name;
+  const per=days===1?"in the last 24 hours":`in the last ${days} days`;
+  $("#subline").textContent=s.conv?`${s.conv} conversation${s.conv>1?"s":""} with ${s.customers} customer${s.customers>1?"s":""} ${per}.`:`No conversations ${per} yet.`;
+  const last=s.ai.last;
+  if(last&&last.ok===false)setPill("bad",`AI not responding`,`Last error: ${last.error}`);
+  else if(s.ai.replies)setPill(s.ai.failures?"bad":"ok",s.ai.failures?`AI · ${s.ai.failures} failed`:`AI online · ${(s.ai.avg_ms/1000).toFixed(1)}s`,"Average reply time this period");
+  else setPill("idle","AI: no messages yet");
+  tween($("#kVal"),s.ai_value,fmt);
+  const plan=s.business.plan_price||79;
+  $("#kValSub").textContent=s.ai_bookings?`${s.chat_bookings} by chat · ${s.web_bookings} online · ${(s.ai_value/plan).toFixed(1)}× the ${fmt(plan)} plan`:"No chat or online bookings yet";
+  if(s.booking_url&&$("#blUrl")&&!$("#blUrl").dataset.set){$("#blUrl").dataset.set=1;setBookingLink(s.booking_url)}
+  tween($("#kConv"),s.conv);$("#kConvSub").textContent=s.conv?`${s.answered} answered · ${s.handoff} sent to staff`:"—";
+  $("#kRate").textContent=s.conv?Math.round(s.booked_conv/s.conv*100)+"%":"—";$("#kRateSub").textContent=s.conv?`${s.booked_conv} of ${s.conv} chats ended in a booking`:"No chats yet";
+  $("#kMs").textContent=s.ai.avg_ms?(s.ai.avg_ms/1000).toFixed(1)+"s":"—";
+  $("#kMsSub").innerHTML=s.ai.replies?(s.ai.failures?`<span style="color:var(--bad)">${s.ai.failures} of ${s.ai.replies} replies failed</span>`:`${s.ai.replies} replies, none failed`):"No replies yet";
+  $("#apprN").hidden=!s.approvals;$("#apprN").textContent=s.approvals;$("#trN").hidden=!s.to_learn;$("#trN").textContent=s.to_learn;
+  if(lastStats&&s.to_learn>lastStats.to_learn)toast("The AI couldn't answer a question. See Training.");
+  area(s.daily);heat(s.heat);svcBars(s.services);funnel(s);attention(s.attention);today(s.today,s.upcoming);insights(s);feed();
+}
+function area(d){const el=$("#area"),W=Math.max(320,Math.round(el.clientWidth/(el.clientHeight||240)*200));el.setAttribute("viewBox",`0 0 ${W} 200`);const conv=d.map(x=>x.conv),book=d.map(x=>x.booked),n=d.length,H=200,l=26,b=22,t=10;
+  const max=Math.max(4,...conv),step=Math.ceil(max/4),top=step*4,X=i=>n<2?W/2:l+i*(W-l-8)/(n-1),Y=v=>H-b-v/top*(H-b-t);
+  const line=a=>a.map((v,i)=>(i?"L":"M")+X(i)+","+Y(v)).join("");
+  let s=`<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--blue)" stop-opacity=".3"/><stop offset="1" stop-color="var(--blue)" stop-opacity="0"/></linearGradient></defs>`;
+  for(let v=0;v<=top;v+=step)s+=`<line x1="${l}" x2="${W-8}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${l-6}" y="${Y(v)+4}" text-anchor="end">${v}</text>`;
+  const ticks=n<=7?d.map((_,i)=>i):[0,Math.round((n-1)/3),Math.round(2*(n-1)/3),n-1];
+  ticks.forEach(i=>s+=`<text x="${X(i)}" y="${H-5}" text-anchor="${i===0&&n>1?"start":i===n-1&&n>1?"end":"middle"}">${nice(L(d[i].day),{day:"numeric",month:"short"})}</text>`);
+  if(n>1)s+=`<path d="${line(conv)}L${X(n-1)},${Y(0)}L${X(0)},${Y(0)}Z" fill="url(#ga)"/><path d="${line(conv)}" fill="none" stroke="var(--blue)" stroke-width="2"/>`;
+  const bw=Math.max(3,Math.min(14,(W-l-8)/n*.45));book.forEach((v,i)=>{if(v)s+=`<rect x="${X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${H-b-Y(v)}" rx="2" fill="var(--good)"><title>${d[i].day}: ${v} AI bookings</title></rect>`});
+  conv.forEach((v,i)=>{if(v)s+=`<circle cx="${X(i)}" cy="${Y(v)}" r="3" fill="var(--blue)"><title>${d[i].day}: ${v} conversations</title></circle>`});
+  $("#area").innerHTML=s;$("#areaNote").textContent=n===1?"today":`last ${n} days`;
+  const sp=conv.slice(-14),mx=Math.max(1,...sp);$("#sp1").innerHTML=`<polyline points="${sp.map((v,i)=>`${i*100/Math.max(1,sp.length-1)},${26-v/mx*24}`).join(" ")}" fill="none" stroke="var(--blue)" stroke-width="2" vector-effect="non-scaling-stroke"/>`}
+function heat(rows){let a=24,b=0;for(let d=0;d<7;d++)(biz?.hours?.[d]||[]).forEach(([s,e])=>{a=Math.min(a,+s.slice(0,2));b=Math.max(b,+e.slice(0,2))});
+  rows.forEach(r=>{a=Math.min(a,r.hour);b=Math.max(b,r.hour+1)});if(a>=b){a=9;b=21}
+  const hrs=[];for(let x=a;x<b;x++)hrs.push(x);const m={},mx=Math.max(1,...rows.map(r=>r.n));rows.forEach(r=>m[r.dow+"-"+r.hour]=r.n);
+  let s=`<span></span>`+hrs.map(x=>`<span style="justify-content:center">${x}</span>`).join("");
+  [1,2,3,4,5,6,0].forEach(d=>{s+=`<span>${DAYS[d]}</span>`;hrs.forEach(x=>{const v=m[d+"-"+x]||0;s+=`<i title="${DAYS[d]} ${x}:00 · ${v} message${v===1?"":"s"}" style="opacity:${v?(.3+.7*v/mx).toFixed(2):.06}"></i>`})});
+  $("#heat").style.gridTemplateColumns=`34px repeat(${hrs.length},1fr)`;$("#heat").innerHTML=s;
+  const tot=rows.reduce((a,r)=>a+r.n,0);$("#heatNote").textContent=tot?`${tot} customer messages`:"no messages yet"}
+function svcBars(sv){const mx=Math.max(1,...sv.map(x=>x.n));$("#svcBars").innerHTML=sv.map(x=>`<div><div class="lbl"><span>${esc(x.name)}</span><b class="num">${x.n} · ${fmt(x.value)}</b></div><div class="bar"><i style="width:${x.n/mx*100}%"></i></div></div>`).join("")||`<div class="empty">Add services in Business setup.</div>`}
+function funnel(s){const f=[["Started a chat",s.conv],["Got an AI answer",s.answered],["Booked",s.booked_conv]],mx=Math.max(1,f[0][1]);
+  $("#fun").innerHTML=f.map(([n,v])=>`<div><div class="lbl"><span>${n}</span><b class="num">${v}</b></div><div class="bar"><i style="width:${v/mx*100}%"></i></div></div>`).join("");
+  const o=s.outcomes;$("#outcomes").innerHTML=`<div><b>${o.completed}</b>Came</div><div><b>${o.no_show}</b>No-show</div><div><b>${o.cancelled}</b>Cancelled</div><div title="Past bookings not yet marked as came or no-show"><b>${o.unmarked}</b>Not marked</div>`}
+function attention(a){$("#attnN").hidden=!a.length;$("#attnN").textContent=a.length;
+  $("#attention").innerHTML=a.length?a.map(x=>`<div class="item"><div class="grow"><b>${esc(x.name||x.phone)} <span class="tag t-attn" style="display:inline">${esc(x.attention_reason||"Needs a person")}</span></b><span>"${esc(x.last)}" · ${ago(x.at)}</span></div>
+    <div class="acts"><button class="mini" data-open="${x.id}">Open &amp; reply</button><button class="mini" data-resolve="${x.id}">Handled</button></div></div>`).join(""):`<div class="empty">Nothing waiting. The AI is handling everything.</div>`}
+function today(t,u){const now=bizNow();$("#todayTitle").textContent="Today · "+nice(now,{weekday:"long",day:"numeric",month:"short"});
+  const val=t.reduce((a,b)=>a+b.price,0);$("#todaySub").textContent=t.length?`${t.length} booking${t.length>1?"s":""} · ${fmt(val)}`:"";
+  $("#today").innerHTML=t.length?t.map(b=>{const st=L(b.start),past=st<now;return`<div class="item"><span class="time">${hm(st)}</span><div class="grow"><b>${esc(b.customer||"Customer")}</b><span>${esc(b.service)} · ${fmt(b.price)}${b.source==="ai"?" · booked by AI":b.source==="web"?" · booked online":""}</span></div>
+    <div class="acts">${b.status==="confirmed"?(past?`<button class="mini" data-mark="${b.id}" data-st="completed">Came</button><button class="mini" data-mark="${b.id}" data-st="no_show">No-show</button>`:`<span class="tag t-faq">Upcoming</span>`):`<span class="tag ${b.status==="completed"?"t-book":"t-attn"}">${b.status==="completed"?"Came":"No-show"}</span>`}</div></div>`}).join(""):`<div class="empty">No bookings today.</div>`;
+  const later=u.filter(b=>dayKey(L(b.start))!==dayKey(now));
+  $("#upcoming").innerHTML=later.length?later.map(b=>`<div class="item"><span class="time">${nice(L(b.start),{weekday:"short"})}</span><div class="grow"><b>${nice(L(b.start),{day:"numeric",month:"short"})} ${hm(L(b.start))} · ${esc(b.customer||"Customer")}</b><span>${esc(b.service)}${b.source==="ai"?" · booked by AI":b.source==="web"?" · booked online":""}</span></div></div>`).join(""):`<div class="empty">No bookings after today.</div>`}
+function insights(s){const out=[];
+  if(!s.conv)out.push(["var(--blue)","No conversations yet","Send a message from Test chat or WhatsApp. Everything here updates live."]);
+  else{if(s.ai.failures)out.push(["var(--bad)",`${s.ai.failures} AI replies failed`,"Customers got the fallback message. Check that n8n and the AI model are working."]);
+    else if(s.ai.avg_ms>8000)out.push(["var(--warn)",`Replies take ${(s.ai.avg_ms/1000).toFixed(0)}s on average`,"That's slow for WhatsApp. A faster or paid AI model would help."]);
+    if(s.handoff)out.push(["var(--accent)",`${s.handoff} chat${s.handoff>1?"s":""} needed a person`,"Read them to see what the AI couldn't answer, then add it in Business setup."]);
+    const top=s.services.find(x=>x.n);if(top)out.push(["var(--good)",`${top.name} is booked most`,`${top.n} booking${top.n>1?"s":""} worth ${fmt(top.value)}.`]);
+    const busy=[...s.heat].sort((a,b)=>b.n-a.n)[0];if(busy)out.push(["var(--blue)",`Busiest: ${DAYS[busy.dow]} around ${busy.hour}:00`,`${busy.n} message${busy.n>1?"s":""} in that hour.`]);
+    if(s.outcomes.unmarked)out.push(["var(--warn)",`${s.outcomes.unmarked} past booking${s.outcomes.unmarked>1?"s":""} not marked`,"Mark them Came or No-show so your no-show numbers are right."])}
+  $("#insights").innerHTML=out.slice(0,4).map(([c,t,d])=>`<div class="ins"><span class="dot" style="--c:${c}"></span><div><b>${esc(t)}</b>${esc(d)}</div></div>`).join("")}
+const OUT={booked:["t-book","Booked"],answered:["t-faq","Answered"],handoff:["t-hand","Sent to staff"]},CH={whatsapp:"WhatsApp",missed_call:"Missed call",test:"Test chat",webook:"WeBook",telegram:"Telegram"};
+function feed(){const q=$("#search").value.trim().toLowerCase();const rows=convs.filter(r=>!q||[r.name,r.phone,r.last].some(v=>String(v||"").toLowerCase().includes(q)));
+  $("#feed").innerHTML=rows.length?rows.map(r=>{const o=OUT[r.outcome]||["t-faq","Open"];return`<tr class="click" data-open="${r.id}"><td>${ago(r.at)}</td><td>${esc(r.name||(/^test-/.test(r.phone)?"Test customer":r.phone))}</td><td><span class="tag ${r.channel==="test"?"t-test":"t-faq"}">${CH[r.channel]||r.channel}</span></td><td><span class="tag ${o[0]}">${o[1]}</span>${r.needs_attention?' <span class="tag t-attn">Needs you</span>':""}</td><td class="num">${r.value?fmt(r.value):"—"}</td><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis">${esc(r.last)}</td></tr>`}).join(""):`<tr><td colspan="6" class="empty">${q?"No conversations match.":"No conversations yet. Open Test chat and send the first message."}</td></tr>`}
+$("#search").oninput=feed;$("#incTest").onchange=()=>{lastStats=null;refresh()};
+
+let openId=null,openPaused=false;
+const ROLE={customer:"me",assistant:"ai",staff:"ai staff"};
+function renderConvMsgs(m){$("#mMsgs").innerHTML=m.map(x=>`<div class="m ${ROLE[x.role]||"ai"}${x.failed?" fail":""}">${x.role==="staff"?'<b style="display:block;font-size:11px;color:var(--good)">You (staff)</b>':""}${esc(x.text)}<span class="meta">${hm(L(x.at))}${x.role==="assistant"&&x.latency_ms!=null?` · ${x.failed?"AI failed after":"AI replied in"} ${(x.latency_ms/1000).toFixed(1)}s`:x.role==="assistant"?" · AI":""}${x.role==="staff"&&x.failed?" · not delivered":""}</span></div>`).join("");$("#mMsgs").scrollTop=1e9}
+function setAiState(p){openPaused=p;$("#mAiState").textContent=p?"You're handling this chat · AI paused":"AI is answering this chat";$("#mAiState").className="tag "+(p?"t-hand":"t-book");
+  $("#mAiToggle").textContent=p?"Hand back to AI":"Take over (pause AI)"}
+$("#mAiToggle").onclick=async()=>{await req(`/api/conversations/${openId}/ai`,"POST",{paused:!openPaused});setAiState(!openPaused);toast(openPaused?"You took over. The AI won't reply in this chat.":"Handed back to the AI.");refresh()};
+$("#mReply").onsubmit=async e=>{e.preventDefault();const text=$("#mText").value.trim();if(!text)return;$("#mSend").disabled=true;
+  try{const r=await req(`/api/conversations/${openId}/reply`,"POST",{text});$("#mText").value="";setAiState(true);
+    renderConvMsgs(await req(`/api/conversations/${openId}/messages`));toast(r.warning||"Reply sent.");refresh()}catch(err){toast(err.message)}$("#mSend").disabled=false};
+setInterval(async()=>{if($("#modal").hidden||!openId)return;try{renderConvMsgs(await req(`/api/conversations/${openId}/messages`))}catch{}},5000);
+async function openConv(id){openId=id;const r=convs.find(x=>x.id===+id),m=await req(`/api/conversations/${id}/messages`);
+  $("#mTitle").textContent=r?(r.name||r.phone):"Conversation";$("#mResolve").hidden=!(r&&r.needs_attention||lastStats?.attention.some(a=>a.id===+id));
+  renderConvMsgs(m);setAiState(!!(r&&r.ai_paused));$("#mText").value="";$("#modal").hidden=false;setTimeout(()=>$("#mText").focus(),50)}
+document.addEventListener("click",async e=>{const o=e.target.closest("[data-open]"),r=e.target.closest("[data-resolve]"),mk=e.target.closest("[data-mark]");
+  if(r){await req(`/api/conversations/${r.dataset.resolve}/resolve`,"POST");toast("Marked as handled.");return refresh()}
+  if(mk){await req(`/api/bookings/${mk.dataset.mark}`,"PATCH",{status:mk.dataset.st});toast(mk.dataset.st==="completed"?"Marked as came.":"Marked as no-show.");return refresh()}
+  if(o)openConv(o.dataset.open)});
+$("#mResolve").onclick=async()=>{await req(`/api/conversations/${openId}/resolve`,"POST");$("#modal").hidden=true;toast("Marked as handled.");refresh()};
+$("#mClose").onclick=()=>$("#modal").hidden=true;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".modal").forEach(m=>m.hidden=true)});
+
+// ---------- calendar ----------
+const HOUR_PX=52;let weekStart=null,cal={bookings:[],timeOff:[]};
+function startOfWeek(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
+const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+(b||0)};
+function gridHours(){let a=24*60,b=0;for(let d=0;d<7;d++)(biz.hours?.[d]||[]).forEach(([s,e])=>{a=Math.min(a,toMin(s));b=Math.max(b,toMin(e))});if(a>=b){a=9*60;b=18*60}return[Math.floor(a/60),Math.ceil(b/60)]}
+async function loadCal(){if(!weekStart)weekStart=startOfWeek(bizNow());const to=new Date(weekStart);to.setDate(to.getDate()+7);
+  cal=await req(`/api/calendar?from=${stamp(weekStart)}&to=${stamp(to)}`);syncNow(cal.now);drawCal()}
+function drawCal(){if(!biz||!weekStart)return;const[h0,h1]=gridHours(),H=(h1-h0)*HOUR_PX,now=bizNow(),todayK=dayKey(now);
+  const end=new Date(weekStart);end.setDate(end.getDate()+6);
+  $("#calRange").textContent=`${nice(weekStart,{day:"numeric",month:"short"})} – ${nice(end,{day:"numeric",month:"short",year:"numeric"})}`;
+  let head=`<div></div>`,cols=`<div class="cal-times" style="height:${H}px">`;for(let h=h0;h<h1;h++)cols+=`<span style="top:${(h-h0)*HOUR_PX}px">${pad(h)}:00</span>`;cols+="</div>";
+  for(let i=0;i<7;i++){const day=new Date(weekStart);day.setDate(day.getDate()+i);const dk=dayKey(day);
+    const dayB=cal.bookings.filter(b=>b.start.startsWith(dk)&&b.status!=="cancelled");
+    head+=`<div class="cal-dh ${dk===todayK?"today":""}"><b>${nice(day,{weekday:"short"})} ${day.getDate()}</b><small>${dayB.length?dayB.length+" · "+fmt(dayB.reduce((a,b)=>a+b.price,0)):(biz.hours?.[day.getDay()]||[]).length?"":"Closed"}</small></div>`;
+    let c=`<div class="cal-col" data-date="${dk}" style="height:${H}px">`;
+    (biz.hours?.[day.getDay()]||[]).forEach(([s,e])=>c+=`<div class="cal-open" style="top:${(toMin(s)-h0*60)/60*HOUR_PX}px;height:${(toMin(e)-toMin(s))/60*HOUR_PX}px"></div>`);
+    for(let h=h0;h<h1;h++)c+=`<div class="cal-line" style="top:${(h-h0)*HOUR_PX}px"></div>`;
+    const dayStart=new Date(day),dayEnd=new Date(day);dayEnd.setDate(dayEnd.getDate()+1);
+    if(dayEnd<=now)c+=`<div class="past" style="height:${H}px;border-radius:8px"></div>`;
+    else if(dk===todayK){const m=now.getHours()*60+now.getMinutes();const y=Math.min(H,Math.max(0,(m-h0*60)/60*HOUR_PX));c+=`<div class="past" style="height:${y}px"></div>`;if(y>0&&y<H)c+=`<div class="cal-now" style="top:${y}px"></div>`}
+    const place=(s,e)=>{s=new Date(Math.max(s,dayStart));e=new Date(Math.min(e,dayEnd));const top=((s-dayStart)/60000-h0*60)/60*HOUR_PX,ht=(e-s)/3600000*HOUR_PX;return`top:${Math.max(0,top)}px;height:${Math.max(20,ht)}px`};
+    cal.timeOff.filter(t=>L(t.start)<dayEnd&&L(t.end)>dayStart).forEach(t=>c+=`<button type="button" class="cal-off" data-off="${t.id}" style="${place(L(t.start),L(t.end))}">Blocked${t.reason?" · "+esc(t.reason):""}</button>`);
+    const vis=cal.bookings.filter(b=>L(b.start)<dayEnd&&L(b.end)>dayStart);
+    vis.forEach(b=>{const s=L(b.start),e=L(b.end);const lane=vis.filter(o=>o!==b&&o.status!=="cancelled"&&L(o.start)<e&&L(o.end)>s),idx=lane.filter(o=>o.id<b.id).length,n=lane.length+1;
+      const w=100/n;c+=`<button type="button" class="cal-b st-${b.status}" data-b="${b.id}" title="${esc(b.customer||"")} · ${esc(b.service)} · ${hm(s)}–${hm(e)}" style="${place(s,e)};left:calc(${idx*w}% + 3px);right:auto;width:calc(${w}% - 6px)"><b>${hm(s)} ${esc(b.customer||"Customer")}</b><span>${esc(b.service)}${b.source==="ai"?" · AI":b.source==="web"?" · Online":""}</span></button>`});
+    cols+=c+"</div>"}
+  $("#calHead").innerHTML=head;$("#calGrid").innerHTML=cols;
+  const live=cal.bookings.filter(b=>b.status!=="cancelled"),cap=biz.capacity||1;
+  $("#calSum").textContent=`${live.length} booking${live.length===1?"":"s"} · ${fmt(live.reduce((a,b)=>a+b.price,0))} this week · ${cap} customer${cap>1?"s":""} at a time`;
+  $("#calTz").textContent=`Times are the business's time (${lastStats?.tz||"local"}).`}
+$("#calGrid").onclick=e=>{const b=e.target.closest("[data-b]"),o=e.target.closest("[data-off]"),col=e.target.closest(".cal-col");
+  if(b)return openBooking(cal.bookings.find(x=>x.id===+b.dataset.b));if(o)return openOff(cal.timeOff.find(x=>x.id===+o.dataset.off));
+  if(col){const[h0]=gridHours(),y=e.clientY-col.getBoundingClientRect().top,step=biz.slot_step||30,m=Math.floor((h0*60+y/HOUR_PX*60)/step)*step;
+    const when=L(`${col.dataset.date}T${pad(Math.floor(m/60))}:${pad(m%60)}`);if(when<bizNow())return toast("That time has passed. Pick a later time.");
+    openBooking(null,col.dataset.date,hm(when))}};
+$("#calPrev").onclick=()=>{weekStart.setDate(weekStart.getDate()-7);loadCal()};$("#calNext").onclick=()=>{weekStart.setDate(weekStart.getDate()+7);loadCal()};
+$("#calToday").onclick=()=>{weekStart=startOfWeek(bizNow());loadCal()};
+$("#calNew").onclick=()=>{const n=bizNow();n.setMinutes(Math.ceil(n.getMinutes()/30)*30,0,0);openBooking(null,dayKey(n),hm(n))};$("#calBlock").onclick=()=>openOff(null);
+
+let editing=null;
+function openBooking(b,date,time){editing=b;$("#bErr").hidden=true;$("#bForce").hidden=true;
+  $("#bTitle").textContent=b?"Booking":"New booking";
+  $("#bService").innerHTML=biz.services.map(s=>`<option value="${s.id}">${esc(s.name)} · ${fmt(s.price)} · ${s.minutes} min</option>`).join("");
+  $("#bName").value=b?.customer||"";$("#bPhone").value=b&&!/^(test|walk-in)/.test(b.phone)?b.phone:"";$("#bName").disabled=$("#bPhone").disabled=!!b;
+  if(b){const s=L(b.start);$("#bDate").value=dayKey(s);$("#bTime").value=hm(s);$("#bService").value=b.service_id;$("#bStatus").value=b.status;
+    $("#bInfo").textContent=`${b.source==="ai"?"Booked by the AI in chat":b.source==="web"?"Booked online by the customer":"Added by staff"} · ${hm(s)}–${hm(L(b.end))} · ${fmt(b.price)}${b.coupon_code?` · Code ${b.coupon_code} applied`:""}${b.notes?` · Extra request: ${b.notes}`:""}${b.reminder_status?` · Reminder: ${b.reminder_status==="sent"?"sent":b.reminder_status==="skipped"?"not needed (booked last minute)":b.reminder_status.replace("not_sent: ","not sent, ")}`:""}`}
+  else{$("#bDate").value=date;$("#bTime").value=time;$("#bStatus").value="confirmed";$("#bInfo").textContent=""}
+  $("#bChat").hidden=!(b&&b.conversation_id);$("#bStatusWrap").hidden=!b;$("#bCancel").hidden=!b||b.status==="cancelled";$("#bModal").hidden=false;if(!b)$("#bName").focus()}
+async function saveBooking(force){const start=`${$("#bDate").value}T${$("#bTime").value}`;
+  try{if(editing){const moved=start!==editing.start||+$("#bService").value!==editing.service_id;
+      await req(`/api/bookings/${editing.id}`,"PATCH",{...(moved?{start,service_id:+$("#bService").value}:{}),status:$("#bStatus").value,force})}
+    else await req("/api/bookings","POST",{name:$("#bName").value.trim(),phone:$("#bPhone").value.trim(),service_id:+$("#bService").value,start,force});
+    $("#bModal").hidden=true;toast(editing?"Booking updated.":"Booking added.");loadCal();refresh()}
+  catch(err){$("#bErr").textContent=err.message;$("#bErr").hidden=false;$("#bForce").hidden=err.status!==409}}
+$("#bForm").onsubmit=e=>{e.preventDefault();saveBooking(false)};$("#bForce").onclick=()=>saveBooking(true);
+$("#bCancel").onclick=async()=>{await req(`/api/bookings/${editing.id}`,"PATCH",{status:"cancelled"});$("#bModal").hidden=true;toast("Booking cancelled. The time is free again.");loadCal();refresh()};
+$("#bChat").onclick=()=>{$("#bModal").hidden=true;openConv(editing.conversation_id)};
+$("#bClose").onclick=()=>$("#bModal").hidden=true;
+
+let editingOff=null;
+function openOff(t){editingOff=t;$("#oErr").hidden=true;const n=bizNow();n.setMinutes(0,0,0);n.setHours(n.getHours()+1);const s=t?L(t.start):n,e=t?L(t.end):new Date(n.getTime()+3600000);
+  $("#oStart").value=stamp(s);$("#oEnd").value=stamp(e);$("#oReason").value=t?.reason||"";
+  $("#oStart").disabled=$("#oEnd").disabled=$("#oReason").disabled=!!t;$("#oSave").hidden=!!t;$("#oDelete").hidden=!t;$("#oTitle").textContent=t?"Blocked time":"Block time";$("#oModal").hidden=false}
+$("#oForm").onsubmit=async e=>{e.preventDefault();try{await req("/api/time-off","POST",{start:$("#oStart").value,end:$("#oEnd").value,reason:$("#oReason").value.trim()});
+  $("#oModal").hidden=true;toast("Time blocked. The AI won't offer it.");loadCal()}catch(err){$("#oErr").textContent=err.message;$("#oErr").hidden=false}};
+$("#oDelete").onclick=async()=>{await req(`/api/time-off/${editingOff.id}`,"DELETE");$("#oModal").hidden=true;toast("Block removed.");loadCal()};
+$("#oClose").onclick=()=>$("#oModal").hidden=true;
+
+// ---------- test chat ----------
+let testPhone="test-"+Math.random().toString(36).slice(2,8),busy=false;
+function add(t,w,meta){const d=document.createElement("div");d.className="m "+w;d.textContent=t;if(meta){const s=document.createElement("span");s.className="meta";s.textContent=meta;d.appendChild(s)}$("#msgs").appendChild(d);$("#msgs").scrollTop=1e9}
+$("#sendForm").onsubmit=async e=>{e.preventDefault();const t=$("#msgIn").value.trim();if(!t||busy)return;busy=true;$("#sendBtn").disabled=true;$("#msgIn").value="";add(t,"me");
+  const t0=Date.now();$("#phState").textContent="typing…";const slow=setTimeout(()=>$("#phState").textContent="still thinking… the AI is slow right now",8000);
+  try{const r=await req("/api/test-chat","POST",{text:t,phone:testPhone});testConv=r.conversationId;testSeen=(await req(`/api/conversations/${testConv}/messages`)).length;if(r.paused)add("The team took over this chat, so the AI stays quiet. Staff replies will appear here.","sys");
+    else add(r.reply,"ai"+(r.failed&&!/team member/.test(r.reply)?"":r.failed?" fail":""),r.failed?(/team member/.test(r.reply)?"The AI didn't answer in time. The question is in Training and Needs you, so staff can reply.":"The AI was slow, so this was answered instantly from your setup."):`replied in ${((Date.now()-t0)/1000).toFixed(1)}s`);
+    if(r.bookedNow)add("Booking saved. It's in the calendar now.","sys");refresh();if(weekStart)loadCal()}
+  catch(err){add(err.message,"sys")}
+  clearTimeout(slow);$("#phState").textContent="AI assistant";busy=false;$("#sendBtn").disabled=false;$("#msgIn").focus()};
+$("#resetBtn").onclick=()=>{testConv=null;testSeen=0;testPhone="test-"+Math.random().toString(36).slice(2,8);$("#msgs").innerHTML="";$("#log").textContent="New customer. The AI doesn't know this person yet."};
+
+// ---------- setup ----------
+function svcRow(s={}){const d=document.createElement("div");d.className="svc";d.dataset.id=s.id||"";d.style.gridTemplateColumns="1fr 84px 84px 96px 30px";
+  d.innerHTML=`<input value="${esc(s.name||"")}" placeholder="Service" aria-label="Service name"><input type="number" min="0" value="${s.price??""}" placeholder="Price" aria-label="Price"><input type="number" min="5" step="5" value="${s.minutes??30}" aria-label="Minutes"><input class="svcCap" type="number" min="0" value="${s.capacity??""}" placeholder="At once" title="Optional. How many of this can be booked at the same time, e.g. 6 tables for 2. Empty = use the business limit." aria-label="How many at the same time"><button type="button" aria-label="Remove service">✕</button><input class="svcDesc" value="${esc(s.description||"")}" placeholder="What's included, who it's for (helps the AI answer)" aria-label="Service description" style="grid-column:1/-1">`;
+  d.querySelector("button").onclick=()=>d.remove();$("#svcList").appendChild(d)}
+function hoursRows(){$("#fHours").innerHTML=[1,2,3,4,5,6,0].map(d=>{const r=biz.hours?.[d]||[];
+  return`<div class="hr-row" data-d="${d}"><label class="hr-open"><input type="checkbox" ${r.length?"checked":""}> ${DAYS[d]}</label><input class="hr-ranges" value="${r.map(x=>x.join("-")).join(", ")}" placeholder="Closed" aria-label="${DAYS[d]} hours"></div>`}).join("");
+  $("#fHours").querySelectorAll(".hr-row").forEach(row=>{const cb=row.querySelector("input[type=checkbox]"),inp=row.querySelector(".hr-ranges");
+    const sync=()=>{inp.disabled=!cb.checked;if(cb.checked&&!inp.value)inp.value="10:00-20:00"};cb.onchange=sync;sync()})}
+function readHours(){const out={};let bad=null;$("#fHours").querySelectorAll(".hr-row").forEach(row=>{const d=row.dataset.d,on=row.querySelector("input[type=checkbox]").checked,txt=row.querySelector(".hr-ranges").value;
+  out[d]=!on?[]:txt.split(",").map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(\d{1,2})(?::(\d{2}))?\s*-\s*(\d{1,2})(?::(\d{2}))?$/);if(!m||+m[1]>24||+m[3]>24){bad=DAYS[d];return null}return[`${pad(m[1])}:${m[2]||"00"}`,`${pad(m[3])}:${m[4]||"00"}`]}).filter(Boolean)});
+  return bad?{error:`Check the hours for ${bad}. Write them like 10:00-14:00, 15:00-20:00.`}:{hours:out}}
+function faqRow(x={}){const d=document.createElement("div");d.className="faq";d.style.cssText="display:grid;grid-template-columns:1fr 1.6fr 30px;gap:8px";
+  d.innerHTML=`<input value="${esc(x.q||"")}" placeholder="Question, e.g. Do you do bridal packages?" aria-label="Question"><input value="${esc(x.a||"")}" placeholder="Answer" aria-label="Answer"><button type="button" class="mini" aria-label="Remove question">✕</button>`;
+  d.querySelector("button").onclick=()=>d.remove();$("#faqList").appendChild(d)}
+$("#addFaq").onclick=()=>faqRow();
+function fillSetup(){setTimeout(fillAddons);$("#fDesc").value=biz.description||"";$("#fMaps").value=biz.maps_url||"";$("#fInsta").value=biz.instagram||"";$("#fWeb").value=biz.website||"";
+  $("#fLang").value=biz.languages||"";$("#fTone").value=biz.tone||"warm";drawUploads();$("#fAsst").value=biz.assistant_name||"Nora";$("#fAskEmail").checked=biz.ask_email!==false;$("#fTeam").value=biz.team||"";$("#fPol").value=biz.policies||"";$("#fAi").value=biz.ai_instructions||"";
+  $("#faqList").innerHTML="";(biz.faqs||[]).forEach(faqRow);$("#fName").value=biz.name;$("#fAddr").value=biz.address||"";$("#fCap").value=biz.capacity||1;$("#fStep").value=biz.slot_step||30;$("#fFaq").value=biz.faq||"";$("#fPay").value=biz.payment_methods||"";$("#fPhone").value=biz.phone||"";$("#fCancel").value=String(biz.cancel_hours??24);$("#fNote").value=biz.booking_note||"";$("#fWa").value=biz.wa_phone_number_id||"";
+  hoursRows();$("#svcList").innerHTML="";biz.services.forEach(svcRow);$("#phName").textContent=biz.name}
+$("#addSvc").onclick=()=>svcRow();
+$("#setupForm").onsubmit=async e=>{e.preventDefault();const hr=readHours();if(hr.error)return toast(hr.error);
+  const services=[...$("#svcList").children].map(r=>{const i=r.querySelectorAll("input");return{id:+r.dataset.id||null,name:i[0].value.trim(),price:i[1].value||0,minutes:i[2].value||30,capacity:r.querySelector(".svcCap").value,description:r.querySelector(".svcDesc").value.trim()}});
+  if(!services.some(s=>s.name))return toast("Add at least one service.");
+  const faqs=[...$("#faqList").children].map(r=>{const i=r.querySelectorAll("input");return{q:i[0].value.trim(),a:i[1].value.trim()}}).filter(x=>x.q&&x.a);
+  try{biz=await req("/api/business","PUT",{...biz,description:$("#fDesc").value,maps_url:$("#fMaps").value,instagram:$("#fInsta").value,website:$("#fWeb").value,languages:$("#fLang").value,
+    tone:$("#fTone").value,assistant_name:$("#fAsst").value.trim()||"Nora",ask_email:$("#fAskEmail").checked,team:$("#fTeam").value,policies:$("#fPol").value,ai_instructions:$("#fAi").value,faqs,name:$("#fName").value,address:$("#fAddr").value,hours:hr.hours,capacity:$("#fCap").value,slot_step:$("#fStep").value,faq:$("#fFaq").value,payment_methods:$("#fPay").value.trim(),phone:$("#fPhone").value.trim(),cancel_hours:$("#fCancel").value,booking_note:$("#fNote").value.trim(),wa_phone_number_id:$("#fWa").value.trim(),services});
+    fillSetup();toast("Saved. The assistant uses this from the next message.");refresh();drawCal()}catch(err){toast(err.message)}};
+$("#clearBtn").onclick=()=>{$("#clearAsk").hidden=false};$("#clearNo").onclick=()=>{$("#clearAsk").hidden=true};
+$("#clearYes").onclick=async()=>{await req("/api/test-data/clear","POST");$("#clearAsk").hidden=true;lastStats=null;toast("Test data deleted.");refresh();if(weekStart)loadCal()};
+
+// ---------- nav, tabs, theme ----------
+document.querySelectorAll("nav button[data-view]").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button[data-view]").forEach(x=>x.setAttribute("aria-current",x===b));
+  ["overview","calendar","people","analytics","training","demo","setup","admin","security"].forEach(v=>$("#"+v).hidden=v!==b.dataset.view);if(lockedCard(b.dataset.view))return;if(b.dataset.view==="admin")loadAdmin();scrollTo(0,0);if(b.dataset.view==="analytics")loadInsights();if(b.dataset.view==="people")loadPeople();if(b.dataset.view==="training"){loadTraining();loadTeach()}
+  if(b.dataset.view==="calendar")loadCal();if(b.dataset.view==="demo")$("#msgIn").focus()});
+// One period for the whole app: Home, Live, Performance, Insights and every table follow it.
+const PLABEL=d=>d===1?"today":d===365?"last 12 months":`last ${d} days`;
+function setPeriod(d){days=d;inDays=d;try{localStorage.setItem("rb-days",d)}catch{}
+  document.querySelectorAll("button[data-d]").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.d===d));
+  document.querySelectorAll(".plabel").forEach(x=>x.textContent=PLABEL(d));
+  lastStats=null;refresh();if(typeof loadLive==="function")loadLive();if(!$("#analytics").hidden)loadInsights()}
+document.querySelectorAll("button[data-d]").forEach(b=>b.onclick=()=>setPeriod(+b.dataset.d));
+$("#themeBtn").onclick=()=>{const r=document.documentElement,c=r.dataset.theme==="dark"?"light":"dark";r.dataset.theme=c;try{localStorage.setItem("rb-theme",c)}catch{}};
+$("#logoutBtn").onclick=async()=>{await fetch("/api/logout",{method:"POST"});location.href="/login"};
+
+// ---------- customers ----------
+let pplT,pplOpen=null;const RMD={whatsapp:"WhatsApp",sms:"SMS",email:"Email"};
+async function loadPeople(){const list=await req(`/api/customers?q=${encodeURIComponent($("#pplQ").value.trim())}&test=${$("#pplTest").checked?1:0}`);
+  const reg=list.filter(c=>c.visits>=2).length,spent=list.reduce((a,c)=>a+c.spent,0),withEmail=list.filter(c=>c.email).length;
+  $("#pplKpis").innerHTML=[["Customers",list.length,"with a profile"],["Regulars",reg,"2 or more visits"],["Total spent",fmt(spent),"by these customers"],["Have an email",withEmail,list.length?Math.round(withEmail/list.length*100)+"% of customers":"—"]]
+    .map(([l,v,sub],i)=>`<div class="kpi glass${i===2?" hero":""}"><span class="k-l">${l}</span><span class="v num">${v}</span><span class="${i===2?"delta":"k-sub"}">${sub}</span></div>`).join("");
+  $("#pplRows").innerHTML=list.length?list.map(c=>`<tr class="click" data-cust="${c.id}"><td><b>${esc(c.name||"No name yet")}</b>${c.visits>=2?' <span class="tag t-book">Regular</span>':c.visits===0&&!c.upcoming?' <span class="tag t-faq">New</span>':""}${c.staff_notes?' <span class="tag t-hand" title="Has staff notes">Notes</span>':""}</td>
+    <td class="num">${esc(c.phone||"—")}</td><td>${esc(c.email||"—")}</td><td class="num">${c.visits}</td><td class="num">${c.upcoming||"—"}</td><td class="num" style="color:var(--good)">${c.spent?fmt(c.spent):"—"}</td>
+    <td class="num">${c.no_shows?`<span style="color:var(--bad)">${c.no_shows}</span>`:"0"}</td><td>${c.last_booking||"—"}</td><td>${RMD[c.reminder_channel]||"WhatsApp"}</td>
+    <td><label class="switch" title="Client agreed to receive offers"><input type="checkbox" class="mkOk" data-id="${c.id}" ${c.marketing_ok?"checked":""}> ${c.marketing_ok?"Yes":"No"}</label></td></tr>`).join("")
+    :`<tr><td colspan="9" class="empty">No customers yet. Profiles are created automatically when people chat or book.</td></tr>`}
+$("#pplQ").oninput=()=>{clearTimeout(pplT);pplT=setTimeout(loadPeople,250)};$("#pplTest").onchange=loadPeople;
+async function openCustomer(id){const c=await req("/api/customers/"+id);pplOpen=c;$("#pErr").hidden=true;
+  const shown=/^(test|e2e|walk-in)/.test(c.phone)?(c.contact_phone||"—"):c.phone;
+  $("#pTitle").textContent=c.name||"Customer";$("#pName").value=c.name||"";$("#pPhone").value=shown;$("#pEmail").value=c.email||"";$("#pRemind").value=c.reminder_channel||"whatsapp";$("#pNotes").value=c.staff_notes||"";
+  const live=c.bookings.filter(b=>b.status!=="cancelled"),past=live.filter(b=>L(b.start)<bizNow());
+  $("#pStats").innerHTML=`<div><b>${past.filter(b=>b.status!=="no_show").length}</b>Visits</div><div><b>${fmt(live.reduce((a,b)=>a+b.price,0))}</b>Spent</div><div><b>${c.bookings.filter(b=>b.status==="no_show").length}</b>No-shows</div><div><b>${live.filter(b=>L(b.start)>=bizNow()).length}</b>Upcoming</div>`;
+  const ST={confirmed:["t-faq","Confirmed"],completed:["t-book","Came"],no_show:["t-attn","No-show"],cancelled:["t-test","Cancelled"]};
+  $("#pBook").innerHTML=c.bookings.map(b=>`<div class="item"><span class="time">${nice(L(b.start),{day:"numeric",month:"short"})}</span><div class="grow"><b>${esc(b.service)} · ${hm(L(b.start))}</b><span>${fmt(b.price)}${b.coupon_code?" · code "+esc(b.coupon_code):""} · ${b.source==="web"?"online":b.source==="ai"?"by chat":"by staff"}</span></div><span class="tag ${(ST[b.status]||ST.confirmed)[0]}">${(ST[b.status]||ST.confirmed)[1]}</span></div>`).join("")||`<div class="empty">No bookings yet.</div>`;
+  $("#pConv").innerHTML=c.conversations.map(v=>`<div class="item click" data-open="${v.id}" style="cursor:pointer"><div class="grow"><b>${CH[v.channel]||v.channel} · ${ago(v.at)}</b><span>${esc(v.last||"")}</span></div><span class="mini">Read</span></div>`).join("")||`<div class="empty">No conversations.</div>`;
+  $("#pModal").hidden=false}
+document.addEventListener("click",e=>{const r=e.target.closest("[data-cust]");if(r)openCustomer(r.dataset.cust)});
+$("#pClose").onclick=()=>$("#pModal").hidden=true;
+$("#pForm").onsubmit=async e=>{e.preventDefault();try{await req("/api/customers/"+pplOpen.id,"PUT",{name:$("#pName").value,email:$("#pEmail").value,reminder_channel:$("#pRemind").value,staff_notes:$("#pNotes").value});
+  toast("Profile saved. The AI will use it from the next message.");$("#pModal").hidden=true;loadPeople()}catch(err){$("#pErr").textContent=err.message;$("#pErr").hidden=false}};
+
+// ---------- insights ----------
+const plural=(n,w)=>`${n} ${w}${n===1?"":"s"}`;
+let inDays=30,inData=null,inSampleOn=false;
+const DAYNAME=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const pct=(a,b)=>b?Math.round(a/b*100)+"%":"—";
+const barRow=(label,v,max,right,style="")=>`<div><div class="lbl"><span>${label}</span><b class="num">${right}</b></div><div class="bar"><i style="width:${max?Math.min(100,v/max*100):0}%;${style}"></i></div></div>`;
+const delta=(now,prev,invert)=>{if(!prev&&!now)return"";if(!prev)return`<span class="delta">new</span>`;const c=(now-prev)/prev;if(Math.abs(c)<0.005)return`<span class="k-sub">same as before</span>`;
+  const good=invert?c<0:c>0;return`<span class="delta ${good?"":"neg"}">${c>0?"↑":"↓"} ${Math.abs(Math.round(c*100))}% vs previous ${inDays===365?"year":inDays+" days"}</span>`};
+async function loadInsights(){if(inSampleOn)return renderInsights(sampleInsights());try{inData=await req("/api/insights?days="+inDays);renderInsights(inData)}catch(e){toast(e.message)}}
+function renderInsights(d){window.inD=d;const t=d.totals,p=d.prev,past=t.completed+t.no_show,ppast=p.completed+p.no_show,ret=d.customers.returning,nw=d.customers.new,empty=!t.bookings&&!d.conversations;
+  $("#inBanner").hidden=!inSampleOn;$("#inSample").hidden=inSampleOn||t.bookings>=3;
+  $("#inSub").textContent=empty?"No bookings or chats in this period yet. Everything below fills in automatically.":`Last ${d.days===365?"12 months":d.days+" days"}: ${plural(t.bookings,"booking")}, ${plural(d.conversations,"conversation")}, ${plural(t.customers,"customer")}.`;
+  const k=(l,v,sub,hero)=>`<div class="kpi glass${hero?" hero":""}"><span class="k-l">${l}</span><span class="v num">${v}</span>${sub}</div>`;
+  const cap=d.capacity.past;
+  $("#inKpis").innerHTML=k("Revenue",fmt(t.revenue),delta(t.revenue,p.revenue)||`<span class="delta">${t.bookings} bookings</span>`,1)
+    +k("Bookings",t.bookings,delta(t.bookings,p.bookings)||`<span class="k-sub">—</span>`)
+    +k("Average ticket",t.bookings?fmt(t.avg_ticket):"—",delta(t.avg_ticket,p.avg_ticket)||`<span class="k-sub">per booking</span>`)
+    +k("Capacity used",cap===null?"—":Math.round(cap*100)+"%",`<span class="k-sub">${cap===null?"set opening hours in Setup":"of your open hours were booked"}</span>`)
+    +k("No-show rate",past?pct(t.no_show,past):"—",past?delta(t.no_show/past,ppast?p.no_show/ppast:0,true)||`<span class="k-sub">${t.no_show} of ${past}</span>`:`<span class="k-sub">mark bookings Came / No-show</span>`)
+    +k("Returning customers",ret+nw?pct(ret,ret+nw):"—",`<span class="k-sub">${ret} returning · ${nw} new</span>`);
+  // trend: revenue bars + bookings line + chats dots
+  const svg=$("#inTrend"),W=Math.max(320,Math.round(svg.clientWidth/(svg.clientHeight||240)*220)),H=220,l=40,r=30,top=12,bt=24,n=d.trend.length;
+  // Round axis tops to 1, 2 or 5 x 10^n so the labels read as real amounts.
+  const niceTop=v=>{const e=10**Math.floor(Math.log10(v)),m=v/e;return (m<=1?1:m<=2?2:m<=5?5:10)*e};
+  const rawR=Math.max(0,...d.trend.map(x=>x.revenue)),maxR=rawR?niceTop(rawR):1,maxB=niceTop(Math.max(4,...d.trend.map(x=>Math.max(x.bookings,x.chats))));
+  const X=i=>l+(n<2?0:i*(W-l-r)/(n-1)),bw=Math.max(2,Math.min(18,(W-l-r)/Math.max(n,1)*.6)),YR=v=>H-bt-v/maxR*(H-bt-top),YB=v=>H-bt-v/maxB*(H-bt-top);
+  let g="";for(let i=0;i<=4;i++){const v=maxR*i/4;g+=`<line x1="${l}" x2="${W-r}" y1="${YR(v)}" y2="${YR(v)}" stroke="var(--grid)"/><text x="${l-6}" y="${YR(v)+4}" text-anchor="end">${rawR?fmt(v):""}</text><text x="${W-r+6}" y="${YB(maxB*i/4)+4}">${Math.round(maxB*i/4)}</text>`}
+  d.trend.forEach((x,i)=>{if(x.revenue)g+=`<rect x="${X(i)-bw/2}" y="${YR(x.revenue)}" width="${bw}" height="${H-bt-YR(x.revenue)}" rx="3" fill="url(#revFill)"><title>${x.d}: ${fmt(x.revenue)}</title></rect>`});
+  if(n>1)g+=`<polyline points="${d.trend.map((x,i)=>X(i)+","+YB(x.bookings)).join(" ")}" fill="none" stroke="#3ee0ff" stroke-width="2.25" stroke-linejoin="round"/><polyline points="${d.trend.map((x,i)=>X(i)+","+YB(x.chats)).join(" ")}" fill="none" stroke="#e0a400" stroke-width="1.75" stroke-dasharray="3 4"/>`;
+  const ticks=n<=8?d.trend.map((_,i)=>i):[0,Math.round((n-1)/3),Math.round(2*(n-1)/3),n-1];
+  ticks.forEach(i=>g+=`<text x="${X(i)}" y="${H-6}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${nice(L(d.trend[i].d),{day:"numeric",month:"short"})}</text>`);
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.innerHTML=`<defs><linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d65cff"/><stop offset="1" stop-color="#5b8cff"/></linearGradient></defs>`+g+(rawR?"":`<text x="${l}" y="${top+12}" fill="var(--muted)">No paid revenue in this period yet</text>`);$("#inTrendNote").textContent=d.unit==="week"?"per week":"per day";
+  const c7=d.capacity.next7;
+  $("#inAhead").innerHTML=`<div class="statrow" style="grid-template-columns:1fr 1fr;margin:0"><div><b style="color:var(--good)">${fmt(d.upcoming.next7.revenue)}</b>next 7 days · ${d.upcoming.next7.n} bookings</div><div><b style="color:var(--good)">${fmt(d.upcoming.next30.revenue)}</b>next 30 days · ${d.upcoming.next30.n} bookings</div></div>
+    <div class="fun" style="margin-top:16px">${barRow("Next 7 days booked",c7||0,1,c7===null?"closed":`${Math.round((c7||0)*100)}% · ${d.capacity.bookedHoursNext7} of ${d.capacity.openHoursNext7} h`)}</div>
+    <p class="sub" style="font-size:13px;margin:12px 0 0">${c7===null?"No opening hours next week.":c7<.3?"Plenty of free time next week. A good moment for an offer.":c7>.85?"Almost full. Consider extra hours.":"Healthy. Keep an eye on quiet days."}</p>`;
+  const lv={good:"var(--good)",bad:"var(--bad)",info:"var(--blue)"};
+  $("#inRecs").innerHTML=d.recommendations.map(r=>`<div class="ins"><span class="dot" style="--c:${lv[r.level]}"></span><div><b>${esc(r.title)}</b>${esc(r.text)}</div></div>`).join("");
+  // heatmap of booked hours
+  let a=24,b=0;for(let x=0;x<7;x++)(d.hoursOpen?.[x]||[]).forEach(([s1,e1])=>{a=Math.min(a,+s1.slice(0,2));b=Math.max(b,+e1.slice(0,2))});d.heat.forEach(h=>{a=Math.min(a,h.hour);b=Math.max(b,h.hour+1)});if(a>=b){a=9;b=20}
+  const hrs=[];for(let x=a;x<b;x++)hrs.push(x);const hm2={},hmx=Math.max(1,...d.heat.map(h=>h.n));d.heat.forEach(h=>hm2[h.dow+"-"+h.hour]=h.n);
+  let hh=`<span></span>`+hrs.map(x=>`<span style="justify-content:center">${x}</span>`).join("");
+  [1,2,3,4,5,6,0].forEach(dw=>{hh+=`<span>${DAYNAME[dw].slice(0,3)}</span>`;hrs.forEach(x=>{const v=hm2[dw+"-"+x]||0,open=(d.hoursOpen?.[dw]||[]).some(([s1,e1])=>x>=+s1.slice(0,2)&&x<+e1.slice(0,2));
+    hh+=`<i title="${DAYNAME[dw]} ${x}:00 · ${v} booked${open?"":" · closed"}" style="opacity:${v?(.3+.7*v/hmx).toFixed(2):open?.08:.02}"></i>`})});
+  $("#inHeat").style.gridTemplateColumns=`34px repeat(${hrs.length},1fr)`;$("#inHeat").innerHTML=hh;
+  const wd=[1,2,3,4,5,6,0].map(dw=>d.weekday.find(x=>x.dow===dw)||{dow:dw,n:0,revenue:0,no_show:0}),mx=Math.max(1,...wd.map(x=>x.revenue)),best=Math.max(...wd.map(x=>x.revenue));
+  $("#inDays").innerHTML=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:210px">${wd.map(x=>`<div style="display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end" title="${DAYNAME[x.dow]}: ${x.n} bookings, ${fmt(x.revenue)}">
+      <small class="num" style="color:var(--muted);font-size:11px">${x.revenue?fmt(x.revenue):""}</small><div style="width:100%;max-width:46px;border-radius:10px 10px 4px 4px;height:${Math.max(4,x.revenue/mx*140)}px;background:${x.revenue&&x.revenue===best?"var(--good)":x.revenue?"var(--blue)":"var(--grid)"}"></div>
+      <small style="font-size:12px">${DAYNAME[x.dow].slice(0,3)}</small><small class="num" style="color:var(--muted);font-size:11px">${x.n} bk</small></div>`).join("")}</div>`;
+  const tot=d.services.reduce((s1,x)=>s1+x.revenue,0),askedOf=nm=>(d.asked.find(x=>x.name===nm)||{n:0}).n;
+  $("#inSvc").innerHTML=d.services.map(x=>{const all=x.n+x.cancelled,ak=askedOf(x.name);return`<tr><td><b>${esc(x.name)}</b></td><td class="num">${x.n}</td><td class="num" style="color:var(--good)">${fmt(x.revenue)}</td>
+    <td><div class="bar" style="width:90px;display:inline-block;vertical-align:middle;margin-right:6px"><i style="width:${tot?x.revenue/tot*100:0}%"></i></div><span class="num">${pct(x.revenue,tot)}</span></td><td class="num">${x.n?fmt(x.revenue/x.n):"—"}</td>
+    <td class="num">${x.cancelled?`<span style="color:var(--bad)">${x.cancelled} (${pct(x.cancelled,all)})</span>`:"0"}</td><td class="num">${x.no_show||0}</td><td class="num">${ak}${ak>=3&&ak>2*x.n?' <span class="tag t-hand">asked more than booked</span>':""}</td></tr>`}).join("")||`<tr><td colspan="8" class="empty">Add services in Setup.</td></tr>`;
+  const A=d.ai,amx=Math.max(1,A.chats);
+  $("#inAi").innerHTML=A.chats?[["Conversations",A.chats],["Answered by the AI",A.answered],["Wanted to book or asked prices",A.intent],["Booked in the chat",A.booked]].map(([nm,v])=>barRow(nm,v,amx,v)).join(""):`<div class="empty">No conversations in this period.</div>`;
+  $("#inAiStats").innerHTML=`<div><b>${A.chats?pct(A.booked,A.chats):"—"}</b>Chat → booking</div><div><b>${A.avg_ms?(A.avg_ms/1000).toFixed(1)+"s":"—"}</b>Avg reply</div><div><b>${A.handoff}</b>Sent to staff</div><div><b style="${A.failed?"color:var(--bad)":""}">${A.failed}</b>Failed replies</div>`;
+  $("#inLost").innerHTML=d.lost.length?d.lost.map(m=>`<div class="item click" ${m.conversation_id?`data-open="${m.conversation_id}"`:""} style="cursor:pointer"><div class="grow"><b>“${esc(m.text)}”</b><span>${ago(m.at)} · no booking yet</span></div><span class="mini">Read</span></div>`).join(""):`<div class="empty">${A.chats?"Everyone who asked about booking ended up booking. 🎉":"No conversations yet."}</div>`;
+  const flagT={complaint:"t-attn",cancel:"t-hand",discount:"t-hand"};
+  $("#inTopics").innerHTML=d.topics.length?d.topics.map(g2=>`<div class="item" style="align-items:flex-start"><div class="grow">
+      <b>${esc(g2.label)} <span class="tag ${flagT[g2.topic]||"t-faq"}" style="display:inline">${g2.n} message${g2.n>1?"s":""} · ${g2.convs} chat${g2.convs>1?"s":""}</span>${g2.flagged?` <span class="tag t-attn" style="display:inline">${g2.flagged} needed a person</span>`:""}</b>
+      ${g2.examples.map(e=>`<span style="white-space:normal;cursor:pointer" ${e.conversation_id?`data-open="${e.conversation_id}"`:""}>“${esc(e.text)}”</span>`).join("")}</div></div>`).join(""):`<div class="empty">No customer messages in this period.</div>`;
+  const lmx=Math.max(1,...d.lead.map(x=>x.n)),order=["Same day","1–2 days ahead","3–7 days ahead","More than a week ahead"];
+  $("#inLead").innerHTML=d.lead.length?order.map(o=>{const x=d.lead.find(z=>z.bucket===o)||{n:0};return barRow(o,x.n,lmx,x.n)}).join(""):`<div class="empty">No bookings yet.</div>`;
+  const CHN={ai:"Chat / WhatsApp (AI)",web:"Online booking page",manual:"Added by staff"},cmx=Math.max(1,...d.channels.map(c=>c.n));
+  $("#inChan").innerHTML=d.channels.length?[...d.channels].sort((x,y)=>y.n-x.n).map(c=>barRow(CHN[c.source]||c.source,c.n,cmx,`${c.n} · ${fmt(c.revenue)}`)).join(""):`<div class="empty">No bookings yet.</div>`;
+  const v=d.value;
+  $("#inCust").innerHTML=`<div class="statrow" style="grid-template-columns:1fr 1fr;margin:0"><div><b>${v.avg_spend?fmt(v.avg_spend):"—"}</b>Avg spent per customer</div><div><b>${v.avg_visits?v.avg_visits.toFixed(1):"—"}</b>Avg visits</div>
+    <div><b>${v.days_between?v.days_between+" d":"—"}</b>Between visits</div><div><b>${ret+nw?pct(ret,ret+nw):"—"}</b>Returning</div></div>
+    <p class="sub" style="font-size:13px;margin:12px 0 0">Reminders sent: ${d.reminders.sent}${d.reminders.failed?` · <span style="color:var(--bad)">${d.reminders.failed} not sent</span>`:""} · Approval requests: ${d.requests.late_cancel_requests+d.requests.late_move_requests+d.requests.extra_requests}</p>`;
+  const who=c=>esc(c.name||c.phone);
+  $("#inTop").innerHTML=d.customers.top.map(c=>`<div class="item"><div class="grow"><b>${who(c)}</b><span>${c.visits} visit${c.visits>1?"s":""} · last ${c.last}</span></div><b class="num" style="color:var(--good)">${fmt(c.spent)}</b></div>`).join("")||`<div class="empty">No customers yet.</div>`;
+  $("#inRisk").innerHTML=d.customers.atRisk.map(c=>`<div class="item"><div class="grow"><b>${who(c)}</b><span>${c.visits} visits · last ${c.last}</span></div></div>`).join("")||`<div class="empty">Nobody yet. Good sign.</div>`;
+  $("#inNoShow").innerHTML=d.customers.repeatNoShow.map(c=>`<div class="item"><div class="grow"><b>${who(c)}</b><span>${c.n} no-shows</span></div></div>`).join("")||`<div class="empty">Nobody missed twice.</div>`}
+
+$("#inSample").onclick=()=>{inSampleOn=true;loadInsights();scrollTo(0,0)};$("#inReal").onclick=()=>{inSampleOn=false;loadInsights()};
+addEventListener("resize",()=>{if(!$("#analytics").hidden&&(inData||inSampleOn))renderInsights(inSampleOn?sampleInsights():inData)});
+
+// Made-up numbers for the "Preview with sample data" button. Clearly labelled on screen; never stored.
+function sampleInsights(){const n=inDays>90?52:inDays,unit=inDays>90?"week":"day",svcs=(biz?.services||[]).slice(0,6);let seed=7;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  const trend=[...Array(n)].map((_,i)=>{const dt=new Date(bizNow().getTime()-(n-1-i)*(unit==="week"?7:1)*864e5),dow=dt.getDay(),base=dow===0?0:dow===6?1.6:dow===5?1.3:1;const bk=Math.round((unit==="week"?28:4)*base*(0.7+rnd()*0.6));
+    return{d:stamp(dt).slice(0,10),bookings:bk,revenue:bk*(38+rnd()*14),chats:Math.round(bk*1.6+rnd()*3)}});
+  const tb=trend.reduce((a,x)=>a+x.bookings,0),tr=trend.reduce((a,x)=>a+x.revenue,0),share=[.38,.27,.15,.12,.05,.03];
+  return{days:inDays,unit,trend,totals:{bookings:tb,revenue:tr,avg_ticket:tr/tb,cancelled:Math.round(tb*.06),no_show:Math.round(tb*.05),completed:Math.round(tb*.8),customers:Math.round(tb*.55),discounts:tr*.03},
+    prev:{bookings:Math.round(tb*.88),revenue:tr*.85,avg_ticket:tr/tb*.97,no_show:Math.round(tb*.08),completed:Math.round(tb*.75),conversations:Math.round(tb*1.4)},
+    services:svcs.map((x,i)=>({name:x.name,n:Math.round(tb*(share[i]||.02)),revenue:tr*(share[i]||.02),cancelled:Math.round(tb*(share[i]||.02)*.07),no_show:Math.round(tb*(share[i]||.02)*.05)})),
+    weekday:[1,2,3,4,5,6].map(dw=>({dow:dw,n:Math.round(tb/6*(dw===6?1.5:dw===5?1.25:dw===1?.7:1)),revenue:tr/6*(dw===6?1.5:dw===5?1.25:dw===1?.7:1),no_show:1})),
+    heat:[1,2,3,4,5,6].flatMap(dw=>[10,11,12,13,14,15,16,17,18,19].map(h=>({dow:dw,hour:h,n:Math.round((h>=16?3:h>=12?2:1.2)*(dw===6?1.6:dw===5?1.3:1)*(1+rnd()))}))),
+    capacity:{past:.64,next7:.52,bookedHoursNext7:58,openHoursNext7:112},upcoming:{next7:{n:Math.round(tb/n*7*.6),revenue:tr/n*7*.6},next30:{n:Math.round(tb/n*30*.35),revenue:tr/n*30*.35}},
+    ai:{chats:Math.round(tb*1.5),answered:Math.round(tb*1.45),intent:Math.round(tb*1.1),booked:Math.round(tb*.62),handoff:Math.round(tb*.09),failed:1,avg_ms:1900},
+    lost:[{text:"How much is a colour for long hair?",conversation_id:0,at:stamp(new Date(bizNow()-3*36e5))},{text:"Do you have anything Saturday morning?",conversation_id:0,at:stamp(new Date(bizNow()-26*36e5))},{text:"بقديش المانيكور والباديكور سوا؟",conversation_id:0,at:stamp(new Date(bizNow()-50*36e5))}],
+    value:{avg_spend:132,avg_visits:2.9,days_between:34},lead:[{bucket:"Same day",n:Math.round(tb*.22)},{bucket:"1–2 days ahead",n:Math.round(tb*.38)},{bucket:"3–7 days ahead",n:Math.round(tb*.3)},{bucket:"More than a week ahead",n:Math.round(tb*.1)}],channels:[{source:"ai",n:Math.round(tb*.62),revenue:tr*.6},{source:"web",n:Math.round(tb*.26),revenue:tr*.27},{source:"manual",n:Math.round(tb*.12),revenue:tr*.13}],requests:{late_cancel_requests:4,late_move_requests:6,extra_requests:3},hoursOpen:biz?.hours,
+    customers:{new:Math.round(tb*.22),returning:Math.round(tb*.33),top:[["Rana K.",14,812],["Maya S.",11,640],["Nour A.",9,505],["Lina F.",8,470]].map(([name,visits,spent])=>({name,visits,spent,last:stamp(new Date(bizNow()-5*864e5)).slice(0,10)})),
+      atRisk:[{name:"Hala M.",visits:5,last:"2026-08-30"},{name:"Dana J.",visits:3,last:"2026-09-04"}],repeatNoShow:[{name:"Omar H.",n:3}]},
+    topics:[["booking","Booking & availability",Math.round(tb*.9),"Can I book Saturday at 11?"],["price","Prices",Math.round(tb*.5),"How much is a keratin treatment?"],["location","Location & parking",Math.round(tb*.12),"Where can I park?"],
+      ["cancel","Cancel or change a booking",Math.round(tb*.1),"Can I move my booking to Friday?"],["discount","Discounts & offers",Math.round(tb*.07),"Any student discount?"],["complaint","Complaints & bad experiences",2,"I waited 25 minutes last time"]]
+      .map(([topic,label,n2,ex])=>({topic,label,n:n2,convs:Math.round(n2*.8),flagged:topic==="complaint"?2:topic==="cancel"?3:0,examples:[{text:ex,conversation_id:0,at:""}]})),
+    asked:svcs.map((x,i)=>({name:x.name,n:Math.round(tb*(share[i]||.02)*(i===1?2.6:1.1))})),handoff:Math.round(tb*.09),conversations:Math.round(tb*1.5),reminders:{sent:Math.round(tb*.8),failed:0},currency:biz?.currency||"USD",
+    recommendations:[{level:"good",title:"Revenue up 15% vs the previous period",text:"Saturday and Friday drove most of the growth."},{level:"good",title:"Saturday is your best day",text:"Make sure you have enough staff that day."},
+      {level:"info",title:"Monday is quiet",text:"Try a Monday-only discount code to fill it (Setup → Discount codes)."},{level:"info",title:`${svcs[1]?.name||"A service"} is asked about far more than it is booked`,text:"Customers may find the price high. Try a bundle or show results on Instagram."},
+      {level:"info",title:"3 customers asked but didn't book",text:"Follow up personally: these are warm leads."},{level:"bad",title:"1 customer missed 3 appointments",text:"Ask them to confirm or pay a deposit before booking again."}]}}
+
+// ---------- reminders + booking page settings ----------
+function fillAddons(){$("#rmOn").checked=biz.reminders_enabled!==false;$("#rmHours").value=String(biz.reminder_hours||24);$("#rmText").value=biz.reminder_text||"";previewReminder();
+  $("#bkOn").checked=biz.booking_enabled!==false;$("#bkTitle").value=biz.booking_title||"";$("#bkIntro").value=biz.booking_intro||"";$("#bkColor").value=biz.booking_color||"#10a35a";
+  $("#bkNotice").value=String(biz.booking_min_notice_hours??2);$("#bkAhead").value=String(biz.booking_days_ahead||30);$("#bkPrices").checked=biz.booking_show_prices!==false;
+  $("#bkForm").hidden=$("#bkLink").hidden=!$("#bkOn").checked}
+let pvT;function previewReminder(){clearTimeout(pvT);pvT=setTimeout(async()=>{try{$("#rmPreview").textContent=(await req("/api/reminders/preview","POST",{text:$("#rmText").value})).text}catch{}},250)}
+$("#rmText").oninput=previewReminder;
+async function saveAddons(msg){const body={...biz,services:biz.services,reminders_enabled:$("#rmOn").checked,reminder_hours:$("#rmHours").value,reminder_text:$("#rmText").value,
+    booking_enabled:$("#bkOn").checked,booking_title:$("#bkTitle").value,booking_intro:$("#bkIntro").value,booking_color:$("#bkColor").value,
+    booking_min_notice_hours:$("#bkNotice").value,booking_days_ahead:$("#bkAhead").value,booking_show_prices:$("#bkPrices").checked};
+  try{biz=await req("/api/business","PUT",body);fillAddons();toast(msg)}catch(err){toast(err.message)}}
+$("#rmForm").onsubmit=e=>{e.preventDefault();saveAddons("Reminder settings saved.")};
+$("#rmOn").onchange=()=>saveAddons($("#rmOn").checked?"Reminders turned on.":"Reminders turned off.");
+$("#bkForm").onsubmit=e=>{e.preventDefault();saveAddons("Booking page saved.")};
+$("#bkOn").onchange=()=>saveAddons($("#bkOn").checked?"Online booking page turned on.":"Online booking page turned off. Existing booking links still work.");
+$("#rmRun").onclick=async()=>{const r=await req("/api/reminders/run","POST");toast(r.checked?`Sent ${r.checked} reminder${r.checked>1?"s":""}.`:"No reminders due right now.")};
+
+// ---------- AI training ----------
+let trStatus="open";const WHY={unknown:"AI didn't know",ai_failed:"AI didn't respond"};
+async function loadTraining(){const [list,b]=await Promise.all([req("/api/learning?status="+trStatus),req("/api/business")]);biz={...biz,...b};
+  $("#trKnows").innerHTML=`<div><b>${b.services.length}</b>Services</div><div><b>${b.services.filter(x=>x.description).length}</b>With descriptions</div><div><b>${(b.faqs||[]).length}</b>FAQs</div><div><b>${[b.description,b.policies,b.team,b.payment_methods,b.address].filter(Boolean).length}/5</b>Profile sections filled</div>`;
+  $("#trList").innerHTML=list.length?list.map(l=>`<div class="card glass" data-l="${l.id}"><div class="ch"><h2 style="white-space:normal">“${esc(l.question)}”</h2><span class="tag ${l.reason==="ai_failed"?"t-attn":"t-hand"}">${WHY[l.reason]||l.reason}</span></div>
+      <p class="sub" style="margin:0 0 10px;font-size:13px">${esc(l.name||(l.phone&&!/^test-/.test(l.phone)?l.phone:"Test customer"))} · ${ago(l.at)}${l.times>1?` · asked ${l.times} times`:""}${l.conversation_id?` · <a href="#" data-open="${l.conversation_id}">open chat</a>`:""}</p>
+      ${l.status==="open"?`<div class="form" style="grid-template-columns:1fr">
+        <label>Your answer<textarea class="trA" rows="3" placeholder="Write the answer as you'd like the AI to give it"></textarea></label>
+        <label>Save it for the AI as this question<input class="trQ" value="${esc(l.question)}"></label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap"><label class="switch"><input type="checkbox" class="trSend" ${l.conversation_id?"checked":"disabled"}> Send to this customer now</label><label class="switch"><input type="checkbox" class="trFaq" checked> Teach the AI (save as FAQ)</label></div>
+        <div style="display:flex;gap:8px"><button class="btn trGo" type="button">Answer</button><button class="btn ghost trSkip" type="button">Dismiss</button></div></div>`
+      :`<div class="ins"><span class="dot" style="--c:var(--good)"></span><div><b>Answer</b>${esc(l.answer||"(dismissed)")}</div></div>`}</div>`).join("")
+    :`<div class="card glass"><div class="empty">${trStatus==="open"?"Nothing to answer. When the AI can't answer something, it appears here.":"Nothing here yet."}</div></div>`;
+  const n=trStatus==="open"?list.length:null;if(n!==null){$("#trN").dataset.q=n;$("#trN").hidden=!n;$("#trN").textContent=n}}
+document.getElementById("trTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;document.querySelectorAll("#trTabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));trStatus=b.dataset.s;loadTraining()};
+document.getElementById("trList").addEventListener("click",async e=>{const card=e.target.closest("[data-l]");if(!card)return;const id=card.dataset.l;
+  if(e.target.closest("[data-open]")){e.preventDefault();return}
+  if(e.target.closest(".trSkip")){await req(`/api/learning/${id}/dismiss`,"POST");toast("Dismissed.");return loadTraining()}
+  if(e.target.closest(".trGo")){const answer=card.querySelector(".trA").value.trim();if(!answer)return toast("Write the answer first.");
+    try{const r=await req(`/api/learning/${id}/answer`,"POST",{answer,faq_question:card.querySelector(".trQ").value,send:card.querySelector(".trSend").checked,save_faq:card.querySelector(".trFaq").checked});
+      toast(r.warning||[card.querySelector(".trSend").checked&&"Sent to the customer",card.querySelector(".trFaq").checked&&"the AI will know it next time"].filter(Boolean).join(", ")+".");loadTraining();refresh()}catch(err){toast(err.message)}}});
+
+// ---------- business type ----------
+let verticals=[];const cap1=w=>w?w[0].toUpperCase()+w.slice(1):w;
+function applyTerms(){const t=biz?.terms;if(!t)return;const map={Booking:cap1(t.booking),Customer:cap1(t.customer),Customers:cap1(t.customers),Services:cap1(t.services)};
+  document.querySelectorAll("[data-term]").forEach(el=>{if(map[el.dataset.term])el.textContent=map[el.dataset.term]})}
+async function loadVerticals(){verticals=await req("/api/verticals");
+  $("#vtSel").innerHTML=verticals.map(v=>`<option value="${v.key}" ${v.comingSoon?"disabled":""}>${v.emoji} ${esc(v.label)}</option>`).join("");$("#vtSel").value=biz.vertical||"salon";vtNote()}
+function vtNote(){const v=verticals.find(x=>x.key===$("#vtSel").value);if(!v)return;$("#vtNote").textContent=`Words used: ${v.terms.customers}, ${v.terms.bookings}, ${v.terms.services}.`+(v.note?" "+v.note:"")}
+$("#vtSel").onchange=vtNote;
+$("#vtApply").onclick=async()=>{const key=$("#vtSel").value,tpl=$("#vtTpl").checked;
+  if(tpl&&!$("#vtApply").dataset.sure){$("#vtApply").dataset.sure=1;$("#vtApply").textContent="Yes, replace my services";$("#vtNote").textContent="This replaces your services, FAQs and policies with the starter template. Click again to confirm.";return}
+  delete $("#vtApply").dataset.sure;$("#vtApply").textContent="Apply";
+  try{biz=await req("/api/business/vertical","POST",{key,template:tpl});fillSetup();applyTerms();toast(tpl?"Business type and starter template applied.":"Business type changed.");refresh()}catch(err){toast(err.message)}};
+
+// ---------- channels ----------
+async function loadChannels(){const [c,d]=await Promise.all([req("/api/channels"),req("/api/webook-demo")]);const base=location.origin,tg=c.telegram;
+  const row=(icon,name,state,ok,body)=>`<div class="item" style="align-items:flex-start"><div class="grow"><b>${icon} ${name} <span class="tag ${ok?"t-book":"t-faq"}" style="display:inline">${state}</span></b><span style="white-space:normal">${body}</span></div></div>`;
+  $("#chList").innerHTML=row("📱","WeBook app","Live",true,`Customers open <b>${base}/webook</b>, find this business, chat with the AI and book. Works on any phone and can be added to the home screen. Use your public address once the tunnel route is added.`)
+    +row("✈️","Telegram",tg.running?"Connected @"+tg.bot:tg.configured?"Not connecting":"Not set up",tg.running,(tg.running?`Customers chat with <b><a href="https://t.me/${esc(tg.bot)}" target="_blank" rel="noopener">t.me/${esc(tg.bot)}</a></b> and the AI answers. Staff replies and reminders go there too. The bot uses your business name; set its photo in @BotFather with /setuserpic. <button class="mini" id="tgOff" type="button">Disconnect</button>`
+      :(tg.error?`<span style="color:var(--bad)">${esc(tg.error)}</span><br>`:"")+`Give this business its own bot: 1) In Telegram, open <b>@BotFather</b>, send /newbot and pick a name and username. 2) Paste the token it gives you here:<br><input id="tgToken" placeholder="123456789:AAH..." style="width:100%;max-width:420px;margin:8px 0" autocomplete="off"> <button class="mini" id="tgOn" type="button">Connect bot</button>`))
+    +row("🟢","WhatsApp",c.whatsapp.configured?"Configured":"Not set up",c.whatsapp.configured,"Needs a Meta WhatsApp Business account. A later step.")
+    +row("🧪","Demo businesses in WeBook",d.n?d.n+" shown":"None",!!d.n,d.n?`Sample places so the marketplace is not empty. <button class="mini" id="demoOff" type="button">Remove demo businesses</button>`:`<button class="mini" id="demoOn" type="button">Add demo businesses</button>`);
+  if($("#tgOn"))$("#tgOn").onclick=async()=>{try{const r=await req("/api/channels/telegram","PUT",{token:$("#tgToken").value});toast("Connected @"+r.bot+".");loadChannels()}catch(err){toast(err.message)}};
+  if($("#tgOff"))$("#tgOff").onclick=async()=>{await req("/api/channels/telegram","PUT",{token:""});toast("Telegram bot disconnected.");loadChannels()};
+  if($("#demoOff"))$("#demoOff").onclick=async()=>{await req("/api/webook-demo/remove","POST");toast("Demo businesses removed from WeBook.");loadChannels()};
+  if($("#demoOn"))$("#demoOn").onclick=async()=>{await req("/api/webook-demo/add","POST");toast("Demo businesses added.");loadChannels()}}
+
+// ---------- teach AI: review, correct, rules ----------
+let rvFilter="todo";
+async function loadTeach(){const [st,list,rules]=await Promise.all([req("/api/review/stats"),req("/api/review?filter="+rvFilter),req("/api/ai-rules")]);
+  $("#tchStats").innerHTML=`<div><b>${st.accuracy===null?"–":st.accuracy+"%"}</b>Replies you rated good</div><div><b>${st.todo}</b>Replies to review</div><div><b style="color:${st.low?"var(--bad)":"inherit"}">${st.low}</b>The AI wasn't sure</div><div><b>${st.corrected}</b>Answers you taught</div><div><b>${rules.length}</b>Strict rules</div>`;
+  const trOpen=+($("#trN").dataset.q||0),n=st.low+trOpen;$("#trN").hidden=!n;$("#trN").textContent=n;
+  $("#rvList").innerHTML=list.length?list.map(m=>`<div class="card glass" data-m="${m.id}">
+    <div class="ch"><small>${esc(m.name||(m.phone&&!/^(test|e2e|walk-in|tg-)/.test(m.phone)?m.phone:"Customer"))} · ${ago(m.at)} · ${esc(CH[m.channel]||m.channel)}</small>${m.confidence==="low"?'<span class="tag t-attn">AI not sure</span>':""}</div>
+    <div class="ins"><span class="dot" style="--c:var(--muted)"></span><div><b>Customer asked</b>${esc(m.question||"(start of chat)")}</div></div>
+    <div class="ins"><span class="dot" style="--c:${m.review==="wrong"?"var(--bad)":m.review==="corrected"?"var(--muted)":"var(--accent)"}"></span><div><b>AI replied</b><span style="white-space:pre-wrap">${esc(m.answer)}</span></div></div>
+    ${m.review==="corrected"?`<div class="ins"><span class="dot" style="--c:var(--good)"></span><div><b>Your answer (taught)</b><span style="white-space:pre-wrap">${esc(m.corrected_text)}</span></div></div>`:""}
+    ${m.review?`<div style="display:flex;gap:8px;margin-top:10px"><button class="mini rvUndo" type="button">Undo</button>${m.conversation_id?`<a href="#" class="mini" data-open="${m.conversation_id}">Open chat</a>`:""}</div>`
+    :`<div class="rvFix" hidden><div class="form" style="grid-template-columns:1fr;margin-top:10px">
+        <label>The right answer<textarea class="rvBetter" rows="3">${esc(m.answer)}</textarea></label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap"><label class="switch"><input type="checkbox" class="rvSend"> Send this to the customer now</label><label class="switch"><input type="checkbox" class="rvFaq" checked> Also save as an FAQ</label></div>
+        <div style="display:flex;gap:8px"><button class="btn rvSave" type="button">Teach this answer</button><button class="btn ghost rvCancel" type="button">Cancel</button></div></div></div>
+      <div class="rvActs" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn rvGood" type="button">Good reply</button><button class="btn ghost rvEdit" type="button">Fix the answer</button><button class="btn ghost rvWrong" type="button">Wrong</button>${m.conversation_id?`<a href="#" class="mini" data-open="${m.conversation_id}" style="align-self:center">Open chat</a>`:""}</div>`}
+  </div>`).join(""):`<div class="card glass"><div class="empty">${rvFilter==="todo"?"All caught up. New AI replies show up here for you to check.":"Nothing here yet."}</div></div>`;
+  const send=async(id,body)=>{try{const r=await req("/api/review/"+id,"POST",body);if(r.warning)toast(r.warning);loadTeach()}catch(err){toast(err.message)}};
+  $("#rvList").querySelectorAll("[data-m]").forEach(c=>{const id=c.dataset.m,f=c.querySelector(".rvFix"),a=c.querySelector(".rvActs");
+    c.querySelector(".rvGood")?.addEventListener("click",()=>{send(id,{verdict:"approved"});toast("Marked good. The AI will answer like this again.")});
+    c.querySelector(".rvWrong")?.addEventListener("click",()=>{f.hidden=false;a.hidden=true;c.dataset.wrong=1;toast("Write the right answer to teach it, or Cancel.")});
+    c.querySelector(".rvEdit")?.addEventListener("click",()=>{f.hidden=false;a.hidden=true});
+    c.querySelector(".rvCancel")?.addEventListener("click",()=>{if(c.dataset.wrong){send(id,{verdict:"wrong"});return}f.hidden=true;a.hidden=false});
+    c.querySelector(".rvSave")?.addEventListener("click",()=>{send(id,{verdict:"corrected",better:c.querySelector(".rvBetter").value,send:c.querySelector(".rvSend").checked,save_faq:c.querySelector(".rvFaq").checked});toast("Taught. The AI will use your answer from now on.")});
+    c.querySelector(".rvUndo")?.addEventListener("click",()=>send(id,{verdict:"undo"}))});
+  renderRules(rules)}
+let rules=[];
+function renderRules(r){rules=r;$("#ruList").innerHTML=r.length?r.map((x,i)=>`<div class="item"><div class="grow"><b style="font-weight:500;white-space:normal">${i+1}. ${esc(x.text)}</b></div><div class="acts"><button class="mini" data-ed="${i}">Edit</button><button class="mini" data-del="${i}">Remove</button></div></div>`).join(""):`<div class="empty">No rules yet. The AI follows your Setup and its built-in safety rules.</div>`;
+  $("#ruList").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>saveRules(rules.filter((_,i)=>i!==+b.dataset.del)));
+  $("#ruList").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>{const t=prompt("Edit rule",rules[+b.dataset.ed].text);if(t!==null)saveRules(rules.map((x,i)=>i===+b.dataset.ed?{text:t}:x))})}
+async function saveRules(r){try{renderRules(await req("/api/ai-rules","PUT",{rules:r}));toast("Rules saved. The AI follows them from the next message.");loadTeach()}catch(err){toast(err.message)}}
+$("#ruForm").onsubmit=e=>{e.preventDefault();const t=$("#ruIn").value.trim();if(!t)return;$("#ruIn").value="";saveRules([...rules,{text:t}])};
+document.querySelectorAll("#tchMode button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#tchMode button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  $("#tchReview").hidden=b.dataset.m!=="review";$("#tchQuestions").hidden=b.dataset.m!=="questions";$("#tchRules").hidden=b.dataset.m!=="rules"});
+document.querySelectorAll("#rvTabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#rvTabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));rvFilter=b.dataset.f;loadTeach()});
+
+// ---------- glossy UI: page colour and 3D depth ----------
+document.body.dataset.page="overview";
+// Phones: keep the current section visible in the scrolling bottom bar.
+const navCenter=()=>{if(innerWidth<=820)document.querySelector('nav button[aria-current="true"]')?.scrollIntoView({inline:"center",block:"nearest"})};
+document.querySelectorAll("nav button[data-view]").forEach(x=>x.addEventListener("click",()=>setTimeout(navCenter,50)));addEventListener("load",()=>setTimeout(navCenter,300));
+
+document.querySelectorAll("nav button[data-view]").forEach(b=>b.addEventListener("click",()=>{document.body.dataset.page=b.dataset.view}));
+$("#pwBtn").addEventListener("click",()=>{document.body.dataset.page="security"});
+
+// ---------- live desk ----------
+const CHN={whatsapp:"WhatsApp",telegram:"Telegram",webook:"WeBook",web:"Booking page",manual:"Added by staff",test:"Test chat",other:"Other",ai:"Chat"};
+const CHC={whatsapp:"#2fd27b",telegram:"#3d8bff",webook:"#ff4fa0",web:"#ffc93c",manual:"#a6a6b0",test:"#74747e",other:"#74747e"};
+const OUTN={booked:"Booked",answered:"Answered",handoff:"Sent to you"},OUTC={booked:"#2fd27b",answered:"#3d8bff",handoff:"#ff6a1f"};
+let liveSeen=new Set(),liveFirst=true,liveTimer=null,crystalKick=0;
+const hhmm=s=>String(s||"").slice(11,16);
+function tick(id,v){const el=$("#"+id);if(!el)return;const t=String(v);if(el.textContent!==t){el.textContent=t;el.classList.remove("tick");void el.offsetWidth;el.classList.add("tick")}}
+const pctTxt=(a,b)=>b?Math.round((a-b)/b*100):null;
+function microDelta(id,a,b){const p=pctTxt(a,b),el=$("#"+id);if(!el)return;el.className=p===null?"":p>=0?"up":"down";el.textContent=p===null?"":`${p>=0?"↑":"↓"} ${Math.abs(p)}%`}
+// Micro histogram: thin bars, failures stacked in coral (OpsPulse style)
+function microBars(id,vals,fails=[],color="#3d8bff"){const n=vals.length,max=Math.max(1,...vals.map((v,i)=>v+(fails[i]||0))),w=240/n;let g="";
+  vals.forEach((v,i)=>{const h=v/max*50,f=(fails[i]||0)/max*50,x=i*w+w*.3,bw=Math.max(1.5,w*.4);
+    g+=`<rect x="${x}" y="${54-h}" width="${bw}" height="${Math.max(h,1)}" rx="1" fill="${v?color:"var(--line2)"}"/>`;if(f)g+=`<rect x="${x}" y="${54-h-f}" width="${bw}" height="${f}" rx="1" fill="#ff3b5c"/>`});$("#"+id).innerHTML=g}
+function microWave(id,vals,color="#ff6a1f"){const n=vals.length,max=Math.max(1,...vals),pts=vals.map((v,i)=>[i*(240/(n-1)),50-v/max*44]);
+  let d=`M${pts[0][0]},${pts[0][1]}`;for(let i=1;i<n;i++){const [x0,y0]=pts[i-1],[x1,y1]=pts[i],cx=(x0+x1)/2;d+=` C${cx},${y0} ${cx},${y1} ${x1},${y1}`}
+  $("#"+id).innerHTML=`<defs><linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".35"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><path d="${d} L240,54 L0,54Z" fill="url(#${id}g)"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2"/>`}
+function gauge(pct){const r=80,cx=100,cy=104,seg=(a0,a1,c,w=14)=>{const p=a=>[cx+r*Math.cos(Math.PI*(1-a)),cy-r*Math.sin(Math.PI*(1-a))],[x0,y0]=p(a0),[x1,y1]=p(a1);return `<path d="M${x0},${y0} A${r},${r} 0 0 1 ${x1},${y1}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`};
+  const v=pct===null?0:pct/100;let g=seg(0,1,"var(--line2)");if(v>0)g+=seg(0,Math.max(.02,v),v>.85?"#ff3b5c":v>.5?"#ff6a1f":"#2fe0c4");
+  for(let i=0;i<=10;i++){const a=Math.PI*(1-i/10),x0=cx+(r+11)*Math.cos(a),y0=cy-(r+11)*Math.sin(a),x1=cx+(r+16)*Math.cos(a),y1=cy-(r+16)*Math.sin(a);g+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="var(--muted)" stroke-width="1.2"/>`}
+  g+=`<text x="100" y="102" text-anchor="middle" class="gv">${pct===null?"Closed":pct+"%"}</text>`;$("#ldGauge").innerHTML=g}
+function donut(chs){const tot=chs.reduce((a,c)=>a+c.n,0),R=46,C=2*Math.PI*R;let off=0,g=`<circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--line2)" stroke-width="14"/>`;
+  chs.forEach(c=>{const len=c.n/tot*C;g+=`<circle cx="60" cy="60" r="${R}" fill="none" stroke="${CHC[c.channel]||"#ffc93c"}" stroke-width="14" stroke-dasharray="${Math.max(0,len-2)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)" stroke-linecap="butt"/>`;off+=len});
+  g+=`<text x="60" y="58" text-anchor="middle" class="dv">${tot}</text><text x="60" y="74" text-anchor="middle" class="dl">bookings</text>`;$("#ldDonut").innerHTML=g;
+  $("#ldLegend").innerHTML=tot?chs.map(c=>`<div><i style="background:${CHC[c.channel]||"#ffc93c"}"></i><span>${esc(CHN[c.channel]||c.channel)}</span><b>${Math.round(c.n/tot*100)}%</b><small>${c.n} · ${fmt(c.value)}</small></div>`).join(""):`<p class="sub" style="margin:0">No bookings yet. Each channel shows here as they arrive.</p>`}
+function flowChart(rows){const svg=$("#ldFlow");if(!rows.length){svg.innerHTML=`<text x="160" y="85" text-anchor="middle" class="dl">No conversations in the last 30 days yet</text>`;return}
+  const tot=rows.reduce((a,r)=>a+r.n,0),H=150,top=10,gap=6;const L=[...new Set(rows.map(r=>r.channel))],R=["booked","answered","handoff"].filter(o=>rows.some(r=>r.outcome===o));
+  const sum=(k,v)=>rows.filter(r=>r[k]===v).reduce((a,r)=>a+r.n,0),scale=(H-gap*(Math.max(L.length,R.length)-1))/tot;
+  let y=top;const lp={},rp={};L.forEach(c=>{lp[c]={y,h:sum("channel",c)*scale,used:0};y+=lp[c].h+gap});y=top;R.forEach(o=>{rp[o]={y,h:sum("outcome",o)*scale,used:0};y+=rp[o].h+gap});
+  let g="";rows.sort((a,b)=>R.indexOf(a.outcome)-R.indexOf(b.outcome)).forEach(r=>{const h=r.n*scale,a=lp[r.channel],b=rp[r.outcome],y0=a.y+a.used,y1=b.y+b.used;a.used+=h;b.used+=h;
+    g+=`<path d="M78,${y0} C160,${y0} 160,${y1} 242,${y1} L242,${y1+h} C160,${y1+h} 160,${y0+h} 78,${y0+h}Z" fill="${OUTC[r.outcome]}" opacity=".28"><title>${CHN[r.channel]||r.channel} → ${OUTN[r.outcome]}: ${r.n}</title></path>`});
+  L.forEach(c=>g+=`<rect x="70" y="${lp[c].y}" width="8" height="${Math.max(2,lp[c].h)}" rx="2" fill="${CHC[c]||"#ffc93c"}"/><text x="64" y="${lp[c].y+lp[c].h/2+4}" text-anchor="end" class="fl">${esc(CHN[c]||c)}</text>`);
+  R.forEach(o=>g+=`<rect x="242" y="${rp[o].y}" width="8" height="${Math.max(2,rp[o].h)}" rx="2" fill="${OUTC[o]}"/><text x="256" y="${rp[o].y+rp[o].h/2+4}" class="fl">${OUTN[o]} ${sum("outcome",o)}</text>`);
+  svg.innerHTML=g}
+function heatGrid(cells){const m={},max=Math.max(1,...cells.map(c=>c.n));cells.forEach(c=>m[c.dow+"-"+c.h]=c.n);const hrs=[8,10,12,14,16,18,20,22];
+  let g=`<span></span>`+hrs.map(h=>`<span class="hx">${h}</span>`).join("");
+  ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].forEach((d,i)=>{g+=`<span class="hy">${d}</span>`;hrs.forEach(h=>{const n=(m[(i+1)+"-"+h]||0)+(m[(i+1)+"-"+(h+1)]||0),a=n/max;
+    g+=`<i title="${d} ${h}:00–${h+2}:00 · ${n} messages" style="background:${n?`color-mix(in srgb,#ff6a1f ${Math.round(18+a*82)}%,var(--s2))`:"var(--s2)"}"></i>`})});$("#ldHeat").innerHTML=g}
+function canSee(m){try{return !me||me.modules.includes(m)}catch{return true}}
+// A login without access to a section never asks for its data (staff with limited access).
+window.addEventListener("unhandledrejection",e=>{if(/don.t have access|not in your plan|Load failed|access control checks|aborted|Failed to fetch|NetworkError/i.test(e.reason?.message||""))e.preventDefault()});
+async function loadLive(){if(!canSee("overview"))return;let d;try{d=await req("/api/live?days="+days)}catch{return}
+  const n=d.now;
+  $("#ldTitle").textContent=d.ai.ok===false?"Your receptionist can't reach the AI":n.active_now?`Talking with ${n.active_now} ${n.active_now===1?"person":"people"} right now`:"Your receptionist is live";
+  $("#ldSub").textContent=d.ai.ok===false?"Customers still get instant answers from your FAQs and a note that you'll reply.":`${n.msgs_today} message${n.msgs_today===1?"":"s"} today${n.waiting?` · ${n.waiting} waiting for you`:""}${n.avg_ms?` · ${(n.avg_ms/1000).toFixed(1)}s average reply`:""}`;
+  $("#ldDot").classList.toggle("down",d.ai.ok===false);$("#hud").dataset.state=d.ai.ok===false?"down":n.waiting?"wait":"ok";
+  if(!$("#ldStats").children.length)$("#ldStats").innerHTML=[["lsM","Messages today"],["lsR","Replies sent"],["lsA","Active now"],["lsW","Waiting for you"],["lsB","Booked today"],["lsV","Value today"]].map(([id,l])=>`<div><b id="${id}">0</b><span>${l}</span></div>`).join("");
+  tick("lsM",n.msgs_today);tick("lsR",n.replies_today);tick("lsA",n.active_now);tick("lsW",n.waiting);tick("lsB",n.booked_today);tick("lsV",fmt(n.value_today));
+  const today=d.week.find(w=>w.today);gauge(today?.pct??null);$("#ldGaugeSub").textContent=today&&today.open?`${Math.round(today.booked/60*10)/10} of ${Math.round(today.open/60)} open hours booked`:"No opening hours today";
+  donut(d.channels);
+  // micro cards
+  const m24=d.h24.map(h=>h.msgs),f24=d.h24.map(h=>h.failed);tick("mMsg",m24.reduce((a,b)=>a+b,0));microBars("mMsgC",m24,f24,"#3d8bff");
+  const fails=f24.reduce((a,b)=>a+b,0);$("#mMsgD").className=fails?"down":"";$("#mMsgD").textContent=fails?`${fails} failed`:"";
+  const half=Math.floor(d.d14.length/2),cur=d.d14.slice(half),prev=d.d14.slice(0,half),bk=cur.map(x=>x.n),vv=cur.map(x=>x.v),sum=a=>a.reduce((x,y)=>x+y,0);tick("mBk",sum(bk));microBars("mBkC",bk.length>60?bk.slice(-60):bk,[],"#ff6a1f");microDelta("mBkD",sum(bk),sum(prev.map(x=>x.n)));
+  tick("mVal",fmt(sum(vv)));microWave("mValC",vv.length>2?vv:[0,...vv,0],"#ffc93c");microDelta("mValD",sum(vv),sum(prev.map(x=>x.v)));
+  const ms=d.h24.map(h=>h.ms||0),msOk=ms.filter(Boolean);tick("mMs",msOk.length?(msOk.reduce((a,b)=>a+b,0)/msOk.length/1000).toFixed(1)+"s":"—");microBars("mMsC",ms.map(v=>v/1000),[],"#ff4fa0");$("#mMsD").textContent=msOk.length?"per hour":"";
+  // week capsules
+  const DN=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  $("#ldWeek").innerHTML=d.week.map((w,i)=>`<div class="cap${w.today?" today":""}${w.pct===null?" off":""}" title="${DN[i]}: ${w.pct===null?"closed":w.pct+"% booked"}"><em>${w.pct===null?"–":w.pct+"%"}</em><span class="tube"><i style="height:${w.pct||0}%"></i></span><small>${DN[i]}</small></div>`).join("");
+  flowChart(d.flow);heatGrid(d.heat);
+  // setup checklist
+  const done=d.setup.filter(s=>s.done).length;$("#ldSetup").hidden=done===d.setup.length;
+  if(done<d.setup.length)$("#ldSetup").innerHTML=`<div class="su-head"><div><h2>Get the most from your receptionist</h2><p class="sub" style="margin:2px 0 0">${done} of ${d.setup.length} done</p></div><span class="su-bar"><i style="width:${done/d.setup.length*100}%"></i></span></div>
+    <div class="su-list">${d.setup.map(s=>`<button type="button" class="su${s.done?" done":""}" data-go="${s.view}"><i aria-hidden="true">${s.done?"✓":""}</i>${esc(s.label)}</button>`).join("")}</div>`;
+  // tables
+  const ST=c=>c.needs_attention?`<span class="tag t-attn">Needs you</span>`:c.ai_paused?`<span class="tag t-hand">You're replying</span>`:c.outcome==="booked"?`<span class="tag t-book">Booked</span>`:c.outcome==="handoff"?`<span class="tag t-hand">Sent to you</span>`:`<span class="tag t-live">Live</span>`;
+  $("#ldActive").innerHTML=d.active.length?d.active.map(c=>`<tr class="click" data-open="${c.id}"><td><b style="font-weight:500">${esc(c.name||c.phone||"Customer")}</b><br><small>${ago(c.at)} · ${c.msgs} msgs</small></td><td><span class="chip"><i style="background:${CHC[c.channel]||"#8c877b"}"></i>${esc(CHN[c.channel]||c.channel)}</span></td><td>${ST(c)}</td><td style="color:var(--ink2)">${esc(c.last||"")}</td></tr>`).join("")
+    :`<tr><td colspan="4" class="sub">No conversations this week yet.</td></tr>`;
+  $("#ldUp").innerHTML=d.upcoming.length?d.upcoming.map(u=>`<div class="up"><time><b>${hhmm(u.start)}</b><small>${nice(L(u.start),{weekday:"short",day:"numeric"})}</small></time><div><b>${esc(u.name||"Customer")}</b><small>${esc(u.service)} · ${u.minutes} min</small></div><span>${fmt(u.price)}</span></div>`).join("")
+    :`<p class="sub" style="margin:0">Nothing booked ahead yet.</p>`;
+  let fresh=0;
+  $("#ldFeed").innerHTML=d.feed.map(f=>{const key=f.kind+f.id,isNew=!liveFirst&&!liveSeen.has(key);if(isNew)fresh++;liveSeen.add(key);
+    const who=f.kind==="booking"?"New booking":f.role==="customer"?(f.name||"Customer"):f.role==="staff"?"You":"Your AI";
+    const dot=f.kind==="booking"?"#2fd27b":f.role==="customer"?(CHC[f.channel]||"#3d8bff"):f.role==="staff"?"#ffc93c":"var(--muted)";
+    return `<div class="feed-item${f.kind==="booking"?" book":""}${isNew?" new":""}" data-open="${f.conv||""}"><i style="background:${dot}"></i><div><div class="who"><b>${esc(who)}${f.kind==="booking"&&f.name?" · "+esc(f.name):""}</b><span>${esc(CHN[f.channel]||f.channel||"")} · ${hhmm(f.at)}</span></div><p>${esc(f.text)}</p></div></div>`}).join("")||`<p class="sub" style="padding:10px">Messages and bookings appear here the moment they happen.</p>`;
+  if(fresh)crystalKick=1;
+  window.liveD=d;liveFirst=false;$("#ldClock").textContent="updated "+hhmm(d.server_time);renderSummary(d)}
+// ---------- Fit-to-screen: every page is split into tabs so nothing needs page scrolling ----------
+window.tabsOf={};
+// groups: [[key, label, () => [elements]], ...]. Elements move into one pane per tab; the last opened tab is remembered.
+function pageTabs(viewId,groups,{after,cls=""}={}){
+  const sec=$("#"+viewId),anchor=after||sec.querySelector(".top");
+  const bar=document.createElement("div");bar.className="tabs glass ptabs";bar.setAttribute("role","tablist");
+  bar.innerHTML=groups.map(([k,l],i)=>`<button type="button" role="tab" data-tab="${k}" aria-pressed="${i===0}">${l}<b class="badge-n" id="tb_${viewId}_${k}" hidden></b></button>`).join("");
+  anchor.after(bar);
+  const panes={};let prev=bar;
+  groups.forEach(([k,,get])=>{const p=document.createElement("div");p.className="spane "+cls;p.dataset.pane=k;p.hidden=true;
+    for(const el of get().filter(Boolean))p.append(el);prev.after(p);prev=p;panes[k]=p});
+  const show=k=>{if(!panes[k])k=groups[0][0];bar.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===k));
+    Object.entries(panes).forEach(([n,p])=>p.hidden=n!==k);try{localStorage.setItem("rb-tab-"+viewId,k)}catch{}
+    if(!$("#"+viewId).hidden){const bs=[...document.querySelectorAll(`nav button[data-view="${viewId}"]`)],hit=bs.find(x=>x.dataset.sub===k);
+      bs.forEach(x=>x.setAttribute("aria-current",String(hit?x===hit:!x.dataset.sub)))}
+    window.dispatchEvent(new CustomEvent("tabshown",{detail:{view:viewId,tab:k}}))};
+  bar.addEventListener("click",e=>{const b=e.target.closest("button[data-tab]");if(b)show(b.dataset.tab)});
+  let start=groups[0][0];try{start=localStorage.getItem("rb-tab-"+viewId)||start}catch{}show(start);
+  tabsOf[viewId]=show;return show}
+const tabBadge=(view,k,n)=>{const b=$(`#tb_${view}_${k}`);if(b){b.hidden=!n;b.textContent=n}};
+const grid=(cls,...cards)=>{const g=document.createElement("div");g.className=cls;g.append(...cards.filter(Boolean));return g};
+
+// Home
+(function buildHome(){
+  const ov=$("#overview"),top=ov.querySelector(".top"),desk=ov.querySelector(".desk2"),cmd=desk.querySelector(".cmdrow");
+  const grids=[...desk.querySelectorAll(":scope > .g12")];
+  const ai=grids[0].children[0],gaugeCard=grids[0].children[1],donutCard=grids[0].children[2],microGrid=grids[1];
+  const kpis=ov.querySelector(".kpis"),appr=$("#apprCard"),r1=ov.querySelector(".row.r1"),r2=ov.querySelector(".row.r2"),r3=ov.querySelector(".row.r3");
+  const convCard=$("#feed").closest(".card"),setupCard=$("#ldSetup");
+  const activeCard=$("#ldActive").closest(".card"),upCard=$("#ldUp").closest(".card"),feedCard=$("#ldFeed").closest(".card");
+  const weekCard=$("#ldWeek").closest(".card"),flowCard=$("#ldFlow").closest(".card"),heatCard=$("#ldHeat").closest(".card");
+  const needsCard=r1.children[0],todayCard=r1.children[1];
+  top.after(cmd);
+  const urgent=document.createElement("div");urgent.className="card glass gx urgent";urgent.innerHTML=`<div class="ch"><h2>Needs attention</h2><small id="urgN"></small></div><div class="ulist" id="urgList"></div>`;
+  const money=document.createElement("div");money.className="card glass gx money";money.innerHTML=`<div class="ch"><h2>Money</h2><small class="plabel">last 30 days</small></div><div class="mny" id="mnyBox"></div>`;
+  [ai,upCard,activeCard,feedCard,gaugeCard,weekCard,todayCard,donutCard,flowCard,heatCard,needsCard,convCard].forEach(c=>c.classList.remove("gc3","gc4","gc5","gc7","gc8"));
+  urgent.classList.add("a-urgent");money.classList.add("a-money");upCard.classList.add("a-up");ai.classList.add("a-ai");
+  window.showPane=pageTabs("overview",[
+    ["summary","Summary",()=>[grid("sumgrid",urgent,money,upCard,ai)]],
+    ["live","Live now",()=>[grid("fit2 r-big",activeCard,feedCard),grid("fit3",gaugeCard,weekCard,todayCard)]],
+    ["trends","Trends",()=>[kpis,microGrid,r2]],
+    ["channels","Channels",()=>[grid("fit3 r-full",donutCard,flowCard,heatCard)]],
+    ["services","Services",()=>[r3]],
+    ["conversations","Conversations",()=>[grid("fit-side",needsCard,convCard)]],
+    ["approvals","Approvals",()=>[appr]],
+  ],{after:cmd});
+  desk.remove();
+  // the setup checklist now lives at the top of Setup
+  $("#setup").querySelector(".top").after(setupCard);
+})();
+// Summary cards fed by the live data
+function renderSummary(d){const n=d.now,items=[];
+  if(n.waiting)items.push(["bad",`${n.waiting} conversation${n.waiting>1?"s":""} waiting for you`,"The AI handed them to you. Reply so the client isn't left waiting.","conversations"]);
+  if(n.approvals)items.push(["warn",`${n.approvals} request${n.approvals>1?"s":""} to approve`,"Late cancellations, time changes or special requests.","approvals"]);
+  const failed=d.h24.reduce((a,h)=>a+h.failed,0);if(failed)items.push(["bad",`${failed} AI repl${failed>1?"ies":"y"} failed in 24 hours`,"Clients got a fallback message. Check the AI connection.","training"]);
+  if(n.unsure)items.push(["warn",`The AI wasn't sure ${n.unsure} time${n.unsure>1?"s":""}`,"Check those replies and teach the right answer.","training"]);
+  if(n.to_learn)items.push(["warn",`${n.to_learn} question${n.to_learn>1?"s":""} the AI couldn't answer`,"Answer once and the AI learns it.","training"]);
+  const todo=d.setup.filter(s=>!s.done).length;if(todo)items.push(["info",`${todo} setup step${todo>1?"s":""} left`,"Finish setup so the receptionist runs on its own.","setup"]);
+  if(n.active_now)items.push(["live",`${n.active_now} live conversation${n.active_now>1?"s":""} right now`,"The AI is handling them. Watch them on Live now.","live"]);
+  const urgentN=items.filter(i=>i[0]==="bad"||i[0]==="warn").length;$("#urgN").textContent=urgentN?`${urgentN} to handle`:"all clear";
+  $("#urgList").innerHTML=items.length?items.map(([lv,t,s,go])=>`<button type="button" class="urow u-${lv}" data-to="${go}"><i></i><span><b>${t}</b><small>${s}</small></span><em>Open</em></button>`).join("")
+    :`<div class="allclear"><b>All clear</b><span>Nothing needs you right now. The AI is handling everything.</span></div>`;
+  const pct=n.earned_prev?Math.round((n.earned-n.earned_prev)/n.earned_prev*100):null,booked=d.d14.slice(Math.floor(d.d14.length/2)).reduce((a,x)=>a+x.v,0);
+  $("#mnyBox").innerHTML=`<div class="mbig"><span>Earned</span><b>${fmt(n.earned)}</b>${pct===null?"":`<em class="${pct>=0?"up":"down"}">${pct>=0?"↑":"↓"} ${Math.abs(pct)}% vs previous period</em>`}<small>appointments that took place</small></div>
+    <div class="mrow"><div><span>Booked</span><b>${fmt(booked)}</b><small>this period</small></div><div><span>Coming up</span><b>${fmt(n.upcoming_value)}</b><small>${n.upcoming_count} bookings</small></div><div><span>Today</span><b>${fmt(n.value_today)}</b><small>${n.booked_today} bookings</small></div></div>`;
+  tabBadge("overview","conversations",n.waiting);tabBadge("overview","approvals",n.approvals)}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-to]");if(!b)return;const to=b.dataset.to;
+  if(["conversations","approvals","live","trends","channels","services","summary"].includes(to)){showPane(to);return}
+  document.querySelector(`nav button[data-view="${to}"]:not([data-sub])`)?.click()});
+
+// Clients, Insights, Setup, Command center, Account security: tabs instead of long pages
+(function buildPages(){
+  const kids=(id)=>[...$("#"+id).children];
+  // Clients
+  const ppl=kids("people"),pplTable=$("#pplRows").closest(".card");
+  pageTabs("people",[["clients","Clients",()=>[$("#pplKpis"),pplTable]],["offers","Offers",()=>[$("#mkCard")]]]);
+  // Insights: one theme per tab
+  const an=$("#analytics"),row=t=>[...an.querySelectorAll(":scope > .row, :scope > .card")].find(x=>x.querySelector("h2")?.textContent.includes(t));
+  pageTabs("analytics",[
+    ["overview","Overview",()=>[$("#inKpis"),row("Revenue and bookings over time")]],
+    ["timing","Timing",()=>[row("When you're busy"),row("How far ahead they book")]],
+    ["services","Services",()=>[row("Services")]],
+    ["ai","AI performance",()=>[row("AI receptionist performance")]],
+    ["questions","Questions",()=>[row("What customers ask about")]],
+    ["clients","Clients",()=>[row("Top customers")]],
+    ["next","What to do next",()=>[row("What to do next")]],
+  ]);
+  // Setup
+  const sc=$("#security"),scards=[...sc.querySelectorAll(":scope > .card")];
+  const cuCard=(id,t,s)=>{const c=document.createElement("div");c.className="card glass";c.id=id;c.innerHTML=`<div class="ch"><h2>${t}</h2><small>${s}</small></div><div class="cu-body"></div>`;return c};
+  const st=$("#setup"),card=t=>[...st.querySelectorAll(":scope > .card")].find(x=>x.querySelector("h2")?.textContent.trim().startsWith(t)),form=$("#setupForm").closest(".card");
+  pageTabs("setup",[
+    ["start","Getting started",()=>[$("#ldSetup"),card("Business type")]],
+    ["details","Business details",()=>[form]],
+    ["tools","Tools and payments",()=>[$("#toolsCard")]],
+    ["reminders","Reminders",()=>[card("Reminders")]],
+    ["channels","Channels",()=>[card("Channels")]],
+    ["booking","Booking page",()=>[$("#blCard")]],
+    ["codes","Discount codes",()=>[card("Discount codes"),card("Test data")]],
+    ["s2fa","Two-factor sign-in",()=>[scards[0]]],
+    ["spw","Password",()=>[scards[1]]],
+    ["sdev","Devices and activity",()=>[grid("fit2",scards[3],scards[2])]],
+    ["look","Look and feel",()=>[cuCard("cuLook","Look and feel","applies on this device")]],
+    ["dash","Dashboard",()=>[cuCard("cuDash","Dashboard","start page, layouts and details")]],
+  ]);
+  // Settings: three groups (Setup, Security, Customize), each with its own tabs
+  const SG={setup:["start","details","tools","reminders","channels","booking","codes"],security:["s2fa","spw","sdev"],customize:["look","dash"]};
+  const sbar=st.querySelector(".ptabs"),gbar=document.createElement("div");gbar.className="sgroups";gbar.setAttribute("role","tablist");
+  gbar.innerHTML=[["setup","Setup","Business, AI, bookings"],["security","Security","Login, two-factor, devices"],["customize","Customize","Look, layout, start page"]].map(([k,l,s])=>`<button type="button" data-g="${k}"><b>${l}</b><small>${s}</small></button>`).join("");
+  sbar.before(gbar);
+  const syncG=k=>{const g=Object.keys(SG).find(x=>SG[x].includes(k))||"setup";gbar.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.g===g));
+    sbar.querySelectorAll("button[data-tab]").forEach(b=>b.hidden=!SG[g].includes(b.dataset.tab));st.querySelector(".top h1").innerHTML=g==="security"?"Account <b>security</b>":g==="customize"?"Make it <b>yours</b>":"Business <b>setup</b>";
+    st.querySelector(".top .sub").textContent=g==="security"?"Your login, two-factor protection and recent activity.":g==="customize"?"Choose how the dashboard looks and what it shows first.":"The assistant and the booking page only know what you write here.";
+    if(g==="security")try{me&&loadSecurity()}catch{}};
+  gbar.addEventListener("click",e=>{const b=e.target.closest("button[data-g]");if(b)tabsOf.setup(SG[b.dataset.g][0])});
+  addEventListener("tabshown",e=>{if(e.detail.view==="setup")syncG(e.detail.tab)});syncG(localStorage.getItem("rb-tab-setup")||"start");
+  form.classList.add("wideform");
+  // Command center: the new-business form gets its own tab
+  const nb=$("#nbForm").closest(".card"),cc=document.createElement("div");cc.id="ccNew";cc.hidden=true;cc.append(nb);$("#ccBiz").after(cc);
+  const ccTabs=$("#ccTabs");ccTabs.insertAdjacentHTML("beforeend",`<button aria-pressed="false" data-c="new">New business</button>`);
+})();
+// Sidebar entries that open a page on a given tab
+document.querySelectorAll("nav button[data-sub]").forEach(b=>b.addEventListener("click",()=>setTimeout(()=>tabsOf[b.dataset.view]?.(b.dataset.sub),0)));
+document.querySelectorAll("nav button[data-view]:not([data-sub])").forEach(b=>b.addEventListener("click",()=>setTimeout(()=>{const v=b.dataset.view,t=localStorage.getItem("rb-tab-"+v);if(tabsOf[v])tabsOf[v](t||undefined)},0)));
+
+function liveLoop(){clearInterval(liveTimer);loadLive();liveTimer=setInterval(()=>{if(!document.hidden&&!$("#overview").hidden)loadLive()},5000)}
+liveLoop();
+document.querySelector('nav button[data-view="overview"]').addEventListener("click",loadLive);
+// Quick actions and setup steps jump to the right place
+document.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!b)return;const v=b.dataset.go;
+  if(v==="approvals"){showPane("approvals");return}
+  if(v==="bell"){$("#bellBtn").click();setTimeout(()=>$("#bellCfg").click(),150);return}
+  if(v==="newbooking"){document.querySelector('nav button[data-view="calendar"]').click();setTimeout(()=>$("#calNew").click(),350);return}
+  document.querySelector(`nav button[data-view="${v}"]`)?.click()});
+// Command bar: Ctrl/Cmd+K, search clients and conversations
+let cmdT;
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();document.querySelector('nav button[data-view="overview"]').click();setTimeout(()=>$("#cmdQ").focus(),50)}});
+$("#cmdQ").addEventListener("input",()=>{clearTimeout(cmdT);cmdT=setTimeout(async()=>{const q=$("#cmdQ").value.trim(),box=$("#cmdRes");if(q.length<2){box.hidden=true;return}
+  const [cs,cv]=await Promise.all([req(`/api/customers?q=${encodeURIComponent(q)}&test=1`).catch(()=>[]),req("/api/conversations").catch(()=>[])]);
+  const ql=q.toLowerCase(),convs=(Array.isArray(cv)?cv:[]).filter(c=>`${c.name||""} ${c.phone||""} ${c.last||""}`.toLowerCase().includes(ql)).slice(0,5);
+  box.innerHTML=(cs.slice(0,5).map(c=>`<button type="button" data-cust="${c.id}"><b>${esc(c.name||"No name")}</b><small>Client · ${esc(c.phone||c.email||"")} · ${c.visits} visits</small></button>`).join("")
+    +convs.map(c=>`<button type="button" data-open="${c.id}"><b>${esc(c.name||"Customer")}</b><small>Conversation · ${esc(c.last||"")}</small></button>`).join(""))||`<p class="sub" style="margin:8px 10px">Nothing found for “${esc(q)}”.</p>`;box.hidden=false},200)});
+document.addEventListener("click",e=>{if(!e.target.closest(".cmd"))$("#cmdRes").hidden=true});
+$("#cmdQ").addEventListener("keydown",e=>{if(e.key==="Escape"){$("#cmdRes").hidden=true;$("#cmdQ").blur()}});
+// HUD: concentric rings turn constantly; a live waveform in the middle; it flares when something new happens.
+(function hud(){const el=$("#hud"),w=$("#hudWave");if(!el||!w)return;const N=36;let t=0,boost=0;
+  w.innerHTML=[...Array(N)].map((_,i)=>{const a=i/N*Math.PI*2;return `<line x1="${100+28*Math.cos(a)}" y1="${100+28*Math.sin(a)}" x2="${100+30*Math.cos(a)}" y2="${100+30*Math.sin(a)}"/>`}).join("");
+  const lines=[...w.children],still=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  (function f(){if(crystalKick){boost=1;crystalKick=0;el.classList.remove("flare");void el.offsetWidth;el.classList.add("flare")}boost*=.97;t+=.05+boost*.25;
+    if(!$("#overview").hidden&&!document.hidden&&!still)lines.forEach((l,i)=>{const a=i/N*Math.PI*2,amp=3+5*Math.abs(Math.sin(t+i*.55))*(.5+Math.sin(t*.7+i)*.5)+boost*10;
+      l.setAttribute("x2",100+(30+amp)*Math.cos(a));l.setAttribute("y2",100+(30+amp)*Math.sin(a))});
+    el.style.setProperty("--spin",1+boost*4);requestAnimationFrame(f)})()})();
+
+// ---------- notification center ----------
+let notifLast=0,notifPerm=false;
+const KIND_ICON={booking:"var(--good)",cancel:"var(--bad)",approval:"var(--warn)",handoff:"var(--accent)",unsure:"#ff8a3d",review:"var(--good)",marketing:"#d65cff"};
+async function loadNotifs(first){let r;try{r=await req("/api/notifications"+(first?"":"?after="+notifLast))}catch{return}
+  $("#bellN").hidden=!r.unread;$("#bellN").textContent=r.unread>99?"99+":r.unread;
+  const fresh=first?[]:r.items.filter(n=>n.id>notifLast);if(r.items.length)notifLast=Math.max(notifLast,...r.items.map(n=>n.id));
+  fresh.reverse().forEach(n=>{toast(n.title);if(notifPerm&&document.hidden)try{new Notification(n.title,{body:n.body||"",tag:"rb"+n.id})}catch{}});
+  if(first||!$("#bellPanel").hidden)renderNotifs(first?r.items:null)}
+async function renderNotifs(items){items=items||(await req("/api/notifications")).items;
+  $("#bellList").innerHTML=items.length?items.map(n=>`<button type="button" class="bp-item${n.read?"":" unread"}" data-n="${n.id}" data-c="${n.conversation_id||""}"><i style="background:${KIND_ICON[n.kind]||"var(--muted)"}"></i><span><b>${esc(n.title)}</b>${n.body?`<small>${esc(n.body)}</small>`:""}<em>${ago(n.at)}</em></span></button>`).join("")
+    :`<div class="empty" style="padding:28px 10px">You're all caught up. New bookings, cancellations and anything that needs you will appear here.</div>`;
+  $("#bellList").querySelectorAll("[data-n]").forEach(x=>x.onclick=async()=>{await req("/api/notifications/read","POST",{ids:[+x.dataset.n]});x.classList.remove("unread");
+    if(x.dataset.c){$("#bellPanel").hidden=true;document.querySelector('nav button[data-view="overview"]').click();setTimeout(()=>openConv(+x.dataset.c),250)}loadNotifs()})}
+$("#bellBtn").onclick=async()=>{const p=$("#bellPanel"),open=p.hidden;p.hidden=!open;$("#bellBtn").setAttribute("aria-expanded",open);if(open){renderNotifs();
+  if("Notification" in window&&Notification.permission==="default")Notification.requestPermission().then(x=>notifPerm=x==="granted");}};
+if("Notification" in window)notifPerm=Notification.permission==="granted";
+$("#bellAll").onclick=async()=>{await req("/api/notifications/read","POST",{all:true});loadNotifs();renderNotifs()};
+document.addEventListener("click",e=>{if(!$("#bellPanel").hidden&&!e.target.closest("#bellPanel,#bellBtn"))$("#bellPanel").hidden=true});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#bellPanel").hidden=true});
+$("#bellCfg").onclick=async()=>{const box=$("#bellSettings");box.hidden=!box.hidden;if(box.hidden)return;const s=await req("/api/notifications/settings");
+  box.innerHTML=`<p class="sub" style="margin:0 0 8px;font-size:13px">Send these to my phone instantly${s.telegram_linked?" (Telegram linked)":""}:</p>
+    <div style="display:flex;flex-direction:column;gap:6px">${Object.entries(s.kinds).map(([k,l])=>`<label class="switch"><input type="checkbox" value="${k}" ${s.on.includes(k)?"checked":""}> ${esc(l)}</label>`).join("")}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="mini" type="button" id="bsSave">Save</button>${s.telegram_linked?`<button class="mini" type="button" id="bsUnlink">Unlink Telegram</button>`:`<button class="mini" type="button" id="bsLink">Link my Telegram</button>`}</div><p class="sub" id="bsCode" style="margin:8px 0 0;font-size:13px"></p>`;
+  const on=()=>[...box.querySelectorAll("input:checked")].map(x=>x.value);
+  $("#bsSave").onclick=async()=>{await req("/api/notifications/settings","PUT",{on:on()});toast("Alert settings saved.")};
+  $("#bsUnlink")&&($("#bsUnlink").onclick=async()=>{await req("/api/notifications/settings","PUT",{on:on(),unlink:true});box.hidden=true;toast("Telegram alerts unlinked.")});
+  $("#bsLink")&&($("#bsLink").onclick=async()=>{try{const r=await req("/api/notifications/link-telegram","POST");$("#bsCode").innerHTML=`In Telegram, open <a href="https://t.me/${esc(r.bot)}" target="_blank" rel="noopener">@${esc(r.bot)}</a> and send: <b style="user-select:all">/owner ${esc(r.code)}</b>`}catch(err){$("#bsCode").textContent=err.message}})};
+loadNotifs(true);setInterval(()=>loadNotifs(),15000);
+
+// ---------- tools: buffer and payment options ----------
+async function loadTools(){let t;try{t=await req("/api/tools")}catch{$("#toolsCard").hidden=true;return}
+  $("#tlBuf").value=String(t.buffer_minutes);if(!$("#tlBuf").value){$("#tlBuf").insertAdjacentHTML("beforeend",`<option value="${t.buffer_minutes}">${t.buffer_minutes} minutes</option>`);$("#tlBuf").value=String(t.buffer_minutes)}
+  $("#tlSvc").innerHTML=t.services.map(s=>`<label style="font-size:13px">${esc(s.name)} <span style="color:var(--muted)">(${s.minutes} min)</span><select data-s="${s.id}"><option value="">Business default</option>${[0,5,10,15,20,30,45,60].map(m=>`<option value="${m}" ${s.buffer_minutes===m?"selected":""}>${m?m+" min after":"No buffer"}</option>`).join("")}</select></label>`).join("");
+  $("#tlLater").checked=t.pay_later;$("#tlNow").checked=t.pay_now;$("#tlDep").checked=t.pay_deposit;$("#tlDepAmt").value=t.deposit_amount||"";
+  $("#tlNow").disabled=$("#tlDep").disabled=$("#tlDepAmt").disabled=!t.payments_live;
+  $("#tlPayNote").textContent=t.payments_live?`All off by default. Only the options you tick are offered by the AI. Amounts in ${t.currency}.`
+    :"All off by default. Online payment and reservation fees unlock when payments are connected to your account; until then the AI never asks for money or card details."}
+$("#tlSave").onclick=async()=>{try{await req("/api/tools","PUT",{buffer_minutes:+$("#tlBuf").value,pay_later:$("#tlLater").checked,pay_now:$("#tlNow").checked,pay_deposit:$("#tlDep").checked,deposit_amount:+$("#tlDepAmt").value||0,
+  services:[...$("#tlSvc").querySelectorAll("select")].map(x=>({id:+x.dataset.s,buffer_minutes:x.value===""?null:+x.value}))});toast("Tools saved. The AI uses them from the next message.");loadTools()}catch(err){toast(err.message)}};
+document.querySelector('nav button[data-view="setup"]').addEventListener("click",loadTools);
+
+// ---------- marketing ----------
+function mkSeg(){return{type:$("#mkType").value,days:+$("#mkDays").value,service_id:+$("#mkSvc").value||0,min:+$("#mkMin").value}}
+$("#mkType").onchange=()=>{const t=$("#mkType").value;$("#mkDaysL").hidden=!["inactive","new"].includes(t);$("#mkSvcL").hidden=t!=="service";$("#mkMinL").hidden=t!=="regulars";$("#mkInfo").textContent=""};
+$("#mkPrev").onclick=async()=>{try{const r=await req("/api/marketing/preview","POST",{segment:mkSeg()});
+  $("#mkInfo").innerHTML=`<b>${r.reachable}</b> of ${r.matched} matching clients can receive it now (${Object.entries(r.by_channel).map(([k,v])=>`${esc(k)}: ${v}`).join(", ")||"none"}). ${r.opted_in} of your ${r.clients} clients agreed to offers. WhatsApp offers reach only clients who wrote in the last 24 hours.`}catch(err){$("#mkInfo").textContent=err.message}};
+$("#mkSend").onclick=async()=>{if(!$("#mkMsg").value.trim()){$("#mkInfo").textContent="Write the offer first.";return}
+  if(!confirm("Send this offer now? Every message ends with \"Reply STOP to stop offers.\""))return;
+  try{const r=await req("/api/marketing/send","POST",{name:$("#mkName").value,message:$("#mkMsg").value,segment:mkSeg()});toast(`Offer sent to ${r.sent}. ${r.skipped} skipped.`);$("#mkMsg").value="";loadCampaigns()}catch(err){$("#mkInfo").textContent=err.message}};
+async function loadCampaigns(){let list;try{list=await req("/api/marketing/campaigns")}catch(err){const f=$("#mkCard").querySelector(".form");f.hidden=true;let n=$("#mkLocked");if(!n){n=document.createElement("p");n.id="mkLocked";n.className="sub";n.style.margin="0";f.after(n)}n.textContent=err.message;return}
+  $("#mkCard").querySelector(".form").hidden=false;$("#mkLocked")?.remove();
+  try{const b=await req("/api/business");$("#mkSvc").innerHTML=b.services.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}catch{}
+  $("#mkPast").innerHTML=list.map(c=>`<div class="item"><div class="grow"><b style="font-weight:500">${esc(c.name||"Offer")}</b><span>${ago(c.at)} · sent to ${c.sent}, skipped ${c.skipped} · ${esc(c.message)}</span></div></div>`).join("")}
+document.addEventListener("change",async e=>{const x=e.target.closest(".mkOk");if(!x)return;e.stopPropagation();
+  try{await req(`/api/customers/${x.dataset.id}/offers`,"POST",{on:x.checked});x.parentElement.lastChild.textContent=x.checked?" Yes":" No";toast(x.checked?"Marked as agreed to offers.":"Offers turned off for this client.")}catch(err){toast(err.message);x.checked=!x.checked}});
+document.addEventListener("click",e=>{if(e.target.closest(".mkOk")||e.target.closest("label.switch")&&e.target.closest("#pplRows"))e.stopPropagation()},true);
+document.querySelector('nav button[data-view="people"]').addEventListener("click",()=>{$("#mkType")?.onchange?.();loadCampaigns()});
+
+// ---------- sidebar plan card ----------
+function sidebarState(){document.querySelectorAll("nav .ns").forEach(l=>{let n=l.nextElementSibling,any=false;while(n&&n.tagName==="BUTTON"){if(!n.hidden)any=true;n=n.nextElementSibling}l.hidden=!any})}
+
+// ---------- account, plan, permissions ----------
+let me=null;
+const VIEW_MODULE={overview:"overview",calendar:"calendar",people:"customers",analytics:"insights",training:"teach",demo:"testchat",setup:"setup"};
+async function loadMe(){me=await req("/api/me");const b=me.business,admin=me.user.role==="admin";
+  $("#adminNav").hidden=!admin;$("#planBar").hidden=false;
+  // Sections this login can't open disappear; sections the plan doesn't include show a lock.
+  document.querySelectorAll("nav button[data-view]").forEach(x=>{const m=VIEW_MODULE[x.dataset.view];if(!m)return;
+    x.hidden=!me.modules.includes(m);const f=me.module_feature[m];x.classList.toggle("locked",!admin&&!!f&&!me.features.includes(f))});
+  sidebarState();
+  {const days=b.trial_days_left,active=b.plan_status==="active";$("#pcTitle").textContent=(b.plan_name||"Plan")+(active?" · active":b.plan_status==="paused"?" · paused":" trial");
+   $("#pcSub").textContent=active?"Thank you for being with us":days>0?`${days} day${days===1?"":"s"} left in your free trial`:"Your trial has ended";$("#pcBar").style.width=active?"100%":Math.max(4,Math.min(100,(14-days)/14*100))+"%"}
+  if(!me.modules.includes("overview")){const first=document.querySelector("nav button[data-view]:not([hidden])");first&&first.click()}
+  const plan=b.plan_status==="active"?"Subscription active":b.plan_status==="paused"?"Paused":b.trial_days_left>0?`Free trial: ${b.trial_days_left} day${b.trial_days_left===1?"":"s"} left`:"Trial ended";
+  $("#planText").innerHTML=(admin?`Viewing <b>${esc(b.name)}</b> · `:"")+`<span class="tag ${b.plan_status==="active"?"t-book":b.trial_days_left>0?"t-faq":"t-hand"}">${esc(b.plan_name||"No plan")} · ${plan}</span> <span style="color:var(--muted)">${esc([b.country,b.currency,b.timezone].filter(Boolean).join(" · "))}</span>`
+    +(me.user.totp_enabled||me.user.role==="staff"?"":` <a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor</a>`);
+  $("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()})}
+// A section the plan doesn't include shows what it is and how to get it, instead of an error.
+function lockedCard(view){const m=VIEW_MODULE[view],f=me&&me.module_feature[m],sec=$("#"+view);
+  sec.querySelectorAll(".lockCard,.adminNote").forEach(x=>x.remove());[...sec.children].forEach(x=>x.style.display="");
+  if(!f||me.features.includes(f))return false;
+  // Admin sees everything, with a note that this business's plan doesn't include it.
+  if(me.user.role==="admin"){const n=document.createElement("div");n.className="item adminNote";n.style.marginBottom="12px";n.innerHTML=`<span>Admin view: <b>${esc(me.business.name)}</b>'s plan doesn't include this, so its owner sees it locked. Add it in Command center to unlock it for them.</span>`;sec.prepend(n);return false}
+  const c=document.createElement("div");c.className="card glass lockCard";sec.prepend(c);
+  c.innerHTML=`<div class="empty" style="padding:40px 10px"><div style="font-size:34px">🔒</div><h2 style="margin:8px 0">This is a premium feature</h2><p class="sub">It isn't in your current plan. Ask us to upgrade your plan or add it as an add-on, and it unlocks instantly.</p></div>`;
+  [...sec.children].forEach(x=>{if(x!==c)x.style.display="none"});return true}
+$("#pwBtn").onclick=()=>{document.querySelector('nav button[data-view="setup"]').click();setTimeout(()=>tabsOf.setup("s2fa"),20)};
+
+// ---------- security page ----------
+async function loadSecurity(){const on=me.user.totp_enabled;$("#tfState").className="tag "+(on?"t-book":"t-attn");$("#tfState").textContent=on?"On":"Off";
+  $("#tfBody").innerHTML=on?`<p class="sub" style="margin:0 0 10px">Signing in needs your password and a 6-digit code from your authenticator app.</p>
+      <form class="form" id="tfOff"><label>Password<input type="password" id="tfPw" required></label><label>Current code<input id="tfOffCode" inputmode="numeric" maxlength="6" required></label><button class="btn ghost full">Turn two-factor off</button></form>`
+    :`<p class="sub" style="margin:0 0 10px">Protect this dashboard even if your password leaks. You'll need an authenticator app (Google Authenticator, Microsoft Authenticator or 1Password).</p><button class="btn" type="button" id="tfStart">Set up two-factor</button>`;
+  $("#tfStart")&&($("#tfStart").onclick=async()=>{const r=await req("/api/me/2fa/setup","POST");
+    $("#tfBody").innerHTML=`<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center"><div id="tfQr" style="background:#fff;padding:10px;border-radius:12px"></div>
+      <div style="flex:1;min-width:240px"><p class="sub" style="margin:0 0 8px">1. Scan this with your authenticator app.<br>Can't scan? Enter this key: <b style="font-variant-numeric:tabular-nums;letter-spacing:.06em;word-break:break-word;user-select:all" id="tfKey">${esc(r.secret.match(/.{1,4}/g).join(" "))}</b></p>
+      <form class="form" id="tfOn" style="grid-template-columns:1fr"><label>2. Type the 6-digit code it shows<input id="tfCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required></label><button class="btn">Turn on</button></form></div></div>`;
+    try{new QRCode($("#tfQr"),{text:r.url,width:180,height:180})}catch{$("#tfQr").textContent="QR unavailable: use the key."}
+    $("#tfOn").onsubmit=async e=>{e.preventDefault();try{await req("/api/me/2fa/enable","POST",{code:$("#tfCode").value});toast("Two-factor is on.");await loadMe();loadSecurity()}catch(err){toast(err.message)}}});
+  $("#tfOff")&&($("#tfOff").onsubmit=async e=>{e.preventDefault();try{await req("/api/me/2fa/disable","POST",{password:$("#tfPw").value,code:$("#tfOffCode").value});toast("Two-factor is off.");await loadMe();loadSecurity()}catch(err){toast(err.message)}});
+  const act=await req("/api/me/activity");const NAME={login:"Signed in",login_failed:"Wrong password",login_locked:"Locked after wrong passwords",code_failed:"Wrong two-factor code",password_changed:"Password changed",signout_everywhere:"Signed out everywhere","2fa_on":"Two-factor on","2fa_off":"Two-factor off",denied:"Blocked from a section"};
+  $("#myAct").innerHTML=act.length?act.map(a=>`<div class="item"><div class="grow"><b style="font-weight:500">${esc(NAME[a.action]||a.action)}</b><span>${esc(a.at)} · ${esc(a.ip||"")}${a.detail?" · "+esc(a.detail):""}</span></div></div>`).join(""):`<div class="empty">No activity yet.</div>`}
+$("#pwForm").onsubmit=async e=>{e.preventDefault();$("#pwErr").textContent="";try{await req("/api/me/password","POST",{current:$("#pwCur").value,next:$("#pwNew").value});$("#pwForm").reset();toast("Password changed. Other devices are signed out.")}catch(err){$("#pwErr").textContent=err.message}};
+$("#soAll").onclick=async()=>{if(!confirm("Sign out on every device, including this one?"))return;await req("/api/me/signout-everywhere","POST");location.href="/login"};
+
+// ---------- command center ----------
+let cat=null,ccTab="biz";
+const showSecret=(title,r,extra="")=>{$("#ccDone").hidden=false;$("#ccDone").innerHTML=`<div class="ch"><h2>${title}</h2><button class="mini" type="button" onclick="this.closest('#ccDone').hidden=true">Close</button></div>
+  <div style="font-size:14px;line-height:1.9">Login page: <b>${esc(location.origin)}/login</b><br>Email: <b>${esc(r.email)}</b>${r.password?`<br>Password: <b style="font-family:var(--mono)">${esc(r.password)}</b>`:""}${extra}</div>
+  <p class="sub" style="margin:8px 0 0;font-size:13px">Copy this now and send it privately. The password is shown only once; they should change it and turn on two-factor.</p>`;scrollTo({top:0,behavior:"smooth"})};
+async function loadAdmin(){
+  if(!cat){cat=await req("/api/admin/catalog");
+    const v=await req("/api/verticals");$("#nbType").innerHTML=v.filter(x=>!x.comingSoon).map(x=>`<option value="${x.key}">${esc(x.label)}</option>`).join("");
+    try{$("#nbTzs").innerHTML=Intl.supportedValuesOf("timeZone").map(z=>`<option>${z}</option>`).join("")}catch{}
+    $("#nbTz").value=Intl.DateTimeFormat().resolvedOptions().timeZone;$("#nbCur").value="USD";
+    $("#nuPerms").innerHTML=`<span class="sub" style="width:100%;font-size:13px">Staff can open:</span>`+Object.entries(cat.modules).map(([k,n])=>`<label class="switch"><input type="checkbox" value="${k}" ${["overview","calendar","customers"].includes(k)?"checked":""}> ${esc(n)}</label>`).join("")}
+  else cat=await req("/api/admin/catalog");
+  $("#nbPlan").innerHTML=cat.plans.map(p=>`<option value="${p.key}" ${p.key==="pro"?"selected":""}>${esc(p.name)} (${+p.price} ${esc(p.currency)}/mo)</option>`).join("");
+  ({biz:loadBizList,users:loadUsers,plans:loadPlans,audit:loadAudit})[ccTab]()}
+document.querySelectorAll("#ccTabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#ccTabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("#ccLeads").hidden=b.dataset.c!=="leads";if(b.dataset.c==="leads"){["Biz","Users","Plans","Audit"].forEach(k=>$("#cc"+k).hidden=true);if($("#ccNew"))$("#ccNew").hidden=true;loadLeads();return}if(b.dataset.c==="new"){["Biz","Users","Plans","Audit"].forEach(k=>$("#cc"+k).hidden=true);$("#ccNew").hidden=false;return}if($("#ccNew"))$("#ccNew").hidden=true;ccTab=b.dataset.c;
+  ["biz","users","plans","audit"].forEach(k=>$("#cc"+k[0].toUpperCase()+k.slice(1)).hidden=k!==ccTab);loadAdmin()});
+
+async function loadBizList(){const list=await req("/api/admin/businesses");$("#abCount").textContent=list.length+" total";
+  $("#nuBiz").innerHTML=list.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join("");
+  $("#abList").innerHTML=list.map(b=>{const st=b.plan_status==="active"?["t-book","Active"]:b.plan_status==="paused"?["t-hand","Paused"]:b.trial_days_left>0?["t-faq",`Trial, ${b.trial_days_left}d left`]:["t-hand","Trial ended"];
+    const ov=b.feature_overrides||{};
+    return `<details class="item" style="display:block" data-b="${b.id}"><summary style="display:flex;gap:10px;align-items:center;cursor:pointer;list-style:none"><div class="grow"><b>${esc(b.name)} ${b.is_demo?'<span class="tag t-faq" style="display:inline">Demo</span>':""} <span class="tag ${st[0]}" style="display:inline">${st[1]}</span> <span class="tag t-test" style="display:inline">${esc((cat.plans.find(p=>p.key===b.plan_key)||{}).name||"No plan")}${(b.addons||[]).length?" + "+b.addons.length+" add-on":""}</span></b>
+      <span>${esc([b.vertical,b.city,b.country,b.currency,b.timezone].filter(Boolean).join(" · "))} · ${b.logins} login${b.logins===1?"":"s"}${b.last_login?" · last in "+esc(b.last_login):""}</span>
+      <span>${b.chats} chats · ${b.questions} customer messages · ${b.bookings} bookings</span></div><button class="mini" data-open="${b.id}" type="button">Open</button></summary>
+      <div class="form" style="margin-top:12px">
+        <label>Plan<select class="bPlan">${cat.plans.map(p=>`<option value="${p.key}" ${p.key===b.plan_key?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>
+        <label>Status<select class="bStatus">${["trial","active","paused"].map(s=>`<option ${s===b.plan_status?"selected":""}>${s}</option>`).join("")}</select></label>
+        <div class="full"><span class="sub" style="font-size:13px">Add-ons</span><div style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:6px">${cat.addons.map(a=>`<label class="switch"><input type="checkbox" class="bAdd" value="${a.key}" ${(b.addons||[]).includes(a.key)?"checked":""}> ${esc(a.name)}</label>`).join("")||'<span class="sub">No add-ons yet</span>'}</div></div>
+        <div class="full"><span class="sub" style="font-size:13px">Feature switches for this business only (default follows plan and add-ons)</span><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px;margin-top:6px">${Object.entries(cat.features).map(([k,n])=>`<label style="display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px">${esc(n)}<select class="bOv" data-k="${k}" style="width:auto"><option value="" ${ov[k]===undefined?"selected":""}>Default</option><option value="on" ${ov[k]===true?"selected":""}>On</option><option value="off" ${ov[k]===false?"selected":""}>Off</option></select></label>`).join("")}</div></div>
+        <div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn bSave" type="button">Save changes</button><button class="btn ghost bExt" type="button">+14 trial days</button><button class="btn ghost bLogin" type="button">Add a login</button></div></div></details>`}).join("");
+  $("#abList").querySelectorAll("[data-b]").forEach(d=>{const id=+d.dataset.b,body=()=>({plan_key:d.querySelector(".bPlan").value,status:d.querySelector(".bStatus").value,
+      addons:[...d.querySelectorAll(".bAdd:checked")].map(x=>x.value),feature_overrides:Object.fromEntries([...d.querySelectorAll(".bOv")].filter(x=>x.value).map(x=>[x.dataset.k,x.value==="on"]))});
+    d.querySelector(".bSave").onclick=async()=>{await req(`/api/admin/businesses/${id}/plan`,"POST",body());toast("Saved. It applies on their next click.");loadBizList();loadMe()};
+    d.querySelector(".bExt").onclick=async()=>{await req(`/api/admin/businesses/${id}/plan`,"POST",{...body(),extend_days:14});toast("Trial extended by 14 days.");loadBizList();loadMe()};
+    d.querySelector(".bLogin").onclick=()=>{$("#ccTabs button[data-c=users]").click();setTimeout(()=>{$("#nuBiz").value=id;$("#nuEmail").focus()},300)};
+    d.querySelector("[data-open]").onclick=async e=>{e.preventDefault();e.stopPropagation();await req("/api/admin/switch","POST",{id});location.href="/"}})}
+$("#nbForm").onsubmit=async e=>{e.preventDefault();$("#nbErr").textContent="";$("#nbGo").disabled=true;
+  try{const r=await req("/api/admin/businesses","POST",{name:$("#nbName").value,vertical:$("#nbType").value,country:$("#nbCountry").value,city:$("#nbCity").value,currency:$("#nbCur").value,timezone:$("#nbTz").value,plan_key:$("#nbPlan").value,owner_name:$("#nbOwner").value,owner_email:$("#nbEmail").value});
+    showSecret("Business created",r,`<br>Booking page: <b>${esc(location.origin)}/book?b=${r.id}</b>`);$("#nbForm").reset();$("#nbTz").value=Intl.DateTimeFormat().resolvedOptions().timeZone;$("#nbCur").value="USD";loadAdmin()}
+  catch(err){$("#nbErr").textContent=err.message}finally{$("#nbGo").disabled=false}};
+
+async function loadUsers(){if(!$("#nuBiz").options.length)await loadBizList();const list=await req("/api/admin/users");$("#auCount").textContent=list.length+" logins";
+  $("#auList").innerHTML=list.map(u=>`<details class="item" style="display:block" data-u="${u.id}"><summary style="display:flex;gap:10px;align-items:center;cursor:pointer;list-style:none"><div class="grow">
+      <b>${esc(u.email)} <span class="tag ${u.role==="admin"?"t-attn":u.role==="owner"?"t-book":"t-test"}" style="display:inline">${u.role}</span>${u.disabled?' <span class="tag t-hand" style="display:inline">Off</span>':""}${u.locked?' <span class="tag t-hand" style="display:inline">Locked</span>':""} <span class="tag ${u.totp_enabled?"t-book":"t-faq"}" style="display:inline">${u.totp_enabled?"2FA on":"No 2FA"}</span></b>
+      <span>${esc(u.business||"All businesses")}${u.name?" · "+esc(u.name):""} · ${u.last_login?"last in "+esc(u.last_login):"never signed in"}</span>
+      ${u.role==="staff"?`<span>Can open: ${(u.permissions||[]).map(m=>esc(cat.modules[m]||m)).join(", ")||"nothing"}</span>`:""}</div></summary>
+    ${u.role==="admin"?`<div style="margin-top:10px;display:flex;gap:8px"><span class="sub">This is you. Manage it in Account security.</span></div>`:`<div style="margin-top:12px">
+      ${u.role==="staff"?`<div style="display:flex;flex-wrap:wrap;gap:8px 16px">${Object.entries(cat.modules).map(([k,n])=>`<label class="switch"><input type="checkbox" class="uP" value="${k}" ${(u.permissions||[]).includes(k)?"checked":""}> ${esc(n)}</label>`).join("")}</div>`:""}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${u.role==="staff"?`<button class="btn uSave" type="button">Save access</button>`:""}
+        <button class="btn ghost uToggle" type="button">${u.disabled?"Switch on":"Switch off"}</button><button class="btn ghost uOut" type="button">Sign out now</button>
+        <button class="btn ghost uPw" type="button">New password</button>${u.totp_enabled?`<button class="btn ghost u2fa" type="button">Reset 2FA</button>`:""}<button class="btn ghost uDel" type="button" style="color:var(--bad)">Delete</button></div></div>`}</details>`).join("");
+  $("#auList").querySelectorAll("[data-u]").forEach(d=>{const id=+d.dataset.u,P=(b)=>req(`/api/admin/users/${id}`,"PATCH",b).then(()=>{toast("Done. It applies on their next click.");loadUsers()}).catch(err=>toast(err.message));
+    d.querySelector(".uSave")&&(d.querySelector(".uSave").onclick=()=>P({permissions:[...d.querySelectorAll(".uP:checked")].map(x=>x.value)}));
+    d.querySelector(".uToggle")&&(d.querySelector(".uToggle").onclick=()=>P({disabled:d.querySelector(".uToggle").textContent==="Switch off"}));
+    d.querySelector(".uOut")&&(d.querySelector(".uOut").onclick=()=>P({signout:true}));
+    d.querySelector(".uPw")&&(d.querySelector(".uPw").onclick=async()=>{if(!confirm("Give this login a new password? The old one stops working and they are signed out."))return;showSecret("New password",await req(`/api/admin/users/${id}/reset`,"POST",{what:"password"}));loadUsers()});
+    d.querySelector(".u2fa")&&(d.querySelector(".u2fa").onclick=async()=>{if(!confirm("Turn off two-factor for this login? Only do this if they lost their phone and you checked who they are."))return;await req(`/api/admin/users/${id}/reset`,"POST",{what:"2fa"});toast("Two-factor reset. They can set it up again.");loadUsers()});
+    d.querySelector(".uDel")&&(d.querySelector(".uDel").onclick=async()=>{if(!confirm("Delete this login for good?"))return;await req(`/api/admin/users/${id}`,"DELETE");toast("Login deleted.");loadUsers()})})}
+$("#nuRole").onchange=()=>{$("#nuPerms").style.display=$("#nuRole").value==="staff"?"flex":"none"};
+$("#nuForm").onsubmit=async e=>{e.preventDefault();$("#nuErr").textContent="";
+  try{const r=await req("/api/admin/users","POST",{business_id:+$("#nuBiz").value,role:$("#nuRole").value,name:$("#nuName").value,email:$("#nuEmail").value,permissions:[...$("#nuPerms").querySelectorAll("input:checked")].map(x=>x.value)});
+    showSecret("Login created",r);$("#nuEmail").value="";$("#nuName").value="";loadUsers()}catch(err){$("#nuErr").textContent=err.message}};
+
+function loadPlans(){const card=(p,kind)=>`<div class="card glass" data-k="${esc(p.key)}" data-kind="${kind}" style="margin:0"><div class="ch"><h2>${kind==="addon"?"Add-on":"Plan"}</h2><small>${esc(p.key)}</small></div>
+    <div class="form"><label>Name<input class="pN" value="${esc(p.name)}"></label><label>Price per month<input class="pP" type="number" min="0" step="1" value="${+p.price}"></label><label>Currency<input class="pC" value="${esc(p.currency||"USD")}" maxlength="3"></label></div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin:12px 0">${Object.entries(cat.features).map(([k,n])=>`<label class="switch"><input type="checkbox" class="pF" value="${k}" ${(p.features||[]).includes(k)?"checked":""}> ${esc(n)}</label>`).join("")}</div>
+    <div style="display:flex;gap:8px"><button class="btn pSave" type="button">Save</button><button class="btn ghost pDel" type="button">Delete</button></div></div>`;
+  $("#plList").innerHTML=cat.plans.map(p=>card(p,"plan")).join("")+cat.addons.map(a=>card(a,"addon")).join("");
+  $("#plList").querySelectorAll("[data-k]").forEach(c=>{const kind=c.dataset.kind==="addon"?"?kind=addon":"";
+    c.querySelector(".pSave").onclick=async()=>{try{await req(`/api/admin/plans/${encodeURIComponent(c.dataset.k)}${kind}`,"PUT",{name:c.querySelector(".pN").value,price:+c.querySelector(".pP").value,currency:c.querySelector(".pC").value.toUpperCase(),features:[...c.querySelectorAll(".pF:checked")].map(x=>x.value)});toast("Saved. Every business on it updates instantly.");loadMe()}catch(err){toast(err.message)}};
+    c.querySelector(".pDel").onclick=async()=>{if(!confirm("Delete this?"))return;try{await req(`/api/admin/plans/${encodeURIComponent(c.dataset.k)}${kind}`,"DELETE");loadAdmin()}catch(err){toast(err.message)}}})}
+const newPlan=kind=>async()=>{const name=prompt(kind==="addon"?"Add-on name":"Plan name");if(!name)return;const key=name.toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+  try{await req(`/api/admin/plans/${key}${kind==="addon"?"?kind=addon":""}`,"PUT",{name,price:0,currency:"USD",features:[]});loadAdmin()}catch(err){toast(err.message)}};
+$("#plNew").onclick=newPlan("plan");$("#adNew").onclick=newPlan("addon");
+
+let adT;async function loadAudit(){const list=await req("/api/admin/audit?q="+encodeURIComponent($("#adQ").value||""));
+  $("#adList").innerHTML=list.length?list.map(a=>`<div class="item"><div class="grow"><b style="font-weight:500">${esc(a.action)}${a.detail?' <span style="color:var(--muted);font-weight:400">'+esc(a.detail)+"</span>":""}</b><span>${esc(a.at)} · ${esc(a.user_email||"unknown")}${a.business?" · "+esc(a.business):""} · ${esc(a.ip||"")}</span></div></div>`).join(""):`<div class="empty">Nothing logged yet.</div>`}
+$("#adQ").oninput=()=>{clearTimeout(adT);adT=setTimeout(loadAudit,300)};
+
+// ---------- booking link ----------
+function setBookingLink(u){$("#blUrl").value=u;$("#blOpen").href=u;
+  $("#blEmbed").value=`<a href="${u}" target="_blank" style="display:inline-block;padding:12px 22px;border-radius:99px;background:#10a35a;color:#fff;font:600 15px sans-serif;text-decoration:none">Book now</a>`}
+async function copy(v){try{await navigator.clipboard.writeText(v);toast("Copied.")}catch{toast("Select the text and copy it.")}}
+$("#blCopy").onclick=()=>copy($("#blUrl").value);$("#blCopy2").onclick=()=>copy($("#blEmbed").value);
+
+// ---------- approvals ----------
+let apprStatus="pending",apprs=[];
+const TYPE={cancel:["Late cancellation","t-attn"],reschedule:["Late time change","t-hand"],extra:["Extra request","t-faq"]};
+async function loadApprovals(){apprs=await req("/api/requests?status="+apprStatus);
+  $("#approvals").innerHTML=apprs.length?apprs.map(r=>{const t=TYPE[r.type]||[r.type,"t-faq"];
+    return `<div class="item" style="align-items:flex-start"><div class="grow"><b>${esc(r.name||r.phone)} · RB-${String(r.booking_id).padStart(4,"0")} <span class="tag ${t[1]}" style="display:inline">${t[0]}</span></b>
+      <span style="white-space:normal">${esc(r.service)} · ${nice(L(r.start),{weekday:"short",day:"numeric",month:"short"})} ${hm(L(r.start))}${r.new_start?` → <b style="display:inline">${nice(L(r.new_start),{weekday:"short",day:"numeric",month:"short"})} ${hm(L(r.new_start))}</b>`:""}${r.type==="extra"?" · "+esc(r.details):""} · ${ago(r.at)}</span>
+      ${r.staff_note?`<span>Your note: ${esc(r.staff_note)}</span>`:""}</div>
+      <div class="acts">${r.status==="pending"?`<button class="mini" data-appr="${r.id}" data-d="approve" style="color:var(--good);border-color:var(--good)">Approve</button><button class="mini" data-appr="${r.id}" data-d="reject">Reject</button>`:""}${r.conversation_id?`<button class="mini" data-open="${r.conversation_id}">Chat</button>`:""}</div></div>`}).join("")
+    :`<div class="empty">${apprStatus==="pending"?"Nothing waiting for approval.":"None yet."}</div>`}
+document.getElementById("apprTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;document.querySelectorAll("#apprTabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));apprStatus=b.dataset.s;loadApprovals()};
+document.addEventListener("click",async e=>{const a=e.target.closest("[data-appr]");if(!a)return;
+  const card=a.closest(".item");let note=card.querySelector(".apnote");
+  if(!note){note=document.createElement("div");note.className="apnote";note.style.cssText="display:flex;gap:6px;width:100%;margin-top:8px";
+    note.innerHTML=`<input placeholder="Optional note to the customer" aria-label="Note to the customer"><button class="mini" data-go="${a.dataset.d}">${a.dataset.d==="approve"?"Confirm approve":"Confirm reject"}</button>`;
+    card.querySelector(".grow").appendChild(note);note.querySelector("input").focus();
+    note.querySelector("[data-go]").onclick=async()=>{try{await req(`/api/requests/${a.dataset.appr}/${a.dataset.d}`,"POST",{note:note.querySelector("input").value});
+      toast(a.dataset.d==="approve"?"Approved. The customer has been told.":"Rejected. The customer has been told.");loadApprovals();refresh();if(weekStart)loadCal()}
+      catch(err){if(err.status===409&&a.dataset.d==="approve"&&/no longer free/.test(err.message)){note.innerHTML=`<span style="color:var(--bad)">${esc(err.message)}</span>`}else toast(err.message)}};
+  }else note.querySelector("[data-go]").textContent=a.dataset.d==="approve"?"Confirm approve":"Confirm reject",note.querySelector("[data-go]").dataset.go=a.dataset.d});
+
+// ---------- coupons ----------
+async function loadCoupons(){const c=await req("/api/coupons");
+  $("#coupons").innerHTML=c.length?c.map(x=>`<div class="item"><div class="grow"><b>${esc(x.code)} · ${x.kind==="percent"?x.value+"% off":fmt(x.value)+" off"}</b>
+    <span>Used ${x.uses}${x.max_uses?" of "+x.max_uses:""} times${x.expires_on?" · expires "+x.expires_on:""}</span></div>
+    <div class="acts"><span class="tag ${x.active?"t-book":"t-faq"}">${x.active?"Active":"Off"}</span><button class="mini" data-cp="${x.id}" data-on="${x.active?0:1}">${x.active?"Turn off":"Turn on"}</button></div></div>`).join(""):`<div class="empty">No codes yet. Add one above; customers can then use it in chat.</div>`}
+$("#cpForm").onsubmit=async e=>{e.preventDefault();try{await req("/api/coupons","POST",{code:$("#cpCode").value,kind:$("#cpKind").value,value:$("#cpVal").value,expires_on:$("#cpExp").value,max_uses:$("#cpMax").value});
+  $("#cpForm").reset();toast("Code added.");loadCoupons()}catch(err){toast(err.message)}};
+document.addEventListener("click",async e=>{const c=e.target.closest("[data-cp]");if(!c)return;await req(`/api/coupons/${c.dataset.cp}`,"PATCH",{active:c.dataset.on==="1"});loadCoupons()});
+
+// ---------- test chat: show messages that arrive later (e.g. your approval decisions) ----------
+let testConv=null,testSeen=0;
+async function pollTestChat(){if(!testConv||$("#demo").hidden||busy)return;const m=await req(`/api/conversations/${testConv}/messages`);
+  m.slice(testSeen).forEach(x=>{if(x.role==="staff")add(x.text,"ai","from the team · just now");else if(x.role==="assistant")add(x.text,"ai","message from the business")});testSeen=m.length}
+
+{let d0=30;try{d0=+localStorage.getItem("rb-days")||30}catch{}if([1,7,30,90,365].includes(d0)&&d0!==30){days=d0;inDays=d0}document.querySelectorAll("button[data-d]").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.d===days));document.querySelectorAll(".plabel").forEach(x=>x.textContent=PLABEL(days))}
+loadMe().then(()=>{if(canSee("teach"))loadTeach().catch(()=>{})}).catch(()=>{});req("/api/business").then(b=>{biz=b;fillSetup();applyTerms();loadVerticals();loadChannels();loadApprovals();loadCoupons();refresh().then(()=>{$("#fTz").textContent=`Time zone: ${lastStats?.tz||"?"}. To change it, set TIMEZONE in the .env file.`})});
+// ---------- Setup: logo, cover photo and menu ----------
+function drawUploads(){document.querySelectorAll("[data-up]").forEach(box=>{const k=box.dataset.up,u=biz&&biz[k+"_url"];
+  box.querySelector(".upv").innerHTML=!u?`<small class="sub">Nothing uploaded yet</small>`:/\.pdf$/i.test(u)?`<a href="${esc(u)}" target="_blank" rel="noopener">Open the PDF</a>`:`<img src="${esc(u)}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:10px">`;
+  box.querySelector(".upx").hidden=!u})}
+document.querySelectorAll("[data-up]").forEach(box=>{const k=box.dataset.up;
+  box.querySelector("input[type=file]").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;if(f.size>8*1024*1024)return toast("That file is over 8 MB.");
+    toast("Uploading…");const r=await fetch("/api/business/upload/"+k,{method:"POST",headers:{"Content-Type":f.type},body:f}),j=await r.json().catch(()=>({}));
+    if(!r.ok)return toast(j.error||"Upload failed.");biz[k+"_url"]=j.url;drawUploads();toast("Uploaded.")};
+  box.querySelector(".upx").onclick=async()=>{await req("/api/business/upload/"+k,"DELETE");biz[k+"_url"]=null;drawUploads();toast("Removed.")}});
+
+// ---------- Command center: platform health, usage and cost per client, export and close ----------
+$("#ccTabs").insertAdjacentHTML("beforeend",`<button aria-pressed="false" data-c="platform">Platform</button>`);
+$("#ccLeads").insertAdjacentHTML("afterend",`<div id="ccPlatform" hidden>
+  <div class="card glass"><div class="ch"><h2>System health</h2><small>checked every 5 minutes · problems are sent to your Telegram</small></div><div class="list" id="plHealth"></div></div>
+  <div class="card glass"><div class="ch"><h2>Usage and cost per client</h2><select id="plDays" aria-label="Period"><option value="30">Last 30 days</option><option value="7">Last 7 days</option><option value="90">Last 90 days</option></select></div>
+    <p class="sub" style="margin:0 0 10px;font-size:13px">Estimated costs: AI reply ≈ $0.001, WhatsApp reminder or offer ≈ $0.02 (replies inside 24 h are free). Change them with COST_PER_AI_REPLY and COST_PER_WA_TEMPLATE in .env.</p>
+    <div class="tw"><table><thead><tr><th>Business</th><th>Customer messages</th><th>AI replies</th><th>WhatsApp sent</th><th>Reminders and offers</th><th>Bookings</th><th>Est. cost</th><th>Plan</th><th>Margin</th><th></th></tr></thead><tbody id="plUse"></tbody></table></div></div>
+</div>`);
+$("#ccTabs button[data-c=platform]").addEventListener("click",e=>{document.querySelectorAll("#ccTabs button").forEach(x=>x.setAttribute("aria-pressed",x===e.currentTarget));
+  ["Biz","Users","Plans","Audit","Leads","New"].forEach(k=>{const el=$("#cc"+k);if(el)el.hidden=true});$("#ccPlatform").hidden=false;loadPlatform()});
+document.querySelectorAll("#ccTabs button:not([data-c=platform])").forEach(b=>b.addEventListener("click",()=>{$("#ccPlatform").hidden=true}));
+$("#plDays").onchange=loadPlatform;
+async function loadPlatform(){
+  const h=await req("/api/admin/health");$("#plHealth").innerHTML=h.map(c=>`<div class="item"><span class="tag ${c.ok?"t-book":"t-attn"}">${c.ok?"OK":"Check"}</span><div class="grow"><b>${esc(c.name)}</b><small>${esc(c.detail||"")}</small></div></div>`).join("");
+  const u=await req("/api/admin/usage?days="+$("#plDays").value),usd=v=>"$"+(Math.round(v*100)/100).toFixed(2);
+  $("#plUse").innerHTML=u.map(b=>`<tr><td><b style="font-weight:500">${esc(b.name)}</b>${b.is_demo?' <span class="tag">Demo</span>':""}</td><td>${b.customer_messages}</td><td>${b.ai_replies}</td><td>${b.wa_replies}</td><td>${b.wa_outbound}</td><td>${b.bookings}</td><td>${usd(b.est_cost)}</td><td>${b.plan_price?usd(b.plan_price):"—"}</td><td style="color:${b.margin<0?"var(--bad)":"var(--good)"}">${usd(b.margin)}</td>
+    <td style="white-space:nowrap"><a class="mini" href="/api/admin/businesses/${b.id}/export" download>Export</a> <button class="mini" type="button" data-close="${b.id}" data-name="${esc(b.name)}">Close…</button></td></tr>`).join("")}
+$("#plUse").addEventListener("click",async e=>{const b=e.target.closest("[data-close]");if(!b)return;
+  const typed=prompt(`Close "${b.dataset.name}" and permanently delete ALL its data (customers, chats, bookings, logins, photos)?\n\nExport it first if you may need it. Type the business name exactly to confirm:`);
+  if(typed===null)return;try{await req("/api/admin/businesses/"+b.dataset.close,"DELETE",{confirm:typed});toast("Business closed and its data deleted.");loadPlatform()}catch(err){toast(err.message)}});
+
+// ---------- Command center: leads from the Pulse website ----------
+const LST={new:["New","t-attn"],contacted:["Contacted","t-live"],demo_booked:["Demo booked","t-hand"],won:["Won","t-book"],lost:["Lost",""]},SRC={confirm:"booking confirmation",book:"booking page",webook:"WeBook app",chat:"chat",direct:"direct visit"};
+let leadData=null;
+async function loadLeads(){leadData=await req("/api/admin/leads");const L=leadData.leads,clicks=leadData.sources.reduce((a,s)=>a+s.clicks,0),won=L.filter(l=>l.status==="won").length;
+  $("#ldKpis").innerHTML=[["New leads",L.filter(l=>l.status==="new").length,1],["All leads",L.length],["Demo requests",L.filter(l=>l.kind==="demo").length],["Badge clicks",clicks],["Won",won+(L.length?` · ${Math.round(won/L.length*100)}%`:"")]].map(([l,v,h])=>`<div class="kpi glass${h?" hero":""}"><span class="k-l">${l}</span><span class="v num">${v}</span></div>`).join("");
+  drawLeads();
+  $("#ldRefs").innerHTML=(leadData.referrers.length?leadData.referrers.map(r=>`<div class="item"><div class="grow"><b>${esc(r.name)}</b><small>${r.clicks_30d} in the last 30 days · ${r.leads} lead${r.leads===1?"":"s"}</small></div><span class="tag t-book">${r.clicks} clicks</span></div>`).join(""):`<div class="empty">No clicks yet. Every booking confirmation and booking page now carries a "Powered by Pulse" link.</div>`)
+    +(leadData.sources.length?`<p class="sub" style="margin:12px 0 0;font-size:13px">By source: ${leadData.sources.map(s=>`${esc(SRC[s.source]||s.source)} ${s.clicks}`).join(" · ")}</p>`:"")}
+function drawLeads(){const f=$("#ldF").value,L=leadData.leads.filter(l=>!f||l.status===f);
+  $("#ldList").innerHTML=L.length?L.map(l=>`<div class="item" style="align-items:flex-start;flex-wrap:wrap"><div class="grow" style="min-width:220px"><b>${esc(l.name)} · ${esc(l.business)}</b>
+    <small>${l.kind==="demo"?"🎥 Demo request":"🚀 Sign-up"} · ${esc(l.business_type||"")} · ${esc(l.country||"")} · ${new Date(l.created_at).toLocaleString()}</small>
+    <small>${l.phone?`<a href="https://wa.me/${esc(l.phone.replace(/\D/g,""))}" target="_blank" rel="noopener">${esc(l.phone)}</a>`:""}${l.phone&&l.email?" · ":""}${l.email?`<a href="mailto:${esc(l.email)}">${esc(l.email)}</a>`:""}</small>
+    ${l.ref_name?`<small>Came from <b>${esc(l.ref_name)}</b> (${esc(SRC[l.source]||l.source)})</small>`:l.source&&l.source!=="direct"?`<small>Source: ${esc(SRC[l.source]||l.source)}</small>`:""}
+    ${l.message?`<small style="white-space:pre-wrap;color:var(--ink2)">“${esc(l.message)}”</small>`:""}
+    <input class="ldNote" data-id="${l.id}" value="${esc(l.notes||"")}" placeholder="Your notes" style="margin-top:6px;width:100%"></div>
+    <select class="ldSt" data-id="${l.id}" aria-label="Lead status">${Object.entries(LST).map(([k,[t]])=>`<option value="${k}"${l.status===k?" selected":""}>${t}</option>`).join("")}</select></div>`).join("")
+    :`<div class="empty">No leads yet. Share your website: <a href="/pulse" target="_blank" rel="noopener">${location.host}/pulse</a></div>`}
+$("#ldF").onchange=drawLeads;
+$("#ldList").addEventListener("change",async e=>{const el=e.target.closest(".ldSt,.ldNote");if(!el)return;const id=+el.dataset.id,l=leadData.leads.find(x=>x.id===id);
+  if(el.classList.contains("ldSt"))l.status=el.value;else l.notes=el.value;await req("/api/admin/leads/"+id,"PUT",{status:l.status,notes:l.notes});toast("Lead updated.");if(el.classList.contains("ldSt"))loadLeads()});
+setInterval(()=>{if(!document.hidden){refresh();loadApprovals();pollTestChat();if(!$("#calendar").hidden)loadCal()}},5000);
+</script>
+<script src="/widgets.js"></script>
+</body>
+</html>
