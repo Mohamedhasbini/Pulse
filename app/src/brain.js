@@ -184,7 +184,16 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   }
 
   const source = failed ? (decision.quick ? 'quick' : 'fallback') : decision.quick ? 'quick' : 'ai';
-  const choices = bookedNow || failed ? [] : cleanOptions(decision.options);
+  let choices = bookedNow || failed ? [] : cleanOptions(decision.options);
+  // The AI sometimes forgets the tap choices: menus and offered times always get them.
+  const svcNames = biz.services.map(x => x.name.toLowerCase());
+  if (choices.length && choices.every(c => svcNames.includes(c.toLowerCase()))) choices = cleanOptions(biz.services.map(x => x.name)); // a menu always lists every service
+  if (!choices.length && !bookedNow && !failed && reply) {
+    const names = biz.services.map(x => x.name).filter(n => n.length <= 24 && reply.toLowerCase().includes(n.toLowerCase()));
+    const times = Object.values(context.quick_slots || {}).flat().map(x => x.label).filter((l, i, a) => a.indexOf(l) === i && reply.includes(l.replace(/^(Today|Tomorrow) /, '')) && reply.includes(l.split(' ')[0]));
+    if (names.length >= 3) choices = cleanOptions(biz.services.map(x => x.name));
+    else if (times.length) choices = cleanOptions([...times.slice(0, 3), 'Another day']);
+  }
   await q('INSERT INTO messages (conversation_id, role, text, latency_ms, failed, source, confidence, options) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
     [conv.id, 'assistant', reply, ms, failed, source, source === 'ai' ? (String(decision.confidence).toLowerCase() === 'low' || decision.unknown_question || decision.action === 'handoff' ? 'low' : 'high') : null, choices.length ? JSON.stringify(choices) : null]);
   await q(`UPDATE conversations SET outcome=$1, updated_at=now(),
