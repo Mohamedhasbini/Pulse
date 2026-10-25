@@ -5,6 +5,7 @@ import { VERTICALS } from './verticals.js';
 import { quickAnswer, smallTalk } from './quick.js';
 import { emailEnabled, sendEmail } from './email.js';
 import { notify } from './notify.js';
+import { emit } from './live.js';
 import { unify } from './customers.js';
 import { hasFeature } from './features.js';
 import { availability, isFree, freeSlots, bufferOf, label, hoursText, localDate, parseLocal } from './slots.js';
@@ -17,13 +18,16 @@ export const aiHealth = { ok: null, at: null, ms: null, error: null };
 
 // AI pacing: the AI plan allows only so many replies a minute (Gemini free tier: 15). Pulse stays under it
 // instead of being refused; what doesn't fit waits in ai_queue and is answered as soon as there is room.
-const AI_RPM = Math.max(1, +process.env.AI_RPM || 14);
-const aiCalls = [];
-function takeAiSlot() {
-  const now = Date.now();
-  while (aiCalls.length && now - aiCalls[0] > 60000) aiCalls.shift();
-  if (aiCalls.length >= AI_RPM) return false;
-  aiCalls.push(now); return true;
+// Counted in the database (ai_calls), so every process together stays under the one plan limit.
+const AI_RPM = Math.max(1, +process.env.AI_RPM || 10); // below 15: Jarvis and the coach share the same key
+async function takeAiSlot() {
+  return !!(await one(`WITH l AS (SELECT pg_advisory_xact_lock(424242)),
+      c AS (SELECT count(*) AS n FROM ai_calls, l WHERE at > now() - interval '60 seconds')
+    INSERT INTO ai_calls (at) SELECT now() FROM c WHERE c.n < $1 RETURNING 1`, [AI_RPM]));
+}
+async function aiRoom() {
+  const r = await one(`SELECT count(*)::int AS n FROM ai_calls WHERE at > now() - interval '60 seconds'`);
+  return r.n < AI_RPM;
 }
 const HOLD = "Thanks for your message! I'm checking and will reply here in a moment. 🙏";
 const HOLD_AR = 'شكراً لرسالتك! أتحقق الآن وسأرد عليك هنا خلال لحظات. 🙏';
@@ -63,6 +67,30 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     await q(`UPDATE conversations SET updated_at=now(), needs_attention=true, attention_reason='Customer replied, waiting for you (you took over this chat)' WHERE id=$1`, [conv.id]);
     await notify(businessId, 'handoff', `${customer.name || 'A customer'} replied in a chat you took over`, text.slice(0, 200), { conversationId: conv.id });
     return { reply: null, paused: true, outcome: conv.outcome, conversationId: conv.id };
+  }
+
+  // Satisfaction: the chat asked "how did I do? 1-5"; a bare number or stars is the answer, not a new question.
+  if (!queued && conv.rating_asked_at && conv.rating == null) {
+    const t = text.trim(), stars = [...t].filter(c => c === '⭐').length;
+    const n = /^[1-5](\s*(\/\s*5|stars?|نجوم|⭐)*)?[.!]?$/i.test(t) ? +t[0] : stars && stars === [...t.replace(/\s|️/g, '')].length ? Math.min(stars, 5) : null;
+    if (n) {
+      const ar = AR.test(t) || /نجوم/.test(t);
+      const reply = n >= 4 ? (ar ? 'شكراً جزيلاً! سعداء بخدمتك 😊' : 'Thank you so much! Happy we could help 😊')
+        : (ar ? 'نعتذر عن ذلك. ما الذي كان بإمكاننا فعله بشكل أفضل؟' : "Sorry it wasn't better. What could we have done better?");
+      await q('UPDATE conversations SET rating=$1, rated_at=now(), updated_at=now() WHERE id=$2', [n, conv.id]);
+      await q("INSERT INTO messages (conversation_id, role, text, source) VALUES ($1,'assistant',$2,'quick')", [conv.id, reply]);
+      if (n <= 2) await notify(businessId, 'handoff', `${customer.name || 'A customer'} rated their chat ${n}/5`, text.slice(0, 200), { conversationId: conv.id });
+      emit(businessId, 'rating');
+      return { reply, outcome: conv.outcome, conversationId: conv.id, rated: n };
+    }
+  }
+  // After a low rating the next plain message (not a question) is their comment.
+  if (!queued && conv.rating != null && conv.rating <= 3 && !conv.rating_comment && conv.rated_at && Date.now() - new Date(conv.rated_at) < 86400e3 && !/\?|؟/.test(text)) {
+    await q('UPDATE conversations SET rating_comment=$1, updated_at=now() WHERE id=$2', [text.slice(0, 1000), conv.id]);
+    const reply = AR.test(text) ? 'شكراً على ملاحظتك، سنشاركها مع الفريق 🙏' : "Thank you for telling us. We'll share it with the team 🙏";
+    await q("INSERT INTO messages (conversation_id, role, text, source) VALUES ($1,'assistant',$2,'quick')", [conv.id, reply]);
+    emit(businessId, 'rating');
+    return { reply, outcome: conv.outcome, conversationId: conv.id };
   }
 
   const kw = text.trim().toLowerCase().replace(/[.!]+$/, '');
@@ -128,18 +156,20 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   try {
     const chit = !queued && smallTalk(text);
     if (chit) decision = { reply: chit, action: 'none', quick: true };
-    else if (!takeAiSlot()) throw Object.assign(new Error('AI limit reached for this minute'), { busy: true });
+    else if (!(await takeAiSlot())) throw Object.assign(new Error('AI limit reached for this minute'), { busy: true });
     else try { decision = await askN8n(context, +process.env.AI_TIMEOUT_MS || 15000); }
     catch (first) {
-      if (!takeAiSlot()) throw first;
+      if (!/timeout|abort/i.test(first.message) || !(await takeAiSlot())) throw first;
       console.warn('AI slow or failed, retrying once:', first.message); decision = await askN8n(context, 15000);
     }
     if (!chit) {
       Object.assign(aiHealth, { ok: true, at: new Date(), ms: Date.now() - t0, error: null });
       // answered live: an older queued copy of this chat would only repeat it
-      await q(`DELETE FROM ai_queue WHERE conversation_id=$1 AND status='waiting'`, [conv.id]);
+      await q(`UPDATE ai_queue SET status='answered', answered_at=now(), reply='(answered live by a newer message)' WHERE conversation_id=$1 AND status='waiting'`, [conv.id]);
     }
   } catch (e) {
+    // circuit breaker: the AI refused or failed, so give it a full minute of rest (fills this minute's allowance)
+    if (!e.busy) await q('INSERT INTO ai_calls (at) SELECT now() FROM generate_series(1, $1)', [AI_RPM]).catch(() => {});
     if (queued) throw e; // the queue worker retries later
     if (!e.busy) {
       console.error('n8n call failed:', e.message);
@@ -157,6 +187,7 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
       if (!added) { await q('UPDATE conversations SET updated_at=now() WHERE id=$1', [conv.id]); return { reply: null, queued: true, outcome: conv.outcome, conversationId: conv.id }; }
       decision = { reply: AR.test(text) ? HOLD_AR : HOLD, action: 'none', quick: true };
       failed = false;
+      emit(businessId, 'queue');
     }
   }
   const ms = Date.now() - t0;
@@ -220,6 +251,12 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     await q('UPDATE customers SET name=$1 WHERE id=$2', [decision.customer_name, customer.id]);
   }
 
+  // The chat just ended (booked, or thanks/bye): ask once how it went.
+  let asked = false;
+  if (!conv.rating_asked_at && ((bookedNow && decision.action === 'book') || (smallTalk(text) && await one(`SELECT 1 FROM messages WHERE conversation_id=$1 AND role='assistant' LIMIT 1`, [conv.id])))) {
+    reply += AR.test(text) || AR.test(reply) ? '\n\nسؤال سريع: كيف كانت المحادثة معي؟ أرسل رقماً من 1 إلى 5 ⭐' : '\n\nOne quick thing: how was this chat? Reply with a number from 1 to 5 ⭐';
+    asked = true;
+  }
   const source = failed ? (decision.quick ? 'quick' : 'fallback') : decision.quick ? 'quick' : 'ai';
   let choices = bookedNow || failed ? [] : cleanOptions(decision.options);
   // The AI sometimes forgets the tap choices: menus and offered times always get them.
@@ -234,8 +271,9 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   await q('INSERT INTO messages (conversation_id, role, text, latency_ms, failed, source, confidence, options) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
     [conv.id, 'assistant', reply, ms, failed, source, source === 'ai' ? (String(decision.confidence).toLowerCase() === 'low' || decision.unknown_question || decision.action === 'handoff' ? 'low' : 'high') : null, choices.length ? JSON.stringify(choices) : null]);
   await q(`UPDATE conversations SET outcome=$1, updated_at=now(),
-      needs_attention = needs_attention OR $2, attention_reason = COALESCE($3, attention_reason) WHERE id=$4`,
+      needs_attention = needs_attention OR $2, attention_reason = COALESCE($3, attention_reason)${asked ? ', rating_asked_at=now()' : ''} WHERE id=$4`,
     [outcome, !!attention, attention, conv.id]);
+  emit(biz.id, bookedNow ? 'booking' : 'message');
   return { reply, options: choices, outcome, bookedNow, conversationId: conv.id, failed };
 }
 
@@ -550,14 +588,16 @@ export function startAiQueue(deliver) {
   setInterval(async () => {
     if (busy) return; busy = true;
     try {
+      await q(`DELETE FROM ai_calls WHERE at < now() - interval '5 minutes'`);
       for (;;) {
-        if (aiCalls.length >= AI_RPM && Date.now() - aiCalls[0] < 60000) break;
+        if (!(await aiRoom())) break;
         const job = await one(`UPDATE ai_queue SET status='working', attempts=attempts+1 WHERE id = (
             SELECT id FROM ai_queue WHERE status='waiting' AND next_at <= now() ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING *`);
         if (!job) break;
         try {
           const r = await handleMessage({ businessId: job.business_id, phone: job.phone, name: job.name, text: job.text, channel: job.channel, queued: true });
-          await q('DELETE FROM ai_queue WHERE id=$1', [job.id]);
+          await q(`UPDATE ai_queue SET status='answered', answered_at=now(), reply=$2 WHERE id=$1`, [job.id, r.reply || null]);
+          emit(job.business_id, 'queue');
           if (r.reply) await deliver({ channel: job.channel, businessId: job.business_id, phone: job.phone, reply: r.reply, options: r.options }).catch(e => console.error('Queue delivery:', e.message));
         } catch (e) {
           // no AI room this minute: not a real try, back to the front of the line
@@ -566,6 +606,7 @@ export function startAiQueue(deliver) {
             await q(`UPDATE ai_queue SET status='failed', error=$2 WHERE id=$1`, [job.id, e.message.slice(0, 300)]);
             await q(`UPDATE conversations SET needs_attention=true, attention_reason='The AI could not answer this customer. Please reply yourself.' WHERE id=$1`, [job.conversation_id]);
             await notify(job.business_id, 'handoff', 'A customer is waiting for a reply', job.text.slice(0, 200), { conversationId: job.conversation_id }).catch(() => {});
+            emit(job.business_id, 'queue');
           } else {
             // not answered: wait 20 s, 40 s, 80 s... (rate limits clear within a minute)
             await q(`UPDATE ai_queue SET status='waiting', error=$2, next_at=now() + make_interval(secs => 20 * power(2, attempts - 1)) WHERE id=$1`, [job.id, e.message.slice(0, 300)]);
@@ -574,6 +615,15 @@ export function startAiQueue(deliver) {
       }
     } catch (e) { console.error('AI queue:', e.message); } finally { busy = false; }
   }, 3000);
+}
+// Queue tab: recent jobs with how long each waited and what was sent.
+export async function aiQueueList(businessId, status) {
+  const f = { waiting: `status IN ('waiting','working')`, answered: `status='answered'`, failed: `status='failed'` }[status] || 'true';
+  return q(`SELECT a.id, a.conversation_id, a.channel, a.status, a.attempts, a.text, a.reply, a.error, a.created_at, a.answered_at, a.next_at,
+      COALESCE(c.name, a.name, a.phone) AS customer,
+      extract(epoch FROM COALESCE(a.answered_at, now()) - a.created_at)::int AS wait_s
+    FROM ai_queue a LEFT JOIN customers c ON c.business_id=a.business_id AND c.phone=a.phone
+    WHERE a.business_id=$1 AND a.created_at > now() - interval '7 days' AND ${f} ORDER BY a.id DESC LIMIT 200`, [businessId]);
 }
 export async function aiQueueStatus(businessId) {
   return one(`SELECT count(*) FILTER (WHERE status IN ('waiting','working'))::int AS waiting, count(*) FILTER (WHERE status='failed')::int AS failed,

@@ -5,7 +5,8 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { hashPassword, checkPassword, newPassword, signSession, readSession, signTicket, readTicket, newTotpSecret, checkTotp, totpUrl, newEmailCode, hashCode, weakPassword, ensureAdmin, createBusiness } from './accounts.js';
 import { MODULES, FEATURES, MODULE_FEATURE, featuresOf, hasFeature, canOpen, moduleOf, seedPlans } from './features.js';
 import { q, one, migrate, withBusinessLock } from './db.js';
-import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus } from './brain.js';
+import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
+import { mountLive } from './live.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
 import { sendWhatsApp, validSignature, parseIncoming, validKapsoSignature, parseKapso, whatsappReady } from './whatsapp.js';
 import { mountPublic } from './public.js';
@@ -621,6 +622,23 @@ app.post('/api/test-chat', wrap(async (req, res) => {
 
 // Messages waiting for the AI (rate limit or AI down) and how long the oldest has waited.
 app.get('/api/ai-queue', wrap(async (_req, res) => res.json(await aiQueueStatus(BIZ()))));
+app.get('/api/ai-queue/list', wrap(async (req, res) => res.json(await aiQueueList(BIZ(), String(req.query.status || '')))));
+mountLive(app, () => BIZ());
+
+// Reviews: customers rate a chat 1-5 when it ends. Satisfaction = share of ratings that are 4 or 5.
+app.get('/api/ratings', wrap(async (req, res) => {
+  const days = Math.min(Math.max(+req.query.days || 30, 1), 365), P = [BIZ(), days];
+  const [s] = await q(`SELECT count(*) FILTER (WHERE rating IS NOT NULL)::int AS rated, count(*) FILTER (WHERE rating_asked_at IS NOT NULL)::int AS asked,
+      round(avg(rating)::numeric, 2)::float AS avg, count(*) FILTER (WHERE rating >= 4)::int AS happy,
+      count(*) FILTER (WHERE rating <= 2)::int AS unhappy, count(*) FILTER (WHERE rating_comment IS NOT NULL)::int AS comments
+    FROM conversations WHERE business_id=$1 AND COALESCE(rated_at, rating_asked_at) > now() - make_interval(days => $2::int)`, P);
+  const dist = await q(`SELECT rating, count(*)::int n FROM conversations WHERE business_id=$1 AND rating IS NOT NULL
+    AND rated_at > now() - make_interval(days => $2::int) GROUP BY rating ORDER BY rating`, P);
+  const list = await q(`SELECT v.id, v.rating, v.rating_comment, v.rated_at, v.outcome, v.channel, COALESCE(c.name, c.phone) AS customer
+    FROM conversations v JOIN customers c ON c.id=v.customer_id WHERE v.business_id=$1 AND v.rating IS NOT NULL
+    AND v.rated_at > now() - make_interval(days => $2::int) ORDER BY v.rated_at DESC LIMIT 200`, P);
+  res.json({ ...s, satisfaction: s.rated ? Math.round(100 * s.happy / s.rated) : null, response_rate: s.asked ? Math.round(100 * s.rated / s.asked) : null, dist, list });
+}));
 
 // ---------- Dashboard numbers ----------
 // Every number comes straight from the database for the chosen period.

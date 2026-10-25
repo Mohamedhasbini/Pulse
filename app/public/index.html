@@ -1116,6 +1116,15 @@ const grid=(cls,...cards)=>{const g=document.createElement("div");g.className=cl
   const needsCard=r1.children[0],todayCard=r1.children[1];
   top.after(cmd);
   const urgent=document.createElement("div");urgent.className="card glass gx urgent";urgent.innerHTML=`<div class="ch"><h2>Needs attention</h2><small id="urgN"></small></div><div class="ulist" id="urgList"></div>`;
+  // Queue and Reviews tabs (filled by live.js)
+  const queueCard=document.createElement("div");queueCard.className="card glass gx";queueCard.id="queueCard";
+  queueCard.innerHTML=`<div class="ch"><h2>AI queue</h2><div class="tabs" role="group" aria-label="Queue status" id="qTabs"><button aria-pressed="true" data-s="waiting">Waiting</button><button aria-pressed="false" data-s="answered">Answered</button><button aria-pressed="false" data-s="failed">Needs you</button></div></div>
+    <p class="sub" style="margin:0 0 10px">When many customers write at once, the AI answers what it can straight away and queues the rest. Queued chats get "I'm checking, back in a moment" and the full answer follows automatically.</p>
+    <div class="kp-row" id="qKpis"></div><div class="tw"><table><thead><tr><th>Received</th><th>Customer</th><th>Channel</th><th>Message</th><th>Waited</th><th>Status</th></tr></thead><tbody id="qList"></tbody></table></div>`;
+  const reviewsCard=document.createElement("div");reviewsCard.className="card glass gx";reviewsCard.id="reviewsCard";
+  reviewsCard.innerHTML=`<div class="ch"><h2>Customer reviews</h2><small class="plabel" id="rvPeriod">last 30 days</small></div>
+    <p class="sub" style="margin:0 0 10px">When a chat ends (a booking, or thanks / bye) the customer is asked to rate it from 1 to 5. Low ratings ask what to improve and alert you.</p>
+    <div class="kp-row" id="rvKpis"></div><div id="rvDist" class="rv-dist"></div><div class="tw"><table><thead><tr><th>When</th><th>Customer</th><th>Channel</th><th>Rating</th><th>Result</th><th>Comment</th></tr></thead><tbody id="rvList"></tbody></table></div>`;
   const money=document.createElement("div");money.className="card glass gx money";money.innerHTML=`<div class="ch"><h2>Money</h2><small class="plabel">last 30 days</small></div><div class="mny" id="mnyBox"></div>`;
   [ai,upCard,activeCard,feedCard,gaugeCard,weekCard,todayCard,donutCard,flowCard,heatCard,needsCard,convCard].forEach(c=>c.classList.remove("gc3","gc4","gc5","gc7","gc8"));
   urgent.classList.add("a-urgent");money.classList.add("a-money");upCard.classList.add("a-up");ai.classList.add("a-ai");
@@ -1127,6 +1136,8 @@ const grid=(cls,...cards)=>{const g=document.createElement("div");g.className=cl
     ["services","Services",()=>[r3]],
     ["conversations","Conversations",()=>[grid("fit-side",needsCard,convCard)]],
     ["approvals","Approvals",()=>[appr]],
+    ["queue","Queue",()=>[queueCard]],
+    ["reviews","Reviews",()=>[reviewsCard]],
   ],{after:cmd});
   desk.remove();
   // the setup checklist now lives at the top of Setup
@@ -1554,5 +1565,6 @@ setInterval(()=>{if(!document.hidden){refresh();loadApprovals();pollTestChat();i
 <script src="/signature.js"></script>
 <script src="/beat.js"></script>
 <script src="/sidebar.js"></script>
+<script src="/live.js"></script>
 </body>
 </html>

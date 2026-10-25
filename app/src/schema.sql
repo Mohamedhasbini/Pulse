@@ -351,3 +351,13 @@ CREATE TABLE IF NOT EXISTS ai_queue (id serial PRIMARY KEY, conversation_id int 
   text text NOT NULL, status text NOT NULL DEFAULT 'waiting', attempts int NOT NULL DEFAULT 0, next_at timestamptz NOT NULL DEFAULT now(), error text, created_at timestamptz DEFAULT now());
 CREATE INDEX IF NOT EXISTS ai_queue_due ON ai_queue (status, next_at);
 
+
+-- Customer satisfaction: asked once when a chat ends (booked, or thanks/bye), answered 1-5 with an optional comment.
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS rating int, ADD COLUMN IF NOT EXISTS rating_comment text, ADD COLUMN IF NOT EXISTS rating_asked_at timestamptz, ADD COLUMN IF NOT EXISTS rated_at timestamptz;
+ALTER TABLE ai_queue ADD COLUMN IF NOT EXISTS answered_at timestamptz, ADD COLUMN IF NOT EXISTS reply text;
+
+
+-- AI calls of the last minute, shared by every process, to stay under the AI plan's per-minute limit.
+CREATE TABLE IF NOT EXISTS ai_calls (at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS ai_calls_at ON ai_calls (at);
+
