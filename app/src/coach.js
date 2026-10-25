@@ -9,6 +9,16 @@ const TONES = { professional: 'Professional and polite', warm: 'Warm and friendl
 const clean = s => String(s || '').replace(/\s+/g, ' ').trim();
 const sentence = s => { s = clean(s).replace(/^[-•*\d.)\s]+/, ''); if (!s) return ''; s = s[0].toUpperCase() + s.slice(1); return /[.!?]$/.test(s) ? s : s + '.'; };
 
+// Two rules mean the same thing when they share most of their key words ("Never use emojis" ~ "Do not use emojis").
+const STOP = new Set('a an the to of in on for and or but with your you our we us they them their is are be do does not no never always dont don t please any every all it its this that at by from as'.split(' '));
+const words = t => new Set(clean(t).toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).map(w => w.replace(/(ies|es|s)$/, '')).filter(w => w && !STOP.has(w)));
+export function sameRule(a, b) {
+  const A = words(a), B = words(b); if (!A.size || !B.size) return clean(a).toLowerCase() === clean(b).toLowerCase();
+  let n = 0; for (const w of A) if (B.has(w)) n++;
+  return n / Math.min(A.size, B.size) >= 0.75;
+}
+const known = (rules, t) => rules.some(r => sameRule(r.text || r, t));
+
 // Turns "please make sure you always mention parking" into "Always mention parking."
 function asRule(text) {
   let s = clean(text)
@@ -56,9 +66,8 @@ export function understand(text, current = {}) {
     if (r.split(' ').length >= 3) changes.push({ type: 'rule', text: r.slice(0, 300) });
   }
   // de-duplicate, and skip rules that already exist
-  const have = new Set(rules.map(r => clean(r.text || r).toLowerCase()));
   const seen = new Set();
-  const out = changes.filter(c => { const k = c.type + ':' + clean(c.text || c.value).toLowerCase(); if (seen.has(k) || (c.type === 'rule' && have.has(clean(c.text).toLowerCase()))) return false; seen.add(k); return true; });
+  const out = changes.filter(c => { const k = c.type + ':' + clean(c.text || c.value).toLowerCase(); if (seen.has(k) || (c.type === 'rule' && known(rules, c.text))) return false; seen.add(k); return true; });
   if (!out.length) return { reply: changes.length ? 'I already follow that. Anything else?' : 'Could you say a bit more? For example: "be more formal", "never offer discounts", "always mention free parking", or "call yourself Lina".', changes: [] };
   return { reply: out.length === 1 ? "Got it. Here's the change:" : `Got it. Here are ${out.length} changes:`, changes: out };
 }
@@ -76,6 +85,8 @@ async function understandWithAI(text, current) {
     const changes = (Array.isArray(j.changes) ? j.changes : []).filter(c =>
       (c.type === 'rule' && clean(c.text)) || (c.type === 'tone' && TONES[c.value]) || (c.type === 'name' && clean(c.value)) || (c.type === 'remove_rule' && Number.isInteger(c.index) && current.rules?.[c.index]))
       .map(c => c.type === 'rule' ? { type: 'rule', text: sentence(c.text).slice(0, 300) } : c.type === 'tone' ? { ...c, text: TONES[c.value] } : c.type === 'remove_rule' ? { ...c, text: current.rules[c.index].text || current.rules[c.index] } : { type: 'name', value: clean(c.value).slice(0, 40) });
+    // Drop rules the assistant already follows (in any wording) and repeats within this answer.
+    for (let i = changes.length - 1; i >= 0; i--) if (changes[i].type === 'rule' && (known(current.rules || [], changes[i].text) || changes.slice(0, i).some(c => c.type === 'rule' && sameRule(c.text, changes[i].text)))) changes.splice(i, 1);
     // Our own wording when there are changes: nothing is saved until the owner presses Apply.
     const reply = changes.length ? (changes.length === 1 ? "Got it. Here's the change:" : `Got it. Here are ${changes.length} changes:`) : clean(j.reply) || 'Could you say a bit more?';
     return { reply, changes, ai: true };
@@ -98,7 +109,7 @@ export function mountCoach(app, BIZ, audit, wrap) {
     const removals = changes.filter(c => c.type === 'remove_rule' && Number.isInteger(c.index)).sort((a, b) => b.index - a.index);
     for (const c of removals) if (rules[c.index] && clean(rules[c.index].text || rules[c.index]) === clean(c.text)) { rules.splice(c.index, 1); done.push(`Removed: ${clean(c.text)}`); }
     for (const c of changes) {
-      if (c.type === 'rule') { const t = sentence(c.text).slice(0, 300); if (t && !rules.some(r => clean(r.text || r).toLowerCase() === t.toLowerCase()) && rules.length < MAX_RULES) { rules.push({ text: t }); done.push(`New rule: ${t}`); } }
+      if (c.type === 'rule') { const t = sentence(c.text).slice(0, 300); if (t && !known(rules, t) && rules.length < MAX_RULES) { rules.push({ text: t }); done.push(`New rule: ${t}`); } }
       if (c.type === 'tone' && TONES[c.value]) { await q('UPDATE businesses SET tone=$1 WHERE id=$2', [c.value, BIZ()]); done.push(`Tone: ${TONES[c.value]}`); }
       if (c.type === 'name' && clean(c.value)) { const n = clean(c.value).slice(0, 40); await q('UPDATE businesses SET assistant_name=$1 WHERE id=$2', [n, BIZ()]); done.push(`Name: ${n}`); }
     }
