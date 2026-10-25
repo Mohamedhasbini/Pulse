@@ -353,3 +353,76 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 :root[data-theme="light"] nav button[data-view][aria-current="true"] svg{stroke:#000!important}
 :root[data-theme="light"] .btn,:root[data-theme="light"] .td-btn{background:#000!important;color:#fff!important}
 :root[data-theme="light"] .ptabs button[aria-pressed="true"]::after{background:#000!important}
+
+/* ======================================================================
+   Aurora glass (final layer). Dark is the home theme: a deep blue-black
+   ground lit by static glows in the page's colour; cards and tables are
+   translucent glass over it; only floating things get real blur (small
+   areas, so it stays fast); charts glow and answer the pointer.
+   ====================================================================== */
+:root,:root[data-theme="dark"]{
+  --gl-ground:#0b0e17;--gl-card:rgba(255,255,255,.045);--gl-card2:rgba(255,255,255,.075);--gl-edge:rgba(255,255,255,.09);--gl-edge2:rgba(255,255,255,.16);
+  --gl-hi:rgba(255,255,255,.07);--gl-float:rgba(22,26,38,.72);--gl-shadow:0 24px 60px -24px rgba(0,0,0,.7);
+  --gl-text:#eef1f7;--gl-2:#aab1c2;--gl-meta:#7c8396}
+body,body[data-page]{--ground:var(--gl-ground);--s1:var(--gl-card);--s2:var(--gl-card2);--s3:rgba(255,255,255,.11);--solid:#111522;--line:var(--gl-edge);--line2:var(--gl-edge2);--ink:var(--gl-text);--ink2:var(--gl-2);--muted:var(--gl-meta);
+  --tb-ground:var(--gl-ground);--tb-card:var(--gl-card);--tb-nest:var(--gl-card2)}
+/* the lit ground: page colour top right, its partner bottom left, a cool wash in between. Fixed and static. */
+html{background:var(--gl-ground)!important}
+body{background:radial-gradient(70vw 60vh at 100% 0%,color-mix(in srgb,var(--pg,#8b7cff) 24%,transparent),transparent 65%),
+  radial-gradient(60vw 55vh at 0% 100%,color-mix(in srgb,var(--pg2,#38d3f5) 16%,transparent),transparent 65%),
+  radial-gradient(50vw 50vh at 45% 45%,rgba(90,110,255,.06),transparent 70%),var(--gl-ground)!important;background-attachment:fixed!important}
+main,nav,.shell{background:transparent!important}
+nav{background:rgba(255,255,255,.025)!important;border-right:1px solid var(--gl-edge)!important}
+/* glass surfaces: translucent fill, a hairline edge, a lit top edge */
+.card,.card.glass,.glass,.kpi,.kpi.glass,.cm-detail,.cm-list,.setnav,.cm-card,.wsprev,.co-card,.td-card,.td-stat,.td-hero,
+#setup .card,#setup .card.glass,.ccmain .card,.ccmain .card.glass,.plancard,body[data-page] .card,body[data-page="today"] .td-hero,body[data-page="today"] .td-stat:first-child{
+  background:linear-gradient(180deg,var(--gl-hi),transparent 40%),var(--gl-card)!important;border:1px solid var(--gl-edge)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 32px -20px rgba(0,0,0,.6)!important;border-radius:16px!important}
+.card:hover,.kpi:hover,.td-card:hover,.td-stat:hover{border-color:var(--gl-edge2)!important;transform:translateY(-1px)!important}
+.card,.kpi,.td-card,.td-stat{transition:border-color .16s cubic-bezier(.22,1,.36,1),transform .16s cubic-bezier(.22,1,.36,1)!important}
+/* KPIs: the figure lights up in the page colour on hover */
+.kpi .v{color:var(--ink)!important}
+.kpi:hover .v,.td-stat:hover b{color:var(--pg)!important}
+.item,.td-note,.td-mem,.td-time,.td-ic{background:var(--gl-card)!important;border:1px solid transparent!important}
+.item:hover,.td-note:hover{background:var(--gl-card2)!important;border-color:var(--gl-edge)!important}
+/* glass tables: floating rows, a lit hover row */
+table{border-collapse:separate!important;border-spacing:0 4px!important}
+thead th{background:transparent!important;border:0!important;color:var(--muted)!important}
+tbody tr td{background:var(--gl-card)!important;border:0!important}
+tbody tr td:first-child{border-radius:10px 0 0 10px!important}tbody tr td:last-child{border-radius:0 10px 10px 0!important}
+tbody tr:hover td{background:color-mix(in srgb,var(--pg) 12%,var(--gl-card2))!important}
+/* floating things: real frosted glass, small areas only */
+.kp-panel,.bellPanel,.cmd-res,.modal .glass,.wx-box,.g-tip,.td-pop,[role="dialog"]:not(.kp)>div:first-child{background:var(--gl-float)!important;-webkit-backdrop-filter:blur(18px) saturate(150%)!important;backdrop-filter:blur(18px) saturate(150%)!important;border:1px solid var(--gl-edge2)!important;box-shadow:var(--gl-shadow)!important}
+.kp{background:rgba(5,7,12,.45)!important}
+/* charts: lines and bars glow in the page colour and answer the pointer */
+svg[data-fx],#area,#inTrend,.spark,.donut,.gauge,.flow{overflow:visible}
+main svg polyline,main svg path[fill="none"]{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--pg) 45%,transparent))}
+main svg [data-tip]{transition:opacity .14s,filter .14s}
+main svg:hover [data-tip]{opacity:.4}
+main svg [data-tip]:hover{opacity:1!important;filter:brightness(1.3) drop-shadow(0 0 8px var(--pg))}
+.hgrid [data-tip]:hover,.heat [data-tip]:hover,.capsules [data-tip]:hover{outline:2px solid var(--pg);outline-offset:1px;border-radius:4px}
+/* controls on glass */
+.btn,.td-btn{background:var(--pg)!important;color:#0b0e17!important;border-radius:999px!important;box-shadow:0 6px 20px -8px var(--pg)!important}
+.btn:hover,.td-btn:hover{filter:brightness(1.1)!important;background:var(--pg)!important}
+.btn.ghost,.mini,.td-btn.ghost{background:var(--gl-card)!important;color:var(--ink)!important;border:1px solid var(--gl-edge2)!important;box-shadow:none!important}
+input,select,textarea{background:rgba(0,0,0,.25)!important;border:1px solid var(--gl-edge)!important}
+.tabs:not(.ptabs),.td-tabs,.cmd,.qp{background:var(--gl-card)!important;border:1px solid var(--gl-edge)!important}
+.ptabs button[aria-pressed="true"]::after{background:var(--pg)!important;height:2px!important;box-shadow:0 0 10px var(--pg)}
+nav button[data-view][aria-current="true"]{background:var(--gl-card2)!important;color:#fff!important}
+nav button[data-view][aria-current="true"] svg{stroke:var(--pg)!important}
+/* the page title's role label keeps its colour; the greeting stays in ink */
+main>section>.top h1::before{color:var(--pg)!important}
+
+/* ---------- light mode: frosted white glass on a soft tinted ground ---------- */
+:root[data-theme="light"]{--gl-ground:#eef0f6;--gl-card:rgba(255,255,255,.62);--gl-card2:rgba(255,255,255,.85);--gl-edge:rgba(20,24,40,.08);--gl-edge2:rgba(20,24,40,.15);--gl-hi:rgba(255,255,255,.7);--gl-float:rgba(255,255,255,.8);--gl-shadow:0 24px 60px -24px rgba(30,30,70,.3);--gl-text:#10131c;--gl-2:#4a5163;--gl-meta:#6f7686}
+:root[data-theme="light"] body{background:radial-gradient(70vw 60vh at 100% 0%,color-mix(in srgb,var(--pg,#8b7cff) 22%,transparent),transparent 65%),radial-gradient(60vw 55vh at 0% 100%,color-mix(in srgb,var(--pg2,#38d3f5) 18%,transparent),transparent 65%),var(--gl-ground)!important}
+:root[data-theme="light"] nav{background:rgba(255,255,255,.45)!important}
+:root[data-theme="light"] nav button[data-view]{color:#4a5163!important}
+:root[data-theme="light"] nav button[data-view][aria-current="true"]{color:#10131c!important;background:rgba(255,255,255,.8)!important}
+:root[data-theme="light"] .card,:root[data-theme="light"] .kpi,:root[data-theme="light"] .td-card,:root[data-theme="light"] .td-stat,:root[data-theme="light"] .td-hero{box-shadow:inset 0 1px 0 #fff,0 10px 30px -18px rgba(40,40,90,.25)!important}
+:root[data-theme="light"] .btn,:root[data-theme="light"] .td-btn{color:#fff!important;background:color-mix(in srgb,var(--pg) 85%,#000)!important}
+:root[data-theme="light"] input,:root[data-theme="light"] select,:root[data-theme="light"] textarea{background:rgba(255,255,255,.7)!important}
+:root[data-theme="light"] .kp{background:rgba(230,232,240,.5)!important}
+:root[data-theme="light"] body[data-page="today"]{--pg:#d97706}
+:root[data-theme="light"] body[data-page="setup"],:root[data-theme="light"] body[data-page="security"]{--pg:#475569}
+@media (prefers-reduced-motion:reduce){.card:hover,.kpi:hover{transform:none!important}}
