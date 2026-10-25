@@ -327,3 +327,8 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS telegram_token_hash TEXT;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS logo_url TEXT;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS cover_url TEXT;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS menu_url TEXT;
+
+-- Client websites: settings (style, sections, languages, texts, gallery) and where the site lives
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS site JSONB;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS subdomain TEXT UNIQUE;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS custom_domain TEXT UNIQUE;

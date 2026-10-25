@@ -5,7 +5,7 @@ import { q, one } from './db.js';
 import { readSession } from './accounts.js';
 
 const PUBLIC = fileURLToPath(new URL('../public', import.meta.url));
-const SOURCES = ['confirm', 'book', 'webook', 'chat', 'direct'];
+const SOURCES = ['confirm', 'book', 'webook', 'chat', 'site', 'direct'];
 const tries = new Map(); // ip -> [timestamps] of lead submissions
 
 export function mountSite(app) {

@@ -46,6 +46,7 @@ export function mountMedia(app) {
 export function mountUploads(app, BIZ, audit) {
   app.post('/api/business/upload/:kind', express.raw({ type: Object.keys(TYPES), limit: '8mb' }), async (req, res, next) => {
     try {
+      if (req.params.kind === 'gallery') return galleryUpload(req, res, BIZ(), audit);
       const col = KINDS[req.params.kind], ext = TYPES[req.get('content-type')];
       if (!col) return res.status(400).json({ error: 'Unknown upload.' });
       if (!ext || !Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'Upload a JPG, PNG, WEBP image or a PDF (max 8 MB).' });
@@ -164,4 +165,21 @@ export function startMonitor(aiHealth) {
     }
   };
   setTimeout(run, 60e3); setInterval(run, 5 * 60e3);
+}
+
+// Website gallery: up to 12 photos, kept in the business's own folder and listed in businesses.site.gallery.
+async function galleryUpload(req, res, biz, audit) {
+  const ext = TYPES[req.get('content-type')];
+  if (!ext || ext === 'pdf' || !Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'Upload a JPG, PNG or WEBP photo (max 8 MB).' });
+  const b = await one('SELECT site FROM businesses WHERE id=$1', [biz]), site = b?.site || {}, gallery = Array.isArray(site.gallery) ? site.gallery : [];
+  if (gallery.length >= 12) return res.status(400).json({ error: 'The gallery holds 12 photos. Remove one first.' });
+  const dir = path.join(UPLOADS, String(biz)), name = `gallery-${Date.now()}.${ext}`;
+  fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, name), req.body);
+  const url = `/media/${biz}/${name}`;
+  await q(`UPDATE businesses SET site = jsonb_set(COALESCE(site,'{}'::jsonb), '{gallery}', COALESCE(site->'gallery','[]'::jsonb) || to_jsonb($1::text)) WHERE id=$2`, [url, biz]);
+  await audit(req, 'upload', `gallery ${Math.round(req.body.length / 1024)} KB`);
+  res.json({ ok: true, url });
+}
+export function removeMedia(biz, urls) {
+  for (const u of urls) if (String(u).startsWith(`/media/${biz}/`)) fs.rm(path.join(UPLOADS, String(biz), path.basename(u)), { force: true }, () => {});
 }

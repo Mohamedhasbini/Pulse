@@ -11,7 +11,8 @@ import { sendWhatsApp, validSignature, parseIncoming, validKapsoSignature, parse
 import { mountPublic } from './public.js';
 import { mountWeBook } from './webook.js';
 import { mountSite, mountSiteAdmin } from './site.js';
-import { mountMedia, mountUploads, usage, exportBusiness, closeBusiness, health, startMonitor, sealExistingSecrets } from './ops.js';
+import { mountMedia, mountUploads, usage, exportBusiness, closeBusiness, health, startMonitor, sealExistingSecrets, removeMedia } from './ops.js';
+import { mountClientSites, siteOf, mergeSite, STYLES, SECTIONS, LANGS, validSubdomain, validDomain } from './sitegen.js';
 import { seedDemo, removeDemo } from './demo.js';
 import { startTelegram, sendTelegram, telegramStatus, connectTelegram, stopBot } from './telegram.js';
 import { notify, KINDS, ownerLinkCode } from './notify.js';
@@ -64,6 +65,9 @@ app.post('/webhook/kapso', async (req, res) => {
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
+// Client websites answer on their own domain or subdomain before anything else
+mountClientSites(app, readSession);
+
 // Public website booking page (before the login check)
 mountPublic(app, 1);
 mountWeBook(app);
@@ -74,7 +78,7 @@ mountMedia(app);
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use((req, res, next) => {
-  res.set({ 'X-Frame-Options': 'DENY', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin',
+  res.set({ 'X-Frame-Options': 'SAMEORIGIN', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' });
   // Requests that change something must come from our own pages, so another website can't act with a signed-in owner's cookie.
   if (req.method !== 'GET' && req.path.startsWith('/api/') && !req.path.startsWith('/api/public/') && !req.path.startsWith('/api/webook/')) {
@@ -182,6 +186,34 @@ app.use(express.static(PUBLIC));
 const adminOnly = (req, res, next) => req.user.role === 'admin' ? next() : res.status(403).json({ error: 'Only the platform admin can do this.' });
 mountSiteAdmin(app, adminOnly);
 mountUploads(app, () => BIZ(), audit);
+// ---------- Website settings: the owner edits texts and photos; style, sections, languages, addresses and publishing are the admin's ----------
+const siteBase = () => (process.env.SITES_DOMAIN || '').toLowerCase();
+app.get('/api/site', wrap(async (req, res) => {
+  const b = await one('SELECT id, name, vertical, description, site, subdomain, custom_domain FROM businesses WHERE id=$1', [BIZ()]);
+  res.json({ site: siteOf(b), subdomain: b.subdomain, custom_domain: b.custom_domain, sites_domain: siteBase(), is_admin: req.user.role === 'admin',
+    allowed: await hasFeature(BIZ(), 'website'), styles: Object.fromEntries(Object.entries(STYLES).map(([k, v]) => [k, { label: v.label, accent: v.accent }])), sections: SECTIONS, langs: LANGS, id: b.id });
+}));
+app.put('/api/site', wrap(async (req, res) => {
+  const admin = req.user.role === 'admin', b = await one('SELECT id, name, vertical, description, site, subdomain, custom_domain FROM businesses WHERE id=$1', [BIZ()]);
+  const before = siteOf(b), next = mergeSite(before, req.body || {}, admin);
+  if (admin && 'subdomain' in req.body) {
+    const sub = String(req.body.subdomain || '').trim().toLowerCase() || null;
+    if (sub && !validSubdomain(sub)) return res.status(400).json({ error: 'Subdomain: 3 to 40 letters, numbers or dashes, and not a reserved word.' });
+    if (sub && await one('SELECT 1 FROM businesses WHERE subdomain=$1 AND id<>$2', [sub, b.id])) return res.status(409).json({ error: 'That subdomain is taken.' });
+    await q('UPDATE businesses SET subdomain=$1 WHERE id=$2', [sub, b.id]);
+  }
+  if (admin && 'custom_domain' in req.body) {
+    const dom = String(req.body.custom_domain || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '') || null;
+    if (dom && !validDomain(dom)) return res.status(400).json({ error: 'Write the domain like laylabeauty.com' });
+    if (dom && siteBase() && (dom === siteBase() || dom.endsWith('.' + siteBase()))) return res.status(400).json({ error: 'Use the subdomain field for addresses on the platform domain.' });
+    if (dom && await one('SELECT 1 FROM businesses WHERE custom_domain=$1 AND id<>$2', [dom, b.id])) return res.status(409).json({ error: 'That domain is already connected to another business.' });
+    await q('UPDATE businesses SET custom_domain=$1 WHERE id=$2', [dom, b.id]);
+  }
+  removeMedia(b.id, before.gallery.filter(g => !next.gallery.includes(g)));
+  await q('UPDATE businesses SET site=$1 WHERE id=$2', [JSON.stringify(next), b.id]);
+  await audit(req, 'website_saved', admin ? 'admin' : 'owner');
+  res.json({ ok: true, site: next });
+}));
 // Platform operations: usage and cost per client, system health, export and closing a client.
 app.get('/api/admin/usage', adminOnly, wrap(async (req, res) => res.json(await usage(Math.min(Math.max(+req.query.days || 30, 1), 365)))));
 app.get('/api/admin/health', adminOnly, wrap(async (_req, res) => res.json(await health(aiHealth))));

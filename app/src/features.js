@@ -5,7 +5,7 @@ import { q, one } from './db.js';
 // Dashboard sections a login can be given access to.
 export const MODULES = {
   overview: 'Overview and chats', calendar: 'Calendar, bookings and approvals', customers: 'Customers',
-  insights: 'Insights', teach: 'Teach AI', testchat: 'Test chat', setup: 'Business setup', channels: 'Channels',
+  insights: 'Insights', teach: 'Teach AI', testchat: 'Test chat', setup: 'Business setup', channels: 'Channels', website: 'Website',
 };
 
 // Things a plan or add-on can switch on.
@@ -14,10 +14,11 @@ export const FEATURES = {
   teach: 'Teach AI (review, corrections, strict rules)', insights: 'Insights and reports', coupons: 'Discount codes',
   telegram: 'Own Telegram bot', staff_logins: 'Staff logins', marketing: 'Marketing campaigns to opted-in clients',
   remove_branding: 'Remove "Powered by Pulse" from confirmations and the booking page',
+  website: 'Own website (one page, own domain or subdomain)',
 };
 
 // A section that needs a feature: without it the section shows an upgrade message instead.
-export const MODULE_FEATURE = { insights: 'insights', teach: 'teach' };
+export const MODULE_FEATURE = { insights: 'insights', teach: 'teach', website: 'website' };
 
 export const DEFAULT_PLANS = [
   { key: 'starter', name: 'Starter', price: 29, features: ['booking_page', 'webook_listing', 'reminders'] },
@@ -30,6 +31,7 @@ export const DEFAULT_ADDONS = [
   { key: 'staff_addon', name: 'Staff logins', price: 10, features: ['staff_logins'] },
   { key: 'marketing_addon', name: 'Marketing', price: 19, features: ['marketing'] },
   { key: 'whitelabel_addon', name: 'Remove Pulse branding', price: 9, features: ['remove_branding'] },
+  { key: 'website_addon', name: 'Own website', price: 15, features: ['website'] },
 ];
 
 export async function seedPlans() {
@@ -40,6 +42,7 @@ export async function seedPlans() {
   // Features added after a plan was first created reach the top plan once.
   await q(`UPDATE plans SET features = features || '["marketing"]'::jsonb WHERE key='business' AND NOT features ? 'marketing'`);
   await q(`UPDATE plans SET features = features || '["remove_branding"]'::jsonb WHERE key='business' AND NOT features ? 'remove_branding'`);
+  await q(`UPDATE plans SET features = features || '["website"]'::jsonb WHERE key='business' AND NOT features ? 'website'`);
 }
 
 // Plan features, plus add-on features, then the admin's per-business switches (on or off) win.
@@ -65,6 +68,7 @@ const ROUTES = [
   [/^\/api\/insights/, 'insights'],
   [/^\/api\/(learning|review|ai-rules)/, 'teach'],
   [/^\/api\/(test-chat|test-data)/, 'testchat'],
+  [/^\/api\/site/, 'website'],
   [/^\/api\/(business|reminders|coupons)/, 'setup'],
   [/^\/api\/(channels|webook-demo)/, 'channels'],
 ];
