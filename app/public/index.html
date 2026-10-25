@@ -1289,7 +1289,7 @@ function sidebarState(){document.querySelectorAll("nav .ns").forEach(l=>{let n=l
 let me=null;
 const VIEW_MODULE={overview:"overview",calendar:"calendar",people:"customers",analytics:"insights",training:"teach",demo:"testchat",setup:"setup",website:"website"};
 async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();const b=me.business,admin=me.user.role==="admin";
-  $("#adminNav").hidden=!admin;$("#planBar").hidden=false;
+  $("#adminNav").hidden=true;$("#labBtn")&&($("#labBtn").hidden=!admin);$("#planBar").hidden=false;
   // Sections this login can't open disappear; sections the plan doesn't include show a lock.
   document.querySelectorAll("nav button[data-view]").forEach(x=>{const m=VIEW_MODULE[x.dataset.view];if(!m)return;
     x.hidden=!me.modules.includes(m);const f=me.module_feature[m];x.classList.toggle("locked",!admin&&!!f&&!me.features.includes(f));
@@ -1461,7 +1461,7 @@ loadMe().then(()=>{if(me.lab)return;if(canSee("teach"))loadTeach().catch(()=>{})
 // The Lab: the platform admin with no business opened. Only the Command center is shown.
 function enterLab(){window.LAB=true;document.body.classList.add("labmode");
   document.querySelectorAll("nav button[data-view]").forEach(x=>x.hidden=x.id!=="adminNav");document.querySelectorAll("nav .ns").forEach(x=>x.hidden=true);
-  $("#adminNav").hidden=false;$("#planCard").hidden=true;$("#planBar").hidden=false;$("#planBar").classList.remove("adminview");
+  $("#adminNav").hidden=false;$("#labBtn")&&($("#labBtn").hidden=true);$("#planCard").hidden=true;$("#planBar").hidden=false;$("#planBar").classList.remove("adminview");
   $("#planText").innerHTML=`<span class="tag t-book">Lab</span> You're in your Lab. Open a business from the list to work inside it.`;
   $("#adminNav").click()}
 // ---------- Setup: logo, cover photo and menu ----------
