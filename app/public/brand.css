@@ -1,0 +1,23 @@
+/* Pulse brand: a living heartbeat mark (the signal traces, the dot pings, the glow breathes) and a gradient wordmark. */
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&display=swap");
+.pl-brand{display:inline-flex!important;align-items:center;gap:10px;text-decoration:none!important;color:inherit;flex-direction:row!important}
+.pl-mark{width:38px;height:38px;flex:none;display:block;border-radius:13px;animation:pl-breathe 3.2s ease-in-out infinite;will-change:filter}
+.pl-mark svg{width:100%;height:100%;display:block;overflow:visible}
+.pl-trace{stroke-dasharray:100;stroke-dashoffset:100;animation:pl-draw 3.2s cubic-bezier(.65,0,.25,1) infinite}
+.pl-ping{transform-box:fill-box;transform-origin:center;animation:pl-ping 3.2s ease-out infinite}
+.pl-dot{animation:pl-dot 3.2s ease-in-out infinite}
+.pl-word{font-family:"Bricolage Grotesque","Instrument Sans",system-ui,sans-serif;font-weight:800;font-size:23px;line-height:1;letter-spacing:-.05em;
+  background:linear-gradient(95deg,var(--pl-ink) 0%,var(--pl-ink) 42%,#ff4f8b 72%,#8a6bff 100%);background-size:200% 100%;background-position:0 0;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:pl-shine 6.4s ease-in-out infinite;padding-bottom:2px}
+:root,.pl-dark{--pl-ink:#ffffff}
+:root[data-theme="light"]{--pl-ink:#16141f}
+@keyframes pl-draw{0%{stroke-dashoffset:100}55%,82%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+@keyframes pl-ping{0%,52%{transform:scale(1);opacity:0}56%{opacity:.85}100%{transform:scale(3.4);opacity:0}}
+@keyframes pl-dot{0%,50%{opacity:.55}56%,90%{opacity:1}100%{opacity:.55}}
+@keyframes pl-breathe{0%,100%{filter:drop-shadow(0 6px 14px rgba(255,46,126,.38))}50%{filter:drop-shadow(0 8px 24px rgba(124,92,255,.62))}}
+@keyframes pl-shine{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+nav .pl-brand{padding:4px 6px 14px!important}
+nav .pl-brand .pl-mark{width:36px;height:36px}
+@media (prefers-reduced-motion:reduce){.pl-mark,.pl-trace,.pl-ping,.pl-dot,.pl-word{animation:none!important}.pl-trace{stroke-dashoffset:0}}
+html.nomotion .pl-mark,html.nomotion .pl-trace,html.nomotion .pl-ping,html.nomotion .pl-dot,html.nomotion .pl-word{animation:none!important}
+html.nomotion .pl-trace{stroke-dashoffset:0}
