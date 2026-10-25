@@ -4,114 +4,96 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sign in · Pulse</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="/brand.css">
 <link rel="icon" href="/pulse-logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <style>
-:root{--ground:#07090e;--ink:#eef1f8;--ink2:#a9b1c5;--muted:#848da2;--line:rgba(226,232,255,.10);--line2:rgba(226,232,255,.16);
-  --accent:#5b8cff;--bad:#ff7a8a;--good:#38d39f;--ease:cubic-bezier(.23,1,.32,1);color-scheme:dark}
-*{box-sizing:border-box}[hidden]{display:none!important}
+/* Calm and light: neutral greys, soft pill controls, one diagram of the product's own signal. */
+:root{--bg:#fbfbfa;--card:#fff;--ink:#0b0b0c;--ink2:#5b5b61;--mute:#9a9aa1;--line:#ececee;--field:#f4f4f5;--dot:#d9d9de;--beat:#0b0b0c;--soft:#e8f0ff;--soft-ink:#1d4ed8;--bad:#d4183d;
+  --ease:cubic-bezier(.22,1,.36,1);--quick:160ms;--base:240ms;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#09090a;--card:#121214;--ink:#f4f4f5;--ink2:#a1a1aa;--mute:#6b6b73;--line:#1f1f22;--field:#18181b;--dot:#2a2a2e;--beat:#f4f4f5;--soft:#1a2336;--soft-ink:#93b4ff;--bad:#ff5a75;color-scheme:dark}}
+*{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 "Instrument Sans",ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;caret-color:var(--accent);overflow:hidden}
-::selection{background:rgba(91,140,255,.35)}
-#stage{position:fixed;inset:0;width:100%;height:100%;display:block}
-.fallback{position:fixed;inset:0;background:radial-gradient(60vmax 40vmax at 30% 50%,rgba(91,140,255,.18),transparent 70%)}
-.layout{position:relative;z-index:1;min-height:100%;display:grid;grid-template-columns:1fr minmax(320px,400px);align-items:center;gap:48px;padding:40px clamp(20px,6vw,96px)}
-.pitch{align-self:end;max-width:30ch;padding-bottom:6vh;pointer-events:none}
-.pitch h1{font-size:2.5rem;line-height:1.08;letter-spacing:-.03em;font-weight:600;margin:0 0 14px;text-wrap:balance}
-.pitch p{margin:0;color:var(--ink2);font-size:1rem;max-width:34ch}
-.brand{position:fixed;top:28px;left:clamp(20px,6vw,96px);z-index:2;display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.01em}
-.brand i{width:28px;height:28px;border-radius:8px;background:var(--ink);color:var(--ground);display:grid;place-items:center;font-style:normal;font-weight:700}
-/* The card is glass because the 3D scene really is behind it */
-form{display:flex;flex-direction:column;gap:18px;padding:30px 28px;border-radius:18px;
-  background:rgba(16,20,30,.55);border:1px solid var(--line2);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 40px 80px -30px rgba(0,0,0,.8)}
-form h2{font-size:1.25rem;font-weight:600;margin:0;letter-spacing:-.01em}
-#lead{margin:4px 0 0;color:var(--ink2);font-size:.875rem}
-.fields{display:flex;flex-direction:column;gap:14px}
-.fields.out{opacity:0;transform:translateX(-10px);transition:opacity .18s var(--ease),transform .18s var(--ease)}
-.fields.in{animation:in .22s var(--ease)}
-@keyframes in{from{opacity:0;transform:translateX(10px)}}
-label{display:flex;flex-direction:column;gap:6px;font-size:.8125rem;color:var(--ink2);font-weight:500}
-input{font:inherit;color:var(--ink);background:rgba(7,9,14,.6);border:1px solid var(--line2);border-radius:10px;padding:11px 12px;transition:border-color .15s var(--ease),box-shadow .15s var(--ease)}
-input:hover{border-color:rgba(226,232,255,.28)}
-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.2)}
-#code{letter-spacing:.5em;font-size:1.5rem;text-align:center;font-variant-numeric:tabular-nums;padding-left:calc(12px + .5em)}
-button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px;background:var(--accent);color:#06102a;cursor:pointer;transition:transform .16s var(--ease),filter .15s var(--ease)}
-button:hover{filter:brightness(1.08)}
-button:active{transform:scale(.97)}
-button:disabled{opacity:.6;cursor:default;transform:none}
-button:focus-visible{outline:2px solid #fff;outline-offset:3px}
-#err{color:var(--bad);font-size:.875rem;margin:-6px 0 0}
-.foot{font-size:.8125rem;color:var(--muted);margin:0}
-.trust{display:flex;gap:16px;font-size:.75rem;color:var(--muted);margin:0;padding-top:14px;border-top:1px solid var(--line)}
-@media (max-width:860px){.layout{grid-template-columns:1fr;align-content:end;gap:24px;padding-top:96px}.pitch{display:none}form{background:rgba(16,20,30,.7)}}
-@media (prefers-reduced-motion:reduce){.fields.in,.fields.out{animation:none;transition:none}}
-/* true-black flat, matching the dashboard: white pill action, card by lightness, no blur */
-body{background:#000!important}
-form{background:#111!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-radius:16px!important}
-input{background:#000!important;border:1px solid #262626!important}
-input:focus{border-color:#fff!important;box-shadow:0 0 0 3px rgba(255,255,255,.12)!important}
-button{background:#fff!important;color:#000!important;border-radius:999px!important}
-button:hover{background:#e6e6e6!important;filter:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Geist,ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+a{color:inherit}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px clamp(16px,4vw,56px)}
+.brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-weight:600;font-size:17px;letter-spacing:-.02em}
+.brand svg{width:28px;height:28px;display:block}
+.back{font-size:14px;color:var(--ink2);text-decoration:none;padding:8px 14px;border-radius:999px;background:var(--field);transition:background-color var(--quick) var(--ease),color var(--quick) var(--ease)}
+.back:hover{color:var(--ink);background:var(--line)}
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 16px 32px;gap:22px}
+h1{margin:0;font-size:clamp(30px,4.2vw,44px);line-height:1.08;letter-spacing:-.035em;font-weight:600;text-align:center}
+.lede{margin:-10px 0 0;color:var(--ink2);text-align:center;max-width:460px}
+/* the signal: a field of dots where today's pulse rises, annotated like an instrument */
+.signal{width:min(560px,100%);position:relative}
+.signal svg{display:block;width:100%;height:auto;overflow:visible}
+.signal .g{fill:var(--dot)}
+.signal .b{fill:var(--beat);opacity:0}
+.signal .t{font:500 10px "Geist Mono",ui-monospace,monospace;fill:var(--mute)}
+.signal .now{fill:#7c5cff;transform-box:fill-box;transform-origin:center;animation:ping 2.4s var(--ease) infinite}
+@keyframes ping{0%{opacity:.5;transform:scale(1)}70%,100%{opacity:0;transform:scale(3.2)}}
+/* the form */
+form{width:min(380px,100%);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.fields{display:flex;flex-direction:column;gap:12px}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--ink2)}
+input{font:inherit;color:var(--ink);background:var(--field);border:1px solid transparent;border-radius:12px;padding:11px 13px;outline:none;transition:border-color var(--quick) var(--ease),background-color var(--quick) var(--ease),box-shadow var(--quick) var(--ease)}
+input:hover{border-color:var(--line)}
+input:focus{background:var(--card);border-color:var(--ink2);box-shadow:0 0 0 4px var(--line)}
+button{font:inherit;font-weight:600;border:0;border-radius:999px;padding:12px;background:var(--ink);color:var(--bg);cursor:pointer;transition:transform var(--quick) var(--ease),opacity var(--quick) var(--ease)}
+button:hover{opacity:.88}button:active{transform:scale(.98)}button:disabled{opacity:.55;cursor:default}
+button:focus-visible,.back:focus-visible,.brand:focus-visible{outline:2px solid var(--soft-ink);outline-offset:3px}
+#err{margin:0;font-size:13.5px;color:var(--bad)}
+.foot{margin:0;font-size:13px;color:var(--mute);line-height:1.45}
+.trust{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.trust span{font-size:12.5px;color:var(--ink2);background:var(--field);padding:5px 11px;border-radius:999px}
+.step{transition:opacity var(--base) var(--ease),transform var(--base) var(--ease)}
+.out{opacity:0;transform:translateX(-10px)}.in{animation:in var(--base) var(--ease)}
+@keyframes in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+body.ok form{transition:transform var(--base) var(--ease),opacity var(--base) var(--ease);transform:translateY(-6px);opacity:.6}
+[hidden]{display:none!important}
+@media (max-height:760px){.signal{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="fallback" aria-hidden="true"></div>
-<canvas id="stage" aria-hidden="true"></canvas>
-<a class="brand pl-brand pl-dark" href="/pulse" title="Back to the Pulse website"><div class="pl-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><defs><linearGradient id="plgl" x1="4" y1="46" x2="44" y2="2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff7a1a"/><stop offset=".55" stop-color="#ff2e7e"/><stop offset="1" stop-color="#7c5cff"/></linearGradient><radialGradient id="plhl" cx="14" cy="8" r="30" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><rect x="2" y="2" width="44" height="44" rx="14" fill="url(#plgl)"/><rect x="2" y="2" width="44" height="44" rx="14" fill="url(#plhl)"/><rect x="2.5" y="2.5" width="43" height="43" rx="13.5" fill="none" stroke="#fff" stroke-opacity=".35"/><path d="M7 27h7l3-5 4 12 5-22 4 18 3-3h8" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path class="pl-trace" pathLength="100" d="M7 27h7l3-5 4 12 5-22 4 18 3-3h8" fill="none" stroke="#fff" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/><circle class="pl-ping" cx="41" cy="27" r="3" fill="#fff"/><circle class="pl-dot" cx="41" cy="27" r="2.8" fill="#fff"/></svg></div><span class="pl-word">pulse</span></a>
-<div class="layout">
-  <div class="pitch"><h1>Your front desk, answering every message.</h1><p>Bookings, questions and reminders on WhatsApp, Telegram and the web, handled while you work.</p></div>
+<header>
+  <a class="brand" href="/pulse" aria-label="Pulse website"><svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ff6a1f"/><stop offset=".55" stop-color="#ff2e7e"/><stop offset="1" stop-color="#7c5cff"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="13" fill="url(#pg)"/><path d="M8 26h7l3-6 5 13 5-20 4 15 2-2h6" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>pulse</a>
+  <a class="back" href="/pulse">Pulse website</a>
+</header>
+<main>
+  <h1>Sign in to your front desk</h1>
+  <p class="lede">Bookings, questions and reminders on WhatsApp, Telegram and the web, answered while you work.</p>
+  <div class="signal" aria-hidden="true"><svg id="sig" viewBox="0 0 560 120"></svg></div>
   <form id="f" novalidate>
-    <div><h2 id="title">Sign in</h2><p id="lead">Use the email your administrator set up for you.</p></div>
-    <div class="fields" id="step1">
+    <div class="fields step" id="step1">
       <label for="em">Email<input id="em" type="text" autocomplete="username" inputmode="email" required autofocus></label>
       <label for="pw">Password<input id="pw" type="password" autocomplete="current-password" required></label>
     </div>
-    <div class="fields" id="step2" hidden>
+    <div class="fields step" id="step2" hidden>
       <label for="code">6-digit code from your authenticator app<input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7"></label>
     </div>
+    <p id="title" hidden></p><p id="lead" hidden></p>
     <p id="err" hidden role="alert"></p>
     <button id="go">Sign in</button>
     <p class="foot">Forgot your password or lost your phone? Ask your administrator. They confirm who you are before resetting anything.</p>
-    <p class="trust">Encrypted connection · Two-factor sign-in · Every sign-in recorded</p>
   </form>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <div class="trust"><span>Encrypted connection</span><span>Two-factor sign-in</span><span>Every sign-in recorded</span></div>
+</main>
 <script>
-// 3D: one glossy ring lit in the brand colours. It leans toward the pointer and spins once on sign-in.
-let spin=0;
-(function(){
-  if(!window.THREE)return;
-  const canvas=document.getElementById("stage");let renderer;
-  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true})}catch{return}
-  document.querySelector(".fallback").hidden=true;
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(35,1,.1,100);cam.position.set(0,0,9);
-  const mat=new THREE.MeshPhysicalMaterial({color:0x0d1328,metalness:.8,roughness:.22,clearcoat:1,clearcoatRoughness:.06,reflectivity:1});
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,.52,96,220),mat);
-  const inner=new THREE.Mesh(new THREE.TorusGeometry(1.6,.18,48,160),new THREE.MeshPhysicalMaterial({color:0x5b8cff,emissive:0x0c1d4a,metalness:.5,roughness:.3,clearcoat:1}));
-  inner.rotation.x=Math.PI/2.3;const group=new THREE.Group();group.add(ring,inner);scene.add(group);
-  scene.add(new THREE.AmbientLight(0x2a3350,.35));
-  const l1=new THREE.PointLight(0x5b8cff,9,30);l1.position.set(-4,3,5);
-  const l2=new THREE.PointLight(0xd65cff,6,30);l2.position.set(5,-2,4);
-  const l3=new THREE.PointLight(0xffffff,3.5,30);l3.position.set(1,5,6);scene.add(l1,l2,l3);
-  const still=matchMedia("(prefers-reduced-motion: reduce)").matches;let tx=0,ty=0,rx=0,ry=0;
-  addEventListener("pointermove",e=>{tx=(e.clientX/innerWidth-.5);ty=(e.clientY/innerHeight-.5)},{passive:true});
-  function size(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();
-    group.position.x=w>860?-Math.min(2.3,w/560):0;group.position.y=w>860?.85:1.9;group.scale.setScalar(w>860?.72:.55)}
-  addEventListener("resize",size);size();
-  const t0=performance.now();
-  (function frame(t){const s=(t-t0)/1000;
-    rx+=(ty*.6-rx)*.06;ry+=(tx*.9-ry)*.06;
-    group.rotation.x=.45+rx+(still?0:Math.sin(s*.4)*.06);group.rotation.y=ry+(still?0:s*.18)+spin;
-    if(spin>0)spin+=(Math.PI*2-spin)*.08;
-    l1.position.x=-4+Math.sin(s*.5)*1.2;renderer.render(scene,cam);requestAnimationFrame(frame)})(t0);
-})();
-
+// The signal: a 40 x 7 field of dots; the dots under a heartbeat trace are inked, and three moments of a day are annotated.
+(function(){const svg=document.getElementById("sig");if(!svg)return;const C=40,R=7,W=560,H=120,dx=W/(C-1),y0=14,dy=(H-28)/(R-1);
+  const beat=[3,3,3,3,3,3,3,3,2,4,3,3,0,6,1,3,3,3,3,3,3,3,3,2,4,3,3,0,6,1,3,3,3,3,3,3,3,3,3,3];
+  let g="";for(let c=0;c<C;c++)for(let r=0;r<R;r++){const on=r===beat[c];g+=`<circle class="${on?"b":"g"}" cx="${(c*dx).toFixed(1)}" cy="${(y0+r*dy).toFixed(1)}" r="${on?2.6:1.5}"/>`}
+  const tag=(c,txt,up)=>{const x=c*dx,y=y0+beat[c]*dy;return `<line x1="${x}" y1="${y+(up?-6:6)}" x2="${x}" y2="${up?2:H-2}" stroke="var(--dot)" stroke-width="1"/><text class="t" x="${x+6}" y="${up?8:H-2}">${txt}</text>`};
+  const pts=beat.map((r,c)=>`${(c*dx).toFixed(1)},${(y0+r*dy).toFixed(1)}`).join(" ");
+  g=`<defs><linearGradient id="tr" x1="0" x2="1"><stop offset="0" stop-color="#ff6a1f"/><stop offset=".55" stop-color="#ff2e7e"/><stop offset="1" stop-color="#7c5cff"/></linearGradient></defs>`+g+`<polyline points="${pts}" fill="none" stroke="url(#tr)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  g+=tag(12,"09:14  booking confirmed",true)+tag(27,"13:02  question answered",false);
+  const last=C-1,lx=last*dx,ly=y0+beat[last]*dy;g+=`<circle class="now" cx="${lx}" cy="${ly}" r="3"/><text class="t" x="${lx-22}" y="${ly-12}">now</text>`;
+  svg.innerHTML=g})();
+</script>
+<script>
 const $=id=>document.getElementById(id);let ticket=null;
-function swap(){$("step1").classList.add("out");setTimeout(()=>{$("step1").hidden=true;$("step2").hidden=false;$("step2").classList.add("in");$("code").focus()},180)}
+function swap(){document.querySelector("h1").textContent="Two-factor check";$("step1").classList.add("out");setTimeout(()=>{$("step1").hidden=true;$("step2").hidden=false;$("step2").classList.add("in");$("code").focus()},180)}
 $("f").onsubmit=async e=>{e.preventDefault();const err=$("err");err.hidden=true;
   if(!ticket&&(!$("em").value.trim()||!$("pw").value)){err.textContent="Enter your email and password.";err.hidden=false;return}
   if(ticket&&!/^\d{6}$/.test($("code").value.replace(/\D/g,""))){err.textContent="Enter the 6-digit code.";err.hidden=false;return}
@@ -120,8 +102,8 @@ $("f").onsubmit=async e=>{e.preventDefault();const err=$("err");err.hidden=true;
       :await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:$("em").value,password:$("pw").value})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok){if(ticket&&/took too long/.test(j.error||"")){ticket=null;$("step2").hidden=true;$("step1").hidden=false;$("step1").classList.remove("out")}throw new Error(j.error||"Couldn't sign in. Try again.")}
-    if(j.need_code){ticket=j.ticket;swap();$("title").textContent="Two-factor check";$("lead").textContent="Open your authenticator app and enter the current code.";$("go").textContent="Verify and sign in";$("go").disabled=false;return}
-    spin=.001;$("go").textContent="Signed in";setTimeout(()=>location.href="/",650)}
+    if(j.need_code){ticket=j.ticket;swap();$("title").textContent="Two-factor check";$("lead").textContent="Open your authenticator app and enter the current code.";$("lead").hidden=false;$("lead").className="foot";$("go").textContent="Verify and sign in";$("go").disabled=false;return}
+    document.body.classList.add("ok");$("go").textContent="Signed in";setTimeout(()=>location.href="/",650)}
   catch(x){err.textContent=x.message;err.hidden=false;$("go").textContent=ticket?"Verify and sign in":"Sign in";$("go").disabled=false}};
 </script>
 </body>
