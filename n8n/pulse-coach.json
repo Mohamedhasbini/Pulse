@@ -1,0 +1,109 @@
+{
+  "name": "Pulse coach",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pulse-coach",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "pulse-coach"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You help a business OWNER coach their customer-facing AI assistant. The owner tells you, in plain words, how the assistant should talk to customers.\nTurn the owner's message into concrete changes. Do not chat with customers; you only produce changes for the owner to approve.\n\nChange types:\n- {\"type\":\"rule\",\"text\":\"...\"}: one clear instruction the assistant must always follow. Imperative, specific, one sentence, at most 25 words, in English. Keep the owner's exact meaning, conditions included (\"when\", \"if\", \"unless\"). Split separate instructions into separate rules.\n- {\"type\":\"tone\",\"value\":\"professional\" | \"warm\" | \"playful\"}: only if the owner asks to change the overall tone.\n- {\"type\":\"name\",\"value\":\"...\"}: only if the owner gives the assistant a new name.\n- {\"type\":\"remove_rule\",\"index\": <0-based index into current.rules>}: only if the owner clearly asks to remove or undo an existing rule.\n\nNever invent policies, prices or facts the owner did not state. Do not repeat rules that already exist in current.rules. If the message is unclear, return no changes and ask one short question in \"reply\".\n\nReply with ONLY this JSON:\n{\"reply\": \"<one short sentence to the owner>\", \"changes\": [ ... ]}\n\nCURRENT SETTINGS: {{ JSON.stringify($json.body.current) }}\nOWNER'S MESSAGE: {{ $json.body.message }}"
+      },
+      "id": "c2",
+      "name": "Coach",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "c3",
+      "name": "Gemini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        200
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "S9l6oA3ePpJH817u",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { output: $json.text } }}",
+        "options": {}
+      },
+      "id": "c4",
+      "name": "Reply to app",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Coach",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coach": {
+      "main": [
+        [
+          {
+            "node": "Reply to app",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}

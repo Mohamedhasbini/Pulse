@@ -103,3 +103,55 @@ nav .ns{font-size:10.5px!important;margin:10px 8px 3px!important}
   #setup .form>label:not(.switch)>small{grid-column:1}
 }
 #setup.setlay>.spane>.card,#setup.setlay>.spane>.fit2,#setup.setlay>.spane>.grid2{flex:none!important}
+
+/* ---------- Command center: index + client manager ---------- */
+#admin{--set-line:color-mix(in srgb,var(--ink) 9%,transparent)}
+#admin.cclay>#ccTabs{display:none!important}
+#admin.cclay:not([hidden]){display:grid!important;grid-template-columns:230px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:0 18px!important;align-content:start}
+#admin.cclay>.top{grid-column:1/-1;margin-bottom:10px!important}
+#admin.cclay>.setnav{grid-row:2}
+.ccmain{grid-column:2;grid-row:2;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px}
+.ccmain>div[hidden]{display:none!important}
+.ccmain>div{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:visible!important}
+.ccmain .card,.ccmain .card.glass{background:transparent!important;box-shadow:none!important;border:1px solid var(--set-line)}
+.ccmain .form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 14px!important}
+.ccmain .form>label{font-size:12.5px;color:var(--ink2);gap:4px}
+/* client manager */
+.cm{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px;min-height:0;align-items:start}
+.cm-list{position:sticky;top:0;display:flex;flex-direction:column;border:1px solid var(--set-line);border-radius:12px;padding:8px;max-height:calc(100dvh - 150px)}
+.cm-tools{display:flex;gap:6px;margin-bottom:6px}.cm-tools input{flex:1;min-width:0}.cm-tools select{width:auto}
+.cm-rows{overflow:auto;display:flex;flex-direction:column;gap:2px;min-height:0}
+.cm-row{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px}
+.cm-row:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)}.cm-row[aria-current=true]{background:color-mix(in srgb,var(--ink) 10%,transparent)}
+.cm-av{width:30px;height:30px;flex:none;border-radius:9px;display:grid;place-items:center;font-weight:700;font-size:13px;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent-text,var(--accent))}
+.cm-av.big{width:44px;height:44px;border-radius:12px;font-size:18px}
+.cm-txt{min-width:0;flex:1;display:flex;flex-direction:column}.cm-txt b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cm-txt small{font-size:11.5px;color:var(--muted)}
+.cm-meta{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.cm-meta small{font-size:11px;color:var(--muted)}
+.cm-detail{border:1px solid var(--set-line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.cm-head{display:flex;gap:12px;align-items:center}.cm-head h2{font-size:17px!important;margin:0}.cm-head small{color:var(--muted);font-size:12px}
+.cm-acts{display:flex;gap:6px;flex-wrap:wrap}
+.cm-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.cm-stats div{border:1px solid var(--set-line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}.cm-stats span{font-size:11px;color:var(--muted)}.cm-stats b{font-size:15px}
+.cm-sec{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--set-line)}
+.cm-sec h3{margin:0;font-size:13px;font-weight:600;display:flex;gap:8px;align-items:baseline}.cm-sec h3 small{font-weight:400;color:var(--muted);font-size:11.5px}
+.cm-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cm-grid2 label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink2)}
+.cm-note{font-size:12.5px;color:var(--ink2)}
+.cm-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.cm-card{display:flex;gap:10px;align-items:center;border:1px solid var(--set-line);border-radius:10px;padding:9px 10px;cursor:pointer}
+.cm-card:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.cm-card span{display:flex;flex-direction:column}.cm-card b{font-size:12.5px;font-weight:600}.cm-card small{font-size:11.5px;color:var(--muted)}
+.cm-feats{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:0 18px}
+.cm-feat{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--set-line);font-size:12.5px}
+.seg3{display:flex;border:1px solid var(--set-line);border-radius:8px;padding:2px;flex:none}
+.seg3 button{all:unset;cursor:pointer;font-size:11.5px;padding:3px 8px;border-radius:6px;color:var(--ink2)}
+.seg3 button[aria-pressed=true]{background:color-mix(in srgb,var(--ink) 12%,transparent);color:var(--ink);font-weight:600}
+.seg3 button[data-v=on][aria-pressed=true]{background:color-mix(in srgb,var(--good) 22%,transparent)}.seg3 button[data-v=off][aria-pressed=true]{background:color-mix(in srgb,var(--bad) 22%,transparent)}
+.cm-save{display:flex;gap:8px;align-items:center;position:sticky;bottom:0;padding:8px 0;background:linear-gradient(transparent,var(--ground,var(--bg)) 35%)}
+.cm-sec.danger h3{color:var(--bad)}
+@media (max-width:1100px){.cm{grid-template-columns:1fr}.cm-list{position:static;max-height:300px}}
+@media (max-width:980px){#admin.cclay:not([hidden]){grid-template-columns:1fr}#admin.cclay>.setnav{grid-row:auto;position:static;flex-direction:row;flex-wrap:wrap;justify-content:flex-start}#admin.cclay>.setnav h3{width:100%}.ccmain{grid-column:1;grid-row:auto}.ccmain .form{grid-template-columns:1fr!important}.cm-grid2{grid-template-columns:1fr}}
+#admin #ccBiz,#admin #ccUsers,#admin #ccAudit,#admin #ccPlans,#admin #ccNew,#admin #ccLeads,#admin #ccPlatform{overflow:visible!important;flex:none!important;height:auto!important}
+#admin #plList{grid-auto-flow:row!important;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))!important;overflow:visible!important}
+.cm-card{flex-direction:row!important;justify-content:flex-start!important}.cm-card input{width:16px!important;height:16px;flex:none;margin:0}
+.cm-acts a.btn,.ccmain a.btn{text-decoration:none}
+.cm-feat label,.cm-grid2 select{width:100%}

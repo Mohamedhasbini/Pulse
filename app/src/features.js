@@ -66,7 +66,7 @@ const ROUTES = [
   [/^\/api\/(customers|marketing)/, 'customers'],
   [/^\/api\/tools/, 'setup'],
   [/^\/api\/insights/, 'insights'],
-  [/^\/api\/(learning|review|ai-rules)/, 'teach'],
+  [/^\/api\/(learning|review|ai-rules|coach)/, 'teach'],
   [/^\/api\/(test-chat|test-data)/, 'testchat'],
   [/^\/api\/site/, 'website'],
   [/^\/api\/(business|reminders|coupons)/, 'setup'],

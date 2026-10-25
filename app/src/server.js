@@ -12,6 +12,7 @@ import { mountPublic } from './public.js';
 import { mountWeBook } from './webook.js';
 import { mountSite, mountSiteAdmin } from './site.js';
 import { mountMedia, mountUploads, usage, exportBusiness, closeBusiness, health, startMonitor, sealExistingSecrets, removeMedia } from './ops.js';
+import { mountCoach } from './coach.js';
 import { mountClientSites, siteOf, mergeSite, STYLES, SECTIONS, LANGS, validSubdomain, validDomain } from './sitegen.js';
 import { seedDemo, removeDemo } from './demo.js';
 import { startTelegram, sendTelegram, telegramStatus, connectTelegram, stopBot } from './telegram.js';
@@ -186,6 +187,7 @@ app.use(express.static(PUBLIC));
 const adminOnly = (req, res, next) => req.user.role === 'admin' ? next() : res.status(403).json({ error: 'Only the platform admin can do this.' });
 mountSiteAdmin(app, adminOnly);
 mountUploads(app, () => BIZ(), audit);
+mountCoach(app, () => BIZ(), audit, wrap);
 // ---------- Website settings: the owner edits texts and photos; style, sections, languages, addresses and publishing are the admin's ----------
 const siteBase = () => (process.env.SITES_DOMAIN || '').toLowerCase();
 app.get('/api/site', wrap(async (req, res) => {
