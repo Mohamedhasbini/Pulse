@@ -7,3 +7,4 @@ a.txt
 o.txt
 tid.txt
 .claude/settings.local.json
+.playwright-mcp/
