@@ -345,3 +345,9 @@ ALTER TABLE messages ADD COLUMN IF NOT EXISTS options JSONB;
 -- Uploaded photos and menus live in the database too, so a server whose disk is wiped (cloud hosting) keeps them.
 CREATE TABLE IF NOT EXISTS media (business_id int NOT NULL, file text NOT NULL, mime text NOT NULL, data bytea NOT NULL, created_at timestamptz DEFAULT now(), PRIMARY KEY (business_id, file));
 
+
+-- Messages the AI could not answer on the spot (rate limit, AI down): answered later, oldest first.
+CREATE TABLE IF NOT EXISTS ai_queue (id serial PRIMARY KEY, conversation_id int NOT NULL, business_id int NOT NULL, channel text NOT NULL, phone text NOT NULL, name text,
+  text text NOT NULL, status text NOT NULL DEFAULT 'waiting', attempts int NOT NULL DEFAULT 0, next_at timestamptz NOT NULL DEFAULT now(), error text, created_at timestamptz DEFAULT now());
+CREATE INDEX IF NOT EXISTS ai_queue_due ON ai_queue (status, next_at);
+

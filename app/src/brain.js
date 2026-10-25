@@ -15,6 +15,19 @@ const SLOW = "Sorry, I'm a bit slow right now. Could you send that again in a mo
 // Last result of talking to the AI, shown on the dashboard.
 export const aiHealth = { ok: null, at: null, ms: null, error: null };
 
+// AI pacing: the AI plan allows only so many replies a minute (Gemini free tier: 15). Pulse stays under it
+// instead of being refused; what doesn't fit waits in ai_queue and is answered as soon as there is room.
+const AI_RPM = Math.max(1, +process.env.AI_RPM || 14);
+const aiCalls = [];
+function takeAiSlot() {
+  const now = Date.now();
+  while (aiCalls.length && now - aiCalls[0] > 60000) aiCalls.shift();
+  if (aiCalls.length >= AI_RPM) return false;
+  aiCalls.push(now); return true;
+}
+const HOLD = "Thanks for your message! I'm checking and will reply here in a moment. 🙏";
+const HOLD_AR = 'شكراً لرسالتك! أتحقق الآن وسأرد عليك هنا خلال لحظات. 🙏';
+
 export async function loadBusiness(id) {
   const biz = await one('SELECT * FROM businesses WHERE id=$1', [id]);
   if (biz) biz.services = await q('SELECT * FROM services WHERE business_id=$1 AND active ORDER BY id', [id]);
@@ -30,7 +43,8 @@ async function openConversation(bizId, customerId, channel) {
   return one('INSERT INTO conversations (business_id, customer_id, channel) VALUES ($1,$2,$3) RETURNING *', [bizId, customerId, channel]);
 }
 
-export async function handleMessage({ businessId, phone, name, text, channel = 'whatsapp', waId = null }) {
+// queued: a second pass from the AI queue; the customer's message is already saved and acknowledged.
+export async function handleMessage({ businessId, phone, name, text, channel = 'whatsapp', waId = null, queued = false }) {
   const biz = await loadBusiness(businessId);
   const customer = await one(
     `INSERT INTO customers (business_id, phone, name) VALUES ($1,$2,$3)
@@ -39,8 +53,10 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   // Same phone or email as an existing client: one client, every channel's history together.
   Object.assign(customer, await unify(businessId, customer.id) || {});
   const conv = await openConversation(businessId, customer.id, channel);
-  if (waId && await one('SELECT 1 FROM messages WHERE wa_id=$1', [waId])) return { duplicate: true };
-  await q('INSERT INTO messages (conversation_id, role, text, wa_id) VALUES ($1,$2,$3,$4)', [conv.id, 'customer', text, waId]);
+  if (!queued) {
+    if (waId && await one('SELECT 1 FROM messages WHERE wa_id=$1', [waId])) return { duplicate: true };
+    await q('INSERT INTO messages (conversation_id, role, text, wa_id) VALUES ($1,$2,$3,$4)', [conv.id, 'customer', text, waId]);
+  }
 
   // Staff took over this chat: the AI stays quiet and the owner is alerted.
   if (conv.ai_paused) {
@@ -110,18 +126,38 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   let decision, failed = false;
   const t0 = Date.now();
   try {
-    const chit = smallTalk(text);
+    const chit = !queued && smallTalk(text);
     if (chit) decision = { reply: chit, action: 'none', quick: true };
+    else if (!takeAiSlot()) throw Object.assign(new Error('AI limit reached for this minute'), { busy: true });
     else try { decision = await askN8n(context, +process.env.AI_TIMEOUT_MS || 15000); }
-    catch (first) { console.warn('AI slow or failed, retrying once:', first.message); decision = await askN8n(context, 15000); }
-    if (!chit) Object.assign(aiHealth, { ok: true, at: new Date(), ms: Date.now() - t0, error: null });
+    catch (first) {
+      if (!takeAiSlot()) throw first;
+      console.warn('AI slow or failed, retrying once:', first.message); decision = await askN8n(context, 15000);
+    }
+    if (!chit) {
+      Object.assign(aiHealth, { ok: true, at: new Date(), ms: Date.now() - t0, error: null });
+      // answered live: an older queued copy of this chat would only repeat it
+      await q(`DELETE FROM ai_queue WHERE conversation_id=$1 AND status='waiting'`, [conv.id]);
+    }
   } catch (e) {
-    console.error('n8n call failed:', e.message);
-    Object.assign(aiHealth, { ok: false, at: new Date(), ms: Date.now() - t0, error: e.message });
+    if (queued) throw e; // the queue worker retries later
+    if (!e.busy) {
+      console.error('n8n call failed:', e.message);
+      Object.assign(aiHealth, { ok: false, at: new Date(), ms: Date.now() - t0, error: e.message });
+    }
     failed = true;
-    // Safety net: answer basic questions straight from the setup so the customer is never stuck.
+    // Safety net: answer basic questions straight from the setup; anything else is queued for the AI.
     const quick = quickAnswer(biz, text);
-    decision = quick ? { reply: quick, action: 'none', quick: true } : { reply: SLOW, action: 'handoff' };
+    if (quick) decision = { reply: quick, action: 'none', quick: true };
+    else {
+      const added = await one(`INSERT INTO ai_queue (conversation_id, business_id, channel, phone, name, text)
+          SELECT $1,$2,$3,$4,$5,$6 WHERE NOT EXISTS (SELECT 1 FROM ai_queue WHERE conversation_id=$1 AND status IN ('waiting','working')) RETURNING id`,
+        [conv.id, businessId, channel, phone, name || null, text]);
+      // already waiting in the queue: that answer will cover this message too, so no second "in a moment"
+      if (!added) { await q('UPDATE conversations SET updated_at=now() WHERE id=$1', [conv.id]); return { reply: null, queued: true, outcome: conv.outcome, conversationId: conv.id }; }
+      decision = { reply: AR.test(text) ? HOLD_AR : HOLD, action: 'none', quick: true };
+      failed = false;
+    }
   }
   const ms = Date.now() - t0;
 
@@ -503,4 +539,43 @@ export function cleanOptions(list) {
   if (!Array.isArray(list)) return [];
   const seen = new Set();
   return list.map(o => String(o ?? '').replace(/\s+/g, ' ').trim()).filter(o => o && o.length <= 24 && !seen.has(o.toLowerCase()) && seen.add(o.toLowerCase())).slice(0, 10);
+}
+
+// ---------- AI queue: answers what could not be answered on the spot ----------
+// Oldest first, only while the AI pace allows, never two at once for the same chat. A reply is delivered on
+// the customer's channel by `deliver` (WhatsApp/Telegram); test chat and WeBook read it from the chat itself.
+export function startAiQueue(deliver) {
+  q(`UPDATE ai_queue SET status='waiting' WHERE status='working'`).catch(() => {});
+  let busy = false;
+  setInterval(async () => {
+    if (busy) return; busy = true;
+    try {
+      for (;;) {
+        if (aiCalls.length >= AI_RPM && Date.now() - aiCalls[0] < 60000) break;
+        const job = await one(`UPDATE ai_queue SET status='working', attempts=attempts+1 WHERE id = (
+            SELECT id FROM ai_queue WHERE status='waiting' AND next_at <= now() ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING *`);
+        if (!job) break;
+        try {
+          const r = await handleMessage({ businessId: job.business_id, phone: job.phone, name: job.name, text: job.text, channel: job.channel, queued: true });
+          await q('DELETE FROM ai_queue WHERE id=$1', [job.id]);
+          if (r.reply) await deliver({ channel: job.channel, businessId: job.business_id, phone: job.phone, reply: r.reply, options: r.options }).catch(e => console.error('Queue delivery:', e.message));
+        } catch (e) {
+          // no AI room this minute: not a real try, back to the front of the line
+          if (e.busy) { await q(`UPDATE ai_queue SET status='waiting', attempts=attempts-1 WHERE id=$1`, [job.id]); break; }
+          if (job.attempts >= 6) {
+            await q(`UPDATE ai_queue SET status='failed', error=$2 WHERE id=$1`, [job.id, e.message.slice(0, 300)]);
+            await q(`UPDATE conversations SET needs_attention=true, attention_reason='The AI could not answer this customer. Please reply yourself.' WHERE id=$1`, [job.conversation_id]);
+            await notify(job.business_id, 'handoff', 'A customer is waiting for a reply', job.text.slice(0, 200), { conversationId: job.conversation_id }).catch(() => {});
+          } else {
+            // not answered: wait 20 s, 40 s, 80 s... (rate limits clear within a minute)
+            await q(`UPDATE ai_queue SET status='waiting', error=$2, next_at=now() + make_interval(secs => 20 * power(2, attempts - 1)) WHERE id=$1`, [job.id, e.message.slice(0, 300)]);
+          }
+        }
+      }
+    } catch (e) { console.error('AI queue:', e.message); } finally { busy = false; }
+  }, 3000);
+}
+export async function aiQueueStatus(businessId) {
+  return one(`SELECT count(*) FILTER (WHERE status IN ('waiting','working'))::int AS waiting, count(*) FILTER (WHERE status='failed')::int AS failed,
+      extract(epoch FROM now() - min(created_at) FILTER (WHERE status IN ('waiting','working')))::int AS oldest_s FROM ai_queue WHERE business_id=$1`, [businessId]);
 }

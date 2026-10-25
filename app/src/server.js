@@ -5,7 +5,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { hashPassword, checkPassword, newPassword, signSession, readSession, signTicket, readTicket, newTotpSecret, checkTotp, totpUrl, newEmailCode, hashCode, weakPassword, ensureAdmin, createBusiness } from './accounts.js';
 import { MODULES, FEATURES, MODULE_FEATURE, featuresOf, hasFeature, canOpen, moduleOf, seedPlans } from './features.js';
 import { q, one, migrate, withBusinessLock } from './db.js';
-import { handleMessage, loadBusiness, aiHealth } from './brain.js';
+import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus } from './brain.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
 import { sendWhatsApp, validSignature, parseIncoming, validKapsoSignature, parseKapso, whatsappReady } from './whatsapp.js';
 import { mountPublic } from './public.js';
@@ -619,6 +619,9 @@ app.post('/api/test-chat', wrap(async (req, res) => {
   res.json(await handleMessage({ businessId: BIZ(), phone: req.body.phone || 'test-user', name: req.body.name, text, channel: 'test' }));
 }));
 
+// Messages waiting for the AI (rate limit or AI down) and how long the oldest has waited.
+app.get('/api/ai-queue', wrap(async (_req, res) => res.json(await aiQueueStatus(BIZ()))));
+
 // ---------- Dashboard numbers ----------
 // Every number comes straight from the database for the chosen period.
 app.get('/api/stats', wrap(async (req, res) => {
@@ -1168,6 +1171,15 @@ if (process.env.WEBOOK_DEMO !== '0') seedDemo().then(n => n && console.log(`Adde
 const PORT = process.env.PORT || 3100;
 app.listen(PORT, () => console.log(`Ringback running on http://localhost:${PORT}`));
 startReminders();
+startAiQueue(async ({ channel, businessId, phone, reply, options }) => {
+  if (channel === 'whatsapp') {
+    const b = await one('SELECT wa_phone_number_id FROM businesses WHERE id=$1', [businessId]);
+    if (b?.wa_phone_number_id) await sendWhatsApp(b.wa_phone_number_id, phone, reply, options);
+  } else if (channel === 'telegram') {
+    const c = await one('SELECT telegram_chat_id FROM customers WHERE business_id=$1 AND phone=$2', [businessId, phone]);
+    if (c?.telegram_chat_id) await sendTelegram(c.telegram_chat_id, reply, businessId, options);
+  }
+});
 await sealExistingSecrets().catch(e => console.error('Encrypt secrets:', e.message));
 startTelegram();
 startMonitor(aiHealth);

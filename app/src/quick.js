@@ -30,6 +30,8 @@ export function quickAnswer(biz, text) {
   const svc = (biz.services || []).find(s => t.includes(norm(s.name)) || norm(s.name).split(' ').some(w => w.length > 3 && t.includes(w))
     || norm(s.name).split(' ').some(w => (ALIASES[w] || []).some(a => t.includes(a))));
   const asksPrice = /price|cost|how much|بقديش|كم|سعر|قديش/.test(t), asksTime = /how long|time|duration|minutes|takes|قديش بياخد|مدة|وقت/.test(t);
+  // Booking, rescheduling or free times need live availability: never a saved answer (it would offer stale slots).
+  if (/\b(book|booking|appointment|reserve|reservation|reschedule|cancel|slot|slots|available|availability|free time)\b|احجز|حجز|موعد|بدي روح/.test(t)) return null;
 
   // 1) Saved FAQ that clearly matches (most specific: written by the owner)
   const q = words(text);
