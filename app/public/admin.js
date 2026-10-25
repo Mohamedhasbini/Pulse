@@ -110,6 +110,6 @@ const oldCard=$("#abList")?.closest(".card");if(oldCard)oldCard.hidden=true;
 const nav=document.querySelector("nav"),brand=nav&&nav.querySelector(".brand"),admin=document.getElementById("adminNav");if(!brand||!admin)return;
 const b=document.createElement("button");b.type="button";b.id="labBtn";b.hidden=true;b.title="Back to your Lab (Command center)";
 b.innerHTML=`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>Back to Lab</span>`;
-brand.after(b);b.onclick=()=>admin.click();
-const sync=()=>{b.hidden=admin.hidden};sync();new MutationObserver(sync).observe(admin,{attributes:true,attributeFilter:["hidden"]});
+brand.after(b);b.onclick=async()=>{await req("/api/admin/lab","POST");location.href="/"};
+const sync=()=>{b.hidden=admin.hidden||!!window.LAB};sync();new MutationObserver(sync).observe(admin,{attributes:true,attributeFilter:["hidden"]});
 })();

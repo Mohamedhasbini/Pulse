@@ -526,7 +526,7 @@ const nice=(d,o)=>d.toLocaleString("en-GB",o);
 let bizOffset=0;const bizNow=()=>new Date(Date.now()+bizOffset);
 function syncNow(s){if(s)bizOffset=L(s)-Date.now()+new Date().getSeconds()*1000}
 
-async function req(p,method="GET",body){const r=await fetch(p,{method,headers:{"Content-Type":"application/json"},body:body&&JSON.stringify(body)});
+async function req(p,method="GET",body){if(window.LAB&&/^\/api\/(?!me(\/|$)|admin\/|logout$|verticals$)/.test(p))return new Promise(()=>{});const r=await fetch(p,{method,headers:{"Content-Type":"application/json"},body:body&&JSON.stringify(body)});
   if(r.status===401){location.href="/login";throw new Error("Signed out")}
   const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||"Something went wrong."),{status:r.status});return j}
 let tm;function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("on");clearTimeout(tm);tm=setTimeout(()=>e.classList.remove("on"),2800)}
@@ -1288,7 +1288,7 @@ function sidebarState(){document.querySelectorAll("nav .ns").forEach(l=>{let n=l
 // ---------- account, plan, permissions ----------
 let me=null;
 const VIEW_MODULE={overview:"overview",calendar:"calendar",people:"customers",analytics:"insights",training:"teach",demo:"testchat",setup:"setup",website:"website"};
-async function loadMe(){me=await req("/api/me");const b=me.business,admin=me.user.role==="admin";
+async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();const b=me.business,admin=me.user.role==="admin";
   $("#adminNav").hidden=!admin;$("#planBar").hidden=false;
   // Sections this login can't open disappear; sections the plan doesn't include show a lock.
   document.querySelectorAll("nav button[data-view]").forEach(x=>{const m=VIEW_MODULE[x.dataset.view];if(!m)return;
@@ -1303,9 +1303,9 @@ async function loadMe(){me=await req("/api/me");const b=me.business,admin=me.use
   const plan=b.plan_status==="active"?"Subscription active":b.plan_status==="paused"?"Paused":b.trial_days_left>0?`Free trial: ${b.trial_days_left} day${b.trial_days_left===1?"":"s"} left`:"Trial ended";
   if(me.edition==="product"&&!admin){$("#planText").innerHTML=me.user.totp_enabled||me.user.role==="staff"?"":`<a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor sign-in</a>`;$("#planBar").hidden=!$("#tfNudge");$("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});return}
   $("#planBar").classList.toggle("adminview",admin);
-  $("#planText").innerHTML=(admin?`<span class="tag t-attn">Admin view</span> You're inside <b>${esc(b.name)}</b>'s dashboard. Their logins only ever see their own business, never Businesses or other clients. <a href="#" id="backCC" class="tag" style="text-decoration:none">← Back to Command center</a> · `:"")+`<span class="tag ${b.plan_status==="active"?"t-book":b.trial_days_left>0?"t-faq":"t-hand"}">${esc(b.plan_name||"No plan")} · ${plan}</span> <span style="color:var(--muted)">${esc([b.country,b.currency,b.timezone].filter(Boolean).join(" · "))}</span>`
+  $("#planText").innerHTML=(admin?`<span class="tag t-attn">Admin view</span> You're inside <b>${esc(b.name)}</b>'s dashboard. Their logins only ever see their own business, never Businesses or other clients. <a href="#" id="backCC" class="tag" style="text-decoration:none">← Back to Lab</a> · `:"")+`<span class="tag ${b.plan_status==="active"?"t-book":b.trial_days_left>0?"t-faq":"t-hand"}">${esc(b.plan_name||"No plan")} · ${plan}</span> <span style="color:var(--muted)">${esc([b.country,b.currency,b.timezone].filter(Boolean).join(" · "))}</span>`
     +(me.user.totp_enabled||me.user.role==="staff"?"":` <a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor</a>`);
-  $("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});$("#backCC")&&($("#backCC").onclick=e=>{e.preventDefault();$("#adminNav").click()})}
+  $("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});$("#backCC")&&($("#backCC").onclick=async e=>{e.preventDefault();await req("/api/admin/lab","POST");location.href="/"})}
 // A section the plan doesn't include shows what it is and how to get it, instead of an error.
 function lockedCard(view){const m=VIEW_MODULE[view],f=me&&me.module_feature[m],sec=$("#"+view);
   sec.querySelectorAll(".lockCard,.adminNote").forEach(x=>x.remove());[...sec.children].forEach(x=>x.style.display="");
@@ -1457,7 +1457,13 @@ async function pollTestChat(){if(!testConv||$("#demo").hidden||busy)return;const
   m.slice(testSeen).forEach(x=>{if(x.role==="staff")add(x.text,"ai","from the team · just now");else if(x.role==="assistant")add(x.text,"ai","message from the business")});testSeen=m.length}
 
 {let d0=30;try{d0=+localStorage.getItem("rb-days")||30}catch{}if([1,7,30,90,365].includes(d0)&&d0!==30){days=d0;inDays=d0}document.querySelectorAll("button[data-d]").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.d===days));document.querySelectorAll(".plabel").forEach(x=>x.textContent=PLABEL(days))}
-loadMe().then(()=>{if(canSee("teach"))loadTeach().catch(()=>{})}).catch(()=>{});req("/api/business").then(b=>{biz=b;fillSetup();applyTerms();loadVerticals();loadChannels();loadApprovals();loadCoupons();refresh().then(()=>{$("#fTz").textContent=`Time zone: ${lastStats?.tz||"?"}. To change it, set TIMEZONE in the .env file.`})});
+loadMe().then(()=>{if(me.lab)return;if(canSee("teach"))loadTeach().catch(()=>{});req("/api/business").then(b=>{biz=b;fillSetup();applyTerms();loadVerticals();loadChannels();loadApprovals();loadCoupons();refresh().then(()=>{$("#fTz").textContent=`Time zone: ${lastStats?.tz||"?"}. To change it, set TIMEZONE in the .env file.`})})}).catch(()=>{});
+// The Lab: the platform admin with no business opened. Only the Command center is shown.
+function enterLab(){window.LAB=true;document.body.classList.add("labmode");
+  document.querySelectorAll("nav button[data-view]").forEach(x=>x.hidden=x.id!=="adminNav");document.querySelectorAll("nav .ns").forEach(x=>x.hidden=true);
+  $("#adminNav").hidden=false;$("#planCard").hidden=true;$("#planBar").hidden=false;$("#planBar").classList.remove("adminview");
+  $("#planText").innerHTML=`<span class="tag t-book">Lab</span> You're in your Lab. Open a business from the list to work inside it.`;
+  $("#adminNav").click()}
 // ---------- Setup: logo, cover photo and menu ----------
 function drawUploads(){document.querySelectorAll("[data-up]").forEach(box=>{const k=box.dataset.up,u=biz&&biz[k+"_url"];
   box.querySelector(".upv").innerHTML=!u?`<small class="sub">Nothing uploaded yet</small>`:/\.pdf$/i.test(u)?`<a href="${esc(u)}" target="_blank" rel="noopener">Open the PDF</a>`:`<img src="${esc(u)}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:10px">`;

@@ -163,7 +163,10 @@ app.use(wrap(async (req, res, next) => {
   let biz = user.business_id;
   if (user.role === 'admin') {
     const want = +(/(?:^|;\s*)rb_biz=(\d+)/.exec(req.get('cookie') || '')?.[1]);
-    biz = (want && await one('SELECT id FROM businesses WHERE id=$1', [want]))?.id || (await one('SELECT id FROM businesses ORDER BY id LIMIT 1'))?.id;
+    biz = (want && await one('SELECT id FROM businesses WHERE id=$1', [want]))?.id || null;
+    // In the Lab (no business opened) only platform pages work; business pages wait until a business is opened.
+    if (!biz && req.path.startsWith('/api/') && !/^\/api\/(me(\/|$)|admin\/|logout$|verticals$)/.test(req.path))
+      return res.status(409).json({ error: 'Open a business first.', lab: true });
   }
   req.user = user;
   // Plan / add-on and permission checks for the section this request belongs to.
@@ -236,13 +239,15 @@ app.delete('/api/admin/businesses/:id', adminOnly, wrap(async (req, res) => {
 }));
 
 // ---------- Me: account, plan, what I can open, security ----------
+// Leave the business you opened and go back to the Lab
+app.post('/api/admin/lab', adminOnly, (req, res) => res.set('Set-Cookie', `rb_biz=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`).json({ ok: true }));
 app.get('/api/me', wrap(async (req, res) => {
   const b = await one(`SELECT b.id, b.name, b.plan_status, b.trial_ends_at, b.country, b.currency, b.timezone, b.plan_key, p.name AS plan_name,
       GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left FROM businesses b LEFT JOIN plans p ON p.key=b.plan_key WHERE b.id=$1`, [BIZ()]);
   const u = req.user;
   res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, totp_enabled: u.totp_enabled }, business: b,
     features: [...await featuresOf(BIZ())], modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE,
-    edition: process.env.EDITION === 'product' ? 'product' : 'lab' });
+    edition: process.env.EDITION === 'product' ? 'product' : 'lab', lab: u.role === 'admin' && !BIZ() });
 }));
 app.post('/api/me/password', wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE id=$1', [req.user.id]);

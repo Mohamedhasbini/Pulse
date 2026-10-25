@@ -31,6 +31,15 @@ try {
   biz.hours = { ...biz.hours, [d.getDay()]: [['12:00', '23:00']] };
   say('Restaurant: 2nd table of a type still free', isFree(biz, bk(1), [], d, end, 0, svc.id));
   say('Restaurant: 3rd table of that type is full', !isFree(biz, bk(2), [], d, end, 0, svc.id));
+  // the admin with no business opened is in the Lab: platform pages only
+  const me0 = await fetch(BASE + '/api/me', { headers: as(admin) }).then(r => r.json());
+  say('Admin signs in to the Lab, not a business', me0.lab === true && !me0.business);
+  say('Lab blocks business data until a business is opened', (await fetch(BASE + '/api/business', { headers: as(admin) })).status === 409);
+  const inside = { ...as(admin), cookie: as(admin).cookie + `; rb_biz=${r.id}` };
+  const me1 = await fetch(BASE + '/api/me', { headers: inside }).then(r => r.json());
+  say('Opening a business puts the admin inside it', me1.lab === false && me1.business?.id === r.id);
+  const lab = await fetch(BASE + '/api/admin/lab', { method: 'POST', headers: { ...inside, 'Content-Type': 'application/json' } });
+  say('Back to Lab clears the opened business', lab.status === 200 && /rb_biz=;/.test(lab.headers.get('set-cookie') || ''));
   // wrong confirmation name refuses to close
   x = await fetch(BASE + `/api/admin/businesses/${r.id}`, { method: 'DELETE', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: JSON.stringify({ confirm: 'wrong' }) });
   say('Close needs the exact business name', x.status === 400);
