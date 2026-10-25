@@ -6,12 +6,15 @@ const SPEED=900; // pixels per second the wave travels
 const off=()=>{let p={};try{p=JSON.parse(localStorage.getItem("rb-prefs")||"{}")}catch{}
   return p.pulse===false||p.motion===false||document.documentElement.classList.contains("nomotion")||matchMedia("(prefers-reduced-motion: reduce)").matches};
 const page=()=>document.querySelector("main > section:not([hidden])");
-function beat(){const sec=page();if(!sec||document.hidden||off())return;
+// typing is never interrupted: no beat while a field has focus or a key was pressed in the last 4 seconds
+let typed=0;document.addEventListener("keydown",()=>typed=Date.now(),true);
+const busy=()=>Date.now()-typed<4000||document.activeElement?.matches("input,textarea,select,[contenteditable],[contenteditable] *");
+function beat(){const sec=page();if(!sec||document.hidden||off()||busy())return;
   const box=sec.getBoundingClientRect(),x=Math.random()*box.width,y=Math.random()*box.height;
   const w=document.createElement("div");w.className="p-wave";w.style.left=x+"px";w.style.top=(y+sec.scrollTop)+"px";sec.append(w);setTimeout(()=>w.remove(),2700);
   const reach=Math.hypot(Math.max(x,box.width-x),Math.max(y,box.height-y));
   sec.querySelectorAll(".card,.kpi,.td-card,.td-stat,.sg-tile,.sg-ring,.tw,.cm-list,.cm-detail").forEach(el=>{
-    if(!el.offsetParent||el.closest(".modal"))return;const r=el.getBoundingClientRect();
+    if(!el.offsetParent||el.closest(".modal")||el.querySelector("input:not([type=checkbox]):not([type=radio]),textarea,select,[contenteditable]"))return;const r=el.getBoundingClientRect();
     const cx=Math.min(Math.max(x+box.left,r.left),r.right),cy=Math.min(Math.max(y+box.top,r.top),r.bottom);
     const d=Math.hypot(cx-(x+box.left),cy-(y+box.top));if(d>reach)return;
     el.style.setProperty("--hd",(d/SPEED).toFixed(2)+"s");el.classList.remove("p-hitme");void el.offsetWidth;el.classList.add("p-hitme");
