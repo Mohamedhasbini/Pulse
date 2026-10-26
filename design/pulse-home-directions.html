@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pulse Home Directions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@500&display=swap">
+<style>
+:root{--ink:#f4f4f5;--ink2:#a1a1aa;--muted:#71717a;--line:rgba(255,255,255,.07)}
+*{box-sizing:border-box}body{margin:0;font-family:Geist,system-ui,sans-serif;color:var(--ink);background:#09090b;transition:background .5s}
+.bar{position:sticky;top:0;z-index:5;display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 16px;background:rgba(9,9,11,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.bar b{margin-right:8px;font-weight:500}.bar button{font:inherit;font-size:13px;padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+.bar button[aria-pressed=true]{background:#f4f4f5;color:#09090b}
+.note{max-width:1180px;margin:18px auto 0;padding:0 16px;color:var(--ink2);font-size:14px;line-height:1.5}
+.note strong{color:var(--ink)}
+.stage{position:relative;max-width:1180px;margin:16px auto 40px;padding:22px;border-radius:28px;overflow:hidden;isolation:isolate}
+.stage::before{content:"";position:absolute;inset:0;z-index:-1}
+.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.head h2{margin:0;font-size:20px;font-weight:500}.head small{color:var(--muted);margin-left:8px;font-size:12px}
+.seg{display:flex;gap:2px;padding:3px;border-radius:99px;background:rgba(255,255,255,.05)}
+.seg span{font-size:11px;padding:5px 10px;border-radius:99px;color:var(--ink2)}.seg span.on{background:var(--ink);color:#111}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.c{border-radius:20px;padding:16px 18px;position:relative;overflow:hidden;min-height:150px}
+.c h4{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--ink2);display:flex;justify-content:space-between}
+.big{font-size:34px;font-weight:300;letter-spacing:-.02em}.mid{font-size:26px;font-weight:300}
+.up{font-family:'Geist Mono';font-size:11px;color:#a3e635}
+.s8{grid-column:span 8}.s4{grid-column:span 4}.s3{grid-column:span 3}.s5{grid-column:span 5}.s7{grid-column:span 7}
+svg{display:block;width:100%}
+.ticks{display:flex;gap:3px;align-items:flex-end;height:26px;margin-top:14px}.ticks i{flex:1;border-radius:2px;background:currentColor;opacity:.22}.ticks i.f{opacity:.9}
+.row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);padding:6px 0;border-top:1px solid var(--line)}.row:first-of-type{border:0}
+.row b{color:var(--ink);font-weight:500}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--ink2)}.legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+@media(max-width:820px){.s8,.s4,.s3,.s5,.s7{grid-column:span 12}.stage{padding:14px}}
+
+/* ===== A. Graphite calm ===== */
+.A .stage{background:#0c0c0e}
+.A .stage::before{background:radial-gradient(60% 50% at 85% 0%,rgba(120,110,255,.07),transparent 70%)}
+.A .c{background:#141417;border:1px solid var(--line)}
+.A .hero{background:linear-gradient(160deg,#1b1a2e,#141417 70%);border-color:rgba(140,130,255,.14)}
+.A{--k1:#8b8cf6;--k2:#e8a87c;--k3:#d4d4d8;--k4:#6ee7b7}
+.A .ret{background:linear-gradient(150deg,#1d2214,#141417)}
+/* ===== B. Warm dusk ===== */
+.B .stage{background:#120e0b}
+.B .stage::before{background:radial-gradient(50% 60% at 20% 10%,rgba(214,140,90,.16),transparent 70%),radial-gradient(40% 50% at 90% 90%,rgba(120,80,60,.18),transparent 70%);filter:blur(10px)}
+.B .c{background:rgba(255,240,225,.035);border:1px solid rgba(255,220,190,.07);backdrop-filter:blur(18px)}
+.B{--k1:#e8956a;--k2:#c9a27e;--k3:#8fb4a8;--k4:#d9c7a0}
+.B .ret{background:linear-gradient(150deg,rgba(232,149,106,.14),rgba(255,240,225,.03))}
+/* ===== C. Soft gradient tiles ===== */
+.C .stage{background:#0b0b10}
+.C .c{background:#15151b;border:1px solid var(--line)}
+.C .hero{background:linear-gradient(135deg,#2a2860 0%,#1b1a3a 55%,#15151b 100%)}
+.C .ret{background:linear-gradient(140deg,#3a4416,#1e2410)}
+.C .pk{background:linear-gradient(160deg,#4a1f36,#1d1520)}
+.C .br{background:linear-gradient(160deg,#4a2c1c,#1d1714)}
+.C .gr{background:linear-gradient(160deg,#173d30,#131c18)}
+.C{--k1:#a5a6ff;--k2:#f5a37a;--k3:#e9e9ef;--k4:#7ee2b8}
+.view{display:none}.A .vA,.B .vB,.C .vC{display:block}
+</style></head>
+<body class="A">
+<div class="bar"><b>Pulse home – background & chart directions</b>
+<button data-d="A" aria-pressed="true">A · Graphite calm</button>
+<button data-d="B" aria-pressed="false">B · Warm dusk</button>
+<button data-d="C" aria-pressed="false">C · Soft tiles</button></div>
+
+<div class="note">
+<p class="vA view"><strong>A · Graphite calm (recommended for all-day use).</strong> Matte near-black, no big glows. Only the hero card is tinted (muted indigo, from the Net worth card in reference 1). Charts are thin lines, tick-bar meters and a fine-line gauge. Lowest eye strain; colour shows up only where data changes.</p>
+<p class="vB view"><strong>B · Warm dusk (from the Kerfa CRM reel).</strong> Warm brown ambient light behind frosted cards, one orange data colour. The revenue chart is a smooth line with a dotted "last period" line and week columns for pace. Cosy and premium, but less neutral for status colours (red/green).</p>
+<p class="vC view"><strong>C · Soft tiles (reference 1, toned down ~60%).</strong> Each KPI tile has its own deep gradient (indigo, olive, plum, copper, green), fading to dark. The most striking, and the heaviest to look at for hours. Good for a "wow" overview but busy as a working screen.</p>
+</div>
+
+<div class="stage">
+ <div class="head"><h2>Overview<small>Updated today, 09:41</small></h2><div class="seg"><span>Today</span><span>7d</span><span class="on">30d</span><span>All</span></div></div>
+ <div class="grid">
+  <div class="c s8 hero">
+   <h4>Conversations handled <span class="legend"><span><i style="background:var(--k1)"></i>WhatsApp</span><span><i style="background:var(--k2)"></i>Instagram</span><span><i style="background:var(--k3)"></i>Web</span></span></h4>
+   <div class="big">4,812 <span class="up">↑ 18.4%</span></div>
+   <svg viewBox="0 0 600 150" preserveAspectRatio="none" style="height:150px;margin-top:8px" id="stream"></svg>
+  </div>
+  <div class="c s4">
+   <h4>AI resolved <span>Target 85%</span></h4>
+   <svg viewBox="0 0 200 110" style="height:120px" id="gauge"></svg>
+   <div class="row"><span>By AI</span><b>3,918</b></div><div class="row"><span>Handed to staff</span><b>894</b></div>
+  </div>
+  <div class="c s3 ret"><h4>Bookings <span>30d</span></h4><div class="mid">↑ 142</div><div class="ticks" style="color:var(--k4)" id="t1"></div></div>
+  <div class="c s3"><h4>Avg reply <span>seconds</span></h4><div class="mid">4.2s</div><div class="ticks" style="color:var(--k1)" id="t2"></div></div>
+  <div class="c s3"><h4>Next up <span>3 today</span></h4>
+   <div class="row"><span>Haircut · Lina</span><b>10:30</b></div><div class="row"><span>Facial · Rami</span><b>12:00</b></div><div class="row"><span>Nails · Sara</span><b>15:15</b></div></div>
+  <div class="c s3"><h4>Rating <span>1–5</span></h4><div class="mid">4.7</div><div class="ticks" style="color:var(--k2)" id="t3"></div></div>
+  <div class="c s7 pk"><h4>Messages by hour <span class="legend"><span><i style="background:var(--k1)"></i>This week</span><span><i style="background:var(--muted)"></i>Last week</span></span></h4>
+   <svg viewBox="0 0 600 140" preserveAspectRatio="none" style="height:140px" id="line"></svg></div>
+  <div class="c s5 gr"><h4>Bookings per day <span>this week</span></h4><svg viewBox="0 0 300 140" style="height:140px" id="bars"></svg></div>
+ </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+function wave(n,amp,base,seed){let p=[];for(let i=0;i<=n;i++){const x=i/n;p.push(base+amp*Math.sin(x*6+seed)+amp*.5*Math.sin(x*13+seed*2))}return p}
+function path(pts,w,h){const s=w/(pts.length-1);let d=`M0 ${pts[0]}`;for(let i=1;i<pts.length;i++){const x0=(i-1)*s,x1=i*s,cx=(x0+x1)/2;d+=` C${cx} ${pts[i-1]} ${cx} ${pts[i]} ${x1} ${pts[i]}`}return d}
+// stream: three soft bands around a centre line
+(function(){const n=40,top1=wave(n,8,30,1),top2=wave(n,6,52,2),mid=wave(n,4,75,3),bot2=wave(n,6,98,4),bot1=wave(n,8,120,5);
+ const band=(a,b,c,o)=>`<path d="${path(a,600)} L600 ${b.at(-1)} ${path(b.slice().reverse(),600).replace(/^M[^C]+/,'').replace(/C/g,'C')} Z" fill="${c}" opacity="${o}"/>`;
+ const rev=(a)=>{const s=600/(a.length-1);let d='';for(let i=a.length-1;i>0;i--){const x0=i*s,x1=(i-1)*s,cx=(x0+x1)/2;d+=` C${cx} ${a[i]} ${cx} ${a[i-1]} ${x1} ${a[i-1]}`}return d};
+ const area=(a,b,c,o)=>`<path d="${path(a,600)} L600 ${b.at(-1)}${rev(b)} Z" fill="${c}" opacity="${o}"/>`;
+ $('stream').innerHTML=area(top1,bot1,'var(--k2)',.35)+area(top2,bot2,'var(--k1)',.55)+area(top2.map(v=>v+12),bot2.map(v=>v-12),'var(--k3)',.8)
+  +[150,300,450].map(x=>`<line x1="${x}" x2="${x}" y1="0" y2="150" stroke="white" stroke-opacity=".12"/>`).join('')})();
+// gauge: fine tick arc
+(function(){let s='';const N=48,pct=.82;for(let i=0;i<N;i++){const a=Math.PI*(1-i/(N-1)),on=i/(N-1)<=pct,r1=78,r2=on?92:88;
+ s+=`<line x1="${100+r1*Math.cos(a)}" y1="${100-r1*Math.sin(a)}" x2="${100+r2*Math.cos(a)}" y2="${100-r2*Math.sin(a)}" stroke="${on?'var(--k1)':'rgba(255,255,255,.15)'}" stroke-width="2" stroke-linecap="round"/>`}
+ $('gauge').innerHTML=s+`<text x="100" y="92" text-anchor="middle" fill="var(--ink)" font-size="30" font-weight="300" font-family="Geist">82%</text>`})();
+// tick meters
+[['t1',.7],['t2',.45],['t3',.9]].forEach(([id,f])=>{let h='';for(let i=0;i<34;i++){const v=40+50*Math.abs(Math.sin(i*1.7+f*9));h+=`<i class="${i/34<f?'f':''}" style="height:${v}%"></i>`}$(id).innerHTML=h});
+// line chart this vs last
+(function(){const a=wave(24,22,70,.4),b=wave(24,16,80,1.6);
+ $('line').innerHTML=`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--k1)" stop-opacity=".25"/><stop offset="1" stop-color="var(--k1)" stop-opacity="0"/></linearGradient></defs>`
+ +[35,70,105].map(y=>`<line x1="0" x2="600" y1="${y}" y2="${y}" stroke="white" stroke-opacity=".05"/>`).join('')
+ +`<path d="${path(b,600)}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="2 5"/>`
+ +`<path d="${path(a,600)} L600 140 L0 140Z" fill="url(#g)"/><path d="${path(a,600)}" fill="none" stroke="var(--k1)" stroke-width="2"/>`})();
+// rounded pill bars, today highlighted
+(function(){const v=[.55,.3,.75,.45,.9,.6,.35],d='MTWTFSS';let s='';v.forEach((h,i)=>{const x=18+i*40,H=h*100;
+ s+=`<rect x="${x}" y="10" width="22" height="100" rx="11" fill="rgba(255,255,255,.05)"/><rect x="${x}" y="${110-H}" width="22" height="${H}" rx="11" fill="${i==4?'var(--k4)':'rgba(255,255,255,.7)'}" opacity="${i==4?1:.55}"/><text x="${x+11}" y="130" text-anchor="middle" fill="var(--muted)" font-size="10" font-family="Geist">${d[i]}</text>`});$('bars').innerHTML=s})();
+document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>{document.body.className=b.dataset.d;document.querySelectorAll('.bar button').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+</script>
+</body></html>

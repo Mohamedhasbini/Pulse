@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pulse Glass Structure</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* colour meanings: --accent green = good / main, --need orange = needs you, --ai violet = the AI, --bad red = broken only */
+:root[data-theme="dark"]{--ink:#eef1ef;--ink2:rgba(238,241,239,.70);--muted:rgba(238,241,239,.45);--need:#e07a42;--ai:#7f72e6;
+  --l1:rgba(18,22,20,.42);--l2:rgba(24,29,26,.86);--l3:rgba(255,255,255,.07);--rim:rgba(255,255,255,.10);--rim-hi:rgba(255,255,255,.16);
+  --shadow:0 30px 60px -30px rgba(0,0,0,.65);--veil:rgba(10,8,7,.55);--accent:#34b26f;--a2:#7f72e6;--a3:#e07a42;--bad:#ff4d5e;--grid:rgba(255,255,255,.06);
+  --pill:#f5f2ee;--pill-ink:#0d0f0e;--wall1:#26302b;--wall2:#121614;--win:#4a5550;--floor:#0b0d0c;--lamp:rgba(52,178,111,.10)}
+:root[data-theme="light"]{--ink:#151a17;--ink2:rgba(21,26,23,.74);--muted:rgba(21,26,23,.52);--need:#c45f2a;--ai:#5d50cc;
+  --l1:rgba(255,255,255,.5);--l2:rgba(255,255,255,.88);--l3:rgba(20,40,30,.045);--rim:rgba(255,255,255,.7);--rim-hi:#fff;
+  --shadow:0 30px 60px -34px rgba(90,60,30,.45);--veil:rgba(246,240,232,.35);--accent:#1f8f55;--a2:#6457d4;--a3:#cc6630;--bad:#e11d48;--grid:rgba(60,40,20,.09);
+  --pill:#14201a;--pill-ink:#fff;--wall1:#e6e9e6;--wall2:#c9d0cb;--win:#ffffff;--floor:#b9c2bc;--lamp:rgba(18,161,80,.18)}
+*{box-sizing:border-box}
+body{margin:0;font-family:Geist,system-ui,sans-serif;color:var(--ink);background:var(--floor)}
+.scene{position:fixed;inset:-60px;z-index:-3;filter:blur(38px) saturate(.9);
+  background:radial-gradient(18% 34% at 22% 38%,var(--win),transparent 70%),radial-gradient(14% 30% at 38% 36%,var(--win),transparent 70%),
+  radial-gradient(22% 18% at 78% 30%,var(--lamp),transparent 70%),radial-gradient(40% 20% at 55% 88%,var(--wall2),transparent 70%),
+  linear-gradient(180deg,var(--wall1) 0%,var(--wall2) 62%,var(--floor) 100%)}
+.veil{position:fixed;inset:0;z-index:-2;background:var(--veil)}
+/* blur on two layers only: the top bar and the page sheet. Data cards are near-solid so numbers stay readable */
+.g1,.g2,.g3{border:1px solid var(--rim)}
+.g1{backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2)}
+body.plain .scene{background:var(--floor);filter:none}body.plain .veil{opacity:.4}
+.g1{background:var(--l1);border-radius:28px;box-shadow:var(--shadow),inset 0 1px 0 var(--rim-hi)}
+.g2{background:var(--l2);border-radius:20px;box-shadow:inset 0 1px 0 var(--rim-hi)}
+.g3{background:var(--l3);border-radius:12px}
+button{font:inherit;color:inherit;cursor:pointer}
+/* top bar: main tabs */
+.top{position:sticky;top:12px;z-index:5;margin:12px auto 0;max-width:1240px;display:flex;align-items:center;gap:10px;padding:8px 10px 8px 18px;border-radius:99px}
+.top .b{font-weight:600}
+.main{display:flex;gap:2px;padding:3px;border-radius:99px;margin:0 auto;overflow-x:auto;scrollbar-width:none}
+.main button,.sub button{border:0;background:none;font-size:13px;padding:7px 14px;border-radius:99px;color:var(--ink2);white-space:nowrap}
+.main button[aria-pressed=true]{background:var(--pill);color:var(--pill-ink)}
+.tg{border:1px solid var(--rim);background:var(--l2);font-size:13px;padding:8px 14px;border-radius:99px}
+.wrap{max-width:1240px;margin:0 auto;padding:18px 16px 40px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:8px 6px 14px}
+.head h1{margin:0;font-weight:400;font-size:28px}.head p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+.sub{display:flex;gap:2px;padding:3px;border-radius:99px;flex-wrap:wrap}
+.sub button[aria-pressed=true]{background:var(--l3);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rim)}
+.sheet{padding:14px}
+.focus{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);gap:12px;align-items:start}
+.focus.solo{grid-template-columns:1fr}
+.fmain{min-height:360px;padding:20px 22px}
+.fmain svg{max-height:240px}
+.flist{padding:6px 0;display:flex;flex-direction:column}
+.fr{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;background:none;text-align:left;padding:13px 18px;border-bottom:1px solid var(--grid);font-size:13.5px;color:var(--ink2)}
+.fr:last-child{border-bottom:0}.fr:hover{background:var(--l3);color:var(--ink)}
+.fr.on{background:var(--l3);color:var(--ink);box-shadow:inset 3px 0 0 var(--accent)}
+.fr .ft{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fr .fv{font-family:'Geist Mono';font-size:12px;color:var(--muted);white-space:nowrap}
+.fr.on .fv{color:var(--ink)}
+.fr .ft::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:10px;vertical-align:middle;background:var(--muted)}
+.fr.need .ft::before,.fmain.need .say b{background:var(--need)}.fr.ai .ft::before{background:var(--ai)}.fr.good .ft::before{background:var(--accent)}
+.fr.need.on{box-shadow:inset 3px 0 0 var(--need)}.fr.ai.on{box-shadow:inset 3px 0 0 var(--ai)}
+.fmain.need{--accent:var(--need)}.fmain.ai{--accent:var(--ai)}
+.say{margin:-2px 0 12px;font-size:14px;color:var(--ink2);line-height:1.5}.say i{font-style:normal;font-family:'Geist Mono';font-size:11px;padding:2px 8px;border-radius:99px;margin-right:8px;background:var(--l3);color:var(--ink)}
+.period{display:flex;gap:2px;padding:3px;border-radius:99px}.period button{border:0;background:none;font-size:12px;padding:6px 12px;border-radius:99px;color:var(--ink2)}.period button[aria-pressed=true]{background:var(--l3);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rim)}
+.hctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.empty{text-align:center;padding:56px 24px}.empty h3{margin:14px 0 6px;font-weight:400;font-size:22px}.empty p{color:var(--ink2);max-width:460px;margin:0 auto 18px;font-size:14px}
+.empty .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:640px;margin:0 auto;text-align:left}.empty .steps div{padding:14px;font-size:13px;color:var(--ink2)}.empty .steps b{display:block;color:var(--ink);font-weight:500;margin-bottom:4px}
+.cta{border:0;background:var(--accent);color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px}
+@media(max-width:860px){.empty .steps{grid-template-columns:1fr}}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.c{padding:16px 18px;min-height:130px;display:flex;flex-direction:column}
+.c h4{margin:0 0 8px;font-size:12.5px;font-weight:500;color:var(--ink2);display:flex;justify-content:space-between;align-items:center;gap:8px}
+/* strong tiles (reference 1): deep saturated gradient in one of the three Pulse colours, glass rim kept */
+.vg,.vv,.vo{--ink:#fff;--ink2:rgba(255,255,255,.8);--muted:rgba(255,255,255,.62);--l3:rgba(255,255,255,.12);--rim:rgba(255,255,255,.18);--grid:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.16)}
+.vg{--accent:#fff;--a2:#c9c2ff;--a3:#ffc29c;background:radial-gradient(90% 120% at 0% 0%,rgba(90,200,140,.22),transparent 60%),linear-gradient(160deg,#2a6b4a 0%,#1f4d37 50%,#173528 100%)}
+.vv{--accent:#fff;background:radial-gradient(120% 90% at 0% 0%,#a99cff 0%,#5b46e8 40%,#1c1450 100%)}
+.vo{--accent:#fff;background:radial-gradient(120% 90% at 0% 0%,#ffa05c 0%,#e8641a 40%,#4a1d08 100%)}
+.open{border:1px solid var(--rim);background:var(--l3);font-size:11px;padding:3px 10px;border-radius:99px;color:var(--ink2)}
+.big{font-size:32px;font-weight:300;letter-spacing:-.02em}.mid{font-size:24px;font-weight:300}
+.chip{font-family:'Geist Mono';font-size:10.5px;padding:3px 8px;color:var(--a2)}
+.w3{grid-column:span 3}.w4{grid-column:span 4}.w5{grid-column:span 5}.w6{grid-column:span 6}.w7{grid-column:span 7}.w8{grid-column:span 8}.w12{grid-column:span 12}
+svg{display:block;width:100%;overflow:visible}
+@media (prefers-reduced-transparency:reduce){.g1,.g2,.g3{backdrop-filter:none;-webkit-backdrop-filter:none}}
+/* rows and KPIs: hairline dividers, no bubbles */
+.rows{display:flex;flex-direction:column}.rows div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 2px;font-size:13px;background:none!important;border:0!important;border-bottom:1px solid var(--grid)!important;border-radius:0!important;backdrop-filter:none}
+.rows div:last-child{border-bottom:0!important}.rows span{color:var(--muted);font-family:'Geist Mono';font-size:11.5px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px 0}.kpis small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kpis div{padding:4px 14px 6px;background:none!important;border:0!important;border-left:1px solid var(--grid)!important;border-radius:0!important;backdrop-filter:none}
+.kpis div:first-child{border-left:0!important;padding-left:2px}.kpis small{display:block;color:var(--muted);font-size:11px;margin-bottom:2px}.kpis b{font-weight:300;font-size:22px;letter-spacing:-.01em}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:8px;vertical-align:middle}
+table{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:12.5px}
+th{text-align:left;font-weight:500;color:var(--muted);font-size:11px;padding:0 10px;white-space:nowrap}
+td{padding:10px;background:var(--l3);border-top:1px solid var(--rim);white-space:nowrap}
+td:first-child{border-radius:10px 0 0 10px}td:last-child{border-radius:0 10px 10px 0}
+.tw{overflow-x:auto}
+.form{display:flex;flex-direction:column;gap:8px}.form i{display:block;height:34px;border-radius:10px;background:var(--l3);border:1px solid var(--rim)}
+.note{display:none}
+.c h4{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.c h4 .open{text-transform:none;letter-spacing:0}
+/* drawer for "Open" */
+.dim{position:fixed;inset:0;background:rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.3s;z-index:9}
+.drawer{position:fixed;top:12px;right:12px;bottom:12px;width:min(720px,calc(100% - 24px));z-index:10;padding:20px;transform:translateX(110%);transition:transform .35s cubic-bezier(.2,.8,.2,1);overflow:auto}
+.on .dim{opacity:1;pointer-events:auto}.on .drawer{transform:none}
+.drawer h3{margin:0 0 4px;font-weight:500}.drawer p{margin:0 0 14px;color:var(--ink2);font-size:13px}
+/* map */
+.map{margin-top:18px;padding:20px 22px}.map h2{margin:0 0 4px;font-size:17px;font-weight:500}.map>p{margin:0 0 14px;color:var(--ink2);font-size:13.5px}
+.mcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.mcols div{padding:12px 14px;font-size:12.5px;line-height:1.5;color:var(--ink2)}.mcols b{color:var(--ink);font-weight:500;display:block;margin-bottom:4px}
+.mcols ul{margin:0;padding-left:16px}
+.focus>*{min-width:0}.hctl{min-width:0;max-width:100%}.head>div{min-width:0;max-width:100%}
+@media(max-width:860px){.hctl{width:100%}.hctl .sub{flex:1 1 100%;min-width:0}.focus{grid-template-columns:1fr}.fmain{min-height:0}.sub{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%}.g1,.g2,.g3{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}.w3,.w4,.w5,.w6,.w7,.w8{grid-column:span 12}.top{border-radius:22px;flex-wrap:wrap}.main{order:3;width:100%}}
+</style></head>
+<body>
+<div class="scene"></div><div class="veil"></div>
+<div class="top g1"><span class="b">Pulse</span><div class="main g3" id="main"></div><button class="tg" id="bgb" title="Background">Room</button><button class="tg" id="nb" title="Preview a brand-new business">New business</button><button class="tg" id="tg">Light</button></div>
+<div class="wrap">
+  <div class="head"><div><h1 id="title"></h1><p id="lede"></p></div><div class="hctl"><div class="sub g3" id="sub"></div><div class="period g3" id="per"><button>7 days</button><button aria-pressed="true">30 days</button><button>12 months</button></div></div></div>
+  <div class="sheet g1"><div class="grid" id="grid"></div></div>
+  <div class="map g1">
+    <h2>How it is organised</h2>
+    <p>Nothing is removed. Every chart, table and list Pulse has today is in this preview: click through the tabs. The rules:</p>
+    <div class="mcols">
+      <div class="g2"><b>1 · Each screen answers one question</b>Main tab = an area (Today, Dashboard, Clients…). Subtab = one question inside it ("What's happening now?", "Where do bookings come from?"). At most 4–5 blocks per subtab.</div>
+      <div class="g2"><b>2 · Summary first, detail on demand</b>Cards show one number, a small chart or the top 3–5 rows. Full tables, long lists and filters open in a glass side drawer with the <i>Open</i> button, the same as the expand-and-CSV view you have now.</div>
+      <div class="g2"><b>3 · Home stays calm</b>Home is only what needs you today: the day, what's next, what needs you, three numbers. Everything else is one click away in Dashboard and Insights.</div>
+      <div class="g2"><b>4 · Grouped by question, not by data type</b>Dashboard's 10 subtabs become 5: Now, Conversations, Performance, Channels &amp; services, Reviews. Insights' 8 become 5: Highlights, Money, Timing, Clients, Next steps. Old subtabs live on as sections inside them.</div>
+    </div>
+  </div>
+</div>
+<div class="dim" id="dim"></div>
+<aside class="drawer g1" id="drawer"><h3 id="dt"></h3><p id="dp"></p><div id="db"></div></aside>
+
+<script>
+/* ---- small renderers ---- */
+const W=(n,a,b,s)=>Array.from({length:n+1},(_,i)=>{const x=i/n;return b+a*Math.sin(x*6+s)+a*.6*Math.sin(x*15+s*2)});
+const P=(p,w)=>{const s=w/(p.length-1);let d=`M0 ${p[0]}`;for(let i=1;i<p.length;i++){const x0=(i-1)*s,x1=i*s,c=(x0+x1)/2;d+=` C${c} ${p[i-1]} ${c} ${p[i]} ${x1} ${p[i]}`}return d};
+let gid=0;
+const V={
+ line:(h=150,cmp=true)=>{const a=W(24,h*.15,h*.55,Math.random()*6),b=W(24,h*.1,h*.62,Math.random()*6),id='f'+(gid++);
+   return `<svg viewBox="0 0 600 ${h}" preserveAspectRatio="none" style="height:${h}px"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".26"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>`
+   +[.25,.5,.75].map(f=>`<line x1="0" x2="600" y1="${h*f}" y2="${h*f}" stroke="var(--grid)"/>`).join('')
+   +(cmp?`<path d="${P(b,600)}" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="2 5"/>`:'')
+   +`<path d="${P(a,600)} L600 ${h} L0 ${h}Z" fill="url(#${id})"/><path d="${P(a,600)}" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>`},
+ spark:()=>`<svg viewBox="0 0 200 40" style="height:40px;margin-top:auto"><path d="${P(W(14,7,20,Math.random()*6),200)}" fill="none" stroke="var(--a2)" stroke-width="1.8"/></svg>`,
+ cols:(n=7,lab='MTWTFSS',hi=4)=>{let s=[30,75].map(y=>`<line x1="0" x2="300" y1="${y}" y2="${y}" stroke="var(--grid)"/>`).join('');const step=300/n,w=Math.min(14,step*.38);
+   for(let i=0;i<n;i++){const x=i*step+step/2-w/2,h=24+((i*37)%70)+(i==hi?20:0);
+   s+=`<rect x="${x}" y="${120-h}" width="${w}" height="${h}" rx="${w/2}" fill="${i==hi?'var(--accent)':'var(--ink)'}" opacity="${i==hi?1:.22}"/>`
+   +(lab[i]?`<text x="${x+w/2}" y="136" text-anchor="middle" font-size="10" fill="${i==hi?'var(--ink)':'var(--muted)'}" font-family="Geist Mono">${lab[i]}</text>`:'')}
+   return `<svg viewBox="0 0 300 140" style="height:140px">${s}</svg>`},
+ hbars:(items)=>`<div class="rows">${items.map((t,i)=>`<div style="flex-direction:column;align-items:stretch;gap:6px"><span style="display:flex;justify-content:space-between;font-family:Geist;font-size:13px;color:var(--ink)">${t}<span>${40-i*7}</span></span><i style="display:block;height:4px;border-radius:99px;background:linear-gradient(90deg,${i==0?'var(--accent)':'var(--ink2)'} ${92-i*18}%,var(--grid) 0);opacity:${i==0?1:.55}"></i></div>`).join('')}</div>`,
+ donut:()=>{const seg=[[.46,'var(--accent)'],[.3,'var(--a2)'],[.16,'var(--a3)'],[.08,'var(--muted)']];let o=0,s='';seg.forEach(([v,c])=>{s+=`<circle r="44" cx="60" cy="60" fill="none" stroke="${c}" stroke-width="14" stroke-dasharray="${v*276-4} 276" stroke-dashoffset="${-o*276}" transform="rotate(-90 60 60)" stroke-linecap="round"/>`;o+=v});
+   return `<div style="display:flex;gap:16px;align-items:center"><svg viewBox="0 0 120 120" style="width:120px;height:120px">${s}</svg><div class="rows" style="flex:1"><div class="g3">WhatsApp<span>46%</span></div><div class="g3">Instagram<span>30%</span></div><div class="g3">Website<span>16%</span></div></div></div>`},
+ heat:()=>{let s='';for(let r=0;r<7;r++)for(let c=0;c<12;c++){const v=Math.max(0,Math.sin(c/3.5+r)*.5+.4+Math.random()*.3);s+=`<rect x="${c*25}" y="${r*17}" width="22" height="14" rx="4" fill="var(--accent)" opacity="${(.06+v*.8).toFixed(2)}"/>`}return `<svg viewBox="0 0 300 119" style="height:130px">${s}</svg>`},
+ gauge:(p=.64)=>{let s='';const N=40;for(let i=0;i<N;i++){const a=Math.PI*(1-i/(N-1)),on=i/(N-1)<=p;s+=`<line x1="${100+70*Math.cos(a)}" y1="${95-70*Math.sin(a)}" x2="${100+(on?84:80)*Math.cos(a)}" y2="${95-(on?84:80)*Math.sin(a)}" stroke="${on?'var(--accent)':'var(--rim)'}" stroke-width="2.2" stroke-linecap="round"/>`}
+   return `<svg viewBox="0 0 200 105" style="height:120px">${s}<text x="100" y="88" text-anchor="middle" font-size="28" font-weight="300" fill="var(--ink)" font-family="Geist">${Math.round(p*100)}%</text></svg>`},
+ flow:()=>{const L=[['WhatsApp',20,60],['Instagram',90,40],['Website',140,24]],R=[['Booked',15,46],['Answered',70,70],['Handed off',150,12]];let s='';
+   L.forEach(([,y,h],i)=>R.forEach(([,y2,h2],j)=>{s+=`<path d="M90 ${y+h/2} C250 ${y+h/2} 250 ${y2+h2/2} 410 ${y2+h2/2}" stroke="${['var(--accent)','var(--a2)','var(--a3)'][i]}" stroke-opacity=".28" stroke-width="${Math.max(2,(h*h2)/90)}" fill="none"/>`}));
+   L.forEach(([t,y,h])=>s+=`<rect x="78" y="${y}" width="12" height="${h}" rx="5" fill="var(--ink)" opacity=".5"/><text x="70" y="${y+h/2+4}" text-anchor="end" font-size="11" fill="var(--ink2)" font-family="Geist">${t}</text>`);
+   R.forEach(([t,y,h])=>s+=`<rect x="410" y="${y}" width="12" height="${h}" rx="5" fill="var(--accent)" opacity=".75"/><text x="430" y="${y+h/2+4}" font-size="11" fill="var(--ink2)" font-family="Geist">${t}</text>`);
+   return `<svg viewBox="0 0 500 175" style="height:175px">${s}</svg>`},
+ funnel:()=>`<div style="display:flex;flex-direction:column;gap:10px">${[['Conversations',128,100],['Asked to book',54,42],['Booked',20,16],['Came',17,13]].map(([t,n,w],i)=>`<div style="display:grid;grid-template-columns:110px 1fr 44px;align-items:center;gap:12px;font-size:12.5px;color:var(--ink2)">${t}<i style="display:block;height:10px;border-radius:99px;background:linear-gradient(90deg,${i==2?'var(--accent)':'var(--ink2)'} ${w}%,var(--grid) 0);opacity:${i==2?1:.6}"></i><b style="font-weight:500;color:var(--ink);font-family:'Geist Mono';text-align:right">${n}</b></div>`).join('')}</div>`,
+ stack:()=>`<div style="display:flex;gap:4px;height:12px;margin:10px 0"><i style="flex:34;background:var(--accent);border-radius:99px"></i><i style="flex:22;background:var(--a2);border-radius:99px"></i><i style="flex:18;background:var(--a3);border-radius:99px"></i><i style="flex:26;background:var(--rim);border-radius:99px"></i></div>`,
+ pills:()=>`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:auto;padding-top:18px">${[['Answered','99%',99,'var(--ink)'],['Booked','15%',15,'var(--a3)'],['Handed off','2%',2,'var(--a2)']].map(([t,v,f,c])=>`<div style="font-size:11.5px;color:var(--ink2)">${t}<b style="float:right;font-weight:500;color:var(--ink);font-family:'Geist Mono'">${v}</b><i style="display:block;height:3px;margin-top:8px;border-radius:99px;background:linear-gradient(90deg,${c} ${f}%,var(--grid) 0)"></i></div>`).join('')}</div>`,
+ rings:()=>`<div style="display:flex;gap:16px;justify-content:space-around">${[['Good replies',.82],['Reviewed',.6],['Confident',.74]].map(([t,p])=>`<div style="text-align:center;font-size:11.5px;color:var(--ink2)"><svg viewBox="0 0 80 80" style="width:80px;height:80px"><circle r="32" cx="40" cy="40" fill="none" stroke="var(--rim)" stroke-width="7"/><circle r="32" cx="40" cy="40" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${p*201} 201" transform="rotate(-90 40 40)"/><text x="40" y="45" text-anchor="middle" font-size="16" fill="var(--ink)" font-family="Geist">${Math.round(p*100)}</text></svg>${t}</div>`).join('')}</div>`,
+ week:()=>{let s='<div style="display:grid;grid-template-columns:40px repeat(7,1fr);gap:4px;font-size:11px;color:var(--muted)"><span></span>'+'Mon Tue Wed Thu Fri Sat Sun'.split(' ').map(d=>`<span style="text-align:center">${d}</span>`).join('');
+   for(let h=9;h<18;h++){s+=`<span>${h}:00</span>`;for(let d=0;d<7;d++){const b=Math.random()<.28;s+=`<span class="${b?'g3':''}" style="height:30px;border-radius:8px;${b?'background:color-mix(in srgb,var(--accent) 28%,var(--l3))':'border:1px dashed var(--grid)'}"></span>`}}return s+'</div>'},
+};
+const rows=(a)=>`<div class="rows">${a.map(([x,y])=>`<div class="g3">${x}<span>${y}</span></div>`).join('')}</div>`;
+const kpis=(a)=>`<div class="kpis">${a.map(([t,v])=>`<div class="g3"><small>${t}</small><b>${v}</b></div>`).join('')}</div>`;
+const table=(cols,n=4)=>{const s=['Lina H.','WhatsApp','Rami K.','Instagram','Sara M.','Website','Nour A.','12:40','$45','Booked','4.8','2','Yes'];
+  return `<div class="tw"><table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${Array.from({length:n},(_,r)=>`<tr>${cols.map((c,i)=>`<td>${s[(r*3+i)%s.length]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`};
+const form=(n=3)=>`<div class="form">${'<i></i>'.repeat(n)}</div>`;
+
+/* card(title, width, body, opts) — opts.open = full table / list shown in the drawer */
+const C=(t,w,body,o={})=>({t,w,body,o});
+
+/* ---- the structure: every block Pulse has today ---- */
+const APP={
+ Today:{lede:'Only what needs you today. Everything else is one click away.',subs:{
+  'Today':[
+   C('Good evening, Beauty S1','w8',`<div class="big" style="font-size:44px">$1,840 <span style="font-size:15px;color:var(--muted)">booked by the AI this month</span></div><div style="margin-top:6px;font-size:14px;color:var(--ink2)">7 appointments today · 11 things need you</div>${V.pills()}`,{note:'Hero + Answered / Booked / Handed off'}),
+   C('Next up','w4',rows([['Haircut · Lina','10:30'],['Facial · Rami','12:00'],['Nails · Sara','15:15']]),{open:['Next up — today',rows([['Haircut · Lina','10:30'],['Facial · Rami','12:00'],['Nails · Sara','15:15'],['Brows · Nour','16:40'],['Color · Maya','18:00']])]}),
+   C('Needs you','w4',rows([['Reply to Sara','Move booking'],['Approve refund','$45'],['Unanswered question','Parking?']]),{open:['To do + Notifications',rows([['Reply to Sara','Move booking'],['Approve refund','$45'],['Unanswered question','Parking?'],['New booking','Lina 10:30'],['New message','Rami']])],note:'To do + Notifications (Overview / Bookings / Messages) merged, unread first'}),
+   C('This month','w4',V.cols(7,'MTWTFSS',0),{note:'Mini month + day strip → Calendar'}),
+   C('Your team & health','w4',rows([['Lina · Stylist','On shift'],['Receptionist','Live'],['WhatsApp','Connected']]),{note:'Your team + Health'}),
+ ]}},
+ Dashboard:{lede:'How the receptionist is doing. Five questions, one per subtab.',subs:{
+  'Now':[
+   C('Live now','w8',V.flow(),{note:'Message flow (channel → outcome) + Live status'}),
+   C('Today’s capacity','w4',V.gauge(.64)+rows([['Booked by the AI','20'],['Average reply','4.2s'],['Needs you','3']]),{note:'Capacity gauge + side tiles'}),
+   C('Happening now','w6',rows([['Lina booked a haircut','2 min'],['Rami asked about prices','6 min'],['Sara wants to move','11 min']]),{open:['Happening now — live feed',rows(Array.from({length:10},(_,i)=>['Event '+(i+1),i*3+' min']))]}),
+   C('This week','w6',V.cols(),{note:'Capsule bars: how full each day is'}),
+  ],
+  'Conversations':[
+   C('Needs you','w4',rows([['Sara M.','Handed off'],['Omar T.','Asked for a human'],['Hiba R.','Complaint']]),{open:['Needs you',rows([['Sara M.','Handed off'],['Omar T.','Asked for a human'],['Hiba R.','Complaint']])]}),
+   C('AI queue','w4',kpis([['Waiting','2'],['Answered','41'],['Needs you','3']]),{open:['AI queue — Waiting / Answered / Needs you',table(['Received','Customer','Channel','Message','Waited','Status'],8)]}),
+   C('Approvals','w4',kpis([['Waiting','1'],['Approved','12']]),{open:['Approvals',rows([['Refund $45 · Sara','Waiting'],['Discount 10% · Omar','Approved']])]}),
+   C('Latest conversations','w12',table(['Updated','Customer','Channel','Result','Value','Last message'],3),{open:['All conversations (search, filter, CSV)',table(['Updated','Customer','Channel','Result','Value','Last message'],12)],note:'Merges the Live now and Conversations tables; full list with search in the drawer'}),
+  ],
+  'Performance':[
+   C('Conversations and automatic bookings per day','w8',`<div class="big">128 <span class="chip">+18% vs last period</span></div>`+V.line(150),{note:'This period vs last period'}),
+   C('Key numbers','w4',kpis([['Auto-booked','$1,840'],['Booking rate','15%'],['AI reply','4.2s']])+V.spark()),
+   C('From chat to visit','w6',V.funnel()),
+   C('Money · last 30 days','w6',kpis([['Earned','$3,120'],['Booked','$1,840'],['Coming up','$960'],['Today','$210']])),
+  ],
+  'Channels & services':[
+   C('Bookings by channel','w5',V.donut()),
+   C('From channel to result','w7',V.flow()),
+   C('Busiest moments','w6',V.heat(),{note:'Busiest moments + When customers message (same heatmap, toggle inside)'}),
+   C('Services booked','w6',V.hbars(['Haircut','Facial','Nails','Color']),{open:['Insights',rows([['Facials book best on Thursdays','Tip'],['Color is asked about but rarely booked','Tip']])]}),
+  ],
+  'Reviews':[
+   C('Customer reviews','w4',`<div class="big">4.7</div>`+V.stack()+`<div class="note">Rating distribution 5 → 1</div>`),
+   C('Latest reviews','w8',table(['When','Customer','Channel','Rating','Result','Comment'],3),{open:['All reviews',table(['When','Customer','Channel','Rating','Result','Comment'],10)]}),
+  ]}},
+ Calendar:{lede:'Your week. Booking, blocking time and the legend stay as they are.',subs:{
+  'Week':[C('Booking calendar · this week','w12',V.week(),{note:'‹ This week › · Block time · New booking · Legend: Confirmed, Came, No-show'})]}},
+ Clients:{lede:'Who your customers are and what they’re worth.',subs:{
+  'Board':[
+   C('Top 5 by spend','w12',V.stack()+rows([['Maya K.','$640'],['Lina H.','$520'],['Everyone else','$4,100']])),
+   C('All clients','w5',rows([['Lina H.','6 visits'],['Rami K.','2 visits'],['Sara M.','4 visits']]),{open:['Clients table',table(['Customer','Phone','Email','Visits','Upcoming','Spent','No-shows','Last booking','Reminder by','Offers'],10)]}),
+   C('Lina H.','w7',kpis([['Visits','6'],['Upcoming','1'],['No-shows','0'],['Lifetime value','$520']])+rows([['Haircut','12 Oct'],['Color','28 Sep']]),{note:'Detail card: last 5 bookings, totals'}),
+  ],
+  'Overview':[C('Clients','w12',kpis([['Customers','106'],['Regulars','31'],['Total spent','$8,420'],['Have an email','64']]))],
+  'Offers':[C('Send an offer','w8',form(4),{note:'Only to clients who agreed to receive offers'})]}},
+ 'Teach AI':{lede:'How well the AI answers, and how to make it better.',subs:{
+  'Coach':[C('How it’s doing','w12',V.rings()),C('Coach your assistant','w8',form(3)),C('How it talks now','w4',rows([['Name','Nour'],['Tone','Warm'],['Rules','6']]))],
+  'Review replies':[C('Replies','w12',rows([['“We open at 9”','To review'],['“Facial is $45”','Good'],['“Yes, parking”','Corrected']]),{open:['All replies · To review / Good / Corrected / Wrong',rows(Array.from({length:8},(_,i)=>['Reply '+(i+1),'To review']))]})],
+  'Unanswered':[C('Unanswered questions','w12',rows([['Do you have parking?','To answer'],['Can I bring my kid?','To answer']]))],
+  'Rules & knowledge':[C('Rules the AI must always follow','w7',rows([['Never promise discounts','Rule'],['Always confirm the time','Rule']])),C('What the AI already knows','w5',kpis([['Services','14'],['Hours','Set'],['FAQ','22']]))]}},
+ 'Test chat':{lede:'Try the receptionist as a customer.',subs:{'Chat':[C('Phone','w7',rows([['Hi, can I book a facial?','Customer'],['Of course! Thursday 12:00?','AI']])),C('Test controls','w5',form(2))]}},
+ Insights:{lede:'The bigger picture over time. Eight old subtabs, grouped into five.',subs:{
+  'Highlights':[C('Revenue by service','w6',V.stack()+rows([['Haircut','$2,100'],['Facial','$1,400'],['Color','$1,100']])),C('Conversations and bookings','w6',V.cols(8,'',6))],
+  'Money':[
+   C('Revenue and bookings over time','w8',V.line(170)),
+   C('Key numbers','w4',kpis([['Revenue','$8,420'],['Bookings','184'],['Avg ticket','$46'],['Capacity used','64%'],['No-show rate','4%'],['Returning','62%']])),
+   C('Services','w12',table(['Service','Bookings','Revenue','Share','Avg price','Cancelled','No-show','Asked about'],3),{open:['Services — full table',table(['Service','Bookings','Revenue','Share','Avg price','Cancelled','No-show','Asked about'],10)],note:'Already booked (money in the calendar) sits in the drawer header'}),
+  ],
+  'Timing':[C('When you’re busy','w6',V.heat()),C('Revenue by day of the week','w6',V.cols()),C('How far ahead they book','w4',V.hbars(['Same day','1–3 days','1 week+'])),C('Where bookings come from','w4',V.hbars(['WhatsApp','Instagram','Website'])),C('Customer value','w4',`<div class="big">$79</div><div class="note">Average per customer</div>`)],
+  'Clients & AI':[C('AI receptionist performance','w6',V.funnel()),C('Asked but didn’t book','w6',rows([['Omar T.','Color'],['Hiba R.','Facial']])),C('Top customers','w4',rows([['Maya K.','$640'],['Lina H.','$520']])),C('Haven’t come back','w4',rows([['Dana S.','52 days'],['Ali F.','61 days']])),C('Repeated no-shows','w4',rows([['Karim B.','3 missed']])),C('What customers ask about','w12',V.hbars(['Prices','Opening hours','Parking','Booking changes']))],
+  'Next steps':[C('What to do next','w12',rows([['Send an offer to 6 clients who haven’t come back','Clients'],['Add a parking answer — asked 9 times','Teach AI'],['Thursday afternoons are empty','Calendar']]))]}},
+ Website:{lede:'Your booking website. Editor panels unchanged, preview beside them.',subs:{'Edit':[C('Texts · Photos · Style · Sections','w5',form(5)),C('Preview','w7',`<div class="g3" style="height:220px"></div>`),C('Publishing & address','w12',rows([['Free address','beauty-s1.pulse.app'],['Own domain','Not set']]))]}},
+ Settings:{lede:'Setup, Security and Customize groups stay exactly as they are.',subs:{
+  'Setup':[C('Get the most from your receptionist','w12',`<div class="mid">5 of 8 done</div>`+V.stack()),C('Business details','w6',form(4)),C('Tools & payments','w6',form(3)),C('Reminders · Channels · Booking page · Discount codes · Test data','w12',rows([['Send reminders','On'],['WhatsApp','Connected'],['Online booking page','On']]))],
+  'Security':[C('Two-factor sign-in','w6',rows([['Code by email','On'],['Authenticator app','Off']])),C('Password','w6',form(2)),C('Devices & recent activity','w12',rows([['Chrome · Beirut','Now'],['iPhone · Beirut','Yesterday']]))],
+  'Customize':[C('Look and feel','w6',form(3)),C('Dashboard','w6',form(3),{note:'Start page, layouts and details'})]}},
+ Admin:{lede:'Command center, admin only. Same tabs, glass surfaces.',subs:{
+  'Businesses':[C('Businesses','w5',rows([['Beauty S1','Pro trial'],['Garage One','Starter']])),C('Business detail','w7',rows([['Plan and billing','Pro'],['Add-ons','Website'],['Features','12'],['Logins','3']]))],
+  'Leads':[C('Leads','w12',kpis([['New leads','4'],['All leads','38'],['Demo requests','9'],['Badge clicks','112'],['Won','6 · 16%']])),C('Leads from the website','w12',table(['Name','Business','Source','Status'],3))],
+  'Platform':[C('System health','w4',rows([['Database','OK'],['WhatsApp','OK'],['AI pacing','OK']])),C('Usage and cost per client','w8',table(['Business','Messages','AI replies','Bookings','Est. cost','Margin'],3),{open:['Usage and cost per client',table(['Business','Customer messages','AI replies','WhatsApp sent','Reminders and offers','Bookings','Est. cost','Plan','Margin'],8)]})],
+  'More':[C('Logins · Plans and add-ons · New business · Audit log','w12',rows([['All logins','14'],['Plans','3 + 4 add-ons'],['Audit log','Today: 52 events']]))]}},
+};
+
+/* ---- render ---- */
+const $=id=>document.getElementById(id);
+let tab='Today',sub=null;
+function render(){
+  $('main').innerHTML=Object.keys(APP).map(k=>`<button aria-pressed="${k==tab}">${k}</button>`).join('');
+  const A=APP[tab],subs=Object.keys(A.subs);if(!subs.includes(sub))sub=subs[0];
+  $('title').textContent=tab;$('lede').textContent=A.lede;
+  $('sub').style.display=subs.length>1?'flex':'none';
+  $('sub').innerHTML=subs.map(s=>`<button aria-pressed="${s==sub}">${s}</button>`).join('');
+  // focus + list: one block at a comfortable size, the others as a quiet list beside it
+  const cards=A.subs[sub];if(fi>=cards.length)fi=0;const c=cards[fi];
+  const openBtn=(i)=>cards[i].o.open?`<button class="open" data-i="${i}">Open table</button>`:'';
+  if(fresh){$('grid').className='focus solo';$('grid').innerHTML=EMPTY;bind();return}
+  $('grid').className=cards.length>1?'focus':'focus solo';
+  const [,say='',m='']=meta(c),[chg,txt]=say.split('|');
+  // green hero only for the main good-news block; needs-you and AI blocks take their own colour
+  $('grid').innerHTML=`<div class="fmain c g2 ${fi==0&&m=='g'?'vg':m}"><h4>${c.t}${openBtn(fi)}</h4>${txt?`<p class="say">${chg?`<i>${chg}</i>`:''}${txt}</p>`:''}${c.body}</div>`
+   +(cards.length>1?`<div class="flist g2">${cards.map((x,i)=>`<button class="fr ${meta(x)[2]||''}${i==fi?' on':''}" data-f="${i}"><span class="ft">${x.t}</span><span class="fv">${summary(x)}</span></button>`).join('')}</div>`:'');
+  bind();
+}
+function bind(){const A=APP[tab],cards=A.subs[sub];
+  $('main').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.textContent;sub=null;fi=0;render()});
+  $('sub').querySelectorAll('button').forEach(b=>b.onclick=()=>{sub=b.textContent;fi=0;render()});
+  $('grid').querySelectorAll('.fr').forEach(b=>b.onclick=()=>{fi=+b.dataset.f;render()});
+  $('grid').querySelectorAll('.open').forEach(b=>b.onclick=()=>{const [t,h]=cards[b.dataset.i].o.open;$('dt').textContent=t;$('dp').textContent='Full detail with search, filters and Download CSV — opens over the page, closes with a click outside.';$('db').innerHTML=h;document.body.classList.add('on')});
+}
+let fi=0;
+/* per block: [headline number for the list row, one plain sentence with its change label, colour meaning]
+   meaning: g = good / main (green), need = needs you (orange), ai = the AI (violet), '' = neutral */
+const META={
+ 'Good evening, Beauty S1':['$1,840','+9%|That’s 20 appointments the AI booked on its own, 9% more than last month.','g'],
+ 'Next up':['10:30','|Haircut with Lina is next, in 40 minutes.',''],
+ 'Needs you':['3','|3 things are waiting for you. The oldest is 2 hours old.','need'],
+ 'This month':['142','+12%|142 bookings so far this month, 12% ahead of last month.','g'],
+ 'Your team & health':['All OK','|Everyone is on shift and every channel is connected.',''],
+ 'Live now':['128','+18%|128 conversations: most came from WhatsApp and ended in an answer or a booking.','g'],
+ 'Today’s capacity':['64%','|Today is 64% booked. 3 free slots left this afternoon.',''],
+ 'Happening now':['3 new','|3 things happened in the last 15 minutes.',''],
+ 'This week':['Fri','|Friday is your busiest day this week.',''],
+ 'AI queue':['2 waiting','|2 messages are waiting for the AI. They usually clear within a minute.','ai'],
+ 'Approvals':['1 waiting','|1 refund is waiting for your approval.','need'],
+ 'Latest conversations':['128','|128 conversations in 30 days. Open the table to search them.',''],
+ 'Conversations and automatic bookings per day':['128','+18%|128 conversations, 18% more than the period before.','g'],
+ 'Key numbers':['$1,840','+9%|The AI booked $1,840 without you lifting a finger.','g'],
+ 'From chat to visit':['13%','+1 pt|13 of every 100 chats become a visit.','g'],
+ 'Money · last 30 days':['$3,120','+6%|You earned $3,120 in 30 days, and $960 is already booked ahead.','g'],
+ 'Bookings by channel':['WhatsApp','|WhatsApp brings almost half of your bookings.',''],
+ 'From channel to result':['46%','|46% of WhatsApp chats end in a booking.',''],
+ 'Busiest moments':['Thu 5pm','|Thursday evenings get the most messages.',''],
+ 'Services booked':['Haircut','|Haircut is your most booked service.',''],
+ 'Customer reviews':['4.7','+0.2|Customers rate you 4.7 out of 5.','g'],
+ 'Latest reviews':['12','|12 reviews in 30 days, none below 3 stars.',''],
+ 'Booking calendar · this week':['31','|31 bookings this week, Friday is almost full.',''],
+ 'Top 5 by spend':['$1,160','|Your top 2 clients spent $1,160 together.',''],
+ 'All clients':['106','|106 clients, 31 of them regulars.',''],
+ 'Lina H.':['$520','|Lina has visited 6 times and never missed a booking.',''],
+ 'Clients':['106','+8|106 clients, 8 new this month.','g'],
+ 'Send an offer':['64','|64 clients agreed to receive offers.',''],
+ 'How it’s doing':['82%','+4 pts|82% of replies were rated good.','ai'],
+ 'Coach your assistant':['Chat','|Tell the AI what to change, in your own words.','ai'],
+ 'How it talks now':['Warm','|Nour speaks warmly and follows 6 rules.','ai'],
+ 'Replies':['3 to review','|3 replies are waiting for your review.','need'],
+ 'Unanswered questions':['2','|2 questions the AI couldn’t answer yet.','need'],
+ 'Rules the AI must always follow':['2 rules','|The AI follows these rules in every chat.','ai'],
+ 'What the AI already knows':['14','|It knows your 14 services, your hours and 22 answers.','ai'],
+ 'Phone':['Live','|Write like a customer and see how the AI replies.','ai'],
+ 'Test controls':['Reset','|Start again as a brand-new customer.',''],
+ 'Revenue by service':['$2,100','|Haircuts bring the most revenue.','g'],
+ 'Conversations and bookings':['+18%','+18%|Conversations and bookings are both up.','g'],
+ 'Revenue and bookings over time':['$8,420','+6%|Revenue is growing month after month.','g'],
+ 'Services':['8','|8 services; Color is asked about more than it’s booked.',''],
+ 'When you’re busy':['Thu–Sat','|Thursday to Saturday afternoons are your peak.',''],
+ 'Revenue by day of the week':['Fri','|Friday earns the most.',''],
+ 'How far ahead they book':['1–3 days','|Most clients book 1 to 3 days ahead.',''],
+ 'Where bookings come from':['WhatsApp','|WhatsApp is the top source of bookings.',''],
+ 'Customer value':['$79','|An average client is worth $79.',''],
+ 'AI receptionist performance':['99%','|The AI answered 99% of chats on its own.','ai'],
+ 'Asked but didn’t book':['2','|2 warm leads asked but didn’t book. Worth a message.','need'],
+ 'Top customers':['$640','|Maya is your top client this year.',''],
+ 'Haven’t come back':['2','|2 regulars haven’t been back in over 45 days.','need'],
+ 'Repeated no-shows':['1','|1 client missed 3 bookings.','need'],
+ 'What customers ask about':['Prices','|Prices are the most common question.',''],
+ 'What to do next':['3','|3 simple moves could bring more bookings this week.','g'],
+ 'Texts · Photos · Style · Sections':['Edit','|Change texts and photos; the preview updates live.',''],
+ 'Preview':['Live','|This is how customers see your website.',''],
+ 'Publishing & address':['Online','|Your website is live at beauty-s1.pulse.app.','g'],
+ 'Get the most from your receptionist':['5 of 8','|5 of 8 setup steps done.','g'],
+ 'Business details':['Done','|Name, address and hours are set.',''],
+ 'Tools & payments':['3 on','|The AI can book, take deposits and send reminders.',''],
+ 'Reminders · Channels · Booking page · Discount codes · Test data':['On','|Reminders on, WhatsApp connected, booking page live.',''],
+ 'Two-factor sign-in':['Email','|Sign-in codes come by email. An app is safer.','need'],
+ 'Password':['90 days','|Password last changed 90 days ago.',''],
+ 'Devices & recent activity':['2','|Signed in on 2 devices.',''],
+ 'Look and feel':['Room','|Colour, background and motion.',''],
+ 'Dashboard':['Today','|Choose your start page and what each card shows.',''],
+ 'Businesses':['2','|2 businesses on the platform.',''],
+ 'Business detail':['Pro','|Beauty S1 is on a Pro trial, 12 days left.',''],
+ 'Leads':['4 new','+4|4 new leads this week.','g'],
+ 'Leads from the website':['38','|38 leads from the website in total.',''],
+ 'System health':['All OK','|Database, WhatsApp and AI pacing are healthy.','g'],
+ 'Usage and cost per client':['$0.42','|Average AI cost per client this month.',''],
+ 'Logins · Plans and add-ons · New business · Audit log':['14','|14 logins, 3 plans, 52 audit events today.',''],
+};
+const meta=x=>META[x.t]||META[x.t.replace(/'/g,'’')]||[];
+// the one number a list row shows: the block's headline figure, else its first value, else its size
+function summary(x){if(meta(x)[0])return meta(x)[0];const d=document.createElement('div');d.innerHTML=x.body;
+  const e=d.querySelector('.big,.mid,.kpis b');if(e)return e.firstChild.textContent.trim();
+  const r=d.querySelectorAll('.rows > div, tbody tr');if(r.length)return r.length+' items';
+  return x.o.open?'Table':'View'}
+$('dim').onclick=()=>document.body.classList.remove('on');
+// a brand-new business with no data yet: one calm, designed screen instead of empty boxes
+let fresh=false;
+const EMPTY=`<div class="fmain c g2 empty"><svg viewBox="0 0 64 64" style="width:56px;height:56px;margin:0 auto"><circle cx="32" cy="32" r="30" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 6"/><path d="M18 34h8l4-10 6 18 4-8h6" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+ <h3>Your receptionist is ready</h3><p>Nothing to show yet. The first conversations usually arrive within a day of connecting WhatsApp. Here's what to do while you wait:</p>
+ <div class="steps"><div class="g3"><b>1 · Connect WhatsApp</b>So customers can reach the AI.</div><div class="g3"><b>2 · Check your services</b>Prices and durations the AI will offer.</div><div class="g3"><b>3 · Try the test chat</b>Book an appointment as a customer.</div></div>
+ <p style="margin-top:20px"><button class="cta">Connect WhatsApp</button></p></div>`;
+$('nb').onclick=()=>{fresh=!fresh;$('nb').textContent=fresh?'Sample data':'New business';render()};
+$('bgb').onclick=()=>{const p=document.body.classList.toggle('plain');$('bgb').textContent=p?'Plain':'Room'};
+$('per').querySelectorAll('button').forEach(b=>b.onclick=()=>$('per').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)));
+$('tg').onclick=()=>{const r=document.documentElement,d=r.dataset.theme==='dark';r.dataset.theme=d?'light':'dark';$('tg').textContent=d?'Dark':'Light'};
+render();
+</script>
+</body></html>

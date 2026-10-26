@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pulse Glass Layers</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* ---------- tokens ---------- */
+:root[data-theme="dark"]{
+  --ink:#f5f2ee;--ink2:rgba(245,242,238,.66);--muted:rgba(245,242,238,.42);
+  --l1:rgba(28,24,22,.38);--l2:rgba(255,255,255,.06);--l3:rgba(255,255,255,.10);
+  --rim:rgba(255,255,255,.10);--rim-hi:rgba(255,255,255,.16);--shadow:0 30px 60px -30px rgba(0,0,0,.65);
+  --veil:rgba(10,8,7,.55);--accent:#f08a4b;--a2:#8fb4a8;--a3:#c9a27e;--grid:rgba(255,255,255,.06);--pill:#f5f2ee;--pill-ink:#16110d;
+  --wall1:#3a2c22;--wall2:#1b1512;--win:#6b5a48;--floor:#120e0b;--lamp:rgba(255,170,110,.55)}
+:root[data-theme="light"]{
+  --ink:#1f1812;--ink2:rgba(31,24,18,.66);--muted:rgba(31,24,18,.45);
+  --l1:rgba(255,252,247,.45);--l2:rgba(255,255,255,.42);--l3:rgba(255,255,255,.62);
+  --rim:rgba(255,255,255,.65);--rim-hi:rgba(255,255,255,.95);--shadow:0 30px 60px -34px rgba(90,60,30,.45);
+  --veil:rgba(246,240,232,.45);--accent:#d9682e;--a2:#4f8f78;--a3:#a07a58;--grid:rgba(60,40,20,.08);--pill:#2a211b;--pill-ink:#fff;
+  --wall1:#e9dccb;--wall2:#cdbba5;--win:#fff6e8;--floor:#bfa98f;--lamp:rgba(255,200,150,.6)}
+*{box-sizing:border-box}
+body{margin:0;font-family:Geist,system-ui,sans-serif;color:var(--ink);background:var(--floor);transition:color .4s}
+
+/* ---------- layer 0: the "picture" — a soft, blurred interior painted in CSS (swap for a real photo later) ---------- */
+.scene{position:fixed;inset:-60px;z-index:-3;filter:blur(38px) saturate(.9);transition:background .6s;
+  background:
+    radial-gradient(18% 34% at 22% 38%,var(--win),transparent 70%),      /* window light */
+    radial-gradient(14% 30% at 38% 36%,var(--win),transparent 70%),
+    radial-gradient(22% 18% at 78% 30%,var(--lamp),transparent 70%),     /* lamp */
+    radial-gradient(40% 20% at 55% 88%,var(--wall2),transparent 70%),    /* sofa / table mass */
+    linear-gradient(180deg,var(--wall1) 0%,var(--wall2) 62%,var(--floor) 100%)}
+/* layer 1: a veil that tones the picture down so it never competes with data */
+.veil{position:fixed;inset:0;z-index:-2;background:var(--veil)}
+/* fine grain stops banding and makes glass read as glass */
+.grain{position:fixed;inset:0;z-index:-1;opacity:.06;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ---------- glass layers ---------- */
+.g1,.g2,.g3{border:1px solid var(--rim);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2)}
+.g1{background:var(--l1);border-radius:28px;box-shadow:var(--shadow),inset 0 1px 0 var(--rim-hi)}   /* panel: the big sheet */
+.g2{background:var(--l2);border-radius:20px;box-shadow:inset 0 1px 0 var(--rim-hi)}               /* card on the sheet */
+.g3{background:var(--l3);border-radius:14px}                                                       /* chip / row inside a card */
+
+/* ---------- page ---------- */
+.top{position:sticky;top:12px;z-index:5;margin:12px auto 0;max-width:1200px;display:flex;align-items:center;gap:10px;padding:8px 10px 8px 16px;border-radius:99px}
+.top .b{font-weight:600;margin-right:auto}
+.tabs{display:flex;gap:2px;padding:3px;border-radius:99px}
+.tabs span{font-size:13px;padding:7px 14px;border-radius:99px;color:var(--ink2)}
+.tabs span.on{background:var(--pill);color:var(--pill-ink)}
+.tg{font:inherit;font-size:13px;padding:8px 14px;border-radius:99px;border:1px solid var(--rim);background:var(--l2);color:var(--ink);cursor:pointer}
+.wrap{max-width:1200px;margin:16px auto 40px;padding:0 16px}
+.hello{padding:18px 6px 14px}.hello small{color:var(--muted);font-size:12px}.hello h1{margin:4px 0 2px;font-weight:400;font-size:30px}.hello p{margin:0;color:var(--ink2);font-size:14px}
+.sheet{padding:14px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.c{padding:16px 18px;min-height:140px;position:relative}
+.c h4{margin:0 0 4px;font-size:12px;font-weight:500;color:var(--ink2);display:flex;justify-content:space-between;align-items:center}
+.big{font-size:34px;font-weight:300;letter-spacing:-.02em}.mid{font-size:26px;font-weight:300}
+.chip{font-family:'Geist Mono';font-size:10.5px;padding:3px 8px;color:var(--a2)}
+.s8{grid-column:span 8}.s4{grid-column:span 4}.s3{grid-column:span 3}.s12{grid-column:span 12}.s6{grid-column:span 6}
+svg{display:block;width:100%;overflow:visible}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--ink2)}.legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.split{display:flex;gap:6px;margin-top:12px}.split div{height:6px;border-radius:99px}
+.splitl{display:flex;gap:6px;margin-top:8px}.splitl span{flex:1;font-size:11px;color:var(--ink2);padding:6px 10px;display:flex;justify-content:space-between}
+.next{display:flex;flex-direction:column;gap:6px;margin-top:8px}.next div{display:flex;justify-content:space-between;padding:9px 12px;font-size:13px}.next b{font-weight:500}.next span{color:var(--muted)}
+/* glass table */
+table{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:13px}
+th{text-align:left;font-weight:500;color:var(--muted);font-size:11px;padding:0 12px}
+td{padding:11px 12px;background:var(--l3);border-top:1px solid var(--rim);border-bottom:1px solid transparent}
+td:first-child{border-radius:12px 0 0 12px}td:last-child{border-radius:0 12px 12px 0;text-align:right}
+tr:hover td{background:var(--rim-hi)}
+.st{font-size:11px;padding:3px 9px;border-radius:99px;background:var(--l2);border:1px solid var(--rim)}
+.st.ok{color:var(--a2)}.st.wait{color:var(--accent)}
+@media(max-width:860px){.s8,.s4,.s3,.s6{grid-column:span 12}.tabs{display:none}}
+
+/* ---------- analysis ---------- */
+.notes{margin-top:22px;padding:22px 24px}
+.notes h2{margin:0 0 4px;font-size:18px;font-weight:500}.notes>p{margin:0 0 16px;color:var(--ink2);font-size:14px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.cols div{padding:14px 16px;font-size:13.5px;line-height:1.55;color:var(--ink2)}
+.cols b{display:block;color:var(--ink);font-weight:500;margin-bottom:4px;font-size:14px}
+.cols ul{margin:6px 0 0;padding-left:18px}
+</style></head>
+<body>
+<div class="scene"></div><div class="veil"></div><div class="grain"></div>
+
+<div class="top g1">
+  <span class="b">Pulse</span>
+  <div class="tabs g3"><span class="on">Home</span><span>Dashboard</span><span>Calendar</span><span>Clients</span><span>Insights</span></div>
+  <button class="tg" id="tg">Switch to light</button>
+</div>
+
+<div class="wrap">
+  <div class="hello"><small>Mon, 26 Oct · Open now · until 20:00</small><h1>Good evening, Beauty S1</h1><p>7 appointments today · 11 things need you.</p></div>
+
+  <div class="sheet g1">
+   <div class="grid">
+    <div class="c g2 s8">
+      <h4>Conversations <span class="legend"><span><i style="background:var(--accent)"></i>This week</span><span><i style="background:var(--muted)"></i>Last week</span></span></h4>
+      <div class="big">128 <span class="chip g3">↑ 18%</span></div>
+      <svg viewBox="0 0 640 170" preserveAspectRatio="none" style="height:170px;margin-top:6px" id="line"></svg>
+      <div class="split"><div style="flex:99;background:var(--ink)"></div><div style="flex:15;background:var(--accent)"></div><div style="flex:6;background:var(--a2)"></div></div>
+      <div class="splitl"><span class="g3">Answered <b>99%</b></span><span class="g3">Booked <b>15%</b></span><span class="g3">Handed off <b>2%</b></span></div>
+    </div>
+    <div class="c g2 s4">
+      <h4>Week pace <span class="chip g3">Ahead</span></h4>
+      <div class="mid">20 <span style="font-size:13px;color:var(--muted)">AI bookings of 30</span></div>
+      <svg viewBox="0 0 260 150" style="height:150px;margin-top:10px" id="pace"></svg>
+    </div>
+    <div class="c g2 s3"><h4>Customers</h4><div class="mid">106</div><svg viewBox="0 0 200 50" style="height:50px;margin-top:14px" id="sp1"></svg></div>
+    <div class="c g2 s3"><h4>Avg reply</h4><div class="mid">4.2s</div><svg viewBox="0 0 200 50" style="height:50px;margin-top:14px" id="sp2"></svg></div>
+    <div class="c g2 s6"><h4>Next up <span>Your calendar</span></h4>
+      <div class="next"><div class="g3"><b>Haircut · Lina</b><span>10:30</span></div><div class="g3"><b>Facial · Rami</b><span>12:00</span></div></div></div>
+    <div class="c g2 s12"><h4>Latest conversations <span>Today</span></h4>
+      <table><thead><tr><th>Customer</th><th>Channel</th><th>Topic</th><th>Status</th></tr></thead><tbody>
+      <tr><td>Lina H.</td><td>WhatsApp</td><td>Booked haircut Thu 10:30</td><td><span class="st ok">Booked</span></td></tr>
+      <tr><td>Rami K.</td><td>Instagram</td><td>Price of facial</td><td><span class="st ok">Answered</span></td></tr>
+      <tr><td>Sara M.</td><td>WhatsApp</td><td>Wants to move appointment</td><td><span class="st wait">Needs you</span></td></tr>
+      </tbody></table></div>
+   </div>
+  </div>
+
+  <div class="notes g1">
+    <h2>What the references do, and what we take</h2>
+    <p>The numbers and text in this preview are placeholders. Fonts are unchanged (Geist). Only surfaces, background and charts are new.</p>
+    <div class="cols">
+      <div class="g2"><b>Kerfa CRM (reel 2 & 3)</b>A blurred photo of a real room sits behind everything, dimmed so it never fights the data. Cards are frosted glass: the room shows through, softened. One warm colour (orange) carries all the data, a dotted line shows "last year", and columns show pace against a target.
+        <ul><li>Take: photo + veil background, frosted cards, dotted comparison line, pace columns, charcoal active tab.</li></ul></div>
+      <div class="g2"><b>Finance overview (reel 1)</b>Every tile is a different loud gradient (indigo, olive, pink, copper, green). It looks great in a video but is tiring to work in all day. Its chart shapes are excellent: flowing bands, a fine-tick gauge, tick-bar meters, rounded pill bars.
+        <ul><li>Take: the chart shapes only. Leave out: the loud tile colours.</li></ul></div>
+      <div class="g2"><b>The layer system in this preview</b>
+        <ul><li><b style="display:inline">0 · Picture:</b> a soft, blurred room, painted in CSS here. It can be swapped for a real photo per business.</li>
+        <li><b style="display:inline">1 · Veil:</b> dark or cream wash that tones the picture down.</li>
+        <li><b style="display:inline">2 · Sheet:</b> one big glass panel holding the page.</li>
+        <li><b style="display:inline">3 · Cards:</b> lighter glass on the sheet.</li>
+        <li><b style="display:inline">4 · Chips / rows:</b> the lightest glass, for table rows, tags and pills.</li></ul>
+        Each layer is a bit lighter than the one under it, so depth comes from transparency, not shadows or 3D.</div>
+      <div class="g2"><b>Why it is easier on the eyes</b>
+        <ul><li>No bright glows or neon. The picture is blurred and dimmed by about 55%.</li>
+        <li>One data colour plus neutrals. Green and red only for status.</li>
+        <li>Thin lines and soft fills in charts, and the grid is barely visible.</li>
+        <li>The same layers in dark and light, so switching feels calm.</li></ul></div>
+      <div class="g2"><b>Cost and risks</b>
+        <ul><li>Blur is heavy on weak phones and old laptops. Plan: the full effect on desktop, a lighter blur on phones, and none when "reduce transparency" is on.</li>
+        <li>Text contrast on glass has to be checked on every page. The veil is what keeps it readable.</li>
+        <li>The CSS today is several stacked theme files. This should become one clean theme file, replacing them, not another layer.</li></ul></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function wave(n,a,b,s){return Array.from({length:n+1},(_,i)=>{const x=i/n;return b+a*Math.sin(x*6+s)+a*.6*Math.sin(x*15+s*2)})}
+function path(p,w){const s=w/(p.length-1);let d=`M0 ${p[0]}`;for(let i=1;i<p.length;i++){const x0=(i-1)*s,x1=i*s,c=(x0+x1)/2;d+=` C${c} ${p[i-1]} ${c} ${p[i]} ${x1} ${p[i]}`}return d}
+function draw(){
+  const a=wave(26,26,90,.6),b=wave(26,18,100,1.9);
+  $('line').innerHTML=`<defs><linearGradient id="fa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".28"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>`
+   +[40,85,130].map(y=>`<line x1="0" x2="640" y1="${y}" y2="${y}" stroke="var(--grid)"/>`).join('')
+   +`<path d="${path(b,640)}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="2 5"/>`
+   +`<path d="${path(a,640)} L640 170 L0 170Z" fill="url(#fa)"/><path d="${path(a,640)}" fill="none" stroke="var(--accent)" stroke-width="2.2"/>`
+   +`<circle cx="${640*17/26}" cy="${a[17]}" r="5" fill="var(--accent)" stroke="var(--ink)" stroke-width="2"/>`;
+  // pace: glass columns, filled ones tinted
+  let s='';const v=[.5,.62,.7,.85,.4,.35,.3];v.forEach((h,i)=>{const x=6+i*36,H=h*120,done=i<4;
+    s+=`<rect x="${x}" y="10" width="26" height="120" rx="8" fill="var(--l3)" stroke="var(--rim)"/>`
+     +(done?`<rect x="${x}" y="${130-H}" width="26" height="${H}" rx="8" fill="var(--accent)" opacity="${.45+i*.15}"/>`:'')});
+  s+=`<line x1="0" x2="260" y1="46" y2="46" stroke="var(--ink2)" stroke-dasharray="3 4" stroke-opacity=".6"/><text x="258" y="40" text-anchor="end" font-size="10" fill="var(--muted)" font-family="Geist">target</text>`;
+  $('pace').innerHTML=s;
+  [['sp1',wave(14,8,25,1)],['sp2',wave(14,6,28,3)]].forEach(([id,p])=>$(id).innerHTML=`<path d="${path(p,200)}" fill="none" stroke="var(--a2)" stroke-width="1.8"/>`);
+}
+draw();
+$('tg').onclick=()=>{const r=document.documentElement,l=r.dataset.theme==='dark';r.dataset.theme=l?'light':'dark';$('tg').textContent=l?'Switch to dark':'Switch to light'};
+</script>
+</body></html>

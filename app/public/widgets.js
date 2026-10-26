@@ -206,11 +206,12 @@ addEventListener("tabshown",()=>{if(editing)stopEdit()});
 document.querySelectorAll("nav button[data-view]").forEach(b=>b.addEventListener("click",()=>editing&&stopEdit()));
 
 /* ---------- Settings > Customize ---------- */
-const PREF="rb-prefs",pref=Object.assign({accent:"",density:"comfy",size:"m",motion:true,pulse:true,start:"overview"},store.get(PREF,{}));
-const ACC=[["","Orange (default)","#ff6a1f"],["#3d8bff","Blue","#3d8bff"],["#2fd27b","Green","#2fd27b"],["#d65cff","Purple","#d65cff"],["#ff4fa0","Pink","#ff4fa0"],["#2fe0c4","Teal","#2fe0c4"]];
+const PREF="rb-prefs",pref=Object.assign({accent:"",density:"comfy",size:"m",motion:true,pulse:true,start:"overview",bg:"room"},store.get(PREF,{}));
+const ACC=[["","Green (default)","#34b26f"],["#3d8bff","Blue","#3d8bff"],["#ff6a1f","Orange","#ff6a1f"],["#d65cff","Purple","#d65cff"],["#ff4fa0","Pink","#ff4fa0"],["#2fe0c4","Teal","#2fe0c4"]];
 function apply(){const r=document.documentElement;
   if(pref.accent){r.style.setProperty("--accent",pref.accent);r.style.setProperty("--accent-text",pref.accent);r.style.setProperty("--accent-soft",pref.accent+"24");r.style.setProperty("--accent-line",pref.accent+"73")}
   else["--accent","--accent-text","--accent-soft","--accent-line"].forEach(p=>r.style.removeProperty(p));
+  if(pref.bg==="plain")r.dataset.bg="plain";else delete r.dataset.bg;
   r.classList.toggle("compact",pref.density==="compact");r.classList.toggle("nomotion",!pref.motion);
   const m=document.querySelector("main");if(m)m.style.zoom={s:.92,m:1,l:1.1}[pref.size]||1}
 apply();
@@ -218,6 +219,7 @@ const seg=(k,opts)=>`<div class="cu-seg" data-k="${k}">${opts.map(([v,l])=>`<but
 function drawCustom(){const look=$("#cuLook .cu-body"),dash=$("#cuDash .cu-body");if(!look||!dash)return;const th=document.documentElement.dataset.theme;
   look.innerHTML=`<div class="cu-grid">
    <div class="cu-row"><b>Theme</b><small>Dark is easier on the eyes at night.</small><div class="cu-seg" data-theme-seg><button type="button" data-v="dark" aria-pressed="${th==="dark"}">Dark</button><button type="button" data-v="light" aria-pressed="${th==="light"}">Light</button></div></div>
+   <div class="cu-row"><b>Background</b><small>A soft blurred room behind the page, or a plain colour.</small>${seg("bg",[["room","Room"],["plain","Plain"]])}</div>
    <div class="cu-row"><b>Highlight colour</b><small>Buttons, active tabs and highlights.</small><div class="cu-seg">${ACC.map(([v,l,c])=>`<button type="button" class="cu-sw" data-acc="${v}" title="${l}" aria-label="${l}" aria-pressed="${pref.accent===v}" style="background:${c}"></button>`).join("")}</div></div>
    <div class="cu-row"><b>Text size</b><small>Makes everything bigger or smaller.</small>${seg("size",[["s","Small"],["m","Normal"],["l","Large"]])}</div>
    <div class="cu-row"><b>Spacing</b><small>Compact fits more on the screen.</small>${seg("density",[["comfy","Roomy"],["compact","Compact"]])}</div>

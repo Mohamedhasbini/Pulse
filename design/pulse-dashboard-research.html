@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pulse Dashboard Research</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap">
+<style>
+:root{--bg:#0e1210;--card:#161b18;--ink:#eef1ef;--ink2:#a9b2ad;--line:rgba(255,255,255,.08);--g:#34b26f;--v:#7f72e6;--o:#e07a42}
+@media (prefers-color-scheme:light){:root{--bg:#f2f4f2;--card:#fff;--ink:#151a17;--ink2:#56605a;--line:rgba(0,0,0,.08);--g:#1f8f55;--v:#6457d4;--o:#cc6630}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Geist,system-ui,sans-serif;line-height:1.6}
+main{max-width:880px;margin:0 auto;padding:40px 16px 60px}
+h1{font-weight:500;font-size:30px;margin:0 0 6px}h2{font-weight:500;font-size:20px;margin:36px 0 10px}h3{font-size:15px;font-weight:600;margin:0 0 6px}
+p,li{color:var(--ink2);font-size:15px}b{color:var(--ink);font-weight:500}
+.lede{font-size:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:10px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:700px){.two{grid-template-columns:1fr}}
+.good h3{color:var(--g)}.bad h3{color:var(--o)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--ink2);font-weight:500;font-size:12px}
+td:first-child{white-space:nowrap;color:var(--ink)}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--ink2)}
+ul{padding-left:20px}
+small{color:var(--ink2)}
+a{color:var(--g)}
+</style></head><body><main>
+<h1>Pulse dashboard: what to improve before launch</h1>
+<p class="lede">What the research says about colours, glass layers, backgrounds and data, what makes clients and investors happy with a dashboard, and what gets bad reviews. Ends with a concrete list of changes to the preview. <b>All your tabs, tools and data stay.</b> Only the look and the way things are arranged change.</p>
+
+<h2>The short version</h2>
+<div class="card"><ul>
+<li><b>Glass is for the frame, not for the numbers.</b> The common advice is to put blur on navigation, panels and pop-ups, and keep charts and tables on nearly solid surfaces. Blur behind numbers makes them harder to read when real data changes underneath.</li>
+<li><b>One question per screen, one headline number first.</b> 5–7 numbers per view is the usual ceiling before people stop taking them in. The rest goes one click deeper. This is exactly the Focus + list idea.</li>
+<li><b>Colour means something, or it isn't used.</b> Green = good / main, orange = needs attention, violet = AI. Red only when something is broken. Then people learn to trust the colours.</li>
+<li><b>Dark mode should not use pure white on pure black.</b> Very high contrast blurs for many eyes (especially with astigmatism) and tires people over a day. Off-white text on dark grey-green is calmer.</li>
+<li><b>Small business owners judge by "does this help me today?"</b> The most common complaints about booking software are: too much information, widgets that don't help day-to-day, and weak reports. Not "it's not pretty".</li>
+<li><b>Investors judge by the first 10 seconds.</b> Clean, consistent and effortless on the main path. A demo with real-looking data and no empty or broken states.</li>
+</ul></div>
+
+<h2>Colours</h2>
+<div class="card">
+<p><b>Keep:</b> the three Pulse colours at the medium strength you approved (green #34b26f, violet #7f72e6, orange #e07a42 in dark mode).</p>
+<p><b>Add a meaning to each</b>, used the same way on every page:</p>
+<table><tr><th>Colour</th><th>Means</th><th>Used for</th></tr>
+<tr><td>Green</td><td>Good / the main number</td><td>Headline card, main chart line, "booked", "answered", growth</td></tr>
+<tr><td>Orange</td><td>Needs you</td><td>Handed off, waiting, approvals, things to do. Never decoration.</td></tr>
+<tr><td>Violet</td><td>The AI</td><td>AI reply time, Teach AI, confidence, AI queue</td></tr>
+<tr><td>Grey / off-white</td><td>Everything else</td><td>Comparison lines, last period, axes, secondary bars</td></tr>
+<tr><td>Red (rare)</td><td>Broken</td><td>Disconnected channel, failed reminder, error. Nothing else.</td></tr></table>
+<p><b>Dark mode text:</b> use off-white (about #eef1ef) not #fff. Secondary text at about 70%, labels at about 45%.</p>
+<p><b>Light mode:</b> the green card stays deep green. Charts use the darker versions of the three colours so they still read on white glass.</p>
+</div>
+
+<h2>Layers and background</h2>
+<div class="card">
+<p>The layer system from the preview is right. Two adjustments based on the research:</p>
+<ul>
+<li><b>Data cards get more solid.</b> Raise the card fill so blur shows only at the edges and in the frame. Number and chart areas sit on 85–90% solid glass. Text is checked at 4.5:1 contrast (body) and 3:1 (big numbers, chart lines) against the <i>real</i> background, not a flat colour.</li>
+<li><b>Blur only on 2 layers at most:</b> the top bar / side panel and the page sheet. Cards don't blur again on top. This also keeps phones smooth, since stacked blur is heavy on mid-range Android.</li>
+<li><b>Background picture:</b> keep it soft and dim (the veil). Offer 3 options in Settings → Look and feel: <i>Calm room</i> (default), <i>Plain</i> (no picture), and later <i>Your own photo</i> (blurred automatically). Plain is also the automatic choice when the device asks for less transparency.</li>
+</ul>
+</div>
+
+<h2>Data and charts</h2>
+<div class="card">
+<ul>
+<li><b>Every list row has a real headline number</b> (64%, 7 today, $1,840). No "View" or "3 items".</li>
+<li><b>Every number has context:</b> a small change label ("+18% vs last week") and a short sentence on hover or under the chart ("You booked 3 more than last week").</li>
+<li><b>One period switch per page</b> (7 days / 30 days / 12 months) in the same place on every tab.</li>
+<li><b>Thin lines, rounded small bars, faint grid,</b> last period as a dotted grey line. That's how the reference charts look calm and expensive.</li>
+<li><b>Empty and loading states are designed,</b> not blank. A new business with no data sees a friendly example and what to do next.</li>
+<li><b>Numbers line up:</b> monospace digits for values in lists and tables so columns don't jump.</li>
+</ul>
+</div>
+
+<h2>What gets good reviews and bad reviews</h2>
+<div class="two">
+<div class="card good"><h3>Praised</h3><ul>
+<li>"Easy to use", "I see my day at a glance"</li>
+<li>Fast to learn without training</li>
+<li>Great support behind a complex tool</li>
+<li>Clear revenue and booking reports</li>
+<li>Looks modern and trustworthy in front of staff and clients</li></ul></div>
+<div class="card bad"><h3>Complained about</h3><ul>
+<li>"Too much information to go through" for a busy owner</li>
+<li>Dashboard widgets that don't help day-to-day work</li>
+<li>Reports too basic or not customisable</li>
+<li>Takes time to learn all the features</li>
+<li>Few options to style the dashboard; slow or failing logins</li></ul></div>
+</div>
+<p><small>Based on public reviews of booking tools (Checkfront, BookingPress, Wix Bookings, SimplyBook.me, Booker) on Capterra, G2 and Endorsal. Small sample, indicative only.</small></p>
+
+<h2>What makes a client or investor happy in a demo</h2>
+<div class="card"><ul>
+<li><b>First 10 seconds:</b> the Today screen says what is happening and what needs you, in plain words, with one strong number.</li>
+<li><b>Consistency:</b> same card shapes, same spacing, same colour meaning on every tab. Inconsistent styling reads as "unfinished".</li>
+<li><b>An effortless happy path:</b> open → see today → open a conversation → see the AI booked it. No dead ends, no empty boxes.</li>
+<li><b>Proof of value on screen:</b> "The AI booked $1,840 for you this month" is the line that sells to both owners and investors.</li>
+<li><b>Polish signals:</b> smooth tab changes, no layout jumps, readable on a phone.</li></ul></div>
+
+<h2>Changes to make in the preview before building</h2>
+<table>
+<tr><th>#</th><th>Change</th><th>Why</th></tr>
+<tr><td>1</td><td>Data cards more solid; blur only on top bar and page sheet</td><td>Readability, phone speed</td></tr>
+<tr><td>2</td><td>Colour meanings applied everywhere (green good, orange needs you, violet AI)</td><td>Colours become information, not decoration</td></tr>
+<tr><td>3</td><td>Off-white text, softer contrast in dark mode</td><td>Less eye strain over a full day</td></tr>
+<tr><td>4</td><td>Real headline number on every list row</td><td>No vague "View" / "3 items"</td></tr>
+<tr><td>5</td><td>Change label + one-line sentence on each focus block</td><td>Owners understand without reading charts</td></tr>
+<tr><td>6</td><td>Same period switch, same place, every tab</td><td>Consistency</td></tr>
+<tr><td>7</td><td>Today opens with "The AI booked $X for you" value line</td><td>Shows value in the first 10 seconds</td></tr>
+<tr><td>8</td><td>Background choice: Calm room / Plain</td><td>Personal taste and accessibility</td></tr>
+<tr><td>9</td><td>Designed empty state for a new business</td><td>No blank boxes in demos or first days</td></tr>
+</table>
+
+<h2>Sources</h2>
+<ul style="font-size:13px">
+<li><a href="https://axesslab.com/?p=5111">Axesslab – Glassmorphism meets accessibility</a></li>
+<li><a href="https://medium.com/design-bootcamp/glassmorphism-the-most-beautiful-trap-in-modern-ui-design-a472818a7c0a">Glassmorphism: the most beautiful trap in modern UI design</a></li>
+<li><a href="https://uxmagic.ai/blog/what-is-glassmorphism">UX Magic – What is glassmorphism</a></li>
+<li><a href="https://userpilot.com/blog/progressive-disclosure/">Userpilot – Progressive disclosure</a></li>
+<li><a href="https://www.lazarev.agency/articles/saas-dashboard-design">Lazarev – SaaS dashboard design best practices</a></li>
+<li><a href="https://www.designrush.com/agency/ui-ux-design/trends/dashboard-design-principles">DesignRush – 9 dashboard design principles for 2026</a></li>
+<li><a href="https://www.uxmatters.com/mt/archives/2025/03/from-features-to-value-designing-saas-dashboards-that-deliver-insights.php">UXmatters – From features to value</a></li>
+<li><a href="https://925studios.co/blog/saas-dashboard-design-examples-2026">925 Studios – SaaS dashboard examples 2026</a></li>
+<li><a href="https://www.sumologic.com/blog/dark-theme">Sumo Logic – Dark theme</a></li>
+<li><a href="https://ant.design/docs/spec/dark">Ant Design – Dark mode spec</a></li>
+<li><a href="https://arxiv.org/html/2512.00516v2">Chameleon – palette adaptation for dark mode visualisations</a></li>
+<li><a href="https://www.g2.com/survey_responses/checkfront-review-7611154">G2 – Checkfront review</a></li>
+<li><a href="https://www.capterra.com/p/248925/Bookingpress/reviews/?page=3">Capterra – BookingPress reviews</a></li>
+<li><a href="https://www.capterra.com/p/99249/Checkfront/reviews?page=3">Capterra – Checkfront reviews</a></li>
+<li><a href="https://www.capterra.com/p/14148/Wix-Bookings/?page=2">Capterra – Wix Bookings</a></li>
+<li><a href="https://endorsal.io/reviews/simplybookme?rating=3">Endorsal – SimplyBook.me reviews</a></li>
+<li><a href="https://www.capterra.com/p/90708/Booker/reviews/">Capterra – Booker reviews</a></li>
+<li><a href="https://www.slidegenius.com/blog/build-a-winning-pitch-deck-for-saas-investors">SlideGenius – Pitch decks for SaaS investors</a></li>
+<li><a href="https://contra.com/community/5n3ehfBI-some-prototypes-need-to-work-others">Contra – Prototypes for investors</a></li>
+</ul>
+<p><small>Most design sources are agency and vendor blogs, not formal studies. Treat numbers like "5–7 KPIs" as rules of thumb.</small></p>
+</main></body></html>

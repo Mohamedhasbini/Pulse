@@ -1,0 +1,85 @@
+/* Glass: the final look (design/pulse-glass-structure.html). Loaded last.
+   A soft blurred room behind a veil, blur only on the bar/sidebar and the page, near-solid data cards,
+   three colours with fixed meanings: green = good / main, orange = needs you, violet = the AI. */
+:root,:root[data-theme="dark"]{
+  --p-green:#34b26f;--p-orange:#e07a42;--p-violet:#7f72e6;
+  --gp-ground:#0b0d0c;--gp-card:rgba(24,29,26,.86);--gp-nest:rgba(255,255,255,.06);--gp-nest2:rgba(255,255,255,.1);--gp-edge:rgba(255,255,255,.09);
+  --gp-text:#eef1ef;--gp-2:rgba(238,241,239,.70);--gp-meta:rgba(238,241,239,.45);--gp-on:#fff;
+  --need:var(--p-orange);--ai:var(--p-violet);--bad:#ff4d5e;
+  --gl-frame:rgba(18,22,20,.42);--gl-rim:rgba(255,255,255,.09);--gl-rim-hi:rgba(255,255,255,.14);--gl-grid:rgba(255,255,255,.07);
+  --gl-wall1:#26302b;--gl-wall2:#121614;--gl-win:#4a5550;--gl-lamp:rgba(52,178,111,.10);--gl-veil:rgba(8,10,9,.55)}
+:root[data-theme="light"]{
+  --p-green:#1f8f55;--p-orange:#c45f2a;--p-violet:#5d50cc;
+  --gp-ground:#b9c2bc;--gp-card:rgba(255,255,255,.88);--gp-nest:rgba(20,40,30,.045);--gp-nest2:rgba(20,40,30,.08);--gp-edge:rgba(20,40,30,.09);
+  --gp-text:#151a17;--gp-2:rgba(21,26,23,.74);--gp-meta:rgba(21,26,23,.52);--gp-on:#fff;--bad:#e11d48;
+  --gl-frame:rgba(255,255,255,.5);--gl-rim:rgba(255,255,255,.75);--gl-rim-hi:#fff;--gl-grid:rgba(20,40,30,.09);
+  --gl-wall1:#e6e9e6;--gl-wall2:#c9d0cb;--gl-win:#fff;--gl-lamp:rgba(31,143,85,.12);--gl-veil:rgba(240,244,241,.35)}
+/* green leads on every page; orange and violet are kept for their meanings */
+body,body[data-page],:root[data-theme] body[data-page][data-page]{--pg:var(--p-green);--pg2:var(--p-violet);--accent:var(--p-green);--accent-ink:#fff;--accent-text:var(--p-green);
+  --accent-soft:color-mix(in srgb,var(--p-green) 14%,transparent);--accent-line:color-mix(in srgb,var(--p-green) 45%,transparent);
+  --good:var(--p-green);--warn:var(--need);--blue:var(--p-green);--d1:var(--p-green);--d2:var(--p-violet);--d3:var(--p-orange);--d4:var(--gp-2)}
+
+/* ground: the blurred room and its veil */
+html{background:var(--gp-ground)!important}
+body{background:var(--gp-ground)!important}
+body::before{content:"";position:fixed;inset:-60px;z-index:-2;pointer-events:none;filter:blur(38px);
+  background:radial-gradient(18% 34% at 22% 38%,var(--gl-win),transparent 70%),radial-gradient(14% 30% at 38% 36%,var(--gl-win),transparent 70%),
+  radial-gradient(22% 18% at 78% 30%,var(--gl-lamp),transparent 70%),radial-gradient(40% 20% at 55% 88%,var(--gl-wall2),transparent 70%),
+  linear-gradient(180deg,var(--gl-wall1) 0%,var(--gl-wall2) 62%,var(--gp-ground) 100%)!important}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--gl-veil)}
+:root[data-bg="plain"] body::before{background:var(--gp-ground)!important;filter:none}
+
+/* frame layer: the only blurred surfaces */
+nav,.top,.ptabs{background:var(--gl-frame)!important;border:1px solid var(--gl-rim)!important;
+  backdrop-filter:blur(24px) saturate(1.2)!important;-webkit-backdrop-filter:blur(24px) saturate(1.2)!important;box-shadow:inset 0 1px 0 var(--gl-rim-hi)}
+nav{border-width:0 1px 0 0!important}
+
+/* data cards: near-solid, thin rim, no second blur */
+.card,.card.glass,.glass,.kpi,.kpi.glass,.cm-detail,.cm-list,.setnav,.cm-card,.wsprev,.co-card,.td-card,.td-hero,.plancard,
+#setup .card,.ccmain .card,body[data-page] .card,body[data-page="today"] .td-hero{
+  background:var(--gp-card)!important;border:1px solid var(--gl-rim)!important;border-radius:20px!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  box-shadow:inset 0 1px 0 var(--gl-rim-hi),0 30px 60px -34px rgba(0,0,0,.55)!important}
+:root[data-theme="light"] .card,:root[data-theme="light"] .kpi,:root[data-theme="light"] .td-card,:root[data-theme="light"] .td-hero{
+  box-shadow:inset 0 1px 0 #fff,0 24px 50px -34px rgba(40,60,50,.35)!important}
+
+/* the one hero per page: deep forest green, calm */
+body[data-page="today"] .td-hero{background:radial-gradient(90% 120% at 0% 0%,rgba(90,200,140,.22),transparent 60%),linear-gradient(160deg,#2a6b4a 0%,#1f4d37 50%,#173528 100%)!important;
+  --ink:#fff;--ink2:rgba(255,255,255,.8);--muted:rgba(255,255,255,.62);color:#fff;border-color:rgba(255,255,255,.14)!important}
+
+/* rows inside cards: hairlines, not bubbles */
+.item,.td-note,.td-mem,.td-time,.feed-item,.up{background:transparent!important;border:0!important;border-bottom:1px solid var(--gl-grid)!important;border-radius:0!important}
+.item:hover,.td-note:hover,.feed-item:hover,.up:hover{background:var(--gp-nest)!important}
+
+/* Today (home.js): figures sit on dividers inside their card, status dots keep their colour, list rows stay flat */
+:root .today .td-stats .td-stat,:root .today .td-stats .td-stat:first-child{background:none!important;border:0!important;border-left:1px solid var(--gl-grid)!important;border-radius:0!important;box-shadow:none!important;padding:4px 16px!important}
+:root .today .td-stats .td-stat:first-child{border-left:0!important;padding-left:0!important}
+.today .td-ic{width:8px!important;height:8px!important;border-radius:50%!important;border:0!important;background:var(--gp-meta)!important}
+.today .td-ic.red{background:var(--bad)!important}.today .td-ic.amber{background:var(--need)!important}.today .td-ic.blue{background:var(--ai)!important}.today .td-ic.green{background:var(--p-green)!important}
+.today .td-time{background:none!important;border:0!important}
+.today .td-li:focus{outline:0;background:var(--gp-nest)}.today .td-li:focus-visible{outline:2px solid var(--p-green);outline-offset:-2px}
+.today .td-hero .td-btn{background:#fff!important;color:#14201a!important}.today .td-hero .td-btn.ghost{background:rgba(255,255,255,.14)!important;color:#fff!important}
+@media (max-width:900px){:root .today .td-stats .td-stat:nth-child(3){border-left:0!important;padding-left:0!important}}
+
+/* Focus + list (focus.js): one block big, the others as rows beside it */
+.spane:has(> .fx):not([hidden]){display:block!important}
+.fx-main>*{height:auto!important;max-height:none!important}
+.fx{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(240px,1fr);gap:14px;align-items:start;width:100%}
+.fx-main{min-width:0}.fx-main>*{margin:0!important;width:auto!important;max-width:none!important;grid-column:auto!important}
+.fx-off{display:none!important}
+.fx-list{position:sticky;top:12px;padding:6px 0;background:var(--gp-card);border:1px solid var(--gl-rim);border-radius:20px;box-shadow:inset 0 1px 0 var(--gl-rim-hi)}
+.fx-li{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;padding:13px 18px;border-bottom:1px solid var(--gl-grid);font-size:13.5px;color:var(--gp-2)}
+.fx-li:last-child{border-bottom:0}.fx-li:hover,.fx-li:focus{background:var(--gp-nest);color:var(--gp-text);outline:0}.fx-li:focus-visible{outline:2px solid var(--p-green);outline-offset:-2px}
+.fx-li::before{content:"";width:6px;height:6px;border-radius:50%;flex:none;background:var(--gp-meta)}.fx-li.need::before{background:var(--need)}.fx-li.ai::before{background:var(--ai)}
+.fx-li .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fx-li .v{font-family:'Geist Mono',monospace;font-size:12px;color:var(--gp-meta);white-space:nowrap}
+.fx-li[aria-current="true"]{background:var(--gp-nest);color:var(--gp-text);box-shadow:inset 3px 0 0 var(--p-green)}.fx-li.need[aria-current="true"]{box-shadow:inset 3px 0 0 var(--need)}.fx-li.ai[aria-current="true"]{box-shadow:inset 3px 0 0 var(--ai)}
+@media (max-width:900px){.fx{grid-template-columns:1fr}.fx-list{position:static;order:-1}}
+
+/* selected tab / nav item: solid pill */
+.ptabs button[aria-pressed="true"],nav button[data-view][aria-current="true"]{background:var(--gp-text)!important;color:var(--gp-ground)!important}
+:root[data-theme="light"] .ptabs button[aria-pressed="true"],:root[data-theme="light"] nav button[data-view][aria-current="true"]{background:#14201a!important;color:#fff!important}
+nav button[data-view][aria-current="true"] svg{stroke:currentColor!important}
+
+/* phones: lighter blur; reduced transparency: none */
+@media (max-width:760px){nav,.top,.ptabs{backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}}
+@media (prefers-reduced-transparency:reduce){nav,.top,.ptabs{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}body::before{filter:none;background:var(--gp-ground)!important}}

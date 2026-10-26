@@ -7,69 +7,98 @@ const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MON=["Jan","Feb","Mar","Ap
 let biz=null,live=null,notes=[],ch=null,nFilter="all",timer=null;
 
 const sec=document.createElement("section");sec.className="wrap today";sec.id="today";sec.hidden=true;
+// Focus + list: the hero and one block at a comfortable size on the left; every block as a quiet row on the right.
+// Clicking a row shows that block in the focus area. Nothing is dropped, only one block is open at a time.
 sec.innerHTML=`<div class="td-grid">
+ <div class="td-left">
   <div class="td-card td-hero"><div class="td-hero-in"><div class="td-logo" id="tdLogo" role="button" tabindex="0" data-go="team" title="Change your logo in Settings"></div><div style="min-width:0"><p class="td-eyebrow" id="tdDate"></p><h1 id="tdHello">Good morning</h1><p class="td-sub" id="tdSub"></p></div></div>
-    <div class="td-hero-acts"><button class="td-btn" type="button" data-go="newbooking">+ New booking</button><button class="td-btn ghost" type="button" data-go="dash">Full dashboard</button></div><span class="td-blob" aria-hidden="true"></span></div>
-  <div class="td-card td-cal"><div class="td-h"><h2 id="tdMonth"></h2><button class="td-link" type="button" data-go="calendar">Calendar →</button></div><div class="td-days" id="tdDays"></div></div>
-  <div class="td-stats" id="tdStats"></div>
-  <div class="td-card td-notes"><div class="td-h"><h2>Notifications</h2><span class="td-pill" id="tdUnread"></span></div>
+    <div class="td-val"><b id="tdVal"></b><span id="tdValL"></span><i id="tdValChg"></i></div>
+    <div class="td-hero-acts"><button class="td-btn" type="button" data-go="newbooking">+ New booking</button><button class="td-btn ghost" type="button" data-go="dash">Full dashboard</button></div></div>
+  <div class="td-focus" id="tdFocus">
+   <div class="td-card td-start" data-k="start"><div class="td-h"><h2>Get started</h2></div><h3>Your receptionist is ready</h3>
+    <p class="td-say">Nothing to show yet. The first conversations usually arrive within a day of connecting WhatsApp. While you wait:</p>
+    <div class="td-steps"><button type="button" data-go="setup"><b>1 · Connect WhatsApp</b><small>So customers can reach the AI.</small></button><button type="button" data-go="setup"><b>2 · Check your services</b><small>Prices and durations the AI offers.</small></button><button type="button" data-go="demo"><b>3 · Try the test chat</b><small>Book as if you were a customer.</small></button></div></div>
+   <div class="td-card" data-k="todo"><div class="td-h"><h2>Needs you</h2><span class="td-pill" id="tdTodoN"></span></div><p class="td-say" id="tdTodoSay"></p><div id="tdTodo"></div></div>
+   <div class="td-card" data-k="notes"><div class="td-h"><h2>Notifications</h2><span class="td-pill" id="tdUnread"></span></div>
     <div class="td-tabs" id="tdNTabs"><button type="button" data-f="all" aria-pressed="true">Overview</button><button type="button" data-f="booking" aria-pressed="false">Bookings</button><button type="button" data-f="people" aria-pressed="false">Messages</button></div><div id="tdNotes"></div></div>
-  <div class="td-card td-todo"><div class="td-h"><h2>To do</h2><span class="td-pill" id="tdTodoN"></span></div><div id="tdTodo"></div></div>
-  <div class="td-card td-team"><div class="td-h"><h2>Your team</h2><button class="td-link" type="button" data-go="team">Edit</button></div><div id="tdTeam"></div></div>
-  <div class="td-card td-next"><div class="td-h"><h2>Next up</h2><span class="td-pill" id="tdNextN"></span></div><div id="tdNext"></div></div>
-  <div class="td-card td-health"><div class="td-h"><h2>Health</h2><span class="td-pill" id="tdHealthState"></span></div><div id="tdHealth"></div></div>
+   <div class="td-card" data-k="next"><div class="td-h"><h2>Next up</h2><span class="td-pill" id="tdNextN"></span></div><div id="tdNext"></div></div>
+   <div class="td-card" data-k="week"><div class="td-h"><h2 id="tdMonth"></h2><button class="td-link" type="button" data-go="calendar">Calendar →</button></div><div class="td-days" id="tdDays"></div></div>
+   <div class="td-card" data-k="stats"><div class="td-h"><h2>Today in numbers</h2></div><div class="td-stats" id="tdStats"></div></div>
+   <div class="td-card" data-k="team"><div class="td-h"><h2>Your team</h2><button class="td-link" type="button" data-go="team">Edit</button></div><div id="tdTeam"></div></div>
+   <div class="td-card" data-k="health"><div class="td-h"><h2>Health</h2><span class="td-pill" id="tdHealthState"></span></div><div id="tdHealth"></div></div>
+  </div>
+ </div>
+ <div class="td-card td-list" id="tdList"></div>
 </div>`;
 document.querySelector("main").append(sec);
 document.head.insertAdjacentHTML("beforeend",`<style>
-.today{--td-bg:#f3f1f8;--td-card:#ffffff;--td-ink:#17151f;--td-ink2:#5f5a6e;--td-mute:#9a94a8;--td-line:rgba(23,21,31,.07);--td-soft:#f1eef8;--td-acc:var(--accent);--td-a1:#cdbdf5;--td-a2:#f6c9dc;--td-a3:#c8e6f7;--td-r:22px}
-:root[data-theme="dark"] .today,:root:not([data-theme]) .today{--td-card:#17161d;--td-ink:#f4f2f8;--td-ink2:#b7b2c4;--td-mute:#7f7a8c;--td-line:rgba(255,255,255,.07);--td-soft:#211f29;--td-a1:#4b3d78;--td-a2:#6b3550;--td-a3:#25465a}
+.today{--td-card:var(--gp-card,#fff);--td-ink:var(--gp-text,#151a17);--td-ink2:var(--gp-2,#56605a);--td-mute:var(--gp-meta,#8a948e);--td-line:var(--gl-grid,rgba(0,0,0,.08));--td-soft:var(--gp-nest,rgba(0,0,0,.04));--td-acc:var(--p-green,#1f8f55);--td-need:var(--need,#c45f2a);--td-r:20px}
 main>section.today:not([hidden]){overflow:auto}
-.td-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:minmax(0,auto);gap:14px;color:var(--td-ink);padding-bottom:10px}
-.td-card{background:var(--td-card);border-radius:var(--td-r);padding:18px;border:1px solid var(--td-line);box-shadow:0 1px 2px rgba(0,0,0,.03),0 16px 36px -26px rgba(40,20,80,.35);min-width:0;position:relative;overflow:hidden}
-.td-h{display:flex;align-items:center;gap:8px;margin-bottom:12px}.td-h h2{margin:0;font-size:15px;font-weight:650;letter-spacing:-.01em;color:var(--td-ink)}
+.td-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);gap:14px;align-items:start;color:var(--td-ink);padding-bottom:10px}
+.td-left{display:flex;flex-direction:column;gap:14px;min-width:0}
+.td-card{background:var(--td-card);border-radius:var(--td-r);padding:18px 20px;border:1px solid var(--td-line);min-width:0;position:relative;overflow:hidden}
+.td-h{display:flex;align-items:center;gap:8px;margin-bottom:12px}.td-h h2{margin:0;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--td-mute)}
 .td-link{all:unset;cursor:pointer;margin-inline-start:auto;font-size:12.5px;color:var(--td-ink2)}.td-link:hover{color:var(--td-ink)}
-.td-pill:empty{display:none}.td-pill{margin-inline-start:auto;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--td-soft);color:var(--td-ink2)}
-.td-hero{grid-column:span 8;background:linear-gradient(120deg,var(--td-a1),var(--td-a2) 70%,var(--td-a3));border:0;padding:24px;display:flex;flex-direction:column;justify-content:space-between;gap:18px;min-height:190px}
-.td-hero-in{display:flex;gap:16px;align-items:center;position:relative;z-index:1}
-.td-logo{width:72px;height:72px;flex:none;border-radius:22px;background:#fff center/cover no-repeat;display:grid;place-items:center;font-weight:800;font-size:30px;line-height:1;color:#5b45a8;cursor:pointer;box-shadow:0 10px 24px -12px rgba(40,20,80,.5);border:3px solid rgba(255,255,255,.75)}
-.td-eyebrow{margin:0;font-size:12.5px;font-weight:600;color:color-mix(in srgb,var(--td-ink) 70%,transparent)}
-.td-hero h1{margin:2px 0 4px;font-size:28px!important;letter-spacing:-.025em;line-height:1.1;color:var(--td-ink)}
-.td-sub{margin:0;font-size:13.5px;color:color-mix(in srgb,var(--td-ink) 75%,transparent)}
-.td-hero-acts{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
-.td-btn{all:unset;cursor:pointer;padding:9px 15px;border-radius:99px;background:#17151f;color:#fff;font-size:13px;font-weight:600}.td-btn.ghost{background:rgba(255,255,255,.6);color:#17151f}.td-btn:hover{filter:brightness(1.1)}
-.td-blob{position:absolute;right:-60px;top:-70px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.75),rgba(255,255,255,0) 62%);pointer-events:none}
-.td-cal{grid-column:span 4}
+.td-pill:empty{display:none}.td-pill{margin-inline-start:auto;font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:99px;background:var(--td-soft);color:var(--td-ink2)}
+.td-say{margin:-4px 0 10px;font-size:14px;color:var(--td-ink2)}.td-say:empty{display:none}
+/* hero: the one strong card. Its colour comes from glass.css */
+.td-hero{padding:24px;display:flex;flex-direction:column;gap:16px}
+.td-hero-in{display:flex;gap:16px;align-items:center}
+.td-logo{width:60px;height:60px;flex:none;border-radius:18px;background:#fff center/cover no-repeat;display:grid;place-items:center;font-weight:700;font-size:26px;line-height:1;color:#1f4d37;cursor:pointer;border:2px solid rgba(255,255,255,.6)}
+.td-eyebrow{margin:0;font-size:12.5px;color:var(--muted,var(--td-mute))}
+.td-hero h1{margin:2px 0 4px;font-size:24px!important;letter-spacing:-.02em;line-height:1.15;color:inherit}
+.td-sub{margin:0;font-size:13.5px;color:var(--ink2,var(--td-ink2))}
+.td-val{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.td-val:has(b:empty){display:none}
+.td-val b{font-size:44px;font-weight:300;letter-spacing:-.03em;line-height:1}.td-val span{font-size:14px;color:var(--ink2,var(--td-ink2))}
+.td-val i{font-style:normal;font-size:11px;font-family:'Geist Mono',monospace;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.14)}.td-val i:empty{display:none}
+.td-hero-acts{display:flex;gap:8px;flex-wrap:wrap}
+.td-btn{all:unset;cursor:pointer;padding:9px 15px;border-radius:99px;background:#fff;color:#14201a;font-size:13px;font-weight:500}.td-btn.ghost{background:rgba(255,255,255,.14);color:#fff}.td-btn:hover{filter:brightness(1.08)}
+/* focus area: one block open at a time */
+.td-focus>.td-card{display:none;min-height:260px}.td-focus>.td-card.on{display:block}
+/* the list of blocks */
+.td-list{padding:6px 0}
+.td-li{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;padding:14px 20px;border-bottom:1px solid var(--td-line);font-size:13.5px;color:var(--td-ink2)}
+.td-li:last-child{border-bottom:0}.td-li:hover{background:var(--td-soft);color:var(--td-ink)}
+.td-li::before{content:"";width:6px;height:6px;border-radius:50%;flex:none;background:var(--td-mute)}
+.td-li.need::before{background:var(--td-need)}.td-li.good::before{background:var(--td-acc)}.td-li.bad::before{background:var(--bad,#e11d48)}
+.td-li .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.td-li .v{font-family:'Geist Mono',monospace;font-size:12px;color:var(--td-mute);white-space:nowrap}
+.td-li[aria-current="true"]{background:var(--td-soft);color:var(--td-ink);box-shadow:inset 3px 0 0 var(--td-acc)}.td-li.need[aria-current="true"]{box-shadow:inset 3px 0 0 var(--td-need)}
+.td-li[aria-current="true"] .v{color:var(--td-ink)}
+/* week strip */
 .td-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.td-day{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 0;border-radius:14px;font-size:11px;color:var(--td-mute)}
-.td-day b{font-size:16px;color:var(--td-ink)}.td-day:hover{background:var(--td-soft)}
-.td-day.now{background:#17151f;color:#cfc9dc}.td-day.now b{color:#fff}:root[data-theme="dark"] .td-day.now{background:#f4f2f8;color:#5f5a6e}:root[data-theme="dark"] .td-day.now b{color:#17151f}
-.td-day i{width:22px;height:4px;border-radius:9px;background:var(--td-line);overflow:hidden;display:block}.td-day i u{display:block;height:100%;background:var(--td-acc)}
+.td-day{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0;border-radius:14px;font-size:11px;color:var(--td-mute)}
+.td-day b{font-size:17px;font-weight:400;color:var(--td-ink)}.td-day:hover{background:var(--td-soft)}
+.td-day.now{background:var(--td-ink);color:var(--td-card)}.td-day.now b{color:var(--td-card)}
+.td-day i{width:26px;height:4px;border-radius:9px;background:var(--td-line);overflow:hidden;display:block}.td-day i u{display:block;height:100%;background:var(--td-acc)}
 .td-day.off{opacity:.45}
-.td-stats{grid-column:span 8;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.td-stat{background:var(--td-card);border:1px solid var(--td-line);border-radius:var(--td-r);padding:16px;display:flex;flex-direction:column;gap:4px;min-width:0}
-.td-stat span{font-size:12px;color:var(--td-mute);font-weight:500}.td-stat b{font-size:28px;letter-spacing:-.03em;color:var(--td-ink);line-height:1.1}
-.td-stat small{font-size:12px;color:var(--td-ink2)}.td-stat small.up{color:#16a34a}.td-stat small.down{color:#e11d48}
-.td-stat:first-child{background:linear-gradient(160deg,var(--td-a1),var(--td-card) 75%)}
-.td-notes{grid-column:span 4;grid-row:span 3;align-self:stretch}
-.td-todo,.td-team{grid-column:span 4}.td-next,.td-health{grid-column:span 4}
-.td-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--td-line)}.td-row:first-child{border-top:0;padding-top:2px}
-.td-row .tx{min-width:0;flex:1;display:flex;flex-direction:column}.td-row .tx b{font-size:13px;font-weight:600;color:var(--td-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.td-row .tx small{font-size:11.5px;color:var(--td-mute)}
-.td-ic{width:34px;height:34px;flex:none;border-radius:11px;display:grid;place-items:center;font-size:15px;background:var(--td-soft)}
-.td-ic.red{background:color-mix(in srgb,#e11d48 14%,transparent)}.td-ic.amber{background:color-mix(in srgb,#f59e0b 16%,transparent)}.td-ic.blue{background:color-mix(in srgb,#3b82f6 14%,transparent)}.td-ic.green{background:color-mix(in srgb,#16a34a 14%,transparent)}
-.td-go{all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:5px 10px;border-radius:99px;background:var(--td-soft);color:var(--td-ink)}.td-go:hover{background:var(--td-line)}
-.td-av{width:38px;height:38px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:#fff}
-.td-team .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}
-.td-mem{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;padding:10px 4px;border-radius:16px;background:var(--td-soft)}.td-mem .td-av{width:46px;height:46px;font-size:16px}
-.td-mem b{font-size:12.5px;color:var(--td-ink)}.td-mem small{font-size:11px;color:var(--td-mute);line-height:1.25}
-.td-time{width:52px;flex:none;display:flex;flex-direction:column;align-items:center;padding:6px 0;border-radius:12px;background:var(--td-soft)}.td-time b{font-size:13.5px;color:var(--td-ink)}.td-time small{font-size:10.5px;color:var(--td-mute)}
-.td-price{font-weight:650;font-size:13px;color:var(--td-ink)}
-.td-dot{width:9px;height:9px;border-radius:50%;flex:none;background:#16a34a;box-shadow:0 0 0 4px color-mix(in srgb,#16a34a 18%,transparent)}.td-dot.bad{background:#e11d48;box-shadow:0 0 0 4px color-mix(in srgb,#e11d48 18%,transparent)}.td-dot.warn{background:#f59e0b;box-shadow:0 0 0 4px color-mix(in srgb,#f59e0b 18%,transparent)}
-.td-tabs{display:flex;gap:14px;border-bottom:1px solid var(--td-line);margin-bottom:6px}.td-tabs button{all:unset;cursor:pointer;font-size:12.5px;padding:0 0 8px;color:var(--td-mute)}.td-tabs button[aria-pressed=true]{color:var(--td-ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--td-ink)}
-.td-note{display:flex;gap:10px;padding:10px;border-radius:14px;margin-top:6px;background:var(--td-soft);cursor:pointer}.td-note:hover{filter:brightness(.98)}
-.td-note .tx b{white-space:normal}.td-note.unread .tx b::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--td-acc);margin-inline-start:6px;vertical-align:middle}
-.td-empty{font-size:12.5px;color:var(--td-mute);padding:8px 0}
-@media (max-width:1200px){.td-hero,.td-stats{grid-column:span 12}.td-cal,.td-todo,.td-team,.td-next,.td-health{grid-column:span 6}.td-notes{grid-column:span 12;grid-row:auto}}
-@media (max-width:760px){.td-cal,.td-todo,.td-team,.td-next,.td-health{grid-column:span 12}.td-stats{grid-template-columns:1fr 1fr}.td-hero h1{font-size:23px!important}.td-logo{width:58px;height:58px;border-radius:18px}}
+/* today in numbers */
+.td-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.td-stat{padding:4px 16px;border-left:1px solid var(--td-line);display:flex;flex-direction:column;gap:4px;min-width:0}.td-stat:first-child{border-left:0;padding-left:0}
+.td-stat span{font-size:11.5px;color:var(--td-mute)}.td-stat b{font-size:26px;font-weight:300;letter-spacing:-.02em;color:var(--td-ink);line-height:1.1}
+.td-stat small{font-size:12px;color:var(--td-ink2)}.td-stat small .up{color:var(--td-acc)}.td-stat small .down{color:var(--td-need)}
+/* rows */
+.td-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--td-line)}.td-row:first-child{border-top:0;padding-top:2px}
+.td-row .tx{min-width:0;flex:1;display:flex;flex-direction:column}.td-row .tx b{font-size:13.5px;font-weight:500;color:var(--td-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.td-row .tx small{font-size:12px;color:var(--td-mute)}
+.td-ic{width:8px;height:8px;flex:none;border-radius:50%;font-size:0;background:var(--td-mute)}
+.td-ic.red{background:var(--bad,#e11d48)}.td-ic.amber{background:var(--td-need)}.td-ic.blue{background:var(--ai,#6457d4)}.td-ic.green{background:var(--td-acc)}
+.td-go{all:unset;cursor:pointer;font-size:12px;font-weight:500;padding:5px 12px;border-radius:99px;border:1px solid var(--td-line);color:var(--td-ink)}.td-go:hover{background:var(--td-soft)}
+.td-av{width:38px;height:38px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:14px;color:#fff}
+[data-k="team"] .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.td-mem{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;padding:12px 4px;border-radius:16px;border:1px solid var(--td-line)}.td-mem .td-av{width:44px;height:44px;font-size:16px}
+.td-mem b{font-size:12.5px;font-weight:500;color:var(--td-ink)}.td-mem small{font-size:11px;color:var(--td-mute);line-height:1.25}
+.td-time{width:52px;flex:none;display:flex;flex-direction:column;align-items:flex-start}.td-time b{font-size:14px;font-weight:500;font-family:'Geist Mono',monospace;color:var(--td-ink)}.td-time small{font-size:11px;color:var(--td-mute)}
+.td-price{font-family:'Geist Mono',monospace;font-size:12.5px;color:var(--td-ink)}
+.td-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--td-acc)}.td-dot.bad{background:var(--bad,#e11d48)}.td-dot.warn{background:var(--td-need)}
+.td-tabs{display:flex;gap:16px;border-bottom:1px solid var(--td-line);margin-bottom:4px}.td-tabs button{all:unset;cursor:pointer;font-size:12.5px;padding:0 0 9px;color:var(--td-mute)}.td-tabs button[aria-pressed=true]{color:var(--td-ink);box-shadow:inset 0 -2px 0 var(--td-ink)}
+.td-note{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--td-line);cursor:pointer}.td-note:last-child{border-bottom:0}.td-note:hover .tx b{color:var(--td-acc)}
+.td-note .tx b{white-space:normal}.td-note.unread .tx b::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--td-acc);margin-inline-start:6px;vertical-align:middle}
+.td-start h3{margin:0 0 6px;font-size:22px;font-weight:400;letter-spacing:-.01em}
+.td-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:6px}
+.td-steps button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;border:1px solid var(--td-line)}.td-steps button:hover{background:var(--td-soft)}
+.td-steps b{font-size:13.5px;font-weight:500;color:var(--td-ink)}.td-steps small{font-size:12px;color:var(--td-mute)}
+@media (max-width:900px){.td-steps{grid-template-columns:1fr}}
+.td-empty{font-size:13px;color:var(--td-mute);padding:8px 0}
+@media (max-width:900px){.td-grid{grid-template-columns:1fr}.td-stats{grid-template-columns:1fr 1fr;gap:14px 0}.td-stat:nth-child(3){border-left:0;padding-left:0}.td-val b{font-size:36px}.td-hero h1{font-size:21px!important}.td-logo{width:50px;height:50px}}
 </style>`);
 
 // Home opens Today; the data dashboard stays on Live now and the other tabs
@@ -95,6 +124,13 @@ function draw(unread){if(!biz||!live)return;const now=live.now,d=new Date(),h=d.
   $("#tdHello").textContent=`${h<12?"Good morning":h<18?"Good afternoon":"Good evening"}, ${biz.name}`;
   const tasks=(now.waiting||0)+(now.approvals||0)+(now.unsure||0);
   $("#tdSub").textContent=`${now.visits_today||0} appointment${now.visits_today===1?"":"s"} today${tasks?` · ${tasks} thing${tasks===1?"":"s"} need${tasks===1?"s":""} you`:" · nothing waiting for you"}.`;
+  // the value line: what the AI booked on its own. Older servers have no ai_value; then count bookings that came through a chat channel this week
+  const chat=(live.channels||[]).filter(c=>!["manual","direct","web","other"].includes(c.channel));
+  const aiV=now.ai_value!=null?now.ai_value:chat.reduce((a,c)=>a+c.value,0),aiN=now.ai_count!=null?now.ai_count:chat.reduce((a,c)=>a+c.n,0);
+  const aiP=now.ai_value_prev,aiC=aiP?Math.round((aiV-aiP)/aiP*100):null;
+  $("#tdVal").textContent=aiN?money(aiV):"";
+  $("#tdValL").textContent=`booked by the AI · ${aiN} appointment${aiN===1?"":"s"} ${now.ai_value!=null?"in 30 days":"this week"}`;
+  $("#tdValChg").textContent=aiC===null?"":`${aiC>=0?"+":"−"}${Math.abs(aiC)}%`;
   // week strip
   const mon=new Date(live.week[0].d+"T12:00");$("#tdMonth").textContent=`${MON[mon.getMonth()]}, ${mon.getFullYear()}`;
   $("#tdDays").innerHTML=live.week.map(w=>{const x=new Date(w.d+"T12:00");return `<button type="button" class="td-day${w.today?" now":""}${w.pct===null?" off":""}" data-go="calendar" title="${w.pct===null?"Closed":w.pct+"% booked"}">${DOW[x.getDay()]}<b>${x.getDate()}</b><i><u style="width:${w.pct||0}%"></u></i></button>`}).join("");
@@ -133,7 +169,26 @@ function draw(unread){if(!biz||!live)return;const now=live.now,d=new Date(),h=d.
   $("#tdHealthState").textContent=bad?"Needs attention":warn?"Mostly good":"All good";
   $("#tdHealth").innerHTML=checks.map(([s,t,d])=>`<div class="td-row"><span class="td-dot ${s}"></span><span class="tx"><b>${t}</b><small>${esc(d)}</small></span></div>`).join("")+`<div class="td-row"><span class="tx"><small>Setup ${(live.setup||[]).filter(s=>s.done).length} of ${(live.setup||[]).length} done</small></span><button class="td-go" type="button" data-go="setup">Settings</button></div>`;
   // notifications
-  $("#tdUnread").textContent=unread?`${unread} new`:"";drawNotes()}
+  $("#tdUnread").textContent=unread?`${unread} new`:"";drawNotes();
+  // the list: every block as one row with its headline figure. Orange = needs you, green = good, red = broken
+  $("#tdTodoSay").textContent=todo.length?`${todo.length} thing${todo.length>1?"s are":" is"} waiting for you.`:"";
+  const onShift=open?team.length:0,today=live.week.find(w=>w.today);
+  const rows=[["todo","Needs you",todo.length?`${todo.length} open`:"All done",todo.length?"need":"good"],
+    ["notes","Notifications",unread?`${unread} new`:"Read",unread?"need":""],
+    ["next","Next up",up[0]?hm(up[0].start):"—",""],
+    ["week",$("#tdMonth").textContent||"This week",today&&today.pct!=null?`${today.pct}% today`:"Week",""],
+    ["stats","Today in numbers",money(now.revenue_today||0),""],
+    ["team","Your team",team.length?`${onShift} on shift`:"Add",""],
+    ["health","Health",$("#tdHealthState").textContent,bad?"bad":warn?"need":"good"]];
+  // a brand-new business: no chats, bookings or alerts yet. Open on the first steps instead of empty boxes
+  const fresh=!notes.length&&!up.length&&!(live.d14||[]).some(x=>x.v)&&!(live.channels||[]).length&&!now.msgs_today;
+  if(fresh){rows.unshift(["start","Get started","3 steps","good"]);if(!started){focus="start";started=true}}
+  if(!rows.some(r=>r[0]===focus))focus="todo";
+  $("#tdList").innerHTML=rows.map(([k,t,v,c])=>`<button type="button" class="td-li ${c}" data-k="${k}" aria-current="${k===focus}"><span class="t">${esc(t)}</span><span class="v">${esc(v)}</span></button>`).join("");
+  $$("#tdFocus > .td-card").forEach(c=>c.classList.toggle("on",c.dataset.k===focus))}
+let focus="todo",started=false;
+$("#tdList").addEventListener("click",e=>{const b=e.target.closest(".td-li");if(!b)return;focus=b.dataset.k;
+  $$("#tdList .td-li").forEach(x=>x.setAttribute("aria-current",x===b));$$("#tdFocus > .td-card").forEach(c=>c.classList.toggle("on",c.dataset.k===focus))});
 const ICON={booking:["green","📅"],cancel:["red","✕"],approval:["amber","✓"],handoff:["red","💬"],unsure:["amber","?"],review:["blue","★"],marketing:["blue","📣"]};
 function drawNotes(){const list=notes.filter(n=>nFilter==="all"||(nFilter==="booking"?["booking","cancel","approval"].includes(n.kind):["handoff","unsure","review"].includes(n.kind))).slice(0,7);
   $("#tdNotes").innerHTML=list.length?list.map(n=>{const[c,i]=ICON[n.kind]||["blue","•"];return `<div class="td-note${n.read?"":" unread"}" data-c="${n.conversation_id||""}"><span class="td-ic ${c}">${i}</span><span class="tx"><b>${esc(n.title)}</b><small>${esc((n.body||"").split("\n")[0]).slice(0,90)}${n.body?" · ":""}${esc(String(n.at||"").slice(5,16).replace("T"," "))}</small></span></div>`}).join("")
