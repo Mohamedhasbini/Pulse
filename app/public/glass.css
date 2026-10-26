@@ -3,14 +3,14 @@
    three colours with fixed meanings: green = good / main, orange = needs you, violet = the AI. */
 :root,:root[data-theme="dark"]{
   --p-green:#34b26f;--p-orange:#e07a42;--p-violet:#7f72e6;
-  --gp-ground:#0b0d0c;--gp-card:rgba(24,29,26,.86);--gp-nest:rgba(255,255,255,.06);--gp-nest2:rgba(255,255,255,.1);--gp-edge:rgba(255,255,255,.09);
+  --gp-ground:#0b0d0c;--gp-card:rgba(24,29,26,.62);--gp-nest:rgba(255,255,255,.06);--gp-nest2:rgba(255,255,255,.1);--gp-edge:rgba(255,255,255,.09);
   --gp-text:#eef1ef;--gp-2:rgba(238,241,239,.70);--gp-meta:rgba(238,241,239,.45);--gp-on:#fff;
   --need:var(--p-orange);--ai:var(--p-violet);--bad:#ff4d5e;
   --gl-frame:rgba(18,22,20,.42);--gl-rim:rgba(255,255,255,.09);--gl-rim-hi:rgba(255,255,255,.14);--gl-grid:rgba(255,255,255,.07);
-  --gl-wall1:#26302b;--gl-wall2:#121614;--gl-win:#4a5550;--gl-lamp:rgba(52,178,111,.10);--gl-veil:rgba(8,10,9,.55)}
+  --gl-wall1:#26302b;--gl-wall2:#121614;--gl-win:#4a5550;--gl-lamp:rgba(52,178,111,.16);--gl-veil:rgba(8,10,9,.42)}
 :root[data-theme="light"]{
   --p-green:#1f8f55;--p-orange:#c45f2a;--p-violet:#5d50cc;
-  --gp-ground:#b9c2bc;--gp-card:rgba(255,255,255,.88);--gp-nest:rgba(20,40,30,.045);--gp-nest2:rgba(20,40,30,.08);--gp-edge:rgba(20,40,30,.09);
+  --gp-ground:#b9c2bc;--gp-card:rgba(255,255,255,.6);--gp-nest:rgba(20,40,30,.045);--gp-nest2:rgba(20,40,30,.08);--gp-edge:rgba(20,40,30,.09);
   --gp-text:#151a17;--gp-2:rgba(21,26,23,.74);--gp-meta:rgba(21,26,23,.52);--gp-on:#fff;--bad:#e11d48;
   --gl-frame:rgba(255,255,255,.5);--gl-rim:rgba(255,255,255,.75);--gl-rim-hi:#fff;--gl-grid:rgba(20,40,30,.09);
   --gl-wall1:#e6e9e6;--gl-wall2:#c9d0cb;--gl-win:#fff;--gl-lamp:rgba(31,143,85,.12);--gl-veil:rgba(240,244,241,.35)}
@@ -22,11 +22,11 @@ body,body[data-page],:root[data-theme] body[data-page][data-page]{--pg:var(--p-g
 /* ground: the blurred room and its veil */
 html{background:var(--gp-ground)!important}
 body{background:var(--gp-ground)!important}
-body::before{content:"";position:fixed;inset:-60px;z-index:-2;pointer-events:none;filter:blur(38px);
+body::before{content:"";display:block!important;position:fixed;inset:-60px;z-index:-2;pointer-events:none;filter:blur(38px)!important;opacity:1!important;
   background:radial-gradient(18% 34% at 22% 38%,var(--gl-win),transparent 70%),radial-gradient(14% 30% at 38% 36%,var(--gl-win),transparent 70%),
   radial-gradient(22% 18% at 78% 30%,var(--gl-lamp),transparent 70%),radial-gradient(40% 20% at 55% 88%,var(--gl-wall2),transparent 70%),
   linear-gradient(180deg,var(--gl-wall1) 0%,var(--gl-wall2) 62%,var(--gp-ground) 100%)!important}
-body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--gl-veil)}
+body::after{content:"";display:block!important;position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--gl-veil)}
 :root[data-bg="plain"] body::before{background:var(--gp-ground)!important;filter:none}
 
 /* frame layer: the only blurred surfaces */
@@ -34,12 +34,13 @@ nav,.top,.ptabs{background:var(--gl-frame)!important;border:1px solid var(--gl-r
   backdrop-filter:blur(24px) saturate(1.2)!important;-webkit-backdrop-filter:blur(24px) saturate(1.2)!important;box-shadow:inset 0 1px 0 var(--gl-rim-hi)}
 nav{border-width:0 1px 0 0!important}
 
-/* data cards: near-solid, thin rim, no second blur */
+/* data cards: transparent glass over the soft background */
 .card,.card.glass,.glass,.kpi,.kpi.glass,.cm-detail,.cm-list,.setnav,.cm-card,.wsprev,.co-card,.td-card,.td-hero,.plancard,
 #setup .card,.ccmain .card,body[data-page] .card,body[data-page="today"] .td-hero{
   background:var(--gp-card)!important;border:1px solid var(--gl-rim)!important;border-radius:20px!important;
-  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  backdrop-filter:blur(18px) saturate(1.2)!important;-webkit-backdrop-filter:blur(18px) saturate(1.2)!important;
   box-shadow:inset 0 1px 0 var(--gl-rim-hi),0 30px 60px -34px rgba(0,0,0,.55)!important}
+.card .card{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 :root[data-theme="light"] .card,:root[data-theme="light"] .kpi,:root[data-theme="light"] .td-card,:root[data-theme="light"] .td-hero{
   box-shadow:inset 0 1px 0 #fff,0 24px 50px -34px rgba(40,60,50,.35)!important}
 
@@ -83,3 +84,38 @@ nav button[data-view][aria-current="true"] svg{stroke:currentColor!important}
 /* phones: lighter blur; reduced transparency: none */
 @media (max-width:760px){nav,.top,.ptabs{backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}}
 @media (prefers-reduced-transparency:reduce){nav,.top,.ptabs{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}body::before{filter:none;background:var(--gp-ground)!important}}
+
+/* "More details" links that open a folded explanation (details.js) */
+.more-link{all:unset;cursor:pointer;display:inline-block;margin:0 0 8px;font-size:12px;color:var(--gp-meta);border-bottom:1px dotted currentColor;line-height:1.3}
+.more-link:hover,.more-link[aria-expanded="true"]{color:var(--gp-text)}.more-link:focus-visible{outline:2px solid var(--p-green);outline-offset:2px}
+
+/* Calendar: one clean style over the older ones. Quiet grid, soft booking chips, status as a thin edge */
+#calendar .cal-col{background:transparent!important;border-radius:12px!important}
+#calendar .cal-open{background:var(--gp-nest)!important;border-radius:10px!important}
+#calendar .cal-line{border-top:1px solid var(--gl-grid)!important;opacity:.7}
+#calendar .past{background:var(--gp-ground)!important;opacity:.35!important}
+#calendar .cal-times span{font-family:'Geist Mono',monospace;font-size:10.5px;color:var(--gp-meta)}
+#calendar .cal-dh{border-radius:12px!important;padding:8px 10px!important;background:none!important;color:var(--gp-text)!important;border:1px solid transparent}
+#calendar .cal-dh b{font-weight:500}#calendar .cal-dh small{color:var(--gp-meta)!important;opacity:1!important}
+#calendar .cal-dh.today{background:var(--gp-nest)!important;border-color:var(--gl-rim)}
+#calendar .cal-dh.today b{color:var(--p-green)}
+#calendar .cal-now{border-top:2px solid var(--p-green)!important}
+#calendar .cal-b{all:unset;box-sizing:border-box;position:absolute;display:flex!important;flex-direction:column;justify-content:flex-start;gap:1px;cursor:pointer;overflow:hidden!important;
+  padding:5px 8px 5px 10px!important;border-radius:8px!important;font-size:12px!important;line-height:1.3!important;
+  background:color-mix(in srgb,var(--p-green) 16%,var(--gp-card))!important;color:var(--gp-text)!important;
+  border:1px solid color-mix(in srgb,var(--p-green) 28%,transparent)!important;border-left:3px solid var(--p-green)!important;box-shadow:none!important;backdrop-filter:none!important}
+#calendar .cal-b:hover{background:color-mix(in srgb,var(--p-green) 24%,var(--gp-card))!important}
+#calendar .cal-b b{font-weight:500;font-size:12px!important;display:flex!important;align-items:center;gap:5px;min-width:0}
+#calendar .cal-b b,#calendar .cal-b span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+#calendar .cal-b span{font-size:11px;color:var(--gp-2);opacity:1!important;font-family:'Geist Mono',monospace}
+#calendar .cal-b.short{flex-direction:row;align-items:center;gap:6px;padding:0 8px 0 10px!important}
+#calendar .cal-b em,#calendar .cal-b u{font-style:normal;text-decoration:none}
+#calendar .cal-b.short span{order:-1;flex:none}#calendar .cal-b.short u{display:none}#calendar .cal-b.short b{flex:1;min-width:0}
+#calendar .cal-b .src{flex:none;width:6px;height:6px;border-radius:50%;display:inline-block}
+#calendar .cal-b .src.ai{background:var(--ai)}#calendar .cal-b .src.web{background:var(--gp-meta)}
+#calendar .cal-b.st-completed{background:var(--gp-nest)!important;border-color:var(--gl-rim)!important;border-left-color:var(--gp-meta)!important}
+#calendar .cal-b.st-no_show{background:color-mix(in srgb,var(--bad) 12%,var(--gp-card))!important;border-color:color-mix(in srgb,var(--bad) 30%,transparent)!important;border-left-color:var(--bad)!important}
+#calendar .cal-b.st-cancelled{background:none!important;border:1px dashed var(--gl-rim)!important;color:var(--gp-meta)!important;text-decoration:line-through;opacity:.7}
+#calendar .cal-b:focus-visible{outline:2px solid var(--gp-text)!important;outline-offset:1px}
+#calendar .cal-off{background:repeating-linear-gradient(135deg,var(--gp-nest) 0 6px,transparent 6px 12px)!important;border:1px solid var(--gl-rim)!important;color:var(--gp-meta)!important;border-radius:8px!important;font-size:11px!important}
+#calendar .sg-mini{display:none!important}

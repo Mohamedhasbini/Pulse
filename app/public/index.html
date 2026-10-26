@@ -192,7 +192,7 @@
       <div class="card glass">
         <div class="ch"><div style="display:flex;gap:6px;align-items:center"><button class="btn ghost" id="calPrev" type="button" aria-label="Previous week">‹</button><button class="btn ghost" id="calToday" type="button">This week</button><button class="btn ghost" id="calNext" type="button" aria-label="Next week">›</button></div><h2 id="calRange"></h2></div>
         <div class="cal-wrap"><div class="cal"><div class="cal-head" id="calHead"></div><div class="cal-grid" id="calGrid"></div></div></div>
-        <div class="legend" style="margin-top:10px"><span style="--c:var(--blue)">Confirmed</span><span style="--c:var(--good)">Came</span><span style="--c:var(--bad)">No-show</span><span style="--c:var(--muted)">Striped = closed or blocked</span></div>
+        <div class="legend" style="margin-top:10px"><span style="--c:var(--p-green,var(--good))">Confirmed</span><span style="--c:var(--muted)">Came</span><span style="--c:var(--bad)">No-show</span><span style="--c:var(--ai,var(--muted))">Booked by the AI</span><span style="--c:var(--muted)">Striped = blocked</span></div>
         <p class="sub" style="margin:6px 0 0;font-size:13px">Click an empty spot to add a booking. Click a booking to move it, cancel it, or mark whether the customer came. <span class="tzline" id="calTz"></span></p>
       </div>
     </section>
@@ -665,7 +665,9 @@ function drawCal(){if(!biz||!weekStart)return;const[h0,h1]=gridHours(),H=(h1-h0)
     cal.timeOff.filter(t=>L(t.start)<dayEnd&&L(t.end)>dayStart).forEach(t=>c+=`<button type="button" class="cal-off" data-off="${t.id}" style="${place(L(t.start),L(t.end))}">Blocked${t.reason?" · "+esc(t.reason):""}</button>`);
     const vis=cal.bookings.filter(b=>L(b.start)<dayEnd&&L(b.end)>dayStart);
     vis.forEach(b=>{const s=L(b.start),e=L(b.end);const lane=vis.filter(o=>o!==b&&o.status!=="cancelled"&&L(o.start)<e&&L(o.end)>s),idx=lane.filter(o=>o.id<b.id).length,n=lane.length+1;
-      const w=100/n;c+=`<button type="button" class="cal-b st-${b.status}" data-b="${b.id}" title="${esc(b.customer||"")} · ${esc(b.service)} · ${hm(s)}–${hm(e)}" style="${place(s,e)};left:calc(${idx*w}% + 3px);right:auto;width:calc(${w}% - 6px)"><b>${hm(s)} ${esc(b.customer||"Customer")}</b><span>${esc(b.service)}${b.source==="ai"?" · AI":b.source==="web"?" · Online":""}</span></button>`});
+      // name first, then time and service; a booking shorter than 40 minutes keeps to one line. The dot marks who booked it
+      const w=100/n,short=(e-s)<40*60000,src=b.source==="ai"?"ai":b.source==="web"?"web":"";
+      c+=`<button type="button" class="cal-b st-${b.status}${short?" short":""}" data-b="${b.id}" title="${esc(b.customer||"")} · ${esc(b.service)} · ${hm(s)}–${hm(e)}${src==="ai"?" · booked by the AI":src==="web"?" · booked online":""}" style="${place(s,e)};left:calc(${idx*w}% + 2px);right:auto;width:calc(${w}% - 4px)"><b>${src?`<i class="src ${src}"></i>`:""}${esc(b.customer||"Customer")}</b><span><em>${hm(s)}</em><u> · ${esc(b.service)}</u></span></button>`});
     cols+=c+"</div>"}
   $("#calHead").innerHTML=head;$("#calGrid").innerHTML=cols;
   const live=cal.bookings.filter(b=>b.status!=="cancelled"),cap=biz.capacity||1;
@@ -1325,11 +1327,13 @@ async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();cons
    $("#pcSub").textContent=active?"Thank you for being with us":days>0?`${days} day${days===1?"":"s"} left in your free trial`:"Your trial has ended";$("#pcBar").style.width=active?"100%":Math.max(4,Math.min(100,(14-days)/14*100))+"%"}
   if(!me.modules.includes("overview")){const first=document.querySelector("nav button[data-view]:not([hidden])");first&&first.click()}
   const plan=b.plan_status==="active"?"Subscription active":b.plan_status==="paused"?"Paused":b.trial_days_left>0?`Free trial: ${b.trial_days_left} day${b.trial_days_left===1?"":"s"} left`:"Trial ended";
-  if(me.edition==="product"&&!admin){$("#planText").innerHTML=me.user.totp_enabled||me.user.email_2fa||me.user.role==="staff"||nudgeOff()?"":`<a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor sign-in</a><button type="button" class="nudge-x" id="tfNudgeX" aria-label="Hide this reminder" title="Hide this reminder">×</button>`;$("#planBar").hidden=!$("#tfNudge");$("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});return}
+  if(me.edition==="product"&&!admin){$("#planText").innerHTML=me.user.totp_enabled||me.user.email_2fa||me.user.role==="staff"||nudgeOff()?"":`<a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor sign-in</a><button type="button" class="nudge-x" id="tfNudgeX" aria-label="Hide this reminder" title="Hide this reminder">×</button>`;$("#planBar").hidden=true;$("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});return}
   $("#planBar").classList.toggle("adminview",admin);
   $("#planText").innerHTML=(admin?`<span class="tag t-attn">Admin view</span> You're inside <b>${esc(b.name)}</b>'s dashboard. Their logins only ever see their own business, never Businesses or other clients. <a href="#" id="backCC" class="tag" style="text-decoration:none">← Back to Lab</a> · `:"")+`<span class="tag ${b.plan_status==="active"?"t-book":b.trial_days_left>0?"t-faq":"t-hand"}">${esc(b.plan_name||"No plan")} · ${plan}</span> <span style="color:var(--muted)">${esc([b.country,b.currency,b.timezone].filter(Boolean).join(" · "))}</span>`
     +(me.user.totp_enabled||me.user.email_2fa||me.user.role==="staff"||nudgeOff()?"":` <a href="#" id="tfNudge" class="tag t-attn" style="text-decoration:none">Turn on two-factor</a><button type="button" class="nudge-x" id="tfNudgeX" aria-label="Hide this reminder" title="Hide this reminder">×</button>`);
-  $("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});$("#backCC")&&($("#backCC").onclick=async e=>{e.preventDefault();await req("/api/admin/lab","POST");location.href="/"})}
+  $("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});$("#backCC")&&($("#backCC").onclick=async e=>{e.preventDefault();await req("/api/admin/lab","POST");location.href="/"})
+  // the banner stays hidden: Back to Lab and the plan are in the sidebar, two-factor is in Settings > Security
+  $("#planBar").hidden=true}
 // A section the plan doesn't include shows what it is and how to get it, instead of an error.
 function lockedCard(view){const m=VIEW_MODULE[view],f=me&&me.module_feature[m],sec=$("#"+view);
   sec.querySelectorAll(".lockCard,.adminNote").forEach(x=>x.remove());[...sec.children].forEach(x=>x.style.display="");
@@ -1499,7 +1503,7 @@ loadMe().then(()=>{if(me.lab)return;if(canSee("teach"))loadTeach().catch(()=>{})
 // The Lab: the platform admin with no business opened. Only the Command center is shown.
 function enterLab(){window.LAB=true;document.body.classList.add("labmode");
   document.querySelectorAll("nav button[data-view]").forEach(x=>x.hidden=x.id!=="adminNav");document.querySelectorAll("nav .ns").forEach(x=>x.hidden=true);
-  $("#adminNav").hidden=false;$("#labBtn")&&($("#labBtn").hidden=true);$("#planCard").hidden=true;$("#planBar").hidden=false;$("#planBar").classList.remove("adminview");
+  $("#adminNav").hidden=false;$("#labBtn")&&($("#labBtn").hidden=true);$("#planCard").hidden=true;$("#planBar").hidden=true;$("#planBar").classList.remove("adminview");
   $("#planText").innerHTML=`<span class="tag t-book">Lab</span> You're in your Lab. Open a business from the list to work inside it.`;
   $("#adminNav").click()}
 // ---------- Setup: logo, cover photo and menu ----------
@@ -1568,5 +1572,6 @@ setInterval(()=>{if(!document.hidden){refresh();loadApprovals();pollTestChat();i
 <script src="/sidebar.js"></script>
 <script src="/live.js"></script>
 <script src="/focus.js"></script>
+<script src="/details.js"></script>
 </body>
 </html>
