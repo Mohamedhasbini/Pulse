@@ -258,3 +258,13 @@ body.tp-on .td-dock{right:444px}
 .tm-chat{display:none!important}.tm{grid-template-columns:1fr!important}.tm-people{flex-direction:row!important;flex-wrap:wrap}.tm-p{flex:1 1 200px}
 .td-ai-p .tp-links{margin-top:4px}
 @media(max-width:760px){.tpanel{z-index:80;top:8px;right:8px;bottom:8px;width:calc(100vw - 16px)}}
+
+/* page headings (page-head.js): the same on every page; the sections' own titles, labels and folded intros are hidden */
+main>section>.top h1::before{content:none!important;display:none!important}
+main>section.wrap>.top{display:flex!important;align-items:flex-end!important;justify-content:space-between;gap:16px;flex-wrap:wrap;background:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;padding:4px 2px 0!important;margin:0 0 16px!important}
+main>section.wrap>.top:has(> .pg-head) h1:not(.pg-head h1),main>section.wrap>.top:has(> .pg-head) p.sub,main>section.wrap>.top:has(> .pg-head) .eyebrow{display:none!important}
+main>section.wrap>.top>div:has(> h1):not(.pg-head) .more-link{display:none!important}
+.pg-head{flex:1 1 320px;min-width:0}
+.pg-head h1{margin:0;font-size:28px!important;font-weight:500!important;letter-spacing:-.02em;line-height:1.15;color:var(--gp-text)}
+.pg-head p{margin:4px 0 0;font-size:13.5px;color:var(--gp-meta)}
+main>section.wrap>.top .switch{font-size:12.5px;color:var(--gp-meta)}

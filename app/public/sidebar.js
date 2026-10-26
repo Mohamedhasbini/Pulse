@@ -58,7 +58,7 @@ const LEDE={inbox:"Every conversation, sorted by what needs you",support:"How we
 function title(id){const p=page(id),top=$("#"+p[2]+" .top");if(!top)return;const h=top.querySelector("h1"),sub=top.querySelector("p.sub,p");
   if(h){h.dataset.orig??=h.innerHTML;h.textContent=p[1]}if(sub){sub.dataset.orig??=sub.innerHTML;sub.textContent=LEDE[id]||""}
   top.querySelector(".eyebrow,small:first-child")?.setAttribute("hidden","")}
-function openPage(id){const p=page(id);active=id;opening=Date.now();const v=p[2],b=orig(v);title(id);
+function openPage(id){const p=page(id);active=id;opening=Date.now();const v=p[2],b=orig(v);
   const here=!$("#"+v)?.hidden;if(!here)b?.click();
   let saved=null;try{saved=localStorage.getItem("rb-page-"+id)}catch{}
   const host=p[3].find(t=>t[0]===saved&&pane(v,t[0]))?.[0]||p[3].find(t=>pane(v,t[0]))?.[0];

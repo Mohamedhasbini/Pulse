@@ -5,7 +5,7 @@
 const $=s=>document.querySelector(s);
 const GROUPS={};
 // views laid out as Focus + list. Insights shows every chart at once
-const FOCUS=["overview"];
+const FOCUS=[];
 const NEED=/need|attention|approv|queue|waiting|to do|unanswered|no-show|haven/i,AI=/\bAI\b|repl|assistant|confident|teach/i;
 
 // the blocks of a pane: cards (and loose number rows) found by opening up the layout grids around them
@@ -56,7 +56,8 @@ function group(view){const sec=$("#"+view),bar=sec?.querySelector(".ptabs"),G=GR
 function route(view){const bar=$("#"+view)?.querySelector(".ptabs");if(!bar||bar.dataset.routed)return;bar.dataset.routed="1";
   bar.addEventListener("click",e=>{const b=e.target.closest("button[data-tab]");if(!b||!tabsOf[view])return;e.stopPropagation();tabsOf[view](b.dataset.tab)},true)}
 function run(view){group(view);route(view);const sec=$("#"+view);sec&&sec.querySelectorAll(":scope > .spane").forEach(p=>focusPane(view,p))}
-function boot(){FOCUS.forEach(run)}
+// the Dashboard keeps the shared tab routing even without Focus + list
+function boot(){route("overview");FOCUS.forEach(run)}
 // signature.js adds its tabs on load; wait for it
 if(document.readyState==="complete")setTimeout(boot,0);else addEventListener("load",()=>setTimeout(boot,0));
 addEventListener("tabshown",e=>{const v=e.detail?.view,sec=v&&$("#"+v);if(sec&&FOCUS.includes(v))sec.querySelectorAll(":scope > .spane:not([hidden])").forEach(p=>paint(v,p))});

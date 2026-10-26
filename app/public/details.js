@@ -2,7 +2,7 @@
 // Warnings (sample data, locked features) are left visible. Cards drawn later are folded as they appear.
 (function(){
 const KEEP=/made up|sample data|locked|premium|not included|doesn't include/i;
-function fold(root){root.querySelectorAll("p.sub, p.full").forEach(p=>{
+function fold(root){root.querySelectorAll("p.sub, p.full").forEach(p=>{if(p.closest(".top"))return;
   if(p.dataset.fold||p.closest(".td-note,.feed-item,.urow,table,.lockCard,.adminNote,[class*='banner'],[id*='anner'],.chat,.msgs"))return;
   const t=p.textContent.trim();if(t.length<70||KEEP.test(t))return;
   p.dataset.fold="1";p.hidden=true;
