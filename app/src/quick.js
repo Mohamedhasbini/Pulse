@@ -17,9 +17,14 @@ const ALIASES = {
 };
 
 // Thanks / bye on their own need no AI: answering instantly also means a slow AI can never turn them into a handoff.
-const THANKS = /^(thanks?( you)?( so much| a lot)?|thx|ty|merci( beaucoup)?|shukran|شكرا|شكراً|يسلمو|مرسي|bye|goodbye|ciao|see you|يلا باي|باي)$/;
+// A short word before or after is fine too: "ok thanks", "perfect thank you", "great see you then", "thanks bye".
+const LEAD = '(?:(?:ok|okay|okey|k|great|perfect|amazing|awesome|cool|nice|super|good|lovely|alright|all good|done|sure|yes|yeah|yep|wow|tamam|تمام|ممتاز|حلو|اوكي|أوكي) )*';
+const ONE = '(?:thanks?(?: you)?(?: so much| a lot| very much)?|thank u|thx|ty|tysm|merci(?: beaucoup)?|gracias|shukran|شكرا|شكراً|يسلمو|يسلموا|مرسي|bye|goodbye|bye bye|ciao|see you(?: then| soon| there)?|يلا باي|باي)';
+const THANKS = new RegExp(`^${LEAD}${ONE}(?: ${LEAD}${ONE})*(?: (?:again|dear|habibi|حبيبي))?$`);
 export function smallTalk(text) {
   const t = norm(text);
+  // only emojis (a thumbs up, a heart): a friendly emoji back
+  if (!t && /\p{Extended_Pictographic}/u.test(String(text || ''))) return '😊';
   if (!t || !THANKS.test(t)) return null;
   const ar = AR.test(text), bye = /bye|ciao|see you|باي/.test(t);
   return ar ? (bye ? 'مع السلامة! 😊' : 'العفو! نحن هنا إذا احتجت أي شيء 😊') : bye ? 'Bye, have a lovely day! 😊' : "You're welcome! Message us anytime 😊";
