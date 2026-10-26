@@ -4,7 +4,7 @@
 // customer is only proposed; the owner approves it with a button and /api/team/act carries it out.
 // AI: the n8n "Pulse assistant" workflow (prompt in, text out). Calls share the receptionist's per-minute pacing and
 // have their own daily cap, so the team can never use up the receptionist's quota.
-import { q, one } from './db.js';
+import { q, one, pool } from './db.js';
 import { loadBusiness, takeAiSlot } from './brain.js';
 import { freeSlots, bufferOf, hoursText } from './slots.js';
 import { agentFindings } from './agents.js';
@@ -50,7 +50,7 @@ const TOOLS = {
       (SELECT count(*) FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.business_id=$1 AND m.role='assistant' AND m.created_at > now() - interval '24 hours')::int AS ai_replies_24h,
       to_char(now() AT TIME ZONE $2,'Dy DD Mon YYYY HH24:MI') AS now`, [B.id, B.tz]))[0] },
   bookings: { about: 'bookings in a date range (default: next 7 days), with time, client, service, price, status and who booked it', args: '{"from":"YYYY-MM-DD","to":"YYYY-MM-DD","status":"confirmed|completed|no_show|cancelled|any"}',
-    run: async (B, a) => { const list = await q(`SELECT ${day('b.starts_at')} AS at, cu.name AS client, s.name AS service, b.price::float, b.status, b.source AS booked_by
+    run: async (B, a) => { const list = await q(`SELECT ${day('b.starts_at')} AS at, cu.name AS client, cu.id AS client_id, s.name AS service, b.price::float, b.status, b.source AS booked_by
       FROM bookings b JOIN customers cu ON cu.id=b.customer_id JOIN services s ON s.id=b.service_id JOIN businesses bz ON bz.id=b.business_id
       WHERE b.business_id=$1 AND (b.starts_at AT TIME ZONE $2)::date BETWEEN COALESCE($3::date,(now() AT TIME ZONE $2)::date) AND COALESCE($4::date,(now() AT TIME ZONE $2)::date + 7)
       AND ($5='any' OR b.status=$5) ORDER BY b.starts_at LIMIT 60`, [B.id, B.tz, a.from || null, a.to || null, a.status || (a.from && new Date(a.from) < new Date() ? 'any' : 'confirmed')]);
@@ -91,7 +91,7 @@ const TOOLS = {
       return { period: `last ${d} days`, ...s, ...open, handover_reasons: reasons, top_topics: topics, note: 'test chats are excluded' };
     } },
   conversations: { about: 'recent conversations, optionally only those waiting for the owner, or of one kind (booking, question, change, complaint, cancel)', args: '{"waiting":true,"kind":"complaint","days":7}',
-    run: async (B, a) => q(`SELECT c.id, cu.name AS client, c.channel, c.kind, c.topic, c.mood, c.outcome, c.needs_attention AS waiting_for_owner, c.attention_reason AS why,
+    run: async (B, a) => q(`SELECT c.id AS chat_id, cu.name AS client, cu.id AS client_id, c.channel, c.kind, c.topic, c.mood, c.outcome, c.needs_attention AS waiting_for_owner, c.attention_reason AS why,
       ${day('c.updated_at')} AS updated, (SELECT left(text,160) FROM messages m WHERE m.conversation_id=c.id AND m.role='customer' ORDER BY id DESC LIMIT 1) AS last_customer_message
       FROM conversations c JOIN customers cu ON cu.id=c.customer_id JOIN businesses bz ON bz.id=c.business_id
       WHERE c.business_id=$1 AND c.channel<>'test' AND c.updated_at > now() - make_interval(days => $2) AND (NOT $3 OR c.needs_attention) AND ($4='' OR c.kind=$4)
@@ -102,7 +102,7 @@ const TOOLS = {
   unanswered: { about: 'questions the AI could not answer, most asked first, with their id for teaching', args: '{}',
     run: async B => q(`SELECT min(id) AS id, min(question) AS question, count(*)::int AS times FROM learning WHERE business_id=$1 AND status='open' GROUP BY lower(question) ORDER BY 3 DESC LIMIT 15`, [B.id]) },
   reviews: { about: 'latest ratings and comments from clients', args: '{"days":30}',
-    run: async (B, a) => q(`SELECT cu.name AS client, c.rating, c.rating_comment AS comment, c.topic, ${day('c.rated_at')} AS at FROM conversations c JOIN customers cu ON cu.id=c.customer_id JOIN businesses bz ON bz.id=c.business_id
+    run: async (B, a) => q(`SELECT c.id AS chat_id, cu.name AS client, cu.id AS client_id, c.rating, c.rating_comment AS comment, c.topic, ${day('c.rated_at')} AS at FROM conversations c JOIN customers cu ON cu.id=c.customer_id JOIN businesses bz ON bz.id=c.business_id
       WHERE c.business_id=$1 AND c.rating IS NOT NULL AND c.channel<>'test' AND c.rated_at > now() - make_interval(days => $2) ORDER BY c.rated_at DESC LIMIT 20`, [B.id, Math.min(+a.days || 30, 365)]) },
   rules: { about: 'the strict rules the AI receptionist follows', args: '{}', run: async B => (await one('SELECT ai_rules FROM businesses WHERE id=$1', [B.id])).ai_rules || [] },
   opportunities: { about: 'what the growth agents found now: clients to win back, warm leads, quiet days, risky bookings, review requests (with counts and names)', args: '{}',
@@ -138,6 +138,79 @@ const TOOLS = {
     run: async (B, a) => q(`SELECT to_char(starts_at AT TIME ZONE $2,'Dy') AS weekday, extract(hour FROM starts_at AT TIME ZONE $2)::int AS hour, count(*)::int AS bookings FROM bookings
       WHERE business_id=$1 AND status<>'cancelled' AND starts_at > now() - make_interval(days => $3) GROUP BY 1,2 ORDER BY 3 DESC LIMIT 15`, [B.id, B.tz, Math.min(+a.days || 60, 365)]) },
 };
+// ---------- any question about the data: a read-only query, fenced in ----------
+// The model writes one SELECT against these views only; each one is this business's rows and nothing else.
+// Any other real table name, any write, and any system function are refused before the query runs; it runs in a
+// read-only transaction with a 3 second limit and returns at most 200 rows.
+const VIEWS = {
+  bookings: `SELECT id, customer_id, service_id, conversation_id, starts_at, ends_at, price::float AS price, status, source, created_at FROM public.bookings WHERE business_id=$1`,
+  customers: `SELECT id, name, phone, email, marketing_ok, created_at FROM public.customers WHERE business_id=$1`,
+  services: `SELECT id, name, price::float AS price, minutes FROM public.services WHERE business_id=$1`,
+  conversations: `SELECT id, customer_id, channel, outcome, kind, topic, mood, rating, rating_comment, needs_attention, attention_reason, created_at, updated_at FROM public.conversations WHERE business_id=$1`,
+  messages: `SELECT m.id, m.conversation_id, m.role, m.text, m.source, m.created_at FROM public.messages m JOIN public.conversations c ON c.id=m.conversation_id WHERE c.business_id=$1`,
+  requests: `SELECT id, booking_id, conversation_id, type, details, status, created_at FROM public.requests WHERE business_id=$1`,
+  questions: `SELECT id, question, status, answer, created_at FROM public.learning WHERE business_id=$1`,
+  campaigns: `SELECT id, name, message, sent, skipped, created_at FROM public.campaigns WHERE business_id=$1`,
+  time_off: `SELECT id, starts_at, ends_at, reason FROM public.time_off WHERE business_id=$1`,
+};
+let REAL_TABLES = null;
+async function safeQuery(B, sql) {
+  sql = String(sql || '').trim().replace(/;\s*$/, '');
+  if (!/^(select|with)\b/i.test(sql)) return { error: 'Only one SELECT query is allowed.' };
+  if (/;|--|\/\*/.test(sql)) return { error: 'One statement only, no comments.' };
+  if (/\b(insert|update|delete|merge|drop|alter|create|grant|revoke|truncate|copy|call|do|execute|vacuum|analyze|set|reset|listen|notify|lock|prepare|refresh|security|into)\b/i.test(sql)) return { error: 'Read-only: that keyword is not allowed.' };
+  if (/\b(pg_\w+|information_schema|current_setting|set_config|dblink\w*|lo_\w+|version|inet_\w+|txid_\w+|query_to_xml\w*|xpath)\b|\bpublic\s*\.|"/i.test(sql)) return { error: 'System functions, schema names and quoted names are not allowed.' };
+  REAL_TABLES ||= new Set((await q(`SELECT table_name FROM information_schema.tables WHERE table_schema='public'`)).map(r => r.table_name));
+  const words = new Set((sql.toLowerCase().match(/[a-z_][a-z0-9_]*/g) || []));
+  const bad = [...words].filter(w => REAL_TABLES.has(w) && !VIEWS[w]);
+  if (bad.length) return { error: `Only these tables can be used: ${Object.keys(VIEWS).join(', ')}.` };
+  const used = Object.keys(VIEWS).filter(v => words.has(v));
+  const full = `WITH ${used.map(v => `${v} AS (${VIEWS[v]})`).join(', ') || 'nothing AS (SELECT 1)'} SELECT * FROM (${sql}) AS answer LIMIT 200`;
+  const c = await pool.connect();
+  try {
+    await c.query('BEGIN READ ONLY'); await c.query(`SET LOCAL statement_timeout = 3000`); await c.query(`SET LOCAL TIME ZONE '${B.tz.replace(/'/g, '')}'`);
+    const r = await c.query(full, [B.id]);
+    // dates leave as the business's local time ("2026-10-27 18:00"), never as UTC the model could misread
+    const local = d => d.toLocaleString('sv-SE', { timeZone: B.tz }).slice(0, 16);
+    const rows = r.rows.map(row => Object.fromEntries(Object.entries(row).map(([k, v]) => [k, v instanceof Date ? local(v) : v])));
+    return { rows, count: rows.length, times: `local time (${B.tz})`, note: rows.length === 200 ? 'only the first 200 rows' : undefined };
+  } catch (e) { return { error: `Query failed: ${e.message}` }; }
+  finally { await c.query('ROLLBACK').catch(() => {}); c.release(); }
+}
+TOOLS.query = { about: 'ANY other question about this business’s data: write one PostgreSQL SELECT using only these tables (already limited to this business; times in its time zone): '
+  + 'bookings(id, customer_id, service_id, conversation_id, starts_at, ends_at, price, status confirmed|completed|no_show|cancelled, source ai|web|manual, created_at), customers(id, name, phone, email, marketing_ok, created_at), '
+  + 'services(id, name, price, minutes), conversations(id, customer_id, channel, outcome booked|answered|handoff, kind, topic, mood, rating 1-5, rating_comment, needs_attention, attention_reason, created_at, updated_at), '
+  + 'messages(id, conversation_id, role customer|assistant|owner|staff, text, source, created_at), requests(id, booking_id, conversation_id, type, details, status, created_at), questions(id, question, status, answer, created_at), '
+  + 'campaigns(id, name, message, sent, skipped, created_at), time_off(id, starts_at, ends_at, reason). Use it whenever the other tools don’t fit.', args: '{"sql":"SELECT ..."}',
+  run: (B, a) => safeQuery(B, a.sql) };
+TOOLS.business_info = { about: 'the business itself: name, address, opening hours, services with prices, policies, FAQ answers, team, payment methods, languages', args: '{}',
+  run: async B => { const b = await loadBusiness(B.id);
+    return { name: b.name, type: b.vertical, address: b.address, phone: b.phone, opening_hours: hoursText(b), services: b.services.map(s => ({ name: s.name, price: Number(s.price), minutes: s.minutes })),
+      policies: b.policies, faq: [b.faq, ...(b.faqs || []).map(f => `Q: ${f.q} A: ${f.a}`)].filter(Boolean).join('\n').slice(0, 3000), team: b.team, payment_methods: b.payment_methods, languages: b.languages, booking_note: b.booking_note,
+      cancellation_notice_hours: b.cancel_hours ?? 24, reminder_hours_before: b.reminder_hours, minimum_booking_notice_hours: b.booking_min_notice_hours }; } };
+
+// where each tool's data lives in the dashboard, so an answer can send the owner to the source
+const SOURCE = {
+  today: ['Today', { page: 'home' }], bookings: ['Calendar', { view: 'calendar' }], free_slots: ['Calendar', { view: 'calendar' }], services: ['Services', { page: 'settings', tab: 'details' }],
+  find_customer: ['Customers', { page: 'people', tab: 'clients' }], customer: ['Customers', { page: 'people', tab: 'board' }], top_customers: ['Best clients', { page: 'people', tab: 'board' }],
+  support: ['Support', { page: 'support', tab: 'live' }], conversations: ['Inbox', { page: 'inbox', tab: 'conversations' }], conversation: ['Inbox', { page: 'inbox', tab: 'conversations' }],
+  unanswered: ['Knowledge gaps', { page: 'support', tab: 'gaps' }], reviews: ['Satisfaction', { page: 'support', tab: 'reviews' }], rules: ['Teach AI', { view: 'training' }],
+  opportunities: ['Waiting for your OK', { view: 'agents' }], quiet_days: ['Calendar', { view: 'calendar' }],
+  business_info: ['Business details', { page: 'settings', tab: 'details' }],
+  overview: ['Insights · Money', { page: 'analytics', tab: 'overview' }], revenue: ['Insights · Money', { page: 'analytics', tab: 'overview' }], by_service: ['Insights · Money', { page: 'analytics', tab: 'overview' }],
+  by_channel: ['Performance · Channels', { page: 'performance', tab: 'channels' }], busy_times: ['Insights · Timing', { page: 'analytics', tab: 'timing' }],
+};
+// clients and chats named in the data, so the owner can open them from the answer
+function mentions(results) {
+  const clients = new Map(), chats = new Map();
+  const walk = (o, tool) => { if (Array.isArray(o)) return o.forEach(x => walk(x, tool)); if (!o || typeof o !== 'object') return;
+    if (o.client_id && o.client) clients.set(o.client_id, o.client);
+    if ((tool === 'find_customer' || tool === 'top_customers' || tool === 'customer') && o.id && o.name) clients.set(o.id, o.name);
+    if (o.chat_id && o.client) chats.set(o.chat_id, o.client);
+    Object.values(o).forEach(v => typeof v === 'object' && walk(v, tool)); };
+  results.forEach(r => walk(r.data, r.name));
+  return { clients: [...clients].map(([id, name]) => ({ id, name })).slice(0, 30), chats: [...chats].map(([id, client]) => ({ id, client })).slice(0, 20) };
+}
 // actions are only proposed; the owner approves each one
 const ACTIONS = {
   send_message: 'message one client: {"type":"send_message","customer_id":123,"text":"..."}',
@@ -146,14 +219,16 @@ const ACTIONS = {
   run_agent: 'let a growth agent send its prepared messages: {"type":"run_agent","agent":"winback|leads|fill|noshow|reviews"}',
 };
 
-function prompt(B, e, convo, results) {
+function prompt(B, e, convo, results, page) {
   const emp = TEAM[e];
   return `You are ${emp.name}, the ${emp.role} at ${B.name}, a ${B.vertical || 'service'} business. You work for the owner inside their Pulse dashboard.
 Your skills: ${emp.skills}. You are accurate, brief and practical, like a senior employee who owns this area.
-Today is ${B.now} (${B.tz}). Currency: ${B.currency || 'USD'}.
+Today is ${B.now} (${B.tz}). Currency: ${B.currency || 'USD'}.${page ? `\nThe owner is looking at the ${page} page of the dashboard right now; questions like "this" or "here" mean that page.` : ''}
 
 HOW YOU WORK
-- To get facts, call tools. Never guess or invent numbers, names or dates: use only what tools returned. If the data doesn't show something, say so.
+- You can answer ANY question the owner asks. Facts about this business (numbers, names, dates, bookings, chats, settings) come only from tools; use the query tool for anything the other tools don't cover. General know-how (marketing ideas, writing a post or message, pricing, customer service, how to handle a situation, how Pulse works) comes from your own expertise: give a real, specific answer, tailored with the business's data when it helps.
+- Never guess or invent business facts. If the data truly doesn't have it, say so and say what would.
+- Never ask the owner whether you should look something up: if the answer needs more data, fetch it now and answer completely.
 - Never count or add up yourself when a tool gives a count or total: copy it exactly (count, total_value, revenue, bookings).
 - Think like the owner's best employee: answer the question, then add what they would want to know next (a risk, a gap, an opportunity) if the data shows one. Compare with a previous period when it makes a number meaningful.
 - Before you answer, check: every number, name, date and time you wrote appears in TOOL RESULTS. If one doesn't, fetch it or leave it out.
@@ -166,7 +241,7 @@ HOW YOU WORK
 - LANGUAGE: write your answer in ${/[؀-ۿ]/.test(convo.filter(m => m.role === 'owner').pop()?.text || '') ? 'Arabic' : 'English'}, the language of the owner's question (customer messages stay in the client's language).
 - Actions are proposals the owner approves with one click. Only propose an action when it clearly helps; write customer messages warm, short and in the client's language.
 - Never invent facts about the business (prices, products, policies, opening times, offers). In a teach_answer or a message, any fact the tools didn't give you goes in square brackets for the owner to fill, e.g. "[Yes / No], we [do / don't] sell gift cards[, from amount]." Even yes or no goes in brackets when the tools don't say.
-- If the question belongs to a colleague (Maya: front desk, Omar: support, Lina: growth, Sam: numbers), still answer what you can with your tools and say who to ask for more.
+- Answer every question fully yourself, whatever the topic; never send the owner to a colleague instead of answering.
 
 YOUR TOOLS
 ${[...emp.tools, ...Object.keys(TOOLS).filter(t => !emp.tools.includes(t))].map(t => `- ${t} ${TOOLS[t].args}: ${TOOLS[t].about}`).join('\n')}
@@ -182,7 +257,10 @@ Your JSON:`;
 // If that model fails or is out of quota, the receptionist's model answers instead.
 const TEAM_MODEL = () => process.env.TEAM_MODEL || 'models/gemini-3.5-flash';
 async function ask(text) {
-  if (!(await takeAiSlot())) throw Object.assign(new Error('The AI is busy right now. Try again in a minute.'), { status: 429 });
+  // the per-minute allowance is shared with the receptionist: wait a little for a free slot before giving up
+  let slot = false;
+  for (let i = 0; i < 6 && !(slot = await takeAiSlot()); i++) await new Promise(r => setTimeout(r, 2500));
+  if (!slot) throw Object.assign(new Error('The AI is busy right now. Try again in a minute.'), { status: 429 });
   let r;
   for (const model of [TEAM_MODEL(), process.env.AI_MODEL].filter(Boolean)) {
     r = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: text, model }), signal: AbortSignal.timeout(40000) }).catch(() => null);
@@ -235,16 +313,26 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
     res.json({ team: [
       { id: 'maya', name: 'Maya', role: 'Front desk', open: found('noshow') + Math.max(0, d.past_today - d.marked_today),
         advice: d.today ? `${d.today} appointment${d.today > 1 ? 's' : ''} today${d.next_at ? `, next at ${d.next_at}` : ', all done'}.${found('noshow') ? ` ${found('noshow')} risky booking${found('noshow') > 1 ? 's' : ''} to confirm.` : ''}` : 'No appointments today. Ask me to find who could fill the day.',
-        progress: d.today ? Math.round(d.past_today / d.today * 100) : null, of: 'of today’s appointments done', ask: 'Who is coming today and is anyone likely to miss?' },
+        progress: d.today ? Math.round(d.past_today / d.today * 100) : null, of: 'of today’s appointments done', ask: 'Who is coming today and is anyone likely to miss?',
+        items: [d.today && { text: `${d.today} appointment${d.today > 1 ? 's' : ''} today${d.next_at ? `, next at ${d.next_at}` : ''}`, go: { view: 'calendar' } },
+          found('noshow') && { text: `${found('noshow')} risky booking${found('noshow') > 1 ? 's' : ''} to confirm`, tone: 'need', go: { view: 'agents' } },
+          d.past_today > d.marked_today && { text: `${d.past_today - d.marked_today} visit${d.past_today - d.marked_today > 1 ? 's' : ''} to mark came / no-show`, tone: 'need', go: { view: 'calendar' } }].filter(Boolean) },
       { id: 'omar', name: 'Omar', role: 'Support', open: d.open_cases + d.unanswered,
         advice: d.open_cases || d.unanswered ? `${d.open_cases} chat${d.open_cases === 1 ? '' : 's'} waiting for you, ${d.unanswered} question${d.unanswered === 1 ? '' : 's'} to teach.` : 'All chats handled. Nothing waiting for you.',
-        progress: pct(d.solved_cases_7d + d.taught_7d, d.open_cases + d.unanswered), of: 'handovers and questions cleared this week', ask: 'What is waiting for me in support and what should I answer first?' },
+        progress: pct(d.solved_cases_7d + d.taught_7d, d.open_cases + d.unanswered), of: 'handovers and questions cleared this week', ask: 'What is waiting for me in support and what should I answer first?',
+        items: [d.open_cases && { text: `${d.open_cases} chat${d.open_cases > 1 ? 's' : ''} waiting for you`, tone: 'need', go: { page: 'inbox', tab: 'conversations' } },
+          d.unanswered && { text: `${d.unanswered} question${d.unanswered > 1 ? 's' : ''} the AI couldn't answer`, tone: 'need', go: { page: 'support', tab: 'gaps' } },
+          { text: 'Support results', go: { page: 'support', tab: 'live' } }].filter(Boolean) },
       { id: 'lina', name: 'Lina', role: 'Growth', open: growth,
         advice: growth ? `${growth} client${growth > 1 ? 's' : ''} ready to contact: ${[found('winback') && `${found('winback')} to win back`, found('leads') && `${found('leads')} warm leads`, found('fill') && `${found('fill')} for quiet days`, found('reviews') && `${found('reviews')} for reviews`].filter(Boolean).join(', ')}.` : 'No one to contact right now. I keep watching for lapsed regulars and warm leads.',
-        progress: pct(d.sent_7d, growth), of: 'prepared messages sent this week', ask: 'Who should I contact this week to get more bookings?' },
+        progress: pct(d.sent_7d, growth), of: 'prepared messages sent this week', ask: 'Who should I contact this week to get more bookings?',
+        items: [...[['winback', 'to win back'], ['leads', 'warm leads'], ['fill', 'to invite for quiet days'], ['reviews', 'to ask for a review']].filter(([k]) => found(k)).map(([k, l]) => ({ text: `${found(k)} ${l}`, tone: 'need', go: { view: 'agents' } })),
+          { text: 'Clients', go: { page: 'people', tab: 'board' } }] },
       { id: 'sam', name: 'Sam', role: 'Analyst', open: 0,
         advice: `This week so far: ${money(d.week_rev)}${delta === null ? '' : `, ${delta >= 0 ? 'up' : 'down'} ${Math.abs(delta)}% on the same days last week`}.`,
-        progress: d.last_week_rev ? Math.min(100, Math.round(d.week_rev / d.last_week_rev * 100)) : null, of: 'of last week’s revenue at this point', ask: 'How is this week going and what should I improve?' },
+        progress: d.last_week_rev ? Math.min(100, Math.round(d.week_rev / d.last_week_rev * 100)) : null, of: 'of last week’s revenue at this point', ask: 'How is this week going and what should I improve?',
+        items: [{ text: `This week: ${money(d.week_rev)}${delta === null ? '' : ` (${delta >= 0 ? '+' : '−'}${Math.abs(delta)}%)`}`, go: { page: 'analytics', tab: 'overview' } },
+          { text: 'Trends', go: { page: 'performance', tab: 'summary' } }, { text: 'Busiest times', go: { page: 'analytics', tab: 'timing' } }] },
     ] });
   }));
   app.get('/api/team', wrap(async (_req, res) => {
@@ -261,10 +349,13 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
     const results = [{ name: 'today', args: {}, data: await TOOLS.today.run(B).catch(() => ({})) }], used_tools = [];
     let out = null;
     for (let step = 0; step < MAX_STEPS; step++) {
-      try { out = await ask(prompt(B, e, convo, results)); }
-      catch (err) { if (step === 0) return res.status(err.status || 503).json({ error: err.status ? err.message : 'The AI isn’t reachable right now. Try again in a minute.' }); break; }
+      try { out = await ask(prompt(B, e, convo, results, String(req.body.page || '').slice(0, 40))); }
+      catch (err) { if (step === 0) return res.status(err.status || 503).json({ error: err.status ? err.message : 'The AI isn’t reachable right now. Try again in a minute.' }); out = { busy: true }; break; }
       await q('INSERT INTO team_calls (business_id, employee) VALUES ($1,$2)', [B.id, e]);
       if (out.broken) { convo.push({ role: 'system', text: 'Your last reply was not valid JSON. Reply with one valid JSON object only.' }); continue; }
+      // an answer that offers to look something up instead of looking: send it back to do the work
+      if (out.answer && step < MAX_STEPS - 1 && /\b(shall|should|would you like|do you want|want) (me to |i )?(pull|check|fetch|look|get|dig|find)\b|\bi (can|could|need to) (pull|fetch|check|look)\b/i.test(out.answer)) {
+        convo.push({ role: 'system', text: 'Do not offer to look it up: fetch that data now with a tool and give the complete answer.' }); continue; }
       const calls = Array.isArray(out.tools) ? out.tools.slice(0, 3) : [];
       if (!calls.length || out.answer) break;
       for (const c of calls) {
@@ -274,11 +365,13 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
       }
       if (step === MAX_STEPS - 2) convo.push({ role: 'system', text: 'Answer now with what you have.' });
     }
-    const answer = out?.answer || 'I couldn’t finish that one. Try asking it a bit more specifically.';
+    const answer = out?.answer || (out?.busy ? 'The AI got busy halfway through. Ask me again in a minute.' : 'I couldn’t finish that one. Try asking it a bit more specifically.');
     const actions = (Array.isArray(out?.actions) ? out.actions : []).filter(a => a && TEAM[e].actions.includes(a.type)).slice(0, 5);
     // actions carry the client's name so the owner sees who they approve
     for (const a of actions) if (a.customer_id) a.client = (await one('SELECT name FROM customers WHERE id=$1 AND business_id=$2', [+a.customer_id, B.id]))?.name || null;
-    res.json({ employee: e, answer, actions: actions.filter(a => a.type !== 'send_message' || a.client), tools: [...new Set(used_tools)] });
+    const tools = [...new Set(used_tools)], seen = new Set();
+    const sources = tools.map(t => SOURCE[t]).filter(x => x && !seen.has(x[0]) && seen.add(x[0])).map(([label, go]) => ({ label, go }));
+    res.json({ employee: e, answer, actions: actions.filter(a => a.type !== 'send_message' || a.client), tools, sources, ...mentions(results) });
   }));
   // the owner approved one proposed action
   app.post('/api/team/act', wrap(async (req, res) => {
@@ -317,3 +410,6 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
     res.status(400).json({ error: 'Unknown action.' });
   }));
 }
+
+// exported for the safety tests
+export { safeQuery };

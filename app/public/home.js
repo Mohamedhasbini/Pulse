@@ -102,8 +102,8 @@ main>section.today:not([hidden]){overflow:auto}
 @media (max-width:900px){.td-steps{grid-template-columns:1fr}}
 /* AI team strip */
 .td-ai-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.td-ai-p{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:14px;border:1px solid var(--td-line)}
-.td-ai-p:hover{background:var(--td-soft)}
+.td-ai-p{box-sizing:border-box;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:14px;border:1px solid var(--td-line)}
+.td-ai-p .av{all:unset;cursor:pointer}.td-ai-n{all:unset;cursor:pointer;font-weight:500}.td-ai-n:hover{text-decoration:underline}
 .td-ai-p .av{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:600;font-size:12.5px;color:#fff;background:var(--td-mute)}
 .td-ai-p .av-maya{background:#2a6b4a}.td-ai-p .av-omar{background:var(--need,#c45f2a)}.td-ai-p .av-lina{background:#a0527a}.td-ai-p .av-sam{background:var(--aic,#6457d4)}
 .td-ai-p .tx{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
@@ -132,11 +132,13 @@ async function load(){
   biz=b;live=l;notes=n.items||[];ch=c;draw(n.unread||0);drawTeam()}
 // the AI team: what each one advises now, their open tasks and how much is done. No AI call; the data does it
 async function drawTeam(){let t;try{t=(await req("/api/team/status")).team}catch{return}
-  $("#tdAiList").innerHTML=t.map(e=>`<button type="button" class="td-ai-p" data-team="${e.id}" data-ask="${esc(e.ask)}" title="Ask ${e.name}: ${esc(e.ask)}">
-    <span class="av av-${e.id}">${e.name[0]}</span><span class="tx"><b>${e.name} <small>${e.role}</small>${e.open?`<em>${e.open} task${e.open>1?"s":""}</em>`:`<em class="ok">clear</em>`}</b>
-    <small>${esc(e.advice)}</small>${e.progress==null?"":`<i class="td-ai-bar" title="${e.progress}% ${esc(e.of)}"><u style="width:${e.progress}%"></u></i><small class="pc">${e.progress}% ${esc(e.of)}</small>`}</span></button>`).join("")}
+  // each employee: open their panel from the name, follow a finding to its page
+  $("#tdAiList").innerHTML=t.map(e=>`<div class="td-ai-p"><button type="button" class="av av-${e.id}" data-team="${e.id}" title="Talk to ${e.name}">${e.name[0]}</button>
+    <span class="tx"><b><button type="button" class="td-ai-n" data-team="${e.id}">${e.name}</button> <small>${e.role}</small>${e.open?`<em>${e.open} task${e.open>1?"s":""}</em>`:`<em class="ok">clear</em>`}</b>
+    <small>${esc(e.advice)}</small>${e.progress==null?"":`<i class="td-ai-bar" title="${e.progress}% ${esc(e.of)}"><u style="width:${e.progress}%"></u></i><small class="pc">${e.progress}% ${esc(e.of)}</small>`}
+    <span class="tp-links">${(e.items||[]).filter(i=>i.tone).map(i=>`<button type="button" class="tp-link need" data-go='${esc(JSON.stringify(i.go))}'>${esc(i.text)} →</button>`).join("")}</span></span></div>`).join("")}
 $("#tdAiAsk").addEventListener("submit",e=>{e.preventDefault();const t=$("#tdAiIn").value.trim();if(!t)return;$("#tdAiIn").value="";window.openTeam?.("",t)});
-sec.addEventListener("click",e=>{const b=e.target.closest("[data-team]");if(!b)return;e.stopPropagation();window.openTeam?.(b.dataset.team,"")},true);
+sec.addEventListener("click",e=>{const b=e.target.closest("[data-team]");if(!b)return;e.stopPropagation();window.openTeam?.(b.dataset.team||"maya","")},true);
 function openNow(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),r=(biz?.hours?.[d.getDay()]||[]).map(([a,z])=>[a,z].map(t=>{const[h,mm]=t.split(":");return +h*60+ +mm}));
   const cur=r.find(([a,z])=>m>=a&&m<z);if(cur)return `Open now · until ${String(Math.floor(cur[1]/60)).padStart(2,"0")}:${String(cur[1]%60).padStart(2,"0")}`;
   const next=r.find(([a])=>a>m);return next?`Opens today at ${String(Math.floor(next[0]/60)).padStart(2,"0")}:${String(next[0]%60).padStart(2,"0")}`:"Closed today"}

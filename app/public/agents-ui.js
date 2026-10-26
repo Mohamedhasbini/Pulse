@@ -73,9 +73,9 @@ async function askTeam(text){if(!text.trim())return;convo.push({role:"owner",tex
     Object.assign(w,{wait:false,who:r.employee,text:r.answer,tools:r.tools,actions:r.actions})}catch(e){Object.assign(w,{wait:false,who:w.who||"maya",text:e.message})}
   drawLog();loadTeam()}
 // Today's team strip opens the page here, with someone chosen and maybe a question asked
-window.openTeam=async(id,text)=>{nb.click();who=id||"";await loadTeam();if(text)askTeam(text)};
+
 $("#tmForm").addEventListener("submit",e=>{e.preventDefault();const t=$("#tmIn").value;$("#tmIn").value="";askTeam(t)});
-document.addEventListener("click",async e=>{const p=e.target.closest(".tm-p");if(p){who=p.dataset.who;drawPeople();return}
+document.addEventListener("click",async e=>{const p=e.target.closest(".tm-p");if(p){window.openTeam?.(p.dataset.who||"maya");return}
   const s=e.target.closest(".tm-s");if(s){askTeam(s.textContent);return}
   const box=e.target.closest(".tm-act");if(!box)return;const m=convo[+box.dataset.m],a=m.actions[+box.dataset.a];
   if(e.target.closest("[data-skip]")){m.actions.splice(+box.dataset.a,1);drawLog();return}
