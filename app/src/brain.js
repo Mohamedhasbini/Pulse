@@ -20,7 +20,7 @@ export const aiHealth = { ok: null, at: null, ms: null, error: null };
 // instead of being refused; what doesn't fit waits in ai_queue and is answered as soon as there is room.
 // Counted in the database (ai_calls), so every process together stays under the one plan limit.
 const AI_RPM = Math.max(1, +process.env.AI_RPM || 10); // below 15: Jarvis and the coach share the same key
-async function takeAiSlot() {
+export async function takeAiSlot() {
   return !!(await one(`WITH l AS (SELECT pg_advisory_xact_lock(424242)),
       c AS (SELECT count(*) AS n FROM ai_calls, l WHERE at > now() - interval '60 seconds')
     INSERT INTO ai_calls (at) SELECT now() FROM c WHERE c.n < $1 RETURNING 1`, [AI_RPM]));
@@ -274,7 +274,8 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
       needs_attention = needs_attention OR $2, attention_reason = COALESCE($3, attention_reason)${asked ? ', rating_asked_at=now()' : ''} WHERE id=$4`,
     [outcome, !!attention, attention, conv.id]);
   // what the conversation is about (Inbox types, Support topics). A booking stays a booking unless the customer later
-  // complains, cancels or changes it; a booking made now always counts as one
+  // complains, cancels or changes it; a booking made now always counts as one. A complaint and an unhappy mood stick,
+  // so Support still sees them after the chat moves on
   if (source === 'ai') {
     const KINDS = ['booking', 'question', 'change', 'complaint', 'cancel', 'other'], MOODS = ['positive', 'neutral', 'negative'];
     let kind = KINDS.includes(String(decision.kind).toLowerCase()) ? String(decision.kind).toLowerCase() : null;
@@ -282,8 +283,9 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     const topic = typeof decision.topic === 'string' ? decision.topic.trim().slice(0, 40) || null : null;
     const mood = MOODS.includes(String(decision.mood).toLowerCase()) ? String(decision.mood).toLowerCase() : null;
     if (kind || topic || mood) await q(`UPDATE conversations SET
-        kind = CASE WHEN $1::text IS NULL THEN kind WHEN kind='booking' AND $1 NOT IN ('complaint','cancel','change') THEN kind ELSE $1 END,
-        topic = COALESCE($2, topic), mood = COALESCE($3, mood) WHERE id=$4`, [kind, topic, mood, conv.id]);
+        kind = CASE WHEN $1::text IS NULL THEN kind WHEN kind='complaint' THEN kind WHEN kind='booking' AND $1 NOT IN ('complaint','cancel','change') THEN kind ELSE $1 END,
+        topic = CASE WHEN kind='complaint' AND $1 IS DISTINCT FROM 'complaint' THEN topic ELSE COALESCE($2, topic) END,
+        mood = CASE WHEN mood='negative' THEN mood ELSE COALESCE($3, mood) END WHERE id=$4`, [kind, topic, mood, conv.id]);
   }
   emit(biz.id, bookedNow ? 'booking' : 'message');
   return { reply, options: choices, outcome, bookedNow, conversationId: conv.id, failed };
@@ -450,6 +452,7 @@ const FAST_FLOW = `FAST BOOKING FLOW (overrides any earlier guidance about pacin
 - When a service is chosen, reply in ONE short message: service, minutes and price, then offer exactly the 3 times listed for it in CONTEXT.quick_slots (use their labels, and always write them in the message text too), and say they can name another day or time.
 - The 3 quick_slots are on different days and times of day. Always add "Another day" as the last option.
 - "Another day" (or "other day", "next week"): ask which day suits them, with options = CONTEXT.next_open_days (tap a day).
+- When they ask for a part of the day (morning, afternoon after 12:00, evening after 17:00, or the Arabic words for these), offer ONLY free times inside that part; if there are none, say so and offer the closest ones.
 - When they pick or name a day: offer 3 free times on THAT day from CONTEXT.availability, one morning, one afternoon, one evening when possible (options = those 3 times + "Another day").
 - Never list more than 3 times. If they name a time that is taken, offer the 3 closest free times.
 - When they ask what you offer, list the services in one short message (name and price only) and ask which one; the options are ALL service names (up to 10).
@@ -460,7 +463,8 @@ const FAST_FLOW = `FAST BOOKING FLOW (overrides any earlier guidance about pacin
 TAP-TO-ANSWER OPTIONS: also add "options" to your JSON: an array of the choices the customer can tap to answer your message, in the order you wrote them. Examples: the 3 times exactly as you wrote them plus "Another day"; service names; "Yes" / "Change time". Each option at most 20 characters. Up to 10 options (3 or fewer is best). Use [] when the customer must type something (a name, an email) or after a booking is confirmed.`;
 const CONFIDENCE = 'CONFIDENCE: also add "confidence": "high" or "low" to your JSON. Use "low" when you are not sure your reply is correct, complete or allowed; the owner will review it.'
   + '\nCONVERSATION TAGS: also add "kind" (one of: booking, question, change, complaint, cancel, other: what this customer wants in this conversation so far),'
-  + ' "topic" (2 to 4 words in English naming the subject, e.g. "Prices", "Parking", "Late arrival") and "mood" (positive, neutral or negative).';
+  + ' "topic" (1 or 2 words in English; use one of: Prices, Opening hours, Booking, Reschedule, Cancellation, Location, Parking, Services, Payment, Waiting time, Staff, Gift cards; only if none fits, a new 1 or 2 word topic)'
+  + ' and "mood" (positive, neutral or negative).';
 
 // Reminder channels that can really be sent right now (SMS is not connected).
 // WhatsApp customers always get WhatsApp, Telegram customers Telegram; other chats only if WhatsApp sending is set up.

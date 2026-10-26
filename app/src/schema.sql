@@ -383,3 +383,12 @@ CREATE TABLE IF NOT EXISTS test_runs (id serial PRIMARY KEY, business_id int NOT
 CREATE INDEX IF NOT EXISTS test_runs_biz ON test_runs (business_id, created_at DESC);
 -- conversations from before tagging: a booked chat is a booking
 UPDATE conversations SET kind='booking' WHERE kind IS NULL AND outcome='booked';
+
+-- Agents: what each agent sent (or the owner sent from their phone), so nobody is contacted twice too soon.
+CREATE TABLE IF NOT EXISTS agent_actions (id serial PRIMARY KEY, business_id int NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  agent text NOT NULL, customer_id int REFERENCES customers(id) ON DELETE CASCADE, status text NOT NULL, message text, created_at timestamptz DEFAULT now());
+CREATE INDEX IF NOT EXISTS agent_actions_lookup ON agent_actions (customer_id, agent, created_at DESC);
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS review_url text;
+-- AI team: one row per AI call, for the daily cap that keeps the receptionist's quota safe.
+CREATE TABLE IF NOT EXISTS team_calls (id serial PRIMARY KEY, business_id int NOT NULL REFERENCES businesses(id) ON DELETE CASCADE, employee text, at timestamptz DEFAULT now());
+CREATE INDEX IF NOT EXISTS team_calls_biz ON team_calls (business_id, at DESC);

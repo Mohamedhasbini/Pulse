@@ -1,0 +1,110 @@
+{
+  "name": "Pulse assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pulse-assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ef94a798-c303-4d4c-acf2-9dd71dce5d63",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "fdf7c7e1-2c85-4266-949b-78fa21f9feab"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body.prompt }}"
+      },
+      "id": "b9a07165-6616-4423-bd71-8b04a064e4d7",
+      "name": "Assistant",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "={{ $('Webhook').item.json.body.model || 'models/gemini-3.1-flash-lite' }}",
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "3250caae-b39c-44e4-b506-e7ced47f6eef",
+      "name": "Gemini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        200
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "S9l6oA3ePpJH817u",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { output: $json.text } }}",
+        "options": {}
+      },
+      "id": "839ae9bf-d0ed-453d-a393-53489dfe9433",
+      "name": "Reply to app",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assistant": {
+      "main": [
+        [
+          {
+            "node": "Reply to app",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "active": false
+}

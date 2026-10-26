@@ -20,7 +20,7 @@ const PAGES=[
   ["settings","Settings","setup",[["details","Business",["start","details"]],["channels","Channels & reminders",["channels","reminders"]],["booking","Booking & payments",["tools","booking"]],["codes","Discount codes",["codes"]]]],
   ["account","Account","setup",[["s2fa","Security",["s2fa","spw"]],["sdev","Devices",["sdev"]],["look","Look & feel",["look"]],["dash","Dashboard layout",["dash"]]]],
 ];
-const ORDER=[["Main",["home","inbox","support","calendar"]],["Business",["performance","analytics","people"]],["AI receptionist",["training","demo"]],["Setup",["website","settings","account","admin"]]];
+const ORDER=[["Main",["home","inbox","support","calendar","agents"]],["Business",["performance","analytics","people"]],["AI receptionist",["training","demo"]],["Setup",["website","settings","account","admin"]]];
 const homeBtn=$('nav button[data-view="overview"]:not([data-sub])');
 // the button that opens a section; the Dashboard section opens through its own entry, since the plain one is Home
 const orig=v=>v==="overview"?$('nav button[data-view="overview"][data-sub]:not([data-page])'):$(`nav button[data-view="${v}"]:not([data-sub]):not([data-page])`);
@@ -67,8 +67,8 @@ function openPage(id){const p=page(id);active=id;opening=Date.now();const v=p[2]
 // the sidebar itself
 function draw(){const nav=$("nav .navpills");if(!nav||nav.dataset.pg)return;nav.dataset.pg="1";
   $$("nav .navpills > .ns").forEach(x=>x.remove());
-  $$("nav .navpills > button[data-view]").forEach(b=>{if(b!==homeBtn&&b.dataset.view!=="calendar"&&b.dataset.view!=="training"&&b.dataset.view!=="demo"&&b.dataset.view!=="website"&&b.id!=="adminNav")b.classList.add("nav-gone")});
-  const entry={home:homeBtn,calendar:orig("calendar"),training:orig("training"),demo:orig("demo"),website:orig("website"),admin:$("#adminNav")};
+  $$("nav .navpills > button[data-view]").forEach(b=>{if(b!==homeBtn&&b.dataset.view!=="calendar"&&b.dataset.view!=="training"&&b.dataset.view!=="demo"&&b.dataset.view!=="website"&&b.dataset.view!=="agents"&&b.id!=="adminNav")b.classList.add("nav-gone")});
+  const entry={home:homeBtn,agents:orig("agents"),calendar:orig("calendar"),training:orig("training"),demo:orig("demo"),website:orig("website"),admin:$("#adminNav")};
   for(const [id,label,v] of PAGES){const b=document.createElement("button");b.type="button";b.dataset.view=v;b.dataset.page=id;b.title=label;b.setAttribute("aria-label",label);
     const icon=ICON[id]||orig(v)?.querySelector("svg")?.innerHTML||"";b.innerHTML=`<svg viewBox="0 0 24 24">${icon}</svg><span>${label}</span>`;
     b.addEventListener("click",e=>{e.stopImmediatePropagation();openPage(id)});entry[id]=b}

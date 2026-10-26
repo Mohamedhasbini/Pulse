@@ -6,6 +6,8 @@ import { hashPassword, checkPassword, newPassword, signSession, readSession, sig
 import { MODULES, FEATURES, MODULE_FEATURE, featuresOf, hasFeature, canOpen, moduleOf, seedPlans } from './features.js';
 import { q, one, migrate, withBusinessLock } from './db.js';
 import { mountLab } from './lab.js';
+import { mountAgents } from './agents.js';
+import { mountTeam } from './team.js';
 import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
 import { mountLive } from './live.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
@@ -626,6 +628,8 @@ app.get('/api/ai-queue', wrap(async (_req, res) => res.json(await aiQueueStatus(
 app.get('/api/ai-queue/list', wrap(async (req, res) => res.json(await aiQueueList(BIZ(), String(req.query.status || '')))));
 mountLive(app, () => BIZ());
 mountLab(app, () => BIZ());
+mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
+mountTeam(app, () => BIZ(), { sendWhatsApp, sendTelegram, audit });
 
 // Reviews: customers rate a chat 1-5 when it ends. Satisfaction = share of ratings that are 4 or 5.
 app.get('/api/ratings', wrap(async (req, res) => {
