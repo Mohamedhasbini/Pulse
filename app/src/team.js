@@ -186,6 +186,41 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
     const b = await one(`SELECT id, name, vertical, currency, COALESCE(timezone,'Asia/Beirut') AS tz, to_char(now() AT TIME ZONE COALESCE(timezone,'Asia/Beirut'),'Dy DD Mon YYYY HH24:MI') AS now FROM businesses WHERE id=$1`, [BIZ()]);
     return b;
   };
+  // what each employee is on right now, for the Today page: one line of advice, open tasks and progress.
+  // Straight from the data, no AI call, so it can refresh as often as Today does.
+  app.get('/api/team/status', wrap(async (_req, res) => {
+    const B = await biz(), P = [B.id, B.tz];
+    const [[d], ag] = await Promise.all([q(`SELECT
+      (SELECT count(*) FROM bookings WHERE business_id=$1 AND status<>'cancelled' AND (starts_at AT TIME ZONE $2)::date=(now() AT TIME ZONE $2)::date)::int AS today,
+      (SELECT count(*) FROM bookings WHERE business_id=$1 AND status IN ('confirmed','completed','no_show') AND starts_at < now() AND (starts_at AT TIME ZONE $2)::date=(now() AT TIME ZONE $2)::date)::int AS past_today,
+      (SELECT count(*) FROM bookings WHERE business_id=$1 AND status IN ('completed','no_show') AND (starts_at AT TIME ZONE $2)::date=(now() AT TIME ZONE $2)::date)::int AS marked_today,
+      (SELECT to_char(min(starts_at) AT TIME ZONE $2,'HH24:MI') FROM bookings WHERE business_id=$1 AND status='confirmed' AND starts_at > now() AND (starts_at AT TIME ZONE $2)::date=(now() AT TIME ZONE $2)::date) AS next_at,
+      (SELECT count(*) FROM conversations WHERE business_id=$1 AND needs_attention)::int AS open_cases,
+      (SELECT count(*) FROM conversations c WHERE business_id=$1 AND attention_reason IS NOT NULL AND NOT needs_attention AND updated_at > now() - interval '7 days')::int AS solved_cases_7d,
+      (SELECT count(DISTINCT lower(question)) FROM learning WHERE business_id=$1 AND status='open')::int AS unanswered,
+      (SELECT count(*) FROM learning WHERE business_id=$1 AND status='answered' AND answered_at > now() - interval '7 days')::int AS taught_7d,
+      (SELECT count(*) FROM agent_actions WHERE business_id=$1 AND status='sent' AND created_at > now() - interval '7 days')::int AS sent_7d,
+      (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND status<>'cancelled' AND starts_at >= date_trunc('week', now() AT TIME ZONE $2) AT TIME ZONE $2 AND starts_at < now()) AS week_rev,
+      (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND status<>'cancelled' AND starts_at >= (date_trunc('week', now() AT TIME ZONE $2) - interval '7 days') AT TIME ZONE $2 AND starts_at < now() - interval '7 days') AS last_week_rev`, P),
+      agentFindings(B.id).catch(() => ({ out: [] }))]);
+    const found = id => ag.out.find(a => a.id === id)?.list.length || 0, growth = found('winback') + found('leads') + found('fill') + found('reviews');
+    const pct = (done, open) => done + open ? Math.round(done / (done + open) * 100) : 100, money = v => `${!B.currency || B.currency === 'USD' ? '$' : B.currency + ' '}${Math.round(v)}`;
+    const delta = d.last_week_rev ? Math.round((d.week_rev - d.last_week_rev) / d.last_week_rev * 100) : null;
+    res.json({ team: [
+      { id: 'maya', name: 'Maya', role: 'Front desk', open: found('noshow') + Math.max(0, d.past_today - d.marked_today),
+        advice: d.today ? `${d.today} appointment${d.today > 1 ? 's' : ''} today${d.next_at ? `, next at ${d.next_at}` : ', all done'}.${found('noshow') ? ` ${found('noshow')} risky booking${found('noshow') > 1 ? 's' : ''} to confirm.` : ''}` : 'No appointments today. Ask me to find who could fill the day.',
+        progress: d.today ? Math.round(d.past_today / d.today * 100) : null, of: 'of today’s appointments done', ask: 'Who is coming today and is anyone likely to miss?' },
+      { id: 'omar', name: 'Omar', role: 'Support', open: d.open_cases + d.unanswered,
+        advice: d.open_cases || d.unanswered ? `${d.open_cases} chat${d.open_cases === 1 ? '' : 's'} waiting for you, ${d.unanswered} question${d.unanswered === 1 ? '' : 's'} to teach.` : 'All chats handled. Nothing waiting for you.',
+        progress: pct(d.solved_cases_7d + d.taught_7d, d.open_cases + d.unanswered), of: 'handovers and questions cleared this week', ask: 'What is waiting for me in support and what should I answer first?' },
+      { id: 'lina', name: 'Lina', role: 'Growth', open: growth,
+        advice: growth ? `${growth} client${growth > 1 ? 's' : ''} ready to contact: ${[found('winback') && `${found('winback')} to win back`, found('leads') && `${found('leads')} warm leads`, found('fill') && `${found('fill')} for quiet days`, found('reviews') && `${found('reviews')} for reviews`].filter(Boolean).join(', ')}.` : 'No one to contact right now. I keep watching for lapsed regulars and warm leads.',
+        progress: pct(d.sent_7d, growth), of: 'prepared messages sent this week', ask: 'Who should I contact this week to get more bookings?' },
+      { id: 'sam', name: 'Sam', role: 'Analyst', open: 0,
+        advice: `This week so far: ${money(d.week_rev)}${delta === null ? '' : `, ${delta >= 0 ? 'up' : 'down'} ${Math.abs(delta)}% on the same days last week`}.`,
+        progress: d.last_week_rev ? Math.min(100, Math.round(d.week_rev / d.last_week_rev * 100)) : null, of: 'of last week’s revenue at this point', ask: 'How is this week going and what should I improve?' },
+    ] });
+  }));
   app.get('/api/team', wrap(async (_req, res) => {
     const B = await biz(), [used] = await q(`SELECT count(*)::int AS n FROM team_calls WHERE business_id=$1 AND at > now() - interval '24 hours'`, [B.id]);
     res.json({ team: Object.entries(TEAM).map(([id, e]) => ({ id, name: e.name, role: e.role, avatar: e.avatar, skills: e.skills })), calls_left: Math.max(0, DAILY_CAP - used.n), cap: DAILY_CAP });

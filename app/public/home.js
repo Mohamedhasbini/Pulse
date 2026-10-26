@@ -14,6 +14,9 @@ sec.innerHTML=`<div class="td-grid">
   <div class="td-card td-hero"><div class="td-hero-in"><div class="td-logo" id="tdLogo" role="button" tabindex="0" data-go="team" title="Change your logo in Settings"></div><div style="min-width:0"><p class="td-eyebrow" id="tdDate"></p><h1 id="tdHello">Good morning</h1><p class="td-sub" id="tdSub"></p></div></div>
     <div class="td-val"><b id="tdVal"></b><span id="tdValL"></span><i id="tdValChg"></i></div>
     <div class="td-hero-acts"><button class="td-btn" type="button" data-go="newbooking">+ New booking</button><button class="td-btn ghost" type="button" data-go="dash">Full dashboard</button></div></div>
+  <div class="td-card td-ai" id="tdAi"><div class="td-h"><h2>Your AI team</h2><button class="td-link" type="button" data-team="">Open team →</button></div>
+    <div class="td-ai-list" id="tdAiList"></div>
+    <form class="td-ai-ask" id="tdAiAsk"><input id="tdAiIn" placeholder="Give your team a task or ask anything…" autocomplete="off" aria-label="Ask your AI team"><button class="td-go" type="submit">Ask</button></form></div>
   <div class="td-focus" id="tdFocus">
    <div class="td-card td-start" data-k="start"><div class="td-h"><h2>Get started</h2></div><h3>Your receptionist is ready</h3>
     <p class="td-say">Nothing to show yet. The first conversations usually arrive within a day of connecting WhatsApp. While you wait:</p>
@@ -80,7 +83,7 @@ main>section.today:not([hidden]){overflow:auto}
 .td-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--td-line)}.td-row:first-child{border-top:0;padding-top:2px}
 .td-row .tx{min-width:0;flex:1;display:flex;flex-direction:column}.td-row .tx b{font-size:13.5px;font-weight:500;color:var(--td-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.td-row .tx small{font-size:12px;color:var(--td-mute)}
 .td-ic{width:8px;height:8px;flex:none;border-radius:50%;font-size:0;background:var(--td-mute)}
-.td-ic.red{background:var(--bad,#e11d48)}.td-ic.amber{background:var(--td-need)}.td-ic.blue{background:var(--ai,#6457d4)}.td-ic.green{background:var(--td-acc)}
+.td-ic.red{background:var(--bad,#e11d48)}.td-ic.amber{background:var(--td-need)}.td-ic.blue{background:var(--aic,#6457d4)}.td-ic.green{background:var(--td-acc)}
 .td-go{all:unset;cursor:pointer;font-size:12px;font-weight:500;padding:5px 12px;border-radius:99px;border:1px solid var(--td-line);color:var(--td-ink)}.td-go:hover{background:var(--td-soft)}
 .td-av{width:38px;height:38px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:14px;color:#fff}
 [data-k="team"] .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
@@ -97,6 +100,19 @@ main>section.today:not([hidden]){overflow:auto}
 .td-steps button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;border:1px solid var(--td-line)}.td-steps button:hover{background:var(--td-soft)}
 .td-steps b{font-size:13.5px;font-weight:500;color:var(--td-ink)}.td-steps small{font-size:12px;color:var(--td-mute)}
 @media (max-width:900px){.td-steps{grid-template-columns:1fr}}
+/* AI team strip */
+.td-ai-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.td-ai-p{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:14px;border:1px solid var(--td-line)}
+.td-ai-p:hover{background:var(--td-soft)}
+.td-ai-p .av{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:600;font-size:12.5px;color:#fff;background:var(--td-mute)}
+.td-ai-p .av-maya{background:#2a6b4a}.td-ai-p .av-omar{background:var(--need,#c45f2a)}.td-ai-p .av-lina{background:#a0527a}.td-ai-p .av-sam{background:var(--aic,#6457d4)}
+.td-ai-p .tx{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.td-ai-p b{font-size:13px;font-weight:500;color:var(--td-ink);display:flex;align-items:center;gap:6px}.td-ai-p b small{font-weight:400;color:var(--td-mute);font-size:11.5px}
+.td-ai-p em{margin-left:auto;font-style:normal;font-size:11px;font-family:'Geist Mono',monospace;color:var(--td-need)}.td-ai-p em.ok{color:var(--td-acc)}
+.td-ai-p .tx>small{font-size:12px;color:var(--td-ink2);line-height:1.4}.td-ai-p small.pc{font-size:10.5px;color:var(--td-mute)}
+.td-ai-bar{display:block;height:4px;border-radius:99px;background:var(--td-line);overflow:hidden;margin-top:3px}.td-ai-bar u{display:block;height:100%;background:var(--td-acc);border-radius:99px}
+.td-ai-ask{display:flex;gap:6px;margin-top:10px}.td-ai-ask input{flex:1;min-width:0}
+@media (max-width:900px){.td-ai-list{grid-template-columns:1fr}}
 .td-empty{font-size:13px;color:var(--td-mute);padding:8px 0}
 @media (max-width:900px){.td-grid{grid-template-columns:1fr}.td-stats{grid-template-columns:1fr 1fr;gap:14px 0}.td-stat:nth-child(3){border-left:0;padding-left:0}.td-val b{font-size:36px}.td-hero h1{font-size:21px!important}.td-logo{width:50px;height:50px}}
 </style>`);
@@ -113,7 +129,14 @@ const colorOf=s=>{let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))%360;
 const hm=s=>String(s||"").slice(11,16);
 async function load(){
   const [b,l,n,c]=await Promise.all([req("/api/business").catch(()=>null),req("/api/live?days=7").catch(()=>null),req("/api/notifications").catch(()=>({items:[],unread:0})),req("/api/channels").catch(()=>null)]);
-  biz=b;live=l;notes=n.items||[];ch=c;draw(n.unread||0)}
+  biz=b;live=l;notes=n.items||[];ch=c;draw(n.unread||0);drawTeam()}
+// the AI team: what each one advises now, their open tasks and how much is done. No AI call; the data does it
+async function drawTeam(){let t;try{t=(await req("/api/team/status")).team}catch{return}
+  $("#tdAiList").innerHTML=t.map(e=>`<button type="button" class="td-ai-p" data-team="${e.id}" data-ask="${esc(e.ask)}" title="Ask ${e.name}: ${esc(e.ask)}">
+    <span class="av av-${e.id}">${e.name[0]}</span><span class="tx"><b>${e.name} <small>${e.role}</small>${e.open?`<em>${e.open} task${e.open>1?"s":""}</em>`:`<em class="ok">clear</em>`}</b>
+    <small>${esc(e.advice)}</small>${e.progress==null?"":`<i class="td-ai-bar" title="${e.progress}% ${esc(e.of)}"><u style="width:${e.progress}%"></u></i><small class="pc">${e.progress}% ${esc(e.of)}</small>`}</span></button>`).join("")}
+$("#tdAiAsk").addEventListener("submit",e=>{e.preventDefault();const t=$("#tdAiIn").value.trim();if(!t)return;$("#tdAiIn").value="";window.openTeam?.("",t)});
+sec.addEventListener("click",e=>{const b=e.target.closest("[data-team]");if(!b)return;e.stopPropagation();window.openTeam?.(b.dataset.team,"")},true);
 function openNow(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),r=(biz?.hours?.[d.getDay()]||[]).map(([a,z])=>[a,z].map(t=>{const[h,mm]=t.split(":");return +h*60+ +mm}));
   const cur=r.find(([a,z])=>m>=a&&m<z);if(cur)return `Open now · until ${String(Math.floor(cur[1]/60)).padStart(2,"0")}:${String(cur[1]%60).padStart(2,"0")}`;
   const next=r.find(([a])=>a>m);return next?`Opens today at ${String(Math.floor(next[0]/60)).padStart(2,"0")}:${String(next[0]%60).padStart(2,"0")}`:"Closed today"}

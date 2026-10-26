@@ -72,6 +72,8 @@ async function askTeam(text){if(!text.trim())return;convo.push({role:"owner",tex
   try{const r=await req("/api/team/ask","POST",{employee:who||undefined,messages:convo.filter(m=>!m.wait&&m.text).map(m=>({role:m.role==="owner"?"owner":"assistant",text:m.text}))});
     Object.assign(w,{wait:false,who:r.employee,text:r.answer,tools:r.tools,actions:r.actions})}catch(e){Object.assign(w,{wait:false,who:w.who||"maya",text:e.message})}
   drawLog();loadTeam()}
+// Today's team strip opens the page here, with someone chosen and maybe a question asked
+window.openTeam=async(id,text)=>{nb.click();who=id||"";await loadTeam();if(text)askTeam(text)};
 $("#tmForm").addEventListener("submit",e=>{e.preventDefault();const t=$("#tmIn").value;$("#tmIn").value="";askTeam(t)});
 document.addEventListener("click",async e=>{const p=e.target.closest(".tm-p");if(p){who=p.dataset.who;drawPeople();return}
   const s=e.target.closest(".tm-s");if(s){askTeam(s.textContent);return}
