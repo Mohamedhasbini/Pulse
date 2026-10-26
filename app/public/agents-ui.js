@@ -62,7 +62,7 @@ const fmtA=t=>esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\n/g,"<br>")
 const BRACKET=/\[[^\]]+\]/;
 const actTitle=a=>a.type==="send_message"?`Message to ${esc(a.client||"client")}`:a.type==="teach_answer"?"Teach the receptionist this answer":a.type==="add_rule"?"New rule for the receptionist":"Let the agent send its messages";
 function drawLog(){$("#tmLog").innerHTML=convo.map((m,i)=>m.role==="owner"?`<div class="tm-m tm-me">${esc(m.text)}</div>`
-  :`<div class="tm-m tm-them"><span class="av av-${m.who}">${esc(nameOf(m.who)[0])}</span><div><b>${esc(nameOf(m.who))}</b>${m.wait?`<span class="tm-wait">checking your data…</span>`:`<div>${fmtA(m.text||"")}</div>`}
+  :`<div class="tm-m tm-them"><span class="av av-${m.who}">${esc(nameOf(m.who)[0])}</span><div><b>${esc(nameOf(m.who))}</b>${m.wait?`<span class="tm-wait">checking your data… (up to 30 seconds)</span>`:`<div>${fmtA(m.text||"")}</div>`}
     ${m.tools?.length?`<small class="tm-src">Checked: ${m.tools.map(esc).join(", ")}</small>`:""}
     ${(m.actions||[]).map((a,j)=>`<div class="tm-act" data-m="${i}" data-a="${j}"><b>${actTitle(a)}</b>
       ${a.type==="run_agent"?"":`<textarea rows="2">${esc(a.text||a.answer||"")}</textarea>`}${BRACKET.test(a.text||a.answer||"")?`<small class="tm-fill">Fill in the parts in [brackets] first.</small>`:""}

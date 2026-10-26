@@ -10,13 +10,15 @@ import { freeSlots, bufferOf, hoursText } from './slots.js';
 import { agentFindings } from './agents.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
-const DAILY_CAP = +process.env.TEAM_DAILY_CALLS || 60, MAX_STEPS = 4;
+const DAILY_CAP = +process.env.TEAM_DAILY_CALLS || 80, MAX_STEPS = 4;
 const URL_ = () => process.env.ASSISTANT_WEBHOOK_URL || String(process.env.N8N_WEBHOOK_URL || '').replace(/\/webhook\/.*$/, '/webhook/pulse-assistant');
 const TZ = `COALESCE(bz.timezone,'Asia/Beirut')`;
 const day = d => `to_char(${d} AT TIME ZONE ${TZ},'Dy DD Mon HH24:MI')`;
 // real clients: no test phones, and not people whose latest chat is a test chat
 const REAL = `cu.phone !~ '^(test|e2e|walk-in|tg-)' AND COALESCE((SELECT c.channel FROM conversations c WHERE c.customer_id=cu.id ORDER BY c.updated_at DESC LIMIT 1),'') <> 'test'`;
 
+// Every employee can read every tool (the business is one piece); the ones listed per employee are their own
+// and come first. Actions stay with the role that owns them.
 export const TEAM = {
   maya: { name: 'Maya', role: 'Front desk manager', avatar: 'M', skills: 'bookings, the calendar, free times, who is coming, customer profiles',
     tools: ['today', 'bookings', 'free_slots', 'find_customer', 'customer', 'services'], actions: ['send_message'] },
@@ -86,7 +88,7 @@ const TOOLS = {
       const reasons = await q(`SELECT attention_reason AS reason, count(*)::int AS n FROM conversations WHERE business_id=$1 AND channel<>'test' AND attention_reason IS NOT NULL AND created_at > now() - make_interval(days => $2) GROUP BY 1 ORDER BY 2 DESC LIMIT 5`, P);
       const topics = await q(`SELECT initcap(topic) AS topic, count(*)::int AS n FROM conversations WHERE business_id=$1 AND channel<>'test' AND topic IS NOT NULL AND created_at > now() - make_interval(days => $2) GROUP BY 1 ORDER BY 2 DESC LIMIT 8`, P);
       const [open] = await q(`SELECT count(*)::int AS open_cases FROM conversations WHERE business_id=$1 AND needs_attention AND channel<>'test'`, [B.id]);
-      return { days: d, ...s, ...open, handover_reasons: reasons, top_topics: topics, note: 'test chats are excluded' };
+      return { period: `last ${d} days`, ...s, ...open, handover_reasons: reasons, top_topics: topics, note: 'test chats are excluded' };
     } },
   conversations: { about: 'recent conversations, optionally only those waiting for the owner, or of one kind (booking, question, change, complaint, cancel)', args: '{"waiting":true,"kind":"complaint","days":7}',
     run: async (B, a) => q(`SELECT c.id, cu.name AS client, c.channel, c.kind, c.topic, c.mood, c.outcome, c.needs_attention AS waiting_for_owner, c.attention_reason AS why,
@@ -121,14 +123,14 @@ const TOOLS = {
           COALESCE(sum(price) FILTER (WHERE status<>'cancelled' AND starts_at > now()),0)::float AS of_which_still_ahead
           FROM bookings WHERE business_id=$1 AND starts_at > now() - make_interval(days => $2) AND ($3 = 0 OR starts_at <= now() - make_interval(days => $3))`, [B.id, f, t]);
       const [cur, prev, nc] = await Promise.all([row(d, 0), row(d * 2, d), one(`SELECT count(*)::int AS n FROM customers cu WHERE business_id=$1 AND ${REAL} AND created_at > now() - make_interval(days => $2)`, [B.id, d])]);
-      return { days: d, this_period: cur, previous_period: prev, new_clients: nc.n, note: 'same numbers as the Insights page: bookings not cancelled starting in the period; test chats excluded from new clients' }; } },
+      return { period: `last ${d} days`, compared_with: `the ${d} days before`, this_period: cur, previous_period: prev, new_clients: nc.n, note: 'same numbers as the Insights page: bookings not cancelled starting in the period; test chats excluded from new clients' }; } },
   revenue: { about: 'revenue and bookings per week for the last N weeks', args: '{"weeks":8}',
     run: async (B, a) => q(`SELECT to_char(date_trunc('week', starts_at AT TIME ZONE $2),'DD Mon') AS week, count(*)::int AS bookings, sum(price)::float AS revenue FROM bookings
       WHERE business_id=$1 AND status IN ('completed','confirmed') AND starts_at <= now() AND starts_at > now() - make_interval(weeks => $3) GROUP BY 1, date_trunc('week', starts_at AT TIME ZONE $2) ORDER BY date_trunc('week', starts_at AT TIME ZONE $2)`, [B.id, B.tz, Math.min(+a.weeks || 8, 52)]) },
   by_service: { about: 'bookings, revenue, cancellations and no-shows per service for N days', args: '{"days":30}',
-    run: async (B, a) => q(`SELECT s.name AS service, count(*) FILTER (WHERE b.status IN ('completed','confirmed'))::int AS bookings, COALESCE(sum(b.price) FILTER (WHERE b.status IN ('completed','confirmed')),0)::float AS revenue,
+    run: async (B, a) => ({ period: `last ${Math.min(+a.days || 30, 365)} days`, services: await q(`SELECT s.name AS service, count(*) FILTER (WHERE b.status IN ('completed','confirmed'))::int AS bookings, COALESCE(sum(b.price) FILTER (WHERE b.status IN ('completed','confirmed')),0)::float AS revenue,
       count(*) FILTER (WHERE b.status='cancelled')::int AS cancelled, count(*) FILTER (WHERE b.status='no_show')::int AS no_shows
-      FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.business_id=$1 AND b.starts_at > now() - make_interval(days => $2) GROUP BY s.name ORDER BY revenue DESC`, [B.id, Math.min(+a.days || 30, 365)]) },
+      FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.business_id=$1 AND b.starts_at > now() - make_interval(days => $2) GROUP BY s.name ORDER BY revenue DESC`, [B.id, Math.min(+a.days || 30, 365)]) }) },
   by_channel: { about: 'where bookings came from for N days (AI chat per channel, online page, manual)', args: '{"days":30}',
     run: async (B, a) => q(`SELECT COALESCE(CASE WHEN b.source='ai' THEN c.channel ELSE b.source END,'other') AS channel, count(*)::int AS bookings, sum(b.price)::float AS value
       FROM bookings b LEFT JOIN conversations c ON c.id=b.conversation_id WHERE b.business_id=$1 AND b.status<>'cancelled' AND b.created_at > now() - make_interval(days => $2) GROUP BY 1 ORDER BY 2 DESC`, [B.id, Math.min(+a.days || 30, 365)]) },
@@ -153,6 +155,10 @@ Today is ${B.now} (${B.tz}). Currency: ${B.currency || 'USD'}.
 HOW YOU WORK
 - To get facts, call tools. Never guess or invent numbers, names or dates: use only what tools returned. If the data doesn't show something, say so.
 - Never count or add up yourself when a tool gives a count or total: copy it exactly (count, total_value, revenue, bookings).
+- Think like the owner's best employee: answer the question, then add what they would want to know next (a risk, a gap, an opportunity) if the data shows one. Compare with a previous period when it makes a number meaningful.
+- Before you answer, check: every number, name, date and time you wrote appears in TOOL RESULTS. If one doesn't, fetch it or leave it out.
+- Always say the period a number covers, exactly as the tool's "period" or dates say ("last 30 days", "today"). If the owner asked for a different period, fetch that period (e.g. days: 7 for this week).
+- Fetch everything you need in as few rounds as possible: you may call up to 3 tools at once.
 - Reply with ONE JSON object and nothing else:
   {"tools":[{"name":"tool","args":{...}}]}  to fetch data (up to 3 tools at once), or
   {"answer":"your reply to the owner","actions":[...]}  when you can answer.
@@ -163,22 +169,42 @@ HOW YOU WORK
 - If the question belongs to a colleague (Maya: front desk, Omar: support, Lina: growth, Sam: numbers), still answer what you can with your tools and say who to ask for more.
 
 YOUR TOOLS
-${emp.tools.map(t => `- ${t} ${TOOLS[t].args}: ${TOOLS[t].about}`).join('\n')}
+${[...emp.tools, ...Object.keys(TOOLS).filter(t => !emp.tools.includes(t))].map(t => `- ${t} ${TOOLS[t].args}: ${TOOLS[t].about}`).join('\n')}
 ${emp.actions.length ? `\nACTIONS YOU MAY PROPOSE\n${emp.actions.map(a => `- ${ACTIONS[a]}`).join('\n')}` : '\nYou propose no actions; you explain and recommend.'}
 
 CONVERSATION
 ${convo.map(m => `${m.role === 'owner' ? 'OWNER' : m.role === 'system' ? 'NOTE' : emp.name.toUpperCase()}: ${String(m.text).slice(0, 1500)}`).join('\n')}
-${results.length ? `\nTOOL RESULTS (real data)\n${results.map(r => `${r.name}(${JSON.stringify(r.args)}) => ${JSON.stringify(r.data).slice(0, 6000)}`).join('\n')}` : ''}
+${results.length ? `\nTOOL RESULTS (real data)\n${results.map(r => `${r.name}(${JSON.stringify(r.args)}) => ${JSON.stringify(r.data).slice(0, 3500)}`).join('\n')}` : ''}
 
 Your JSON:`;
 }
+// The team thinks with a stronger model than the receptionist (TEAM_MODEL); Gemini counts its free quota separately.
+// If that model fails or is out of quota, the receptionist's model answers instead.
+const TEAM_MODEL = () => process.env.TEAM_MODEL || 'models/gemini-3.5-flash';
 async function ask(text) {
   if (!(await takeAiSlot())) throw Object.assign(new Error('The AI is busy right now. Try again in a minute.'), { status: 429 });
-  const r = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: text, model: process.env.AI_MODEL || undefined }), signal: AbortSignal.timeout(30000) });
-  if (!r.ok) throw new Error(`The AI didn't respond (${r.status}).`);
-  const body = await r.json(), raw = typeof body === 'string' ? body : body.output ?? body.text ?? '';
-  const m = String(raw).match(/\{[\s\S]*\}/);
-  try { return JSON.parse(m ? m[0] : raw); } catch { return { answer: String(raw).trim() }; }
+  let r;
+  for (const model of [TEAM_MODEL(), process.env.AI_MODEL].filter(Boolean)) {
+    r = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: text, model }), signal: AbortSignal.timeout(40000) }).catch(() => null);
+    if (r && r.ok) break;
+  }
+  if (!r || !r.ok) throw new Error(`The AI didn't respond (${r ? r.status : 'no connection'}).`);
+  const body = await r.json();
+  return readReply(typeof body === 'string' ? body : body.output ?? body.text ?? '');
+}
+// The model answers in JSON, but not always perfectly. Repair what can be repaired; a reply that is still
+// broken JSON is marked so the loop asks again instead of showing it to the owner.
+export function readReply(raw) {
+  raw = String(raw).trim();
+  const m = raw.match(/\{[\s\S]*\}/), body = m ? m[0] : raw;
+  try { return JSON.parse(body); } catch {}
+  try { return JSON.parse(body.replace(/,\s*\{\s*\}/g, ',"args":{}').replace(/("name"\s*:\s*"\w+")\s*,\s*\{/g, '$1,"args":{').replace(/,\s*([}\]])/g, '$1')); } catch {}
+  const names = [...body.matchAll(/"name"\s*:\s*"(\w+)"/g)].map(x => x[1]);
+  if (/"tools"/.test(body) && names.length) return { tools: names.map(name => ({ name, args: {} })) };
+  const ans = body.match(/"answer"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (ans) { try { return { answer: JSON.parse(`"${ans[1]}"`) }; } catch { return { answer: ans[1] }; } }
+  if (/^\{|^```/.test(raw)) return { broken: true };
+  return { answer: raw };
 }
 
 export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
@@ -231,17 +257,19 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
     const e = TEAM[req.body.employee] ? req.body.employee : route(convo[convo.length - 1].text);
     const [used] = await q(`SELECT count(*)::int AS n FROM team_calls WHERE business_id=$1 AND at > now() - interval '24 hours'`, [B.id]);
     if (used.n >= DAILY_CAP) return res.status(429).json({ error: `Your team answered ${DAILY_CAP} questions today; they’re back tomorrow. This keeps the receptionist’s AI free for your customers.` });
-    const results = [], used_tools = [];
+    // today's snapshot comes with every question, so simple ones need no lookup
+    const results = [{ name: 'today', args: {}, data: await TOOLS.today.run(B).catch(() => ({})) }], used_tools = [];
     let out = null;
     for (let step = 0; step < MAX_STEPS; step++) {
       try { out = await ask(prompt(B, e, convo, results)); }
       catch (err) { if (step === 0) return res.status(err.status || 503).json({ error: err.status ? err.message : 'The AI isn’t reachable right now. Try again in a minute.' }); break; }
       await q('INSERT INTO team_calls (business_id, employee) VALUES ($1,$2)', [B.id, e]);
+      if (out.broken) { convo.push({ role: 'system', text: 'Your last reply was not valid JSON. Reply with one valid JSON object only.' }); continue; }
       const calls = Array.isArray(out.tools) ? out.tools.slice(0, 3) : [];
       if (!calls.length || out.answer) break;
       for (const c of calls) {
         const t = TOOLS[c.name];
-        const data = t && TEAM[e].tools.includes(c.name) ? await t.run(B, c.args || {}).catch(err => ({ error: err.message })) : { error: `No tool called ${c.name}.` };
+        const data = t ? await t.run(B, c.args || {}).catch(err => ({ error: err.message })) : { error: `No tool called ${c.name}.` };
         results.push({ name: c.name, args: c.args || {}, data }); used_tools.push(c.name);
       }
       if (step === MAX_STEPS - 2) convo.push({ role: 'system', text: 'Answer now with what you have.' });
