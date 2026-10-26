@@ -181,7 +181,7 @@
 
       <div class="card glass">
         <div class="ch"><h2>Conversations</h2><input id="search" placeholder="Search name, phone or message" aria-label="Search conversations"></div>
-        <div class="tw"><table><thead><tr><th>Updated</th><th>Customer</th><th>Channel</th><th>Result</th><th>Value</th><th>Last message</th></tr></thead><tbody id="feed"></tbody></table></div>
+        <div class="tw"><table><thead><tr><th>Updated</th><th>Customer</th><th>Channel</th><th>Type</th><th>Result</th><th>Value</th><th>Last message</th></tr></thead><tbody id="feed"></tbody></table></div>
       </div>
     </section>
 
@@ -616,8 +616,10 @@ function insights(s){const out=[];
     if(s.outcomes.unmarked)out.push(["var(--warn)",`${s.outcomes.unmarked} past booking${s.outcomes.unmarked>1?"s":""} not marked`,"Mark them Came or No-show so your no-show numbers are right."])}
   $("#insights").innerHTML=out.slice(0,4).map(([c,t,d])=>`<div class="ins"><span class="dot" style="--c:${c}"></span><div><b>${esc(t)}</b>${esc(d)}</div></div>`).join("")}
 const OUT={booked:["t-book","Booked"],answered:["t-faq","Answered"],handoff:["t-hand","Sent to staff"]},CH={whatsapp:"WhatsApp",missed_call:"Missed call",test:"Test chat",webook:"WeBook",telegram:"Telegram"};
-function feed(){const q=$("#search").value.trim().toLowerCase();const rows=convs.filter(r=>!q||[r.name,r.phone,r.last].some(v=>String(v||"").toLowerCase().includes(q)));
-  $("#feed").innerHTML=rows.length?rows.map(r=>{const o=OUT[r.outcome]||["t-faq","Open"];return`<tr class="click" data-open="${r.id}"><td>${ago(r.at)}</td><td>${esc(r.name||(/^test-/.test(r.phone)?"Test customer":r.phone))}</td><td><span class="tag ${r.channel==="test"?"t-test":"t-faq"}">${CH[r.channel]||r.channel}</span></td><td><span class="tag ${o[0]}">${o[1]}</span>${r.needs_attention?' <span class="tag t-attn">Needs you</span>':""}</td><td class="num">${r.value?fmt(r.value):"—"}</td><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis">${esc(r.last)}</td></tr>`}).join(""):`<tr><td colspan="6" class="empty">${q?"No conversations match.":"No conversations yet. Open Test chat and send the first message."}</td></tr>`}
+// what each chat is about, tagged by the AI; the chips above the table (support.js) set convKind
+const KIND={booking:["t-book","Booking"],question:["t-faq","Question"],change:["t-faq","Change"],complaint:["t-attn","Complaint"],cancel:["t-hand","Cancel"],other:["t-faq","Other"]};
+function feed(){const q=$("#search").value.trim().toLowerCase(),k=window.convKind||"";const rows=convs.filter(r=>(!q||[r.name,r.phone,r.last,r.topic].some(v=>String(v||"").toLowerCase().includes(q)))&&(!k||r.kind===k));
+  $("#feed").innerHTML=rows.length?rows.map(r=>{const o=OUT[r.outcome]||["t-faq","Open"];return`<tr class="click" data-open="${r.id}"><td>${ago(r.at)}</td><td>${esc(r.name||(/^test-/.test(r.phone)?"Test customer":r.phone))}</td><td><span class="tag ${r.channel==="test"?"t-test":"t-faq"}">${CH[r.channel]||r.channel}</span></td><td>${r.kind&&KIND[r.kind]?`<span class="tag ${KIND[r.kind][0]}">${KIND[r.kind][1]}</span>`:""}${r.topic?` <small style="color:var(--muted)">${esc(r.topic)}</small>`:""}${r.mood==="negative"?' <span title="Unhappy">☹</span>':""}</td><td><span class="tag ${o[0]}">${o[1]}</span>${r.needs_attention?' <span class="tag t-attn">Needs you</span>':""}</td><td class="num">${r.value?fmt(r.value):"—"}</td><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis">${esc(r.last)}</td></tr>`}).join(""):`<tr><td colspan="7" class="empty">${q?"No conversations match.":"No conversations yet. Open Test chat and send the first message."}</td></tr>`}
 $("#search").oninput=feed;$("#incTest").onchange=()=>{lastStats=null;refresh()};
 
 let openId=null,openPaused=false;
@@ -1573,5 +1575,7 @@ setInterval(()=>{if(!document.hidden){refresh();loadApprovals();pollTestChat();i
 <script src="/live.js"></script>
 <script src="/focus.js"></script>
 <script src="/details.js"></script>
+<script src="/support.js"></script>
+<script src="/lab-ui.js"></script>
 </body>
 </html>

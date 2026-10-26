@@ -119,3 +119,54 @@ nav button[data-view][aria-current="true"] svg{stroke:currentColor!important}
 #calendar .cal-b:focus-visible{outline:2px solid var(--gp-text)!important;outline-offset:1px}
 #calendar .cal-off{background:repeating-linear-gradient(135deg,var(--gp-nest) 0 6px,transparent 6px 12px)!important;border:1px solid var(--gl-rim)!important;color:var(--gp-meta)!important;border-radius:8px!important;font-size:11px!important}
 #calendar .sg-mini{display:none!important}
+
+/* sidebar pages (sidebar.js): a page shows only its own sub-tabs; the section's full tab row and Settings' side index are hidden */
+.ptabs.pg-on>button{display:none!important}
+.pg-tabs{display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.pg-tabs button{all:unset;cursor:pointer;padding:7px 14px;border-radius:99px;font-size:13px;color:var(--gp-2);white-space:nowrap}
+.pg-tabs button:hover{color:var(--gp-text)}.pg-tabs button[aria-pressed="true"]{background:var(--gp-text);color:var(--gp-ground)}
+:root[data-theme="light"] .pg-tabs button[aria-pressed="true"]{background:#14201a;color:#fff}
+#setup .setnav{display:none!important}
+nav .nsub{display:none!important}
+
+/* filters inside a card are chips, not another row of tabs */
+.card .tabs:not(.ptabs),.today .td-tabs,#training .tabs:not(.ptabs):not(#tchMode){display:flex!important;gap:6px!important;flex-wrap:wrap;background:none!important;border:0!important;box-shadow:none!important;padding:0!important;backdrop-filter:none!important;margin:0 0 10px!important}
+.card .tabs:not(.ptabs) button,.today .td-tabs button,#training .tabs:not(.ptabs):not(#tchMode) button{all:unset;cursor:pointer;padding:4px 11px!important;border-radius:99px!important;border:1px solid var(--gl-rim)!important;font-size:12px!important;color:var(--gp-2)!important;background:none!important;box-shadow:none!important}
+.card .tabs:not(.ptabs) button[aria-pressed="true"],.today .td-tabs button[aria-pressed="true"],#training .tabs:not(.ptabs):not(#tchMode) button[aria-pressed="true"]{background:var(--gp-nest2)!important;color:var(--gp-text)!important}
+#training #tchMode{display:flex;gap:2px;padding:3px!important;border-radius:99px!important;width:max-content;max-width:100%;overflow-x:auto}
+#training #tchMode button{all:unset;cursor:pointer;padding:7px 14px;border-radius:99px;font-size:13px;color:var(--gp-2);white-space:nowrap}
+#training #tchMode button[aria-pressed="true"]{background:var(--gp-text)!important;color:var(--gp-ground)!important}
+:root[data-theme="light"] #training #tchMode button[aria-pressed="true"]{background:#14201a!important;color:#fff!important}
+
+/* Support (support.js) */
+.sp-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0;padding:16px 18px}
+.sp-kpis>div{padding:2px 16px;border-left:1px solid var(--gl-grid)}.sp-kpis>div:first-child{border-left:0;padding-left:0}
+.sp-kpis small{display:block;font-size:11.5px;color:var(--gp-meta)}.sp-kpis b{display:block;font-size:26px;font-weight:300;letter-spacing:-.02em;margin:2px 0}
+.sp-in{padding:4px 0}
+.sp-chg{font-family:'Geist Mono',monospace;font-size:11px;padding:2px 7px;border-radius:99px;background:var(--gp-nest2)}.sp-chg.up,td.up{color:var(--p-green)}.sp-chg.dn,td.dn{color:var(--need)}
+.sp-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;padding:8px 0;font-size:13px;border-bottom:1px solid var(--gl-grid)}.sp-bar:last-child{border-bottom:0}
+.sp-bar b{font-family:'Geist Mono',monospace;font-size:12px;font-weight:500}.sp-bar i{grid-column:1/-1;height:5px;border-radius:99px;background:var(--gl-grid);overflow:hidden}.sp-bar u{display:block;height:100%;background:var(--p-green);border-radius:99px}
+.sp-note{margin:10px 0 0;font-size:12.5px;color:var(--gp-2)}
+.sp-gap{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--gl-grid)}.sp-gap:last-child{border-bottom:0}
+.sp-gap .q b{display:block;font-weight:500}.sp-gap .q small{color:var(--gp-meta);font-size:12px}
+.sp-gap .a{display:flex;gap:6px}.sp-gap .a input{flex:1;min-width:0}
+#overview > .spane > .sp-card{margin-bottom:12px}
+
+/* Test lab and lessons (lab-ui.js) */
+.lab{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:12px;margin-bottom:16px}
+.lab-runs{grid-column:1/-1}
+.lab-row,.ls-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gl-grid);font-size:13px;cursor:pointer}.lab-row:last-child,.ls-row:last-child{border-bottom:0}
+.lab-row .t,.ls-row .t{flex:1;min-width:0}.lab-row .t b,.ls-row .t b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lab-row .t small,.ls-row .t small{color:var(--gp-meta);font-size:12px}
+.lab-row .v,.ls-row .v{font-family:'Geist Mono',monospace;font-size:12px;color:var(--gp-2)}
+.lab .dot,.learn .dot{width:7px;height:7px;border-radius:50%;background:var(--gp-meta);flex:none;display:inline-block}.lab .dot.ok{background:var(--p-green)}.lab .dot.bad{background:var(--need)}.learn .dot.ai{background:var(--ai)}
+.lab-acts{display:flex;gap:6px;margin-top:12px}
+.lab-new{display:grid;gap:8px;margin-top:12px}
+.lab-chat{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto;margin-bottom:12px}
+.lab-msg{max-width:85%;padding:9px 12px;border-radius:14px;font-size:13px;line-height:1.4}.lab-msg.c{align-self:flex-end;background:var(--gp-nest2)}
+.lab-msg.ai{align-self:flex-start;background:color-mix(in srgb,var(--p-green) 14%,var(--gp-card));border:1px solid color-mix(in srgb,var(--p-green) 26%,transparent)}
+.lab-msg small{display:block;margin-top:4px;font-size:10.5px;color:var(--gp-meta)}
+.lab-checks>div{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--gl-grid);font-size:13px}.lab-checks b{margin-left:auto;font-family:'Geist Mono',monospace;font-weight:500}
+.lab-score{font-size:30px;font-weight:300;margin-top:8px}
+.lab-h{margin:4px 0 10px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--gp-meta)}
+.learn{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;margin-bottom:14px}
+@media(max-width:900px){.lab,.learn{grid-template-columns:1fr}}

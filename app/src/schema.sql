@@ -361,3 +361,25 @@ ALTER TABLE ai_queue ADD COLUMN IF NOT EXISTS answered_at timestamptz, ADD COLUM
 CREATE TABLE IF NOT EXISTS ai_calls (at timestamptz NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS ai_calls_at ON ai_calls (at);
 
+
+-- Receptionist + support: what each conversation is about, filled by the AI in the reply it already makes.
+-- kind: booking | question | change | complaint | cancel | other. topic: a few words in English. mood: positive | neutral | negative.
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS kind text, ADD COLUMN IF NOT EXISTS topic text, ADD COLUMN IF NOT EXISTS mood text;
+CREATE INDEX IF NOT EXISTS conversations_kind ON conversations (business_id, kind);
+
+-- Lessons the AI suggests from its own handovers and low ratings; nothing is used until the owner approves it.
+CREATE TABLE IF NOT EXISTS ai_lessons (id serial PRIMARY KEY, business_id int NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  title text NOT NULL, body text NOT NULL, source text, evidence int DEFAULT 1, status text NOT NULL DEFAULT 'suggested',
+  created_at timestamptz DEFAULT now(), decided_at timestamptz);
+CREATE INDEX IF NOT EXISTS ai_lessons_biz ON ai_lessons (business_id, status);
+-- A version is saved each time the owner approves lessons or changes rules; score comes from the latest test run.
+CREATE TABLE IF NOT EXISTS ai_versions (id serial PRIMARY KEY, business_id int NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  note text, score int, created_at timestamptz DEFAULT now());
+-- Test lab: simulated customers and the results of each run.
+CREATE TABLE IF NOT EXISTS test_scenarios (id serial PRIMARY KEY, business_id int NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  name text NOT NULL, goal text NOT NULL, mood text DEFAULT 'neutral', language text DEFAULT 'English', opening text, created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS test_runs (id serial PRIMARY KEY, business_id int NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  scenario_id int REFERENCES test_scenarios(id) ON DELETE CASCADE, version_id int, transcript jsonb, checks jsonb, score int, created_at timestamptz DEFAULT now());
+CREATE INDEX IF NOT EXISTS test_runs_biz ON test_runs (business_id, created_at DESC);
+-- conversations from before tagging: a booked chat is a booking
+UPDATE conversations SET kind='booking' WHERE kind IS NULL AND outcome='booked';

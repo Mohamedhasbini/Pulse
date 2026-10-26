@@ -5,6 +5,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { hashPassword, checkPassword, newPassword, signSession, readSession, signTicket, readTicket, newTotpSecret, checkTotp, totpUrl, newEmailCode, hashCode, weakPassword, ensureAdmin, createBusiness } from './accounts.js';
 import { MODULES, FEATURES, MODULE_FEATURE, featuresOf, hasFeature, canOpen, moduleOf, seedPlans } from './features.js';
 import { q, one, migrate, withBusinessLock } from './db.js';
+import { mountLab } from './lab.js';
 import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
 import { mountLive } from './live.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
@@ -624,6 +625,7 @@ app.post('/api/test-chat', wrap(async (req, res) => {
 app.get('/api/ai-queue', wrap(async (_req, res) => res.json(await aiQueueStatus(BIZ()))));
 app.get('/api/ai-queue/list', wrap(async (req, res) => res.json(await aiQueueList(BIZ(), String(req.query.status || '')))));
 mountLive(app, () => BIZ());
+mountLab(app, () => BIZ());
 
 // Reviews: customers rate a chat 1-5 when it ends. Satisfaction = share of ratings that are 4 or 5.
 app.get('/api/ratings', wrap(async (req, res) => {
@@ -702,7 +704,7 @@ app.get('/api/stats', wrap(async (req, res) => {
 
 app.get('/api/conversations', wrap(async (req, res) => {
   const convF = req.query.test === '0' ? `AND c.channel <> 'test'` : '';
-  res.json(await q(`SELECT c.id, c.channel, c.outcome, c.value::float, c.needs_attention, c.ai_paused, ${LOCAL('c.updated_at')} AS at, c.updated_at, cu.name, cu.phone,
+  res.json(await q(`SELECT c.id, c.channel, c.outcome, c.value::float, c.needs_attention, c.ai_paused, c.kind, c.topic, c.mood, ${LOCAL('c.updated_at')} AS at, c.updated_at, cu.name, cu.phone,
       (SELECT count(*) FROM messages m WHERE m.conversation_id=c.id)::int AS messages,
       (SELECT text FROM messages m WHERE m.conversation_id=c.id ORDER BY id DESC LIMIT 1) AS last
       FROM conversations c JOIN customers cu ON cu.id=c.customer_id WHERE c.business_id=$1 ${convF} ORDER BY c.updated_at DESC LIMIT 25`, [BIZ()]));
@@ -937,6 +939,37 @@ app.get('/api/customers/:id', wrap(async (req, res) => {
   res.json({ ...c, bookings, conversations: convs });
 }));
 // ---------- Live desk: what is happening right now (polled every few seconds by the Overview) ----------
+// Support: how well the AI solves what customers need. Resolved by AI = no handover and no owner reply;
+// a chat counts in the period it started. Topics and kinds come from the tags the AI adds to each conversation.
+app.get('/api/support', wrap(async (req, res) => {
+  const B = BIZ(), P = [1, 7, 30, 90, 365].includes(+req.query.days) ? +req.query.days : 30, T = req.query.test === '0' ? `AND c.channel <> 'test'` : '';
+  const base = (from, to) => `SELECT c.*, EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id=c.id AND m.role='owner') AS staff,
+      (c.attention_reason IS NOT NULL OR c.outcome='handoff') AS handed FROM conversations c
+      WHERE c.business_id=$1 AND c.created_at > now() - make_interval(days => ${from}) AND c.created_at <= now() - make_interval(days => ${to}) ${T}`;
+  const sum = `count(*)::int AS n, count(*) FILTER (WHERE NOT handed AND NOT staff AND outcome IN ('booked','answered'))::int AS ai,
+      count(*) FILTER (WHERE NOT staff)::int AS auto, round(avg(rating) FILTER (WHERE NOT staff),1)::float AS csat_ai, round(avg(rating) FILTER (WHERE staff),1)::float AS csat_you,
+      round(avg(rating),1)::float AS csat, count(rating)::int AS rated`;
+  const [[cur], [prev], [lat], [open], channels, kinds, topics, reasons, dist] = await Promise.all([
+    q(`SELECT ${sum} FROM (${base('$2', '0')}) c`, [B, P]),
+    q(`SELECT ${sum} FROM (${base('$2 * 2', '$2')}) c`, [B, P]),
+    q(`SELECT round(avg(m.latency_ms))::int AS ms FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.business_id=$1 AND m.role='assistant' AND m.latency_ms IS NOT NULL AND m.created_at > now() - make_interval(days => $2) ${T}`, [B, P]),
+    q(`SELECT count(*)::int AS n FROM conversations c WHERE c.business_id=$1 AND c.needs_attention ${T}`, [B]),
+    q(`SELECT channel, ${sum} FROM (${base('$2', '0')}) c GROUP BY 1 ORDER BY 2 DESC`, [B, P]),
+    q(`SELECT COALESCE(kind,'untagged') AS kind, count(*)::int AS n FROM (${base('$2', '0')}) c GROUP BY 1 ORDER BY 2 DESC`, [B, P]),
+    q(`SELECT t.topic, t.n, t.ai, t.csat, COALESCE(p.n,0)::int AS prev FROM
+        (SELECT initcap(topic) AS topic, ${sum} FROM (${base('$2', '0')}) c WHERE topic IS NOT NULL GROUP BY 1) t
+        LEFT JOIN (SELECT initcap(topic) AS topic, count(*) AS n FROM (${base('$2 * 2', '$2')}) c WHERE topic IS NOT NULL GROUP BY 1) p USING (topic)
+        ORDER BY t.n DESC LIMIT 15`, [B, P]),
+    q(`SELECT attention_reason AS reason, count(*)::int AS n FROM (${base('$2', '0')}) c WHERE attention_reason IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 6`, [B, P]),
+    q(`SELECT rating, count(*)::int AS n FROM (${base('$2', '0')}) c WHERE rating IS NOT NULL GROUP BY 1 ORDER BY 1 DESC`, [B, P]),
+  ]);
+  const pct = (a, n) => n ? Math.round(a / n * 100) : null;
+  res.json({ days: P, n: cur.n, resolved: pct(cur.ai, cur.n), resolved_prev: pct(prev.ai, prev.n), automation: pct(cur.auto, cur.n), automation_prev: pct(prev.auto, prev.n),
+    first_reply_ms: lat.ms, open: open.n, csat: cur.csat, csat_prev: prev.csat, csat_ai: cur.csat_ai, csat_you: cur.csat_you, rated: cur.rated,
+    channels: channels.map(c => ({ channel: c.channel, n: c.n, resolved: pct(c.ai, c.n) })), kinds, reasons, dist,
+    topics: topics.map(t => ({ topic: t.topic, n: t.n, prev: t.prev, resolved: pct(t.ai, t.n), csat: t.csat })) });
+}));
+
 app.get('/api/live', wrap(async (req, res) => {
   const B = BIZ();
   // The period picked on Home (Today, 7, 30 or 90 days) drives every range below except the true "now" figures.
@@ -1191,8 +1224,10 @@ backfillMedia().catch(e => console.error('Media backfill:', e.message));
 if (process.env.WEBOOK_DEMO !== '0') seedDemo().then(n => n && console.log(`Added ${n} demo businesses to WeBook`)).catch(e => console.error('Demo seed:', e.message));
 const PORT = process.env.PORT || 3100;
 app.listen(PORT, () => console.log(`Ringback running on http://localhost:${PORT}`));
-startReminders();
-startAiQueue(async ({ channel, businessId, phone, reply, options }) => {
+// PREVIEW_ONLY: a second copy for checking changes against the real data; it sends nothing and runs no background jobs
+const LIVE = !process.env.PREVIEW_ONLY;
+if (LIVE) startReminders();
+if (LIVE) startAiQueue(async ({ channel, businessId, phone, reply, options }) => {
   if (channel === 'whatsapp') {
     const b = await one('SELECT wa_phone_number_id FROM businesses WHERE id=$1', [businessId]);
     if (b?.wa_phone_number_id) await sendWhatsApp(b.wa_phone_number_id, phone, reply, options);
@@ -1202,5 +1237,5 @@ startAiQueue(async ({ channel, businessId, phone, reply, options }) => {
   }
 });
 await sealExistingSecrets().catch(e => console.error('Encrypt secrets:', e.message));
-startTelegram();
-startMonitor(aiHealth);
+if (LIVE) startTelegram();
+if (LIVE) startMonitor(aiHealth);

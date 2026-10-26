@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pulse Final Preview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@500&display=swap">
+<style>
+:root[data-theme="dark"]{--ground:#0b0d0c;--card:rgba(24,29,26,.62);--frame:rgba(18,22,20,.5);--nest:rgba(255,255,255,.055);--nest2:rgba(255,255,255,.09);
+ --rim:rgba(255,255,255,.09);--rimhi:rgba(255,255,255,.14);--grid:rgba(255,255,255,.07);--ink:#eef1ef;--ink2:rgba(238,241,239,.7);--muted:rgba(238,241,239,.46);
+ --green:#34b26f;--need:#e07a42;--ai:#7f72e6;--bad:#ff5c6c;--on:#0b0d0c;--wall1:#26302b;--wall2:#121614;--win:#4a5550;--lamp:rgba(52,178,111,.16);--veil:rgba(8,10,9,.42);--shadow:0 30px 60px -34px rgba(0,0,0,.6)}
+:root[data-theme="light"]{--ground:#b9c2bc;--card:rgba(255,255,255,.62);--frame:rgba(255,255,255,.5);--nest:rgba(20,40,30,.045);--nest2:rgba(20,40,30,.08);
+ --rim:rgba(255,255,255,.75);--rimhi:#fff;--grid:rgba(20,40,30,.09);--ink:#151a17;--ink2:rgba(21,26,23,.74);--muted:rgba(21,26,23,.52);
+ --green:#1f8f55;--need:#c45f2a;--ai:#5d50cc;--bad:#d11d44;--on:#fff;--wall1:#e6e9e6;--wall2:#c9d0cb;--win:#fff;--lamp:rgba(31,143,85,.14);--veil:rgba(240,244,241,.3);--shadow:0 24px 50px -34px rgba(40,60,50,.4)}
+*{box-sizing:border-box}html{background:var(--ground)}
+body{margin:0;font-family:Geist,system-ui,sans-serif;color:var(--ink);font-size:14px}
+body::before{content:"";position:fixed;inset:-60px;z-index:-2;filter:blur(38px);background:radial-gradient(18% 34% at 22% 38%,var(--win),transparent 70%),radial-gradient(14% 30% at 38% 36%,var(--win),transparent 70%),radial-gradient(22% 18% at 78% 30%,var(--lamp),transparent 70%),radial-gradient(40% 20% at 55% 88%,var(--wall2),transparent 70%),linear-gradient(180deg,var(--wall1),var(--wall2) 62%,var(--ground))}
+body::after{content:"";position:fixed;inset:0;z-index:-1;background:var(--veil)}
+button{font:inherit;color:inherit;cursor:pointer}
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh}
+/* sidebar: the only frame layer */
+nav{position:sticky;top:0;height:100vh;overflow:auto;padding:18px 12px;background:var(--frame);border-right:1px solid var(--rim);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 8px 16px;font-weight:600;font-size:16px}.brand i{width:30px;height:30px;border-radius:9px;background:var(--green);display:grid;place-items:center}
+.ns{margin:12px 10px 4px;font-size:11px;color:var(--muted);letter-spacing:.04em}
+nav button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:11px;color:var(--ink2);font-size:13.5px}
+nav button:hover{background:var(--nest);color:var(--ink)}nav button[aria-current=true]{background:var(--ink);color:var(--on)}
+nav button .n{margin-left:auto;font-size:11px;font-family:'Geist Mono';padding:1px 7px;border-radius:99px;background:var(--need);color:#fff}
+nav button .new{margin-left:auto;font-size:10px;padding:1px 7px;border-radius:99px;border:1px solid var(--green);color:var(--green)}
+nav .foot{margin-top:auto;display:flex;gap:6px;padding-top:10px}nav .foot button{flex:1;justify-content:center;border:1px solid var(--rim);background:var(--nest)}
+/* main */
+main{padding:20px 22px 40px;min-width:0}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.head h1{margin:0;font-weight:400;font-size:26px;letter-spacing:-.01em}.head p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2)}.live i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 var(--green);animation:p 2s infinite}
+@keyframes p{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--green) 60%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
+.hctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;gap:2px;padding:3px;border-radius:99px;background:var(--frame);border:1px solid var(--rim);backdrop-filter:blur(22px)}
+.seg button{border:0;background:none;padding:6px 13px;border-radius:99px;font-size:12.5px;color:var(--ink2)}.seg button[aria-pressed=true]{background:var(--ink);color:var(--on)}
+.subs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--grid);overflow-x:auto;scrollbar-width:none}
+.subs button{all:unset;cursor:pointer;padding:9px 4px 11px;margin-right:16px;font-size:13.5px;color:var(--muted);white-space:nowrap}
+.subs button[aria-pressed=true]{color:var(--ink);box-shadow:inset 0 -2px 0 var(--ink)}
+.subs button .n{font-family:'Geist Mono';font-size:11px;margin-left:5px;color:var(--need)}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.c{grid-column:span 4;background:var(--card);border:1px solid var(--rim);border-radius:18px;padding:16px 18px;box-shadow:inset 0 1px 0 var(--rimhi),var(--shadow);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);min-width:0}
+.w3{grid-column:span 3}.w5{grid-column:span 5}.w6{grid-column:span 6}.w7{grid-column:span 7}.w8{grid-column:span 8}.w12{grid-column:span 12}
+.c h3{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.c h3 .r{text-transform:none;letter-spacing:0;font-weight:400;font-family:'Geist Mono';font-size:11.5px}
+.more{all:unset;cursor:pointer;font-size:11.5px;color:var(--muted);border-bottom:1px dotted currentColor;margin-top:8px;display:inline-block}
+.why{display:none;font-size:12.5px;color:var(--ink2);line-height:1.5;margin-top:6px}.why.on{display:block}
+.big{font-size:34px;font-weight:300;letter-spacing:-.025em;line-height:1.05}.mid{font-size:24px;font-weight:300;letter-spacing:-.02em}
+.chg{font-family:'Geist Mono';font-size:11px;padding:2px 7px;border-radius:99px;background:var(--nest2);margin-left:6px;vertical-align:middle}
+.up{color:var(--green)}.dn{color:var(--need)}
+.say{font-size:13.5px;color:var(--ink2);margin:6px 0 0;line-height:1.45}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0}
+.kpis>div{padding:2px 14px;border-left:1px solid var(--grid)}.kpis>div:first-child{border-left:0;padding-left:0}
+.kpis small{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap}.kpis b{display:block;font-size:24px;font-weight:300;letter-spacing:-.02em;margin:2px 0}
+.rows>div{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--grid);font-size:13px}.rows>div:last-child{border-bottom:0}
+.rows .t{flex:1;min-width:0}.rows .t b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rows .t small{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.rows .v{font-family:'Geist Mono';font-size:12px;color:var(--ink2);white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--muted)}.dot.g{background:var(--green)}.dot.o{background:var(--need)}.dot.a{background:var(--ai)}.dot.r{background:var(--bad)}
+.btn{border:1px solid var(--rim);background:var(--nest);border-radius:99px;padding:5px 12px;font-size:12px}.btn.p{background:var(--ink);color:var(--on);border-color:transparent}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--rim);color:var(--ink2);white-space:nowrap}.tag.o{color:var(--need);border-color:color-mix(in srgb,var(--need) 40%,transparent)}.tag.a{color:var(--ai);border-color:color-mix(in srgb,var(--ai) 40%,transparent)}.tag.g{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,transparent)}.tag.r{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
+.chips{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}.chips button{border:1px solid var(--rim);background:none;border-radius:99px;padding:4px 11px;font-size:12px;color:var(--ink2)}.chips button[aria-pressed=true]{background:var(--nest2);color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}th{text-align:left;font-weight:500;font-size:11px;color:var(--muted);padding:0 8px 8px;white-space:nowrap}td{padding:10px 8px;border-top:1px solid var(--grid);white-space:nowrap}
+td.n{font-family:'Geist Mono'}tr.fresh td{animation:fl 1.6s}@keyframes fl{from{background:color-mix(in srgb,var(--green) 18%,transparent)}to{background:transparent}}
+.tw{overflow-x:auto}
+svg{display:block;width:100%;overflow:visible}
+.bar{height:6px;border-radius:99px;background:var(--grid);overflow:hidden}.bar i{display:block;height:100%;border-radius:99px;background:var(--green)}
+.hero{background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02)),var(--card)}
+:root[data-theme="light"] .hero{background:linear-gradient(160deg,rgba(255,255,255,.75),rgba(255,255,255,.45))}
+.feed>div{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--grid);font-size:13px}.feed>div:last-child{border:0}
+.feed .when{font-family:'Geist Mono';font-size:11px;color:var(--muted);width:42px;flex:none;padding-top:2px}.feed .new{animation:fl 1.6s}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;padding:4px}
+.msg{max-width:78%;padding:9px 12px;border-radius:14px;font-size:13px;line-height:1.4}.msg.c{align-self:flex-end;background:var(--nest2)}.msg.ai{align-self:flex-start;background:color-mix(in srgb,var(--green) 16%,var(--card));border:1px solid color-mix(in srgb,var(--green) 28%,transparent)}
+.msg small{display:block;margin-top:4px;font-size:10.5px;color:var(--muted)}
+.score>div{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--grid);font-size:13px}.score>div:last-child{border:0}
+.score .res{margin-left:auto;font-family:'Geist Mono';font-size:12px}
+.week{display:grid;grid-template-columns:44px repeat(7,minmax(0,1fr));gap:0 6px;position:relative}
+.week .dh{font-size:12px;color:var(--ink2);padding:0 0 8px}.week .dh b{display:block;font-weight:500;color:var(--ink)}.week .dh.now b{color:var(--green)}
+.week .times span{display:block;height:46px;font-family:'Geist Mono';font-size:10.5px;color:var(--muted)}
+.week .col{position:relative;height:460px;border-radius:10px;background:var(--nest);background-image:linear-gradient(var(--grid) 1px,transparent 1px);background-size:100% 46px}
+.bk{position:absolute;left:2px;right:2px;border-radius:8px;padding:5px 8px 5px 10px;font-size:12px;line-height:1.3;overflow:hidden;background:color-mix(in srgb,var(--green) 16%,var(--card));border:1px solid color-mix(in srgb,var(--green) 28%,transparent);border-left:3px solid var(--green)}
+.bk b{font-weight:500;display:flex;gap:5px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bk span{display:block;font-family:'Geist Mono';font-size:11px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk.came{background:var(--nest);border-color:var(--rim);border-left-color:var(--muted)}.bk.ns{background:color-mix(in srgb,var(--bad) 12%,var(--card));border-color:color-mix(in srgb,var(--bad) 30%,transparent);border-left-color:var(--bad)}
+.bk.short{display:flex;align-items:center;gap:6px;padding:0 8px 0 10px}.bk.short span{order:-1}
+.bk i{width:6px;height:6px;border-radius:50%;background:var(--ai);flex:none}
+.notes{margin-top:20px;padding:18px 20px}.notes h2{margin:0 0 6px;font-size:16px;font-weight:500}
+.notes ul{margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:13px;line-height:1.6}
+.mtop{display:none}
+@media(max-width:1000px){.c,.w3,.w5,.w6,.w7,.w8{grid-column:span 12}.c.w3,.c.half{grid-column:span 6}}
+@media(max-width:760px){.app{grid-template-columns:1fr}nav{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;overflow-x:auto;padding:6px;z-index:5;border-right:0;border-top:1px solid var(--rim)}
+ nav .brand,nav .ns,nav .foot{display:none}nav button{flex:none;padding:8px 12px;font-size:12.5px}main{padding:14px 14px 90px}.c.w3,.c.half{grid-column:span 12}.week{grid-template-columns:36px repeat(7,minmax(64px,1fr));overflow-x:auto}}
+</style></head>
+<body>
+<div class="app">
+<nav id="nav"></nav>
+<main>
+ <div class="head"><div><h1 id="title"></h1><p id="lede"></p></div>
+  <div class="hctl"><span class="live"><i></i><span id="clock">Live</span></span><div class="seg" id="per"><button>Today</button><button aria-pressed="true">7 days</button><button>30 days</button></div><div class="seg"><button id="tg">Light</button></div></div></div>
+ <div class="subs" id="subs"></div>
+ <div class="grid" id="grid"></div>
+ <div class="c notes w12" id="about"></div>
+</main>
+</div>
+<script>
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);const R=(a,b)=>a+Math.random()*(b-a);
+const W=(n,a,b,s)=>Array.from({length:n+1},(_,i)=>{const x=i/n;return b+a*Math.sin(x*6+s)+a*.6*Math.sin(x*15+s*2)});
+const P=(p,w)=>{const s=w/(p.length-1);let d=`M0 ${p[0]}`;for(let i=1;i<p.length;i++){const x0=(i-1)*s,x1=i*s,c=(x0+x1)/2;d+=` C${c} ${p[i-1]} ${c} ${p[i]} ${x1} ${p[i]}`}return d};
+let gid=0;
+const line=(h=150,col='var(--green)',cmp=true,seed=.6)=>{const a=W(26,h*.16,h*.5,seed),b=W(26,h*.1,h*.6,seed+1.4),id='g'+gid++;
+ return `<svg viewBox="0 0 600 ${h}" preserveAspectRatio="none" style="height:${h}px"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".24"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>`
+ +[.25,.5,.75].map(f=>`<line x1="0" x2="600" y1="${h*f}" y2="${h*f}" stroke="var(--grid)"/>`).join('')+(cmp?`<path d="${P(b,600)}" fill="none" stroke="var(--muted)" stroke-width="1.3" stroke-dasharray="2 5"/>`:'')
+ +`<path d="${P(a,600)} L600 ${h} L0 ${h}Z" fill="url(#${id})"/><path d="${P(a,600)}" fill="none" stroke="${col}" stroke-width="2"/></svg>`};
+const spark=(s,col='var(--green)')=>`<svg viewBox="0 0 120 28" preserveAspectRatio="none" style="height:28px;width:100%"><path d="${P(W(12,6,14,s),120)}" fill="none" stroke="${col}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;
+const cols=(v,lab,hi,col='var(--green)')=>{const n=v.length,st=300/n,w=Math.min(14,st*.4);let s=[30,75].map(y=>`<line x1="0" x2="300" y1="${y}" y2="${y}" stroke="var(--grid)"/>`).join('');
+ v.forEach((h,i)=>{const x=i*st+st/2-w/2,H=h*100;s+=`<rect x="${x}" y="${115-H}" width="${w}" height="${H}" rx="${w/2}" fill="${i==hi?col:'var(--ink)'}" opacity="${i==hi?1:.2}"/>`+(lab?`<text x="${x+w/2}" y="132" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="Geist Mono">${lab[i]}</text>`:'')});
+ return `<svg viewBox="0 0 300 136" style="height:136px">${s}</svg>`};
+const hbars=items=>`<div class="rows">${items.map(([t,v,f,c])=>`<div style="flex-direction:column;align-items:stretch;gap:6px"><span style="display:flex;justify-content:space-between"><span>${t}</span><span class="v">${v}</span></span><div class="bar"><i style="width:${f}%;background:${c||'var(--green)'}"></i></div></div>`).join('')}</div>`;
+const donut=(seg)=>{let o=0,s='';seg.forEach(([v,c])=>{s+=`<circle r="44" cx="60" cy="60" fill="none" stroke="${c}" stroke-width="13" stroke-dasharray="${v*276-4} 276" stroke-dashoffset="${-o*276}" transform="rotate(-90 60 60)" stroke-linecap="round"/>`;o+=v});return `<svg viewBox="0 0 120 120" style="width:118px;height:118px;flex:none">${s}</svg>`};
+const heat=()=>{let s='';for(let r=0;r<7;r++)for(let c=0;c<12;c++){const v=Math.max(0,Math.sin(c/3.4+r*.7)*.5+.45+Math.random()*.25);s+=`<rect x="${c*25}" y="${r*17}" width="22" height="14" rx="4" fill="var(--green)" opacity="${(.06+v*.8).toFixed(2)}"/>`}return `<svg viewBox="0 0 300 119" style="height:128px">${s}</svg>`};
+const gauge=(p,col='var(--green)')=>{let s='';const N=40;for(let i=0;i<N;i++){const a=Math.PI*(1-i/(N-1)),on=i/(N-1)<=p;s+=`<line x1="${100+70*Math.cos(a)}" y1="${95-70*Math.sin(a)}" x2="${100+(on?84:80)*Math.cos(a)}" y2="${95-(on?84:80)*Math.sin(a)}" stroke="${on?col:'var(--grid)'}" stroke-width="2.2" stroke-linecap="round"/>`}
+ return `<svg viewBox="0 0 200 102" style="height:112px">${s}<text x="100" y="88" text-anchor="middle" font-size="28" font-weight="300" fill="var(--ink)" font-family="Geist">${Math.round(p*100)}%</text></svg>`};
+const flow=()=>{const L=[['WhatsApp',14,70,'var(--green)'],['Instagram',96,40,'var(--ai)'],['Website',146,22,'var(--muted)']],Rr=[['Booked',8,40],['Solved by AI',60,70],['Handed to you',142,16],['No reply',170,6]];let s='';
+ L.forEach(([,y,h,c],i)=>Rr.forEach(([,y2,h2])=>{s+=`<path d="M92 ${y+h/2} C250 ${y+h/2} 250 ${y2+h2/2} 408 ${y2+h2/2}" stroke="${c}" stroke-opacity=".26" stroke-width="${Math.max(1.5,h*h2/95)}" fill="none"/>`}));
+ L.forEach(([t,y,h])=>s+=`<rect x="80" y="${y}" width="12" height="${h}" rx="5" fill="var(--ink)" opacity=".5"/><text x="72" y="${y+h/2+4}" text-anchor="end" font-size="11" fill="var(--ink2)" font-family="Geist">${t}</text>`);
+ Rr.forEach(([t,y,h],i)=>s+=`<rect x="408" y="${y}" width="12" height="${h}" rx="5" fill="${i==2?'var(--need)':i==3?'var(--muted)':'var(--green)'}" opacity=".85"/><text x="428" y="${y+h/2+4}" font-size="11" fill="var(--ink2)" font-family="Geist">${t}</text>`);
+ return `<svg viewBox="0 0 520 182" style="height:182px">${s}</svg>`};
+const rows=a=>`<div class="rows">${a.map(([d,t,s,v])=>`<div><span class="dot ${d}"></span><span class="t"><b>${t}</b>${s?`<small>${s}</small>`:''}</span>${v?`<span class="v">${v}</span>`:''}</div>`).join('')}</div>`;
+const kpis=a=>`<div class="kpis">${a.map(([t,v,c])=>`<div><small>${t}</small><b>${v}</b>${c?`<span class="chg ${c[0]=='-'||c[0]=='−'?'dn':'up'}" style="margin:0">${c}</span>`:''}</div>`).join('')}</div>`;
+const table=(h,rs,id)=>`<div class="tw"><table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody ${id?`id="${id}"`:''}>${rs.map(r=>`<tr>${r.map((c,i)=>`<td class="${/^[\d$+−-]/.test(c)?'n':''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const chips=a=>`<div class="chips">${a.map((x,i)=>`<button aria-pressed="${i==0}">${x}</button>`).join('')}</div>`;
+// card(width, title, right-hand label, body, why) — "why" is the explanation, folded behind More details
+const C=(w,t,r,body,why,cls='')=>({w,t,r,body,why,cls});
+
+/* ---------- sample data ---------- */
+const NAMES=['Lina H.','Rami K.','Sara M.','Nour A.','Maya D.','Omar T.','Hiba R.','Dana H.','Karim B.','Tala H.'];
+const SERV=['Haircut','Facial','Manicure','Hair colour','Brows','Blow-dry'];
+const tagOf={booking:['g','Booking'],question:['','Question'],change:['a','Change'],complaint:['o','Complaint'],cancel:['r','Cancel']};
+const convRows=()=>NAMES.slice(0,7).map((n,i)=>{const k=Object.keys(tagOf)[i%5];return[`${10+i}:${i*7%60<10?'0':''}${i*7%60}`,n,['WhatsApp','Instagram','Website'][i%3],`<span class="tag ${tagOf[k][0]}">${tagOf[k][1]}</span>`,i==3?'<span class="tag o">Handed to you</span>':i==6?'<span class="tag">Waiting</span>':'<span class="tag g">Solved by AI</span>',i%2?'$45':'—','😊 4.8'.slice(0,i%3?6:0)||'—']});
+
+/* ---------- the app: 12 tabs, max 4 sub-tabs, no sub-sub-tabs ---------- */
+const APP={
+ Today:{icon:'◐',lede:'What needs you today. Everything updates live.',subs:{'':[
+  C('w8 hero','Good evening, Beauty S1','Mon 26 Oct · open until 20:00',`<div><span class="big" id="heroVal">$1,840</span><span class="chg up">+9%</span></div><p class="say">booked by the AI this month · <b id="heroN">20</b> appointments · 3 things need you</p>
+   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px">${[['Answered by AI','98%',98,'var(--ink)'],['Booked','15%',15,'var(--green)'],['Handed to you','2%',2,'var(--need)']].map(([t,v,f,c])=>`<div style="font-size:12px;color:var(--ink2)">${t}<b style="float:right;font-family:Geist Mono;font-weight:500;color:var(--ink)">${v}</b><div class="bar" style="margin-top:8px"><i style="width:${f}%;background:${c}"></i></div></div>`).join('')}</div>
+   <div style="display:flex;gap:8px;margin-top:16px"><button class="btn p">+ New booking</button><button class="btn">Open Inbox</button></div>`,'The headline is what the AI earned you this month: appointments it booked on its own, without you replying.'),
+  C('','Needs you','3 open',rows([['o','Sara wants to move Thursday','Handed over · 12 min ago','Reply'],['o','Refund request · $45','Approval · Omar','Review'],['a','Parking question','AI didn’t know · asked 9 times','Teach']]),'Only things the AI couldn’t finish. Everything else it handled.'),
+  C('w5','Next up','4 today',rows([['g','10:30 · Lina H.','Haircut · 45 min','$35'],['g','12:00 · Rami K.','Facial · 60 min','$55'],['a','15:15 · Sara M.','Manicure · booked by AI','$25'],['g','16:40 · Nour A.','Brows · 20 min','$15']])),
+  C('w4','Today in numbers','',kpis([['Appointments','7',''],['Revenue','$330','+12%'],['AI replies','451','']])+`<div style="margin-top:12px">${spark(2)}</div>`),
+  C('w3','Happening now','',`<div class="feed" id="feedToday"></div>`,'A live stream of what the AI is doing right now: replies, bookings and handovers.'),
+ ]}},
+ Inbox:{icon:'✉',badge:3,lede:'Every conversation, sorted by what needs you.',subs:{
+  'Needs you':[C('w8','Handed to you','3',rows([['o','Sara M. · WhatsApp','Wants to move Thursday 10:30 to Friday · AI offered 2 slots, she wants a person','12 min'],['o','Hiba R. · Instagram','Complaint: waited 20 minutes · sentiment negative','40 min'],['o','Karim B. · WhatsApp','Asked for a manager','1 h']]),'The AI hands a chat to you when it’s unsure, the customer asks for a person, or the customer is upset. Each one shows why.'),
+   C('','Why the AI handed over','30 days',hbars([['Customer asked for a person','9',60,'var(--need)'],['Not in your info','6',40,'var(--need)'],['Upset customer','3',20,'var(--need)']]))],
+  'All conversations':[C('w12','Conversations','<span id="convN">128</span> · live',chips(['All','Bookings','Questions','Complaints','Changes'])+table(['Time','Customer','Channel','Type','Result','Value','Rating'],convRows(),'convBody'),'Every chat gets a type and a result the moment it ends, so you can filter by what customers wanted.')],
+  'AI queue':[C('w4','Queue now','',kpis([['Waiting','0',''],['Answered today','41',''],['Avg wait','8s','']])),C('w8','Recent queue','last hour',table(['Received','Customer','Waited','Status'],[['21:02','Nour A.','6s','Answered'],['20:58','Omar T.','11s','Answered'],['20:41','Dana H.','4s','Answered']]),'When many customers write at once, the AI answers what it can right away and queues the rest; they get a holding message and the full answer follows.')],
+  'Approvals':[C('w8','Waiting for you','1',rows([['o','Refund · Omar T.','$45 · haircut cancelled late','Approve'],['','Discount 10% · Lina H.','Loyal customer · 6 visits','Approve']])),C('','Decided','this week',kpis([['Approved','12',''],['Declined','2','']]))]}},
+ Support:{icon:'✦',isNew:true,lede:'Your AI as a support agent: what customers need, how well it’s solved, and what to teach next.',subs:{
+  'Overview':[C('w12','','',kpis([['Resolved by AI','82%','+6 pts'],['Automation rate','91%','+3 pts'],['First reply','4.2s','−0.6s'],['Open cases','3',''],['Satisfaction','4.7','+0.2']]),'Resolved means the customer confirmed the answer or didn’t come back within 24 hours. Automation counts every chat the AI handled without you.'),
+   C('w8','Resolution rate over time','AI vs you',line(170,'var(--green)',true,1.1),'Green line: share of support chats the AI solved itself. Dotted: last period.'),
+   C('','By channel','30 days',hbars([['WhatsApp','86%',86],['Instagram','78%',78],['Website','71%',71]]))],
+  'Topics':[C('w8','What customers contact you about','30 days',table(['Topic','Chats','Trend','Solved by AI','Rating'],[['Prices','46','<span class="up">↑ 12%</span>','96%','4.8'],['Opening hours','31','—','100%','4.9'],['Change appointment','24','<span class="up">↑ 8%</span>','71%','4.6'],['Parking','9','<span class="dn">↑ new</span>','22%','3.9'],['Late arrival complaint','5','<span class="dn">↑ 2</span>','20%','3.1']])),
+   C('','Rising this week','',rows([['o','Parking','9 chats · AI unsure','Teach'],['o','Late arrival complaints','5 · low rating','View'],['g','Gift cards','4 · all solved','']]),'Topics are found automatically from what customers write, in any language.')],
+  'Satisfaction':[C('w4','Rating','30 days',`<div class="big">4.7</div><p class="say">from 67 ratings</p>`+hbars([['5 ★','52',78],['4 ★','10',15],['3 ★','3',5,'var(--need)'],['1–2 ★','2',3,'var(--bad)']])),
+   C('w4','AI vs you','',kpis([['AI chats','4.8',''],['Your chats','4.5','']]),'Rated separately, so you can see where the AI is better and where people still need you.'),
+   C('w4','Low ratings by topic','',rows([['r','Late arrival complaint','3.1 · 5 chats',''],['o','Parking','3.9 · 9 chats','']])),
+   C('w12','Latest reviews','',table(['When','Customer','Rating','Topic','Comment'],[['20:40','Lina H.','5','Booking','“So fast, booked in 1 minute”'],['18:12','Hiba R.','2','Complaint','“Waited 20 min”'],['16:03','Rami K.','5','Prices','“Clear answer”']]))],
+  'Knowledge gaps':[C('w8','Questions the AI couldn’t answer','6',`<div class="rows">${[['Do you have parking?','9 times · last 2 h ago','Customers near Hamra ask before booking'],['Can I bring my child?','4 times','—'],['Do you sell gift cards?','3 times','—']].map(([q,n,s])=>`<div><span class="dot o"></span><span class="t"><b>${q}</b><small>${n}</small></span><button class="btn">Teach answer</button></div>`).join('')}</div>`,'The AI collects every question it couldn’t answer. Teach the answer once and it uses it from then on, in every language.'),
+   C('','Suggested answer','drafted by AI',`<p class="say">“Yes, there’s free street parking on Makdessi St and a paid lot 50 m away.”</p><div style="display:flex;gap:6px;margin-top:12px"><button class="btn p">Approve</button><button class="btn">Edit</button></div>`,'Drafted from your website and past chats. Nothing is used until you approve it.')]}},
+ Calendar:{icon:'▦',lede:'Your week. Click a booking to change it, an empty slot to add one.',subs:{'':[C('w12','This week','31 bookings · $1,120','<div id="week"></div><div style="display:flex;gap:14px;margin-top:12px;font-size:12px;color:var(--ink2)"><span><span class="dot g" style="display:inline-block"></span> Confirmed</span><span><span class="dot" style="display:inline-block"></span> Came</span><span><span class="dot r" style="display:inline-block"></span> No-show</span><span><span class="dot a" style="display:inline-block"></span> Booked by the AI</span></div>')]}},
+ Performance:{icon:'↗',lede:'How the receptionist turns chats into bookings.',subs:{
+  'Live flow':[C('w8','Where chats come from and how they end','live',flow(),'Width shows volume. Updates as conversations finish.'),C('','Today’s capacity','',gauge(.64)+rows([['g','Booked by the AI','14','$605'],['','Average reply','1.2s',''],['o','Handed to you','2','']]))],
+  'Trends':[C('w8','Conversations and bookings per day','7 days',line(180)),C('','Key numbers','',kpis([['Booking rate','15%','+2 pts'],['Rebook rate','38%','+4 pts']])+`<div style="margin-top:12px">`+kpis([['No-show rate','4%','−1 pt'],['Cancel rate','6%','']])+`</div>`,'Rebook rate: customers who book their next visit within 6 weeks.')],
+  'Channels':[C('w5','Bookings by channel','',`<div style="display:flex;gap:16px;align-items:center">${donut([[.48,'var(--green)'],[.32,'var(--ai)'],[.2,'var(--muted)']])}${rows([['g','WhatsApp','48%',''],['a','Instagram','32%',''],['','Website','20%','']])}</div>`),C('w7','Busiest moments','',heat())],
+  'Services':[C('w6','Services booked','30 days',hbars([['Haircut','42 · $1,470',90],['Facial','28 · $1,540',62],['Manicure','24 · $600',52],['Hair colour','9 · $810',20]])),C('w6','Asked about but rarely booked','',rows([['o','Hair colour','asked 31× · booked 9×','Offer'],['','Keratin','asked 12× · not offered','']]),'A gap between interest and bookings is usually price or availability.')]}},
+ Insights:{icon:'◎',lede:'The bigger picture, written in plain words.',subs:{
+  'Highlights':[C('w4','This week','',`<div class="big">+18%</div><p class="say">more conversations than last week, mostly from Instagram after your Thursday post.</p>`),C('w4','Best day','',`<div class="big">Fri</div><p class="say">earns 31% of your week. Thursday is quiet.</p>`),C('w4','Your AI','',`<div class="big">82%</div><p class="say">of support chats solved without you, up 6 points.</p>`),C('w12','Revenue and bookings','30 days',line(170))],
+  'Money':[C('w12','','',kpis([['Revenue','$8,420','+6%'],['Average ticket','$46',''],['Booked ahead','$960',''],['Lost to no-shows','$180','−20%'],['Deposits held','$240','']])),C('w8','Revenue by service','30 days',hbars([['Facial','$1,540',100],['Haircut','$1,470',95],['Hair colour','$810',52],['Manicure','$600',39]])),C('','Revenue by weekday','',cols([.5,.35,.6,.4,.95,.7,0],'MTWTFSS',4))],
+  'Timing':[C('w7','When you’re busy','booked hours',heat()),C('w5','How far ahead they book','',hbars([['Same day','34%',34],['1–3 days','41%',41],['4–7 days','17%',17],['Later','8%',8]]))],
+  'Next steps':[C('w12','What to do next','ranked by expected value',`<div class="rows">${[['g','Fill Thursday afternoons','Send a Thursday-only offer to 38 regulars','≈ +$300/wk'],['o','Win back 6 lapsed regulars','No visit in 45+ days · draft message ready','≈ +$270'],['a','Teach the parking answer','Asked 9× this week · AI unsure','fewer handovers'],['','Take deposits for colour','2 no-shows on colour this month','≈ −$90 lost']].map(([d,t,s,v])=>`<div><span class="dot ${d}"></span><span class="t"><b>${t}</b><small>${s}</small></span><span class="v">${v}</span><button class="btn">Do it</button></div>`).join('')}</div>`,'Ranked by how much each move is likely to bring, from your own numbers.')]}},
+ Customers:{icon:'◍',lede:'Who your customers are and who to bring back.',subs:{
+  'Board':[C('w5','Top customers','by spend',rows([['g','Maya D.','11 visits','$640'],['g','Lina H.','6 visits','$520'],['g','Rami K.','5 visits','$410']])),C('w7','Maya D.','regular since March',kpis([['Visits','11',''],['Next','Thu 12:00',''],['No-shows','0',''],['Lifetime','$640','']])+rows([['','Facial','12 Oct','$55'],['','Haircut','28 Sep','$35']]))],
+  'All clients':[C('w12','Clients','106',chips(['All','Regulars','New','Opted in to offers'])+table(['Customer','Visits','Spent','Last visit','No-shows','Channel'],[['Maya D.','11','$640','12 Oct','0','WhatsApp'],['Lina H.','6','$520','20 Oct','0','Instagram'],['Omar T.','3','$120','2 Sep','1','WhatsApp'],['Karim B.','4','$140','1 Aug','3','WhatsApp']]))],
+  'Win back':[C('w6','Haven’t come back','45+ days',rows([['o','Dana S.','52 days · 4 visits before','Message'],['o','Ali F.','61 days · 3 visits','Message']])),C('w6','Asked but didn’t book','warm leads',rows([['a','Omar T.','asked about colour · 2 days ago','Follow up'],['a','Hiba R.','asked price of facial','Follow up']])),C('w12','Repeated no-shows','',rows([['r','Karim B.','3 missed · ask for a deposit','Set deposit']]))],
+  'Offers':[C('w8','Send an offer','64 opted in',`<p class="say">“Thursday afternoons: 15% off any facial this week.”</p><div style="display:flex;gap:6px;margin-top:12px"><button class="btn p">Send to 38 regulars</button><button class="btn">Edit</button></div>`,'Only to customers who agreed to receive offers.'),C('','Last offer','',kpis([['Sent','38',''],['Booked','7','18%']]))]}},
+ 'Teach AI':{icon:'✎',badge:4,lede:'Coach your assistant. It also learns from its own chats, with your approval.',subs:{
+  'Coach':[C('w7','Coach your assistant','',`<div class="chat"><div class="msg c">When someone asks about parking, tell them about Makdessi St.</div><div class="msg ai">Got it. I’ll say there’s free street parking on Makdessi St and a paid lot 50 m away. Want me to mention it when people book too?<small>Saved as a lesson · used from now on</small></div></div>`),
+   C('w5','Lessons it suggests','learned from its chats',`<div class="rows">${[['Parking answer','from 9 unanswered chats'],['Say sorry first on late complaints','from 3 low ratings'],['Offer Friday when Thursday is full','from 5 handovers']].map(([t,s])=>`<div><span class="dot a"></span><span class="t"><b>${t}</b><small>${s}</small></span><button class="btn p">Approve</button></div>`).join('')}</div>`,'The AI studies its handovers and low ratings and proposes what to change. Nothing changes until you approve.')],
+  'Review replies':[C('w12','Replies to check','12',chips(['To review','Good','Corrected','Wrong'])+rows([['a','“We open at 9 on Saturday”','Confidence low · Lina','Good'],['a','“Facial is $55”','Confidence high · Rami','Good'],['o','“Yes we do keratin”','Not in your services · Omar','Correct']]))],
+  'Rules':[C('w7','Rules it always follows','6',rows([['','Never promise a discount','',''],['','Always confirm date and time before booking','',''],['','Hand over if the customer is upset','','']])),C('w5','What it knows','',kpis([['Services','14',''],['Answers','22',''],['Languages','3','']]))],
+  'AI performance':[C('w8','Quality score over time','after each lesson',line(170,'var(--ai)',false,.3),'Score from tests and real chats. Each dot on the curve is a version after you approved lessons.'),C('','Versions','',rows([['a','v12 · today','+ parking answer','92'],['a','v11 · Oct 20','+ apology rule','88'],['','v10 · Oct 12','','84']]))]}},
+ 'Test lab':{icon:'⚗',isNew:true,lede:'Test the AI like a real customer before it talks to real ones.',subs:{'':[
+  C('w4','Scenarios','12',`<div class="rows">${[['g','Book a haircut','new customer · Arabic','Pass'],['g','Change an appointment','regular','Pass'],['o','Angry about waiting','upset · English','Run'],['g','Price of colour','question','Pass'],['r','Bring a child?','not in your info','Fail'],['g','Cancel last minute','policy','Pass']].map(([d,t,s,v])=>`<div><span class="dot ${d}"></span><span class="t"><b>${t}</b><small>${s}</small></span><span class="v">${v}</span></div>`).join('')}</div><div style="display:flex;gap:6px;margin-top:10px"><button class="btn p">Run all 12</button><button class="btn">+ New from a real chat</button></div>`,'Scenarios are simulated customers with a goal, a mood and a language. Save any real chat as a scenario so mistakes never come back.'),
+  C('w5','Angry about waiting','simulated customer',`<div class="chat" id="sim"></div>`),
+  C('w3','Scorecard','',`<div class="score">${[['Understood the problem','✓'],['Apologised first','✓'],['Offered a fix','✓'],['Followed your rules','✓'],['Handed over in time','—']].map(([t,r])=>`<div><span class="dot ${r=='✓'?'g':'o'}"></span>${t}<span class="res">${r}</span></div>`).join('')}</div><div class="big" style="margin-top:10px">4/5</div><button class="btn" style="margin-top:8px">Correct this reply</button>`,'Correcting a reply in a test teaches the AI right away; re-run to confirm.'),
+  C('w12','Test runs','',table(['When','Version','Passed','Failed','Score'],[['Today 21:10','v12','11','1','92'],['Oct 20','v11','10','2','88'],['Oct 12','v10','9','3','84']]))]}},
+ Website:{icon:'⌂',lede:'Your booking website.',subs:{'':[C('w5','Edit','',rows([['','Texts','Headline, about, services',''],['','Photos','6 photos',''],['','Style','Colours and fonts','']])),C('w7','Preview','beauty-s1.pulse.app',`<div style="height:220px;border-radius:12px;background:var(--nest);display:grid;place-items:center;color:var(--muted)">Live preview</div>`)]}},
+ Settings:{icon:'⚙',lede:'Your business and how the AI works for it.',subs:{
+  'Business':[C('w8','Business details','',rows([['','Name','Beauty S1',''],['','Hours','Mon–Sat 10:00–20:00',''],['','Team','Layla, Carla','']])),C('','Setup','5 of 8',`<div class="bar"><i style="width:62%"></i></div>`)],
+  'Channels & reminders':[C('w6','Channels','',rows([['g','WhatsApp','Connected',''],['g','Telegram','Connected',''],['','Instagram','Not connected','Connect']])),C('w6','Reminders','',rows([['g','Day before','On',''],['g','2 hours before','On','']]))],
+  'Booking & payments':[C('w6','Booking page','',rows([['g','Online booking','On','']])),C('w6','Payments the AI may offer','',rows([['g','Deposits for colour','$20',''],['','Pay at the salon','On','']]))],
+  'Discount codes':[C('w12','Codes','2 active',table(['Code','Discount','Used','Ends'],[['THURS15','15%','7','Nov 2'],['WELCOME','10%','23','—']]))]}},
+ Account:{icon:'◔',lede:'Your login, devices and how Pulse looks.',subs:{
+  'Security':[C('w6','Two-factor sign-in','',rows([['g','Code by email','On',''],['','Authenticator app','Off','Turn on']])),C('w6','Password','',`<button class="btn">Change password</button>`)],
+  'Devices':[C('w12','Signed in','2',rows([['g','Chrome · Beirut','now',''],['','iPhone · Beirut','yesterday','Sign out']]))],
+  'Look & feel':[C('w12','Look','this device',rows([['','Theme','Dark / Light',''],['','Background','Room / Plain',''],['','Text size','Normal','']]))],
+  'Dashboard layout':[C('w12','Start page','',rows([['','Open on','Today','']]))]}},
+};
+const GROUPS=[['Main',['Today','Inbox','Support','Calendar']],['Business',['Performance','Insights','Customers']],['AI',['Teach AI','Test lab']],['Setup',['Website','Settings','Account']]];
+
+/* ---------- render ---------- */
+let tab='Today',sub=null;
+function render(){
+ $('#nav').innerHTML=`<div class="brand"><i>〜</i>pulse</div>`+GROUPS.map(([g,ts])=>`<div class="ns">${g}</div>`+ts.map(t=>{const a=APP[t];return `<button data-t="${t}" aria-current="${t==tab}"><span style="width:16px;text-align:center;opacity:.8">${a.icon}</span>${t}${a.badge?`<span class="n">${a.badge}</span>`:a.isNew?'<span class="new">new</span>':''}</button>`}).join('')).join('')+`<div class="foot"><button title="Notifications">🔔</button><button title="Sign out">⎋</button></div>`;
+ const A=APP[tab],ks=Object.keys(A.subs);if(!ks.includes(sub))sub=ks[0];
+ $('#title').textContent=tab;$('#lede').textContent=A.lede;
+ $('#subs').style.display=ks.length>1?'flex':'none';
+ $('#subs').innerHTML=ks.map(k=>`<button data-s="${k}" aria-pressed="${k==sub}">${k}${k=='Needs you'?'<span class="n">3</span>':''}</button>`).join('');
+ $('#grid').innerHTML=A.subs[sub].map((c,i)=>`<section class="c ${c.w} ${c.cls}">${c.t||c.r?`<h3><span>${c.t}</span><span class="r">${c.r}</span></h3>`:''}${c.body}${c.why?`<button class="more" data-i="${i}">More details</button><div class="why">${c.why}</div>`:''}</section>`).join('');
+ $('#nav').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;sub=null;render();scrollTo(0,0)});
+ $('#subs').querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{sub=b.dataset.s;render()});
+ $('#grid').querySelectorAll('.more').forEach(b=>b.onclick=()=>{const w=b.nextElementSibling;w.classList.toggle('on');b.textContent=w.classList.contains('on')?'Less':'More details'});
+ $('#grid').querySelectorAll('.chips button').forEach(b=>b.onclick=()=>b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)));
+ if($('#week'))drawWeek();if($('#feedToday'))drawFeed();if($('#sim'))sim();
+}
+function drawWeek(){const days=['Mon 26','Tue 27','Wed 28','Thu 29','Fri 30','Sat 31','Sun 1'];const B=[[0,10,.5,'Mohamad H.','Manicure','',1],[0,10.5,.5,'Maha S.','Manicure','came'],[0,11,1,'Mohamad H.','Facial','came',1],[0,12,1.5,'Rami K.','Hair colour','came'],[0,14,.5,'Maya D.','Manicure'],[0,14.5,1.5,'Carla F.','Hair colour','',1],
+ [1,10,1,'Dana H.','Facial','',1],[1,11,1,'Mohamad H.','Haircut'],[1,12,.5,'Rita K.','Manicure'],[1,14,1,'Rania G.','Facial',''],[1,15,1.5,'Dana H.','Hair colour','',1],[1,18,.5,'Mo H.','Haircut','ns'],
+ [2,14,.5,'Maya D.','Manicure'],[2,16,1,'Lina E.','Haircut','',1],[2,17,1,'Tala H.','Haircut'],[2,18,1.5,'Tala H.','Hair colour'],[3,15,.5,'Rita K.','Manicure','',1],[5,10,.5,'Tala H.','Manicure'],[5,11,.5,'Fadi G.','Manicure','',1],[5,12,.5,'Lara F.','Manicure']];
+ let h=`<div class="week"><div class="times"><div class="dh">&nbsp;</div>${[10,11,12,13,14,15,16,17,18,19].map(x=>`<span>${x}:00</span>`).join('')}</div>`;
+ days.forEach((d,i)=>{const bs=B.filter(b=>b[0]==i);h+=`<div><div class="dh ${i==0?'now':''}"><b>${d}</b>${bs.length?bs.length+' booked':i==6?'Closed':'—'}</div><div class="col">${bs.map(([,s,len,n,sv,st,ai])=>`<div class="bk ${st||''} ${len<.75?'short':''}" style="top:${(s-10)*46+1}px;height:${len*46-3}px" title="${n} · ${sv}"><b>${ai?'<i></i>':''}${n}</b><span>${String(Math.floor(s)).padStart(2,'0')}:${s%1?'30':'00'}${len<.75?'':' · '+sv}</span></div>`).join('')}</div></div>`});
+ $('#week').innerHTML=h+'</div>'}
+/* live: a new event every few seconds, numbers tick, tables flash the new row */
+const EV=[['g','Booked','Lina H. · Haircut Thu 10:30'],['','Answered','Rami K. asked about prices'],['a','Learned','New answer approved: parking'],['o','Handed to you','Hiba R. is upset about waiting'],['g','Booked','Nour A. · Brows Fri 16:00'],['','Answered','Omar T. asked opening hours']];
+let feed=EV.slice(0,4).map((e,i)=>[...e,`21:0${4-i}`]);
+function drawFeed(fresh){const f=$('#feedToday');if(!f)return;f.innerHTML=feed.slice(0,5).map(([d,a,t,w],i)=>`<div class="${fresh&&i==0?'new':''}"><span class="when">${w}</span><span class="dot ${d}" style="margin-top:5px"></span><span><b style="font-weight:500">${a}</b><br><small style="color:var(--muted)">${t}</small></span></div>`).join('')}
+let tick=0;function live(){if(document.hidden)return;tick++;const now=new Date();const hm=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+ $('#clock').textContent='Live · '+hm;feed.unshift([...EV[tick%EV.length],hm]);feed=feed.slice(0,8);drawFeed(true);
+ if(EV[tick%EV.length][1]=='Booked'){const v=$('#heroVal'),n=$('#heroN');if(v){const x=+v.textContent.replace(/\D/g,'')+35;v.textContent='$'+x.toLocaleString();n.textContent=+n.textContent+1}}
+ const cb=$('#convBody');if(cb){const r=convRows()[tick%7];r[0]=hm;const tr=document.createElement('tr');tr.className='fresh';tr.innerHTML=r.map(c=>`<td>${c}</td>`).join('');cb.prepend(tr);if(cb.children.length>9)cb.lastChild.remove();$('#convN').textContent=128+tick}}
+setInterval(live,4000);
+function sim(){const S=[['c','I waited 20 minutes yesterday, this is not okay.'],['ai','I’m really sorry about the wait, that shouldn’t happen. Would a 15% discount on your next visit help? I can also book you at a quieter time.','Apologised · offered a fix'],['c','Fine, Thursday afternoon?'],['ai','Thursday 15:00 with Layla is free. Shall I book it with the discount?','Booked · rule followed']];const el=$('#sim');el.innerHTML='';S.forEach(([w,t,n],i)=>setTimeout(()=>{if(!el.isConnected)return;el.insertAdjacentHTML('beforeend',`<div class="msg ${w}">${t}${n?`<small>${n}</small>`:''}</div>`);el.scrollTop=1e4},i*900))}
+$('#tg').onclick=()=>{const r=document.documentElement,d=r.dataset.theme==='dark';r.dataset.theme=d?'light':'dark';$('#tg').textContent=d?'Dark':'Light'};
+$('#per').querySelectorAll('button').forEach(b=>b.onclick=()=>$('#per').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)));
+$('#about').innerHTML=`<h2>About this preview</h2><ul><li>12 main tabs, at most 4 sub-tabs each, no sub-sub-tabs. Filters are small chips inside a card.</li><li>Everything you have today is here; new: <b>Support</b>, <b>Test lab</b>, lessons the AI suggests, versions and scores.</li><li>Live: the clock, feed, Today headline and Inbox table update every few seconds (sample data).</li><li>Explanations sit behind <b>More details</b>.</li></ul>`;
+render();
+</script>
+</body></html>

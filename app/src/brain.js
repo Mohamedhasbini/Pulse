@@ -273,6 +273,18 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   await q(`UPDATE conversations SET outcome=$1, updated_at=now(),
       needs_attention = needs_attention OR $2, attention_reason = COALESCE($3, attention_reason)${asked ? ', rating_asked_at=now()' : ''} WHERE id=$4`,
     [outcome, !!attention, attention, conv.id]);
+  // what the conversation is about (Inbox types, Support topics). A booking stays a booking unless the customer later
+  // complains, cancels or changes it; a booking made now always counts as one
+  if (source === 'ai') {
+    const KINDS = ['booking', 'question', 'change', 'complaint', 'cancel', 'other'], MOODS = ['positive', 'neutral', 'negative'];
+    let kind = KINDS.includes(String(decision.kind).toLowerCase()) ? String(decision.kind).toLowerCase() : null;
+    if (bookedNow) kind = 'booking';
+    const topic = typeof decision.topic === 'string' ? decision.topic.trim().slice(0, 40) || null : null;
+    const mood = MOODS.includes(String(decision.mood).toLowerCase()) ? String(decision.mood).toLowerCase() : null;
+    if (kind || topic || mood) await q(`UPDATE conversations SET
+        kind = CASE WHEN $1::text IS NULL THEN kind WHEN kind='booking' AND $1 NOT IN ('complaint','cancel','change') THEN kind ELSE $1 END,
+        topic = COALESCE($2, topic), mood = COALESCE($3, mood) WHERE id=$4`, [kind, topic, mood, conv.id]);
+  }
   emit(biz.id, bookedNow ? 'booking' : 'message');
   return { reply, options: choices, outcome, bookedNow, conversationId: conv.id, failed };
 }
@@ -446,7 +458,9 @@ const FAST_FLOW = `FAST BOOKING FLOW (overrides any earlier guidance about pacin
 - Returning customers: suggest their favourite_service with its first quick slot ("Same as last time? Next free: ...").
 - Keep messages short: at most 3 short lines, WhatsApp style.
 TAP-TO-ANSWER OPTIONS: also add "options" to your JSON: an array of the choices the customer can tap to answer your message, in the order you wrote them. Examples: the 3 times exactly as you wrote them plus "Another day"; service names; "Yes" / "Change time". Each option at most 20 characters. Up to 10 options (3 or fewer is best). Use [] when the customer must type something (a name, an email) or after a booking is confirmed.`;
-const CONFIDENCE = 'CONFIDENCE: also add "confidence": "high" or "low" to your JSON. Use "low" when you are not sure your reply is correct, complete or allowed; the owner will review it.';
+const CONFIDENCE = 'CONFIDENCE: also add "confidence": "high" or "low" to your JSON. Use "low" when you are not sure your reply is correct, complete or allowed; the owner will review it.'
+  + '\nCONVERSATION TAGS: also add "kind" (one of: booking, question, change, complaint, cancel, other: what this customer wants in this conversation so far),'
+  + ' "topic" (2 to 4 words in English naming the subject, e.g. "Prices", "Parking", "Late arrival") and "mood" (positive, neutral or negative).';
 
 // Reminder channels that can really be sent right now (SMS is not connected).
 // WhatsApp customers always get WhatsApp, Telegram customers Telegram; other chats only if WhatsApp sending is set up.
