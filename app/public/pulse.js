@@ -55,7 +55,7 @@
       ['Versions', { entry: 'training', only: ['top', 'learn'] }]]],
     ['insights', 'Insights', 'Numbers only: how the AI and the business are doing', [
       ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true }],
-      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true }],
+      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' }],
       ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true }],
       ['Business', { page: 'analytics', tab: 'overview', panes: ['highlights', 'overview', 'next'] }],
       ['Timing', { page: 'analytics', tab: 'timing', panes: ['timing'] }],
@@ -130,6 +130,7 @@
       const n = spec.panes ? sec.querySelectorAll(':scope > .spane:not([hidden])').length : 0;
       sec.classList.toggle('p10-multi', n > 1); if (n > 1) sec.style.setProperty('--p10n', n === 4 ? 2 : Math.min(n, 3));
       if (spec.mode) $(`#tchMode button[data-m="${spec.mode}"]`)?.click();
+      if (spec.draw) window[spec.draw]?.(); // panes whose content is drawn when they open
       // the website editor's own tabs become sidebar tabs
       if (spec.ws != null) $$('#wsTabs button')[spec.ws]?.click();
       // a long form shows only the fields of this tab (Save stays); the other cards of its panel wait for their own tab

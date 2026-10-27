@@ -54,6 +54,7 @@ async function loadFlow(){let s;try{s=await get(`/api/stats?days=${per()}`)}catc
   $("#sgReply").textContent=s.ai&&s.ai.avg_ms?(s.ai.avg_ms/1000).toFixed(1):"–";$("#sgNeed").textContent=hand}
 flow.addEventListener("click",e=>{const g=e.target.closest("[data-sub-go]");if(g)tabsOf.overview&&tabsOf.overview(g.dataset.subGo)});
 const tFlow=addTab("overview","flow","Flow",flow,{first:true,onShow:loadFlow});
+window.loadFlow=loadFlow; // Insights › Live flow (pulse.js) opens this pane without the old tab
 
 // ---------------- Home: big figures and pill progress inside the greeting ----------------
 async function homeBand(){const hero=$(".td-hero");if(!hero)return;let s;try{s=await get("/api/stats?days=7")}catch{return}

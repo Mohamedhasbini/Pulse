@@ -2459,26 +2459,18 @@ section.p10-multi>.spane{min-width:0;min-height:0}
 .p10-on #svcList .svc>.svcCap{grid-column:5!important}
 .p10-on #svcList .svc>button{grid-column:6!important}
 .p10-on #svcList .svc>input{padding-top:7px!important;padding-bottom:7px!important}
-/* Live flow: its cards show whole, not with inner scrollbars */
-.p10-on .spane[data-pane="flow"] .card{overflow:visible!important;height:auto!important;max-height:none!important}
 /* tighter spacing above the content of every dashboard page */
 section.p10-on:not([hidden]){row-gap:6px!important}
 .p10-on>.p10-bar{margin-bottom:4px!important}
 .p10-on>.top{margin-bottom:0!important}
 /* Live flow: the conversation list and "happening now" repeat Inbox and Today, so they stay there; the chart is a bit shorter */
 .p10-on .spane[data-pane="flow"] .fit2{display:none!important}
-.p10-on #sgFlow{height:360px!important;max-height:360px}
-.p10-on .spane[data-pane="flow"] .sg-flowcard,.p10-on .spane[data-pane="flow"] .sg-side{height:auto!important}
 /* Services: compact rows */
 .p10-on #svcList .svc{margin-bottom:4px}
 .p10-on #svcList .svc>input{padding-top:5px!important;padding-bottom:5px!important;font-size:13px}
-.p10-on #sgFlow{height:310px!important;max-height:310px}
 #website.p10-on>.top{padding-top:0!important;padding-bottom:0!important;min-height:0!important}
 #website.p10-on>.top .btn{padding-top:5px!important;padding-bottom:5px!important}
 #website.p10-on #wsMain{margin-top:0!important}
-body .p10-on #sgFlow:not(#_){height:400px!important;max-height:400px!important}
-body .p10-on .spane[data-pane="flow"] .sg-tile:not(#_){height:auto!important;min-height:0!important;padding-top:12px!important;padding-bottom:12px!important}
-body .p10-on .spane[data-pane="flow"] .sg-flowcard:not(#_),body .p10-on .spane[data-pane="flow"] .sg-side:not(#_){height:auto!important;min-height:0!important}
 
 /* sidebar sub-tabs: the open page lists its tabs under it */
 .p10-sub{display:flex;flex-direction:column;gap:1px;margin:2px 0 6px 30px;padding-left:10px;border-left:1px solid var(--gl-grid)}
@@ -2661,3 +2653,13 @@ body .p10-on .spane[data-pane="flow"] .sg-flowcard:not(#_),body .p10-on .spane[d
    once, in the Rules card below (with Edit / Remove), so the side card never spills over it */
 .p10-on #tchCoach .co-side ol,.p10-on #tchCoach .co-side ul{display:none!important}
 .p10-on #tchCoach .co-side{overflow:hidden!important}
+
+/* Insights › Live flow: the chart and its tiles on top, then This week and Today's capacity side by side.
+   Happening now, Conversations and Today's list stay on Inbox and Today (no duplicates, nothing overlapping) */
+.p10-on .spane[data-pane="flow"] .fit2{display:none!important}
+.p10-on .spane[data-pane="flow"] .fit3>.card:has(.td-list,[id*="Today"]),.p10-on .spane[data-pane="flow"] .fit3>.card:last-child{display:none!important}
+.p10-on .spane[data-pane="flow"] .fit3{display:grid!important;grid-template-columns:1fr 1fr!important;gap:12px}
+/* Live flow: tiles readable on the dark/glass card; chart labels sized to fit their pills */
+.p10-on .spane[data-pane="flow"] .sg-tile,.p10-on .spane[data-pane="flow"] .sg-tile *:not(svg *){color:var(--gp-text)!important}
+.p10-on .spane[data-pane="flow"] .sg-tile small,.p10-on .spane[data-pane="flow"] .sg-tile .sub{color:var(--gp-meta)!important}
+#sgFlow .sg-t{font-size:16px!important}#sgFlow .sg-n{font-size:18px!important}
