@@ -30,7 +30,7 @@ window.PulseInbox = (() => {
     root.querySelector('#ibQ').addEventListener('input', ev => { clearTimeout(st.t); st.t = setTimeout(() => { st.q = ev.target.value; st.offset = 0; load(); }, 250); });
   }
   // as many lines as the list has room for, so nothing scrolls
-  function fit() { const box = root.querySelector('#ibRows'); const h = box?.clientHeight || 500; st.limit = Math.max(5, Math.floor(h / 52)); }
+  function fit() { if (innerWidth < 768) { st.limit = 25; return; } const box = root.querySelector('#ibRows'); const h = box?.clientHeight || 500; st.limit = Math.max(5, Math.floor(h / 52)); }  // a phone scrolls the list instead
 
   async function load() {
     fit();
@@ -53,9 +53,10 @@ window.PulseInbox = (() => {
     st.open = id; root.querySelectorAll('.ib-row').forEach(r => r.classList.toggle('on', +r.dataset.c === id));
     const row = st.rows.find(r => r.id === id) || {}, read = root.querySelector('#ibRead');
     read.innerHTML = '<div class="ib-empty">Loading…</div>';
+    root.querySelector('.ib').classList.add('reading'); // on a phone the chat takes the whole screen
     const [msgs, cu] = await Promise.all([req(`/api/conversations/${id}/messages`), req(`/api/inbox/${id}/customer`).catch(() => ({}))]);
     req(`/api/inbox/${id}/seen`, 'POST', {}).then(() => { const r = root.querySelector(`.ib-row[data-c="${id}"]`); r?.classList.remove('unread'); }).catch(() => {});
-    read.innerHTML = `<header class="ib-head"><div><h2>${e(who(row))}</h2><small>${e(CH[row.channel] || row.channel || '')}${row.phone && !/^test-/.test(row.phone) ? ' · ' + e(row.phone) : ''}${row.attention_reason ? ' · ' + e(row.attention_reason) : ''}</small></div>
+    read.innerHTML = `<header class="ib-head"><button type="button" class="ib-back" data-back="1" aria-label="Back to chats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div><h2>${e(who(row))}</h2><small>${e(CH[row.channel] || row.channel || '')}${row.phone && !/^test-/.test(row.phone) ? ' · ' + e(row.phone) : ''}${row.attention_reason ? ' · ' + e(row.attention_reason) : ''}</small></div>
         <div class="ib-acts">${row.needs_attention ? '<button type="button" class="btn" data-a="done">Mark done</button>' : ''}
         <button type="button" class="btn ghost" data-a="ai">${row.ai_paused ? 'Let ' + ai() + ' answer' : 'Take over'}</button></div></header>
       <div class="ib-cust">${cu.id ? `<span><b>${cu.visits || 0}</b> visits</span><span><b>$${Math.round(cu.spent || 0)}</b> spent</span><span>${cu.next ? 'Next: <b>' + e(cu.next.replace('T', ' ')) + '</b>' : 'No upcoming visit'}</span>` : ''}</div>
@@ -70,7 +71,8 @@ window.PulseInbox = (() => {
 
   async function click(ev) {
     const t = ev.target;
-    const f = t.closest('[data-f]'); if (f) { st.folder = f.dataset.f; st.offset = 0; st.open = null; root.querySelector('#ibRead').innerHTML = '<div class="ib-empty">Pick a conversation to read it here.</div>'; return load(); }
+    if (t.closest('[data-back]')) { root.querySelector('.ib').classList.remove('reading'); st.open = null; return; }
+    const f = t.closest('[data-f]'); if (f) { st.folder = f.dataset.f; st.offset = 0; st.open = null; root.querySelector('.ib').classList.remove('reading'); root.querySelector('#ibRead').innerHTML = '<div class="ib-empty">Pick a conversation to read it here.</div>'; return load(); }
     const p = t.closest('[data-p]'); if (p) { st.offset = Math.max(0, st.offset + +p.dataset.p * st.limit); return load(); }
     const c = t.closest('[data-c]'); if (c) return open(+c.dataset.c);
     if (t.closest('.ib-retry')) return load();
