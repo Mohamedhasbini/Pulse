@@ -22,8 +22,7 @@ window.PulseInbox = (() => {
 
   function frame() {
     root.innerHTML = `<div class="ib">
-      <aside class="ib-folders">${FOLDERS.map(([k, l]) => `<button type="button" data-f="${k}"><span>${l}</span><b data-n="${k}"></b></button>`).join('')}
-        <div class="ib-sep"></div><button type="button" class="ib-link" data-gmail="1"><span>Email</span><small>Connect Gmail</small></button></aside>
+      <aside class="ib-folders">${FOLDERS.map(([k, l]) => `<button type="button" data-f="${k}"><span>${l}</span><b data-n="${k}"></b></button>`).join('')}</aside>
       <section class="ib-list"><div class="ib-bar"><input type="search" id="ibQ" placeholder="Search name, number or message" aria-label="Search chats"><span class="ib-range" id="ibRange"></span>
         <button type="button" class="ib-nav" data-p="-1" aria-label="Newer">‹</button><button type="button" class="ib-nav" data-p="1" aria-label="Older">›</button></div><div id="ibRows" class="ib-rows"></div></section>
       <section class="ib-read" id="ibRead"><div class="ib-empty">Pick a conversation to read it here.</div></section></div>`;
@@ -75,7 +74,6 @@ window.PulseInbox = (() => {
     const p = t.closest('[data-p]'); if (p) { st.offset = Math.max(0, st.offset + +p.dataset.p * st.limit); return load(); }
     const c = t.closest('[data-c]'); if (c) return open(+c.dataset.c);
     if (t.closest('.ib-retry')) return load();
-    if (t.closest('[data-gmail]')) return window.openP10?.('settings', 7);
     const a = t.closest('[data-a]'); if (!a || !st.open) return;
     const row = st.rows.find(r => r.id === st.open) || {};
     if (a.dataset.a === 'done') await req(`/api/conversations/${st.open}/resolve`, 'POST', {});

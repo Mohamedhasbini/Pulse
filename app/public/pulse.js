@@ -168,8 +168,8 @@
     const sec = $('main > section:not([hidden])'); if (!sec || window.LAB) return;
     sec.style.zoom = '';
     // scaling reflows the content (cards get wider and shorter), so step down until it fits
-    for (let z = 1, k = 0; k < 6 && sec.scrollHeight > sec.clientHeight + 2 && z > 0.72; k++) {
-      z = Math.max(0.72, z * Math.min(0.98, sec.clientHeight / sec.scrollHeight)); sec.style.zoom = z.toFixed(3);
+    for (let z = 1, k = 0; k < 12 && sec.scrollHeight > sec.clientHeight + 2 && z > 0.72; k++) {
+      z = Math.max(0.72, z * Math.min(0.97, sec.clientHeight / sec.scrollHeight)); sec.style.zoom = z.toFixed(3);
     }
   }
   addEventListener('resize', () => { clearTimeout(fitTab.t); fitTab.t = setTimeout(fitTab, 150); });

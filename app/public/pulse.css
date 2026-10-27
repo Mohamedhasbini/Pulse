@@ -2667,9 +2667,13 @@ section.p10-on:not([hidden]){row-gap:6px!important}
 /* Insights › Business: nothing clipped. Chart fills its card, "Already booked" boxes stack, services table fits its width */
 .p10-on #inAhead .statrow{grid-template-columns:1fr!important;gap:8px}
 .p10-on #inAhead *{min-width:0;overflow-wrap:anywhere}
-.p10-on #inAhead :is(b,strong,.big,[style*="font-size"]){font-size:clamp(20px,2vw,30px)!important}
-.p10-on #inTrend{height:220px!important}
+.p10-on #inAhead .fun b,.p10-on #inAhead .fun span{font-size:14px!important;white-space:nowrap}
+.p10-on #inAhead p.sub{font-size:13px!important;line-height:1.4!important}
+.p10-on .spane[data-pane="overview"],.p10-on .spane[data-pane="next"]{overflow:visible!important}
+.p10-on #inTrend{height:300px!important}
 .p10-on .spane table{width:100%!important;min-width:0!important;table-layout:auto}
 .p10-on .spane :is(.tbl,.table-wrap,.tw):has(table){overflow-x:hidden!important}
 .p10-on .spane table :is(th,td){padding-left:6px!important;padding-right:6px!important;white-space:nowrap}
 .p10-on .spane table td:has(.bar),.p10-on .spane table th:nth-child(4):has(+th){}
+
+.p10-on #demo .phone{max-width:100%;max-height:100%}
