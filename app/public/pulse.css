@@ -2427,3 +2427,49 @@ body .td-kpis .kp:hover:not(#_){background:var(--gp-nest)!important}
 /* Train AI › Rules & coach: the coach card grows with its content instead of a fixed screen height */
 .p10-on #tchCoach,.p10-on #tchRules{height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important}
 .p10-on #tchCoach>*{min-height:0}
+
+/* tabs that show several panels put them side by side instead of in a tall stack */
+.p10-multi{}
+section.p10-multi:not([hidden]){display:grid!important;grid-template-columns:repeat(var(--p10n,2),minmax(0,1fr));grid-auto-rows:max-content;align-content:start;column-gap:14px}
+section.p10-multi>*:not(.spane){grid-column:1/-1}
+section.p10-multi>.spane{min-width:0;min-height:0}
+/* dashboard pages never scroll: the AI team strip lives in Pulse AI now, and Today's AI team card moved to Ask Pulse */
+.p10-on>.pbar{display:none!important}
+.today #tdAi{display:none!important}
+
+/* the tab row holds the page title: the old big heading goes, every page gains ~50px */
+.p10-on>.top h1,.p10-on>.top .pg-head{display:none!important}
+.p10-on>.top:not(:has(> *:not(h1):not(.pg-head):not(div:empty))){display:none!important}
+.p10-purpose b{font-size:18px;font-weight:600;color:var(--gp-text);margin-right:8px;letter-spacing:-.01em}
+.p10-bar{margin-bottom:10px!important}
+.p10-bar .pa-switch{flex-wrap:wrap;max-width:100%}
+/* the business form: one column of fields per tab reads better than the old long two-column form */
+/* denser cards and forms on dashboard pages, so each tab fits one screen */
+.p10-on .card{padding:14px 18px!important}
+.p10-on .form{row-gap:10px!important}
+.p10-on .form textarea{min-height:64px;max-height:120px}
+.p-wave{position:fixed!important;pointer-events:none}
+/* Settings › Services: one line per service (name · what's included · price · minutes · at once · remove) */
+.p10-on #svcList .svc{grid-template-columns:minmax(150px,1fr) minmax(200px,1.6fr) 70px 70px 80px 26px!important;row-gap:0!important;margin-bottom:6px}
+.p10-on #svcList .svc>.svcDesc{grid-column:2;grid-row:1}
+.p10-on #svcList .svc>input{padding-top:7px!important;padding-bottom:7px!important}
+/* Live flow: its cards show whole, not with inner scrollbars */
+.p10-on .spane[data-pane="flow"] .card{overflow:visible!important;height:auto!important;max-height:none!important}
+/* tighter spacing above the content of every dashboard page */
+section.p10-on:not([hidden]){row-gap:6px!important}
+.p10-on>.p10-bar{margin-bottom:4px!important}
+.p10-on>.top{margin-bottom:0!important}
+/* Live flow: the conversation list and "happening now" repeat Inbox and Today, so they stay there; the chart is a bit shorter */
+.p10-on .spane[data-pane="flow"] .fit2{display:none!important}
+.p10-on #sgFlow{height:360px!important;max-height:360px}
+.p10-on .spane[data-pane="flow"] .sg-flowcard,.p10-on .spane[data-pane="flow"] .sg-side{height:auto!important}
+/* Services: compact rows */
+.p10-on #svcList .svc{margin-bottom:4px}
+.p10-on #svcList .svc>input{padding-top:5px!important;padding-bottom:5px!important;font-size:13px}
+.p10-on #sgFlow{height:310px!important;max-height:310px}
+#website.p10-on>.top{padding-top:0!important;padding-bottom:0!important;min-height:0!important}
+#website.p10-on>.top .btn{padding-top:5px!important;padding-bottom:5px!important}
+#website.p10-on #wsMain{margin-top:0!important}
+body .p10-on #sgFlow:not(#_){height:400px!important;max-height:400px!important}
+body .p10-on .spane[data-pane="flow"] .sg-tile:not(#_){height:auto!important;min-height:0!important;padding-top:12px!important;padding-bottom:12px!important}
+body .p10-on .spane[data-pane="flow"] .sg-flowcard:not(#_),body .p10-on .spane[data-pane="flow"] .sg-side:not(#_){height:auto!important;min-height:0!important}

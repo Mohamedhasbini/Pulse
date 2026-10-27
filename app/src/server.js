@@ -831,10 +831,11 @@ app.post('/api/conversations/:id/ai', wrap(async (req, res) => {
 // ---------- AI Training: questions the AI couldn't answer ----------
 app.get('/api/learning', wrap(async (req, res) => {
   const status = ['open', 'answered', 'dismissed'].includes(req.query.status) ? req.query.status : 'open';
-  res.json(await q(`SELECT l.id, l.question, l.reason, l.status, l.answer, ${LOCAL('l.created_at')} AS at, l.conversation_id, c.channel, c.ai_paused, cu.name, cu.phone,
-      (SELECT count(*) FROM learning l2 WHERE l2.business_id=l.business_id AND l2.status='open' AND lower(l2.question)=lower(l.question))::int AS times
+  // one row per question (the latest time it was asked), with how many times: the same question is answered once
+  res.json(await q(`SELECT * FROM (SELECT DISTINCT ON (lower(l.question)) l.id, l.question, l.reason, l.status, l.answer, ${LOCAL('l.created_at')} AS at, l.created_at AS sort_at, l.conversation_id, c.channel, c.ai_paused, cu.name, cu.phone,
+      (SELECT count(*) FROM learning l2 WHERE l2.business_id=l.business_id AND l2.status=l.status AND lower(l2.question)=lower(l.question))::int AS times
       FROM learning l LEFT JOIN conversations c ON c.id=l.conversation_id LEFT JOIN customers cu ON cu.id=c.customer_id
-      WHERE l.business_id=$1 AND l.status=$2 ORDER BY l.created_at DESC LIMIT 60`, [BIZ(), status]));
+      WHERE l.business_id=$1 AND l.status=$2 ORDER BY lower(l.question), l.created_at DESC) x ORDER BY sort_at DESC LIMIT 60`, [BIZ(), status]));
 }));
 app.post('/api/learning/:id/answer', wrap(async (req, res) => {
   const l = await one('SELECT * FROM learning WHERE id=$1 AND business_id=$2', [req.params.id, BIZ()]);
@@ -858,7 +859,9 @@ app.post('/api/learning/:id/answer', wrap(async (req, res) => {
   res.json({ ok: true, warning });
 }));
 app.post('/api/learning/:id/dismiss', wrap(async (req, res) => {
-  await q(`UPDATE learning SET status='dismissed', answered_at=now() WHERE id=$1 AND business_id=$2`, [req.params.id, BIZ()]);
+  // dismissing a question dismisses every open copy of it, like answering does
+  await q(`UPDATE learning SET status='dismissed', answered_at=now() WHERE business_id=$2 AND status='open'
+      AND (id=$1 OR lower(question)=(SELECT lower(question) FROM learning WHERE id=$1 AND business_id=$2))`, [req.params.id, BIZ()]);
   res.json({ ok: true });
 }));
 

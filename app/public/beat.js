@@ -11,7 +11,7 @@ let typed=0;document.addEventListener("keydown",()=>typed=Date.now(),true);
 const busy=()=>Date.now()-typed<4000||document.activeElement?.matches("input,textarea,select,[contenteditable],[contenteditable] *");
 function beat(){const sec=page();if(!sec||document.hidden||off()||busy())return;
   const box=sec.getBoundingClientRect(),x=Math.random()*box.width,y=Math.random()*box.height;
-  const w=document.createElement("div");w.className="p-wave";w.style.left=x+"px";w.style.top=(y+sec.scrollTop)+"px";sec.append(w);setTimeout(()=>w.remove(),2700);
+  const w=document.createElement("div");w.className="p-wave";w.style.left=(box.left+x)+"px";w.style.top=(box.top+y)+"px";w.style.position="fixed";document.body.append(w); // on body, fixed: the ripple never makes a page tallersetTimeout(()=>w.remove(),2700);
   const reach=Math.hypot(Math.max(x,box.width-x),Math.max(y,box.height-y));
   sec.querySelectorAll(".card,.kpi,.td-card,.td-stat,.sg-tile,.sg-ring,.tw,.cm-list,.cm-detail").forEach(el=>{
     if(!el.offsetParent||el.closest(".modal")||el.querySelector("input:not([type=checkbox]):not([type=radio]),textarea,select,[contenteditable]"))return;const r=el.getBoundingClientRect();

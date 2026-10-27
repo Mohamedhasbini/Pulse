@@ -1,12 +1,16 @@
 // Calendar: week grid, bookings and time off. Split out of index.html; plain scripts sharing one global scope, loaded in this order.
 // ---------- calendar ----------
-const HOUR_PX=52;let weekStart=null,cal={bookings:[],timeOff:[]};
+let HOUR_PX=52;
+// the week fits its card without scrolling: hour rows shrink (down to 22px) to the room there is
+// each draw takes off what the last one overflowed by, so the second draw fits exactly
+function fitHour(hours){const c=document.querySelector('#calendar > .card');if(!c||!c.clientHeight)return HOUR_PX;const over=c.scrollHeight-c.clientHeight;return Math.max(22,Math.min(52,over>2?HOUR_PX-Math.ceil(over/hours):HOUR_PX))}
+let weekStart=null,cal={bookings:[],timeOff:[]};
 function startOfWeek(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
 const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+(b||0)};
 function gridHours(){let a=24*60,b=0;for(let d=0;d<7;d++)(biz.hours?.[d]||[]).forEach(([s,e])=>{a=Math.min(a,toMin(s));b=Math.max(b,toMin(e))});if(a>=b){a=9*60;b=18*60}return[Math.floor(a/60),Math.ceil(b/60)]}
 async function loadCal(){if(!weekStart)weekStart=startOfWeek(bizNow());const to=new Date(weekStart);to.setDate(to.getDate()+7);
   cal=await req(`/api/calendar?from=${stamp(weekStart)}&to=${stamp(to)}`);syncNow(cal.now);drawCal()}
-function drawCal(){if(!biz||!weekStart)return;const[h0,h1]=gridHours(),H=(h1-h0)*HOUR_PX,now=bizNow(),todayK=dayKey(now);
+function drawCal(){if(!biz||!weekStart)return;const[h0,h1]=gridHours();HOUR_PX=fitHour(h1-h0);const H=(h1-h0)*HOUR_PX,now=bizNow(),todayK=dayKey(now);
   const end=new Date(weekStart);end.setDate(end.getDate()+6);
   $("#calRange").textContent=`${nice(weekStart,{day:"numeric",month:"short"})} – ${nice(end,{day:"numeric",month:"short",year:"numeric"})}`;
   let head=`<div></div>`,cols=`<div class="cal-times" style="height:${H}px">`;for(let h=h0;h<h1;h++)cols+=`<span style="top:${(h-h0)*HOUR_PX}px">${pad(h)}:00</span>`;cols+="</div>";
@@ -69,3 +73,6 @@ $("#oForm").onsubmit=async e=>{e.preventDefault();try{await req("/api/time-off",
 $("#oDelete").onclick=async()=>{await req(`/api/time-off/${editingOff.id}`,"DELETE");$("#oModal").hidden=true;toast("Block removed.");loadCal()};
 $("#oClose").onclick=()=>$("#oModal").hidden=true;
 
+
+// draw twice when the first draw still overflowed the card (fitHour measures it)
+{const _draw=drawCal;drawCal=function(){_draw();const c=document.querySelector('#calendar > .card');if(c&&c.scrollHeight>c.clientHeight+2&&HOUR_PX>22)_draw()}}

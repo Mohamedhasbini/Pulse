@@ -30,13 +30,15 @@
     ['calendar', 'Calendar', 'Run your schedule', [
       ['Week', { entry: 'calendar' }],
       ['Requests', { page: 'inbox', tab: 'conversations', panes: ['approvals'], bare: true }],
-      ['Booking page', { page: 'settings', tab: 'booking', bare: true }]]],
+      ['Booking page', { page: 'settings', tab: 'booking', bare: true, cards: ['Online booking page'] }]]],
     ['customers', 'Customers', 'Know every client', [
-      ['Clients', { page: 'people', tab: 'clients', panes: ['board', 'clients'] }],
+      ['Clients', { page: 'people', tab: 'clients' }],
+      ['Board', { page: 'people', tab: 'board', panes: ['board'] }],
       ['Win back', { page: 'people', tab: 'winback' }],
       ['Reviews', { page: 'support', tab: 'reviews', bare: true }]]],
     ['marketing', 'Marketing', 'Bring customers in', [
-      ['Offers & codes', { page: 'people', tab: 'offers', panes: ['offers', 'codes'] }],
+      ['Offers', { page: 'people', tab: 'offers' }],
+      ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'] }],
       ['Agents', { entry: 'agents' }],
       ['Website', { entry: 'website' }]]],
     ['pulse', 'Pulse AI', 'Your AI assistant', [['Approvals', { own: 'approvals' }], ['Ask Pulse', { own: 'ask' }], ['Brief', { own: 'brief' }]]],
@@ -45,16 +47,30 @@
       ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'] }],
       ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'] }]]],
     ['lab', 'Test lab', 'Prove it works before customers see it', [
-      ['Scenarios', { entry: 'demo' }],
+      ['Scenarios', { entry: 'demo', only: ['top', 'lab'] }],
+      ['Test chat', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
       ['Versions', { entry: 'training', only: ['top', 'learn'] }]]],
     ['insights', 'Insights', 'Numbers only: how the AI and the business are doing', [
-      ['AI performance', { page: 'support', tab: 'live', panes: ['live', 'flow', 'trends'] }],
+      ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true }],
+      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true }],
+      ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true }],
       ['Business', { page: 'analytics', tab: 'overview', panes: ['highlights', 'overview', 'next'] }],
-      ['Timing & channels', { page: 'analytics', tab: 'timing', panes: ['timing', 'channels'] }]]],
+      ['Timing', { page: 'analytics', tab: 'timing', panes: ['timing'] }],
+      ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] }]]],
     ['settings', 'Settings', 'Set it up once', [
-      ['Business & payments', { page: 'settings', tab: 'details' }],
-      ['Channels & reminders', { page: 'settings', tab: 'channels' }],
-      ['Account', { page: 'account', tab: 's2fa', panes: ['s2fa', 'sdev', 'look', 'dash'] }]]],
+      ['Profile', { page: 'settings', tab: 'details', form: [0, 1, 2, 3, 4, 5, 6, 24] }],
+      ['Assistant', { page: 'settings', tab: 'details', form: [7, 8, 9, 17, 18], keep: ['Business type'] }],
+      ['Hours & team', { page: 'settings', tab: 'details', form: [10, 11, 12, 13] }],
+      ['Services', { page: 'settings', tab: 'details', form: [14] }],
+      ['FAQs', { page: 'settings', tab: 'details', form: [16] }],
+      ['Policies & payments', { page: 'settings', tab: 'details', form: [15, 19, 20, 21, 22, 23] }],
+      ['Tools', { page: 'settings', tab: 'booking', cards: ['Tools'] }],
+      ['Channels', { page: 'settings', tab: 'channels', cards: ['Channels'] }],
+      ['Reminders', { page: 'settings', tab: 'channels', cards: ['Reminders'] }],
+      ['Security', { page: 'account', tab: 's2fa', panes: ['s2fa'] }],
+      ['Devices', { page: 'account', tab: 'sdev', panes: ['sdev'] }],
+      ['Look', { page: 'account', tab: 'look', panes: ['look'] }],
+      ['Layout', { page: 'account', tab: 'look', panes: ['dash'] }]]],
   ];
   const BADGE = { inbox: 'apprN', pulse: 'paN', train: 'trN' };
   let current = null, nav = null, count = 0;
@@ -93,13 +109,29 @@
       const h = sec.querySelector(':scope > .top h1'); if (h) h.textContent = page[1];
       sec.classList.remove('pn-conv', 'pn-needs', 'p10-bare'); if (spec.cls) sec.classList.add(spec.cls); if (spec.bare) sec.classList.add('p10-bare');
       if (spec.panes) { adopt(sec, spec.panes); sec.querySelectorAll(':scope > .spane').forEach(p => p.hidden = !spec.panes.includes(p.dataset.pane)); }
+      // several panels in one tab sit side by side (2 or 3 columns) so the tab fits the screen without scrolling
+      const n = spec.panes ? sec.querySelectorAll(':scope > .spane:not([hidden])').length : 0;
+      sec.classList.toggle('p10-multi', n > 1); if (n > 1) sec.style.setProperty('--p10n', n === 4 ? 2 : Math.min(n, 3));
       if (spec.mode) $(`#tchMode button[data-m="${spec.mode}"]`)?.click();
+      // a long form shows only the fields of this tab (Save stays); the other cards of its panel wait for their own tab
+      const form = $('#setupForm');
+      if (spec.form && form) {
+        const f = [...form.children], last = f.length - 1;
+        f.forEach((c, k) => { c.dataset.p10hide = spec.form.includes(k) || k === last ? '' : '1' });
+        sec.querySelectorAll(':scope > .spane:not([hidden]) > *').forEach(c => { if (!c.contains(form) && !(spec.keep || []).some(t => c.querySelector('h2,h3')?.textContent.includes(t))) c.dataset.p10hide = '1' });
+      }
+      // cards: inside the shown panel, keep only the cards whose heading starts with one of these
+      if (spec.cards) sec.querySelectorAll(':scope > .spane:not([hidden]) > *').forEach(c => {
+        const h = c.querySelector('h2,h3')?.textContent.trim() || '';
+        c.dataset.p10hide = spec.cards.some(t => h.startsWith(t)) ? '' : '1';
+      });
       // only: keep just these children; bare: a tab that borrows one panel keeps the heading and its panes, not the
       // section's own toolbar (period chips, search, quick actions)
       [...sec.children].forEach(c => {
         if (c.classList.contains('p10-bar')) return;
         if (spec.only) c.dataset.p10hide = spec.only.some(k => c.id === k || c.classList.contains(k)) ? '' : '1';
-        else if (spec.bare) c.dataset.p10hide = c.classList.contains('top') || c.classList.contains('spane') ? '' : '1';
+        // lean: like bare, but the heading row keeps its period picker (Insights needs it)
+        else if (spec.bare || spec.lean) c.dataset.p10hide = c.classList.contains('top') || c.classList.contains('spane') ? '' : '1';
         else delete c.dataset.p10hide;
       });
       if (spec.mode) spec.only.forEach(k => { const x = $('#' + k); if (x) x.hidden = false });
@@ -118,7 +150,7 @@
     $$('.p10-bar').forEach(x => x.remove());
     const sec = $('main > section:not([hidden])'); if (!sec) return;
     const b = document.createElement('div'); b.className = 'p10-bar';
-    b.innerHTML = `<p class="p10-purpose">${e(purpose)}</p>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l], k) =>
+    b.innerHTML = `<p class="p10-purpose"><b>${e(PAGES.find(p => p[0] === id)[1])}</b> ${e(purpose)}</p>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l], k) =>
       `<button type="button" role="tab" data-t="${k}" aria-selected="${k === i}" aria-pressed="${k === i}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}</div>` : '');
     b.addEventListener('click', ev => { const t = ev.target.closest('[data-t]'); if (t) go(id, +t.dataset.t) });
     sec.prepend(b); sec.classList.add('p10-on');
