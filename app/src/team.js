@@ -9,6 +9,7 @@ import { loadBusiness, takeAiSlot } from './brain.js';
 import { freeSlots, bufferOf, hoursText } from './slots.js';
 import { agentFindings } from './agents.js';
 import * as metrics from './metrics.js';
+import { addShortcut } from './shortcuts.js';
 import { addRule } from './rules.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
@@ -34,9 +35,17 @@ export const TEAM = {
     tools: ['opportunities', 'top_customers', 'quiet_days', 'find_customer', 'customer', 'services'], actions: ['send_message', 'run_agent'] },
   sam: { name: 'Sam', role: 'Business analyst', avatar: 'S', skills: 'revenue, trends, services, channels, no-shows, busiest times, what to improve',
     tools: ['overview', 'revenue', 'by_service', 'by_channel', 'busy_times', 'top_customers', 'support', 'today'], actions: [] },
+  // Pulse AI: one assistant for the whole dashboard, with every tool and every action of the four above
+  pulse: { name: 'Pulse AI', role: 'your dashboard assistant', avatar: 'P',
+    skills: 'everything in the dashboard: bookings and the calendar, customers, conversations and support, Nora the receptionist and her rules, growth and offers, revenue and trends, and the dashboard itself (shortcuts, where to find things, how to use each page)',
+    tools: ['today', 'bookings', 'free_slots', 'find_customer', 'customer', 'services', 'support', 'conversations', 'conversation', 'unanswered', 'reviews', 'rules', 'opportunities', 'top_customers', 'quiet_days', 'overview', 'revenue', 'by_service', 'by_channel', 'busy_times'],
+    actions: ['send_message', 'teach_answer', 'add_rule', 'run_agent', 'add_shortcut'] },
 };
 // who answers when the owner doesn't pick: by the words in the question
 export function route(text) {
+  return 'pulse';
+}
+export function routeByTopic(text) {
   const t = String(text).toLowerCase();
   if (/complain|unhappy|review|rating|handover|handed|unanswer|support|rule|teach|reply|answer/.test(t)) return 'omar';
   if (/win back|lapsed|haven.?t come|offer|promo|campaign|lead|quiet|fill|loyal|regular|grow|marketing|best (client|customer)|top (client|customer)|vip/.test(t)) return 'lina';
@@ -216,11 +225,21 @@ function mentions(results) {
   return { clients: [...clients].map(([id, name]) => ({ id, name })).slice(0, 30), chats: [...chats].map(([id, client]) => ({ id, client })).slice(0, 20) };
 }
 // actions are only proposed; the owner approves each one
+// the dashboard's pages and tabs, for shortcuts (same order as public/pulse.js)
+export const PAGE_TABS = {
+  today: ['Today'], inbox: ['Conversations', 'Needs you', 'Delivery queue'], calendar: ['Week', 'Requests', 'Booking page'],
+  customers: ['Clients', 'Board', 'Win back', 'Reviews'], marketing: ['Offers', 'Discount codes', 'Agents', 'Website'],
+  pulse: ['Approvals', 'Ask Pulse', 'Brief'], train: ['Rules & coach', 'Answers', 'Review replies'], lab: ['Scenarios', 'Test chat', 'Versions'],
+  insights: ['AI performance', 'Live flow', 'Topics', 'Business', 'Timing', 'Channels'],
+  settings: ['Profile', 'Assistant', 'Hours & team', 'Services', 'FAQs', 'Policies & payments', 'Tools', 'Channels', 'Reminders', 'Security & devices', 'Look & layout'],
+};
+const SHORTCUT_PAGES = Object.entries(PAGE_TABS).map(([p, t]) => `${p} [${t.map((x, i) => `${i} ${x}`).join(', ')}]`).join('; ');
 const ACTIONS = {
   send_message: 'message one client: {"type":"send_message","customer_id":123,"text":"..."}',
   teach_answer: 'save the answer to an unanswered question: {"type":"teach_answer","learning_id":12,"answer":"..."}',
   add_rule: 'add a strict rule for the AI receptionist: {"type":"add_rule","text":"..."}',
   run_agent: 'let a growth agent send its prepared messages: {"type":"run_agent","agent":"winback|leads|fill|noshow|reviews"}',
+  add_shortcut: `add a shortcut button to the owner's Home page: {"type":"add_shortcut","label":"short name","page":"page id","tab":0} to open a page, or {"type":"add_shortcut","label":"short name","ask":"a question for Pulse AI"} to ask you something in one click. Pages and their tabs (tab is the 0-based index): ${SHORTCUT_PAGES}`,
 };
 
 function prompt(B, e, convo, results, page) {
@@ -409,6 +428,11 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
       if (!r.ok) return res.json({ ok: false, done: `Not sent: ${r.reason}` });
       if (c.conv_id) await q(`INSERT INTO messages (conversation_id, role, text, source) VALUES ($1,'staff',$2,'team')`, [c.conv_id, text]);
       await audit(req, 'team_message', `to ${c.name}`); return res.json({ ok: true, done: `Sent to ${c.name}.` });
+    }
+    if (a.type === 'add_shortcut') {
+      const r = await addShortcut(B.id, a);
+      if (!r.ok) return res.json({ ok: false, done: r.error });
+      await audit(req, 'shortcut_added', r.shortcut.label); return res.json({ ok: true, done: `Added “${r.shortcut.label}” to your Home page.`, shortcuts: true });
     }
     if (a.type === 'run_agent') return res.json({ ok: false, open: 'agents', done: 'Open Agents to review and send this agent’s messages.' });
     res.status(400).json({ error: 'Unknown action.' });

@@ -2502,3 +2502,17 @@ body .p10-on .spane[data-pane="flow"] .sg-flowcard:not(#_),body .p10-on .spane[d
 
 /* sidebar sub-tabs: compact rows so the open list never runs under the plan card */
 .p10-sub button{padding:4px 10px!important;font-size:12px!important;line-height:18px}
+
+/* Today › shortcuts: the owner's own buttons (Pulse AI can add them too) */
+.td-sc{padding:12px 16px!important}
+.sc-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sc{display:inline-flex;align-items:center;border-radius:12px;background:var(--gp-nest2);border:1px solid var(--gl-rim)}
+.sc-go{all:unset;cursor:pointer;padding:8px 12px;font-size:13px;font-weight:600;color:var(--gp-text)}
+.sc-go i{font-style:normal;color:var(--aic);margin-right:5px}
+.sc-x{all:unset;cursor:pointer;padding:0 9px 0 2px;color:var(--gp-meta);font-size:15px;opacity:0;transition:opacity .15s}
+.sc:hover .sc-x,.sc-x:focus-visible{opacity:1}
+.sc-add{all:unset;cursor:pointer;padding:8px 12px;border-radius:12px;font-size:13px;font-weight:600;color:var(--p-green);border:1px dashed color-mix(in srgb,var(--p-green) 55%,transparent)}
+.sc-tip{color:var(--gp-meta);font-size:12px;margin-left:4px}
+.sc-form{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.sc-form select,.sc-form input{padding:8px 10px;border-radius:10px;border:1px solid var(--gl-rim);background:var(--gp-card);color:var(--gp-text);font:inherit;font-size:13px}
+.sc-form input[name=ask]{flex:1;min-width:200px}

@@ -392,3 +392,4 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS review_url text;
 -- AI team: one row per AI call, for the daily cap that keeps the receptionist's quota safe.
 CREATE TABLE IF NOT EXISTS team_calls (id serial PRIMARY KEY, business_id int NOT NULL REFERENCES businesses(id) ON DELETE CASCADE, employee text, at timestamptz DEFAULT now());
 CREATE INDEX IF NOT EXISTS team_calls_biz ON team_calls (business_id, at DESC);
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS shortcuts jsonb;

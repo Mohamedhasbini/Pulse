@@ -44,6 +44,15 @@ try {
   check('Agent scorecard counts the booking that followed the message', wb2?.sent === 1 && wb2?.booked === 1 && wb2?.value === 40, JSON.stringify(br.agents));
   check('The weekly brief has wins, risks and next steps', ['wins', 'risks', 'next'].every(k => Array.isArray(br[k])) && br.next.length > 0, JSON.stringify(br.next));
   check('The KPI series has one row per day', (await get('/api/kpis?days=14', OA)).length === 14);
+
+  // Home shortcuts: added by the owner or by Pulse AI's action, checked, capped, per business
+  const add = b => fetch(BASE + '/api/shortcuts', { method: 'POST', headers: { cookie: OA, origin: BASE, 'Content-Type': 'application/json' }, body: JSON.stringify(b) });
+  check('A shortcut to a page and tab is added', (await add({ label: 'Requests', page: 'calendar', tab: 1 })).ok);
+  check('A shortcut to a page that does not exist is refused', (await add({ label: 'Nope', page: 'nowhere', tab: 0 })).status === 400);
+  const viaPulse = await post('/api/team/act', { type: 'add_shortcut', label: 'How was my week', ask: 'How did this week go?' }, OA);
+  const mine = (await get('/api/shortcuts', OA)).shortcuts || [];
+  check('Pulse AI adds a shortcut with its action', viaPulse.ok && mine.length === 2 && mine[1].ask === 'How did this week go?', viaPulse.done);
+  check("Business B doesn't see A's shortcuts", ((await get('/api/shortcuts', OB)).shortcuts || []).length === 0);
 } catch (e) { check('Pulse test ran', false, e.message) } finally {
   for (const id of made) await closeBusiness(id).catch(() => {});
   console.log(`\n${results.filter(Boolean).length} passed, ${results.filter(x => !x).length} failed`);

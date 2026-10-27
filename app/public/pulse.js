@@ -247,12 +247,12 @@
   // Ask Pulse: one chat. The server picks the skill (Front desk, Support, Growth, Analyst) for each question.
   const ASK = `<div class="card glass ask"><div class="ask-skills" id="askSkills"></div><div class="ask-log" id="askLog" aria-live="polite"></div>
     <div class="ask-sugg" id="askSugg"></div><form class="ask-form" id="askForm"><input id="askIn" autocomplete="off" placeholder="Ask anything: who hasn't been back in 2 months? how was last week?" aria-label="Ask Pulse"><button class="btn" type="submit">Ask</button></form></div>`;
-  const SUGG = ['How did this week go?', 'Who could fill tomorrow\'s free slots?', 'Which questions did the AI miss?', 'Which regulars haven\'t been back?'];
+  const SUGG = ['How did this week go?', 'Who could fill tomorrow\'s free slots?', 'Add a shortcut to this week\'s revenue', 'Which regulars haven\'t been back?'];
   let convo = [], team = {}, asking = false;
   async function askInit(s) {
     if (s.dataset.on) return; s.dataset.on = 1;
     try { (await req('/api/team')).team.forEach(t => team[t.id] = t); } catch {}
-    s.querySelector('#askSkills').innerHTML = 'Skills: ' + Object.values(team).map(t => `<span>${e(t.role)}</span>`).join('');
+    s.querySelector('#askSkills').innerHTML = 'Pulse AI can: ' + ['Answer anything with your real numbers', 'Book, message and follow up', 'Teach Nora rules and answers', 'Run growth agents', 'Add shortcuts to Home', 'Find any page for you'].map(t => `<span>${e(t)}</span>`).join('');
     s.querySelector('#askSugg').innerHTML = SUGG.map(q => `<button type="button" class="chip">${e(q)}</button>`).join('');
     s.querySelector('#askSugg').addEventListener('click', ev => { const c = ev.target.closest('.chip'); if (c) ask(c.textContent) });
     s.querySelector('#askForm').addEventListener('submit', ev => { ev.preventDefault(); const i = s.querySelector('#askIn'); if (i.value.trim()) { ask(i.value.trim()); i.value = '' } });
@@ -266,10 +266,10 @@
     try {
       const r = await req('/api/team/ask', 'POST', { messages: convo, page: 'ask' });
       convo.push({ role: 'employee', text: r.answer });
-      const skill = team[r.employee]?.role || '';
+      const skill = 'Pulse AI';
       wait.classList.remove('busy');
       wait.innerHTML = `${skill ? `<small class="ask-skill">${e(skill)}</small>` : ''}<p>${e(r.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</p>`
-        + (r.actions?.length ? `<div class="ask-acts">${r.actions.map((a, k) => `<button type="button" class="btn ghost" data-k="${k}">${e(a.label || a.type.replace(/_/g, ' '))}${a.client ? ` · ${e(a.client)}` : ''}</button>`).join('')}</div>` : '')
+        + (r.actions?.length ? `<div class="ask-acts">${r.actions.map((a, k) => `<button type="button" class="btn ghost" data-k="${k}">${e(a.type === 'add_shortcut' ? `Add to Home: ${a.label}` : a.label || a.type.replace(/_/g, ' '))}${a.client ? ` · ${e(a.client)}` : ''}</button>`).join('')}</div>` : '')
         + (r.sources?.length ? `<small class="ask-src">From: ${r.sources.map(x => e(x.label)).join(', ')}</small>` : '');
       wait._acts = r.actions || [];
     } catch (err) { wait.classList.remove('busy'); wait.innerHTML = `<p>${e(err.message || 'Pulse is not reachable right now. Try again in a minute.')}</p>`; convo.pop(); }
@@ -279,8 +279,44 @@
     const b = ev.target.closest('[data-k]'); if (!b) return;
     const a = b.closest('.ask-m')._acts?.[+b.dataset.k]; if (!a) return;
     b.disabled = true;
-    try { const r = await req('/api/team/act', 'POST', a); b.textContent = r.done || 'Done.'; if (r.link) window.open(r.link, '_blank', 'noopener'); }
+    try { const r = await req('/api/team/act', 'POST', a); b.textContent = r.done || 'Done.'; if (r.link) window.open(r.link, '_blank', 'noopener'); if (r.shortcuts) loadShortcuts(); }
     catch (err) { b.disabled = false; window.toast?.(err.message || 'That did not work.'); }
+  }
+
+  // ---------- Home shortcuts: the owner's own buttons on Today (Pulse AI can add them too) ----------
+  let sc = { shortcuts: [], pages: {}, max: 8 };
+  const pageLabel = id => named(PAGES.find(p => p[0] === id)?.[1] || id);
+  async function loadShortcuts() { try { sc = await req('/api/shortcuts'); } catch {} drawShortcuts(); }
+  function drawShortcuts() {
+    const kp = $('#tdKpis') || $('.today .td-hero'); if (!kp) return;
+    let box = $('#tdSc');
+    if (!box) {
+      kp.insertAdjacentHTML('afterend', '<div class="td-card td-sc" id="tdSc" aria-label="Your shortcuts"></div>');
+      box = $('#tdSc'); box.addEventListener('click', scClick); box.addEventListener('submit', scAdd);
+    }
+    const list = sc.shortcuts || [];
+    box.innerHTML = `<div class="sc-row">${list.map((x, k) => `<span class="sc"><button type="button" class="sc-go" data-i="${k}" title="${e(x.ask ? 'Ask Pulse: ' + x.ask : pageLabel(x.page) + ' › ' + (sc.pages[x.page]?.[x.tab] || ''))}">${x.ask ? '<i>✦</i>' : ''}${e(x.label)}</button><button type="button" class="sc-x" data-x="${k}" aria-label="Remove ${e(x.label)}">×</button></span>`).join('')}
+      ${list.length < sc.max ? '<button type="button" class="sc-add" data-add="1">+ Shortcut</button>' : ''}
+      <small class="sc-tip">${list.length ? '' : 'Pin what you use most. '}Or tell Pulse AI: “add a shortcut to this week's revenue”.</small></div>`;
+  }
+  function scForm() {
+    const opts = Object.entries(sc.pages).map(([p, tabs]) => `<optgroup label="${e(pageLabel(p))}">${tabs.map((t, k) => `<option value="${p}:${k}">${e(pageLabel(p))} › ${e(t)}</option>`).join('')}</optgroup>`).join('');
+    return `<form class="sc-form"><select name="to" aria-label="Opens"><option value="ask">Ask Pulse AI a question…</option>${opts}</select>
+      <input name="ask" placeholder="Question, e.g. How did this week go?" aria-label="Question"><input name="label" maxlength="32" placeholder="Button name" aria-label="Button name" required>
+      <button class="btn" type="submit">Add</button><button class="btn ghost" type="button" data-cancel="1">Cancel</button></form>`;
+  }
+  async function scClick(ev) {
+    const t = ev.target;
+    if (t.closest('[data-add]')) { $('#tdSc .sc-row').insertAdjacentHTML('afterend', scForm()); t.closest('[data-add]').hidden = true;
+      const f = $('#tdSc .sc-form'); f.to.onchange = () => { f.ask.hidden = f.to.value !== 'ask'; if (f.to.value !== 'ask' && !f.label.value) f.label.value = f.to.selectedOptions[0].textContent.split(' › ').pop(); }; f.ask.focus(); return; }
+    if (t.closest('[data-cancel]')) return drawShortcuts();
+    const x = t.closest('[data-x]'); if (x) { const list = sc.shortcuts.filter((_, k) => k !== +x.dataset.x); try { sc.shortcuts = (await req('/api/shortcuts', 'PUT', { shortcuts: list })).shortcuts } catch {} return drawShortcuts(); }
+    const g = t.closest('[data-i]'); if (g) { const s2 = sc.shortcuts[+g.dataset.i]; if (s2.ask) { await go('pulse', 1); setTimeout(() => ask(s2.ask), 300); } else go(s2.page, s2.tab); }
+  }
+  async function scAdd(ev) {
+    ev.preventDefault(); const f = ev.target, to = f.to.value, body = { label: f.label.value };
+    if (to === 'ask') body.ask = f.ask.value; else { const [p, k] = to.split(':'); body.page = p; body.tab = +k; }
+    try { sc.shortcuts = (await req('/api/shortcuts', 'POST', body)).shortcuts; drawShortcuts(); } catch (err) { window.toast?.(err.message || 'Could not add it.'); }
   }
 
   // ---------- badges: Inbox = chats waiting, Pulse AI = approvals, Train AI = open questions ----------
@@ -306,6 +342,6 @@
   }, true);
 
   addEventListener('load', () => {
-    const t = setInterval(() => { if (draw()) { clearInterval(t); go('today', 0); poll(); setInterval(poll, 60000); } }, 200);
+    const t = setInterval(() => { if (draw()) { clearInterval(t); go('today', 0); poll(); setInterval(poll, 60000); setTimeout(loadShortcuts, 600); } }, 200);
   });
 })();
