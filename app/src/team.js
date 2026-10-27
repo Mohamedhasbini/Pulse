@@ -8,6 +8,7 @@ import { q, one, pool } from './db.js';
 import { loadBusiness, takeAiSlot } from './brain.js';
 import { freeSlots, bufferOf, hoursText } from './slots.js';
 import { agentFindings } from './agents.js';
+import * as metrics from './metrics.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const DAILY_CAP = +process.env.TEAM_DAILY_CALLS || 80, MAX_STEPS = 4;
@@ -41,14 +42,12 @@ export function route(text) {
 // ---------- tools: every one reads the business's real data ----------
 const TOOLS = {
   today: { about: 'today: appointments, revenue, chats waiting for the owner, approvals, AI replies', args: '{}',
-    run: async B => (await q(`SELECT
-      (SELECT count(*) FROM bookings WHERE business_id=$1 AND status<>'cancelled' AND (starts_at AT TIME ZONE $2)::date=(now() AT TIME ZONE $2)::date)::int AS appointments_today,
-      (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND status<>'cancelled' AND (starts_at AT TIME ZONE $2)::date=(now() AT TIME ZONE $2)::date) AS revenue_today,
+    run: async B => ({ ...await metrics.today(B.id).then(m => ({ appointments_today: m.visits_today, revenue_today: m.revenue_today })), ...(await q(`SELECT
       (SELECT count(*) FROM bookings WHERE business_id=$1 AND status<>'cancelled' AND created_at > now() - interval '24 hours')::int AS booked_last_24h,
       (SELECT count(*) FROM conversations WHERE business_id=$1 AND needs_attention AND channel<>'test')::int AS chats_waiting_for_owner,
       (SELECT count(*) FROM requests WHERE business_id=$1 AND status='pending')::int AS approvals_waiting,
       (SELECT count(*) FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.business_id=$1 AND m.role='assistant' AND m.created_at > now() - interval '24 hours')::int AS ai_replies_24h,
-      to_char(now() AT TIME ZONE $2,'Dy DD Mon YYYY HH24:MI') AS now`, [B.id, B.tz]))[0] },
+      to_char(now() AT TIME ZONE $2,'Dy DD Mon YYYY HH24:MI') AS now`, [B.id, B.tz]))[0] }) },
   bookings: { about: 'bookings in a date range (default: next 7 days), with time, client, service, price, status and who booked it', args: '{"from":"YYYY-MM-DD","to":"YYYY-MM-DD","status":"confirmed|completed|no_show|cancelled|any"}',
     run: async (B, a) => { const list = await q(`SELECT ${day('b.starts_at')} AS at, cu.name AS client, cu.id AS client_id, s.name AS service, b.price::float, b.status, b.source AS booked_by
       FROM bookings b JOIN customers cu ON cu.id=b.customer_id JOIN services s ON s.id=b.service_id JOIN businesses bz ON bz.id=b.business_id

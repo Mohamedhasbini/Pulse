@@ -1,3 +1,4 @@
+import * as metrics from './metrics.js';
 import express from 'express';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
@@ -984,20 +985,14 @@ app.get('/api/live', wrap(async (req, res) => {
       (SELECT round(avg(m.latency_ms))::int FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.business_id=$1 AND m.role='assistant' AND m.latency_ms IS NOT NULL AND m.created_at > now() - interval '24 hours') AS avg_ms,
       (SELECT count(*) FROM conversations WHERE business_id=$1 AND updated_at > now() - interval '30 minutes')::int AS active_now,
       (SELECT count(*) FROM conversations WHERE business_id=$1 AND needs_attention)::int AS waiting,
-      (SELECT count(*) FROM bookings WHERE business_id=$1 AND created_at >= date_trunc('day', now()) AND status <> 'cancelled')::int AS booked_today,
-      (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND created_at >= date_trunc('day', now()) AND status <> 'cancelled') AS value_today,
-      (SELECT count(*) FROM bookings WHERE business_id=$1 AND starts_at >= date_trunc('day', now()) AND starts_at < date_trunc('day', now()) + interval '1 day' AND status <> 'cancelled')::int AS visits_today,
-      (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND starts_at >= date_trunc('day', now()) AND starts_at < date_trunc('day', now()) + interval '1 day' AND status <> 'cancelled') AS revenue_today,
       (SELECT count(*) FROM bookings WHERE business_id=$1 AND starts_at > now() AND status='confirmed')::int AS upcoming_count,
       (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND starts_at > now() AND status='confirmed') AS upcoming_value,
       (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND status IN ('confirmed','completed') AND starts_at <= now() AND starts_at > now() - make_interval(days => $2)) AS earned,
       (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND status IN ('confirmed','completed') AND starts_at <= now() - make_interval(days => $2) AND starts_at > now() - make_interval(days => $2 * 2)) AS earned_prev,
-      (SELECT count(*) FROM bookings WHERE business_id=$1 AND source='ai' AND status <> 'cancelled' AND created_at > now() - interval '30 days')::int AS ai_count,
-      (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND source='ai' AND status <> 'cancelled' AND created_at > now() - interval '30 days') AS ai_value,
-      (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND source='ai' AND status <> 'cancelled' AND created_at <= now() - interval '30 days' AND created_at > now() - interval '60 days') AS ai_value_prev,
       (SELECT count(*) FROM requests WHERE business_id=$1 AND status='pending')::int AS approvals,
       (SELECT count(*) FROM learning WHERE business_id=$1 AND status='open')::int AS to_learn,
       (SELECT count(*) FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.business_id=$1 AND m.role='assistant' AND m.source='ai' AND m.review IS NULL AND m.confidence='low')::int AS unsure`, [B, P]);
+  Object.assign(now, await metrics.today(B), await metrics.aiBookings(B, P));
   // Messages and bookings per hour, today.
   const hourly = await q(`SELECT h, COALESCE(m.n,0)::int AS msgs, COALESCE(b.n,0)::int AS booked FROM generate_series(0,23) h
       LEFT JOIN (SELECT extract(hour FROM m.created_at)::int hr, count(*) n FROM messages m JOIN conversations c ON c.id=m.conversation_id
