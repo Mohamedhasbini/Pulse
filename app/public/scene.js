@@ -27,7 +27,7 @@ function start() {
         vec2 b = vec2(.86 + .05 * cos(t * .07), .88 + .04 * sin(t * .13));
         vec2 c = vec2(.70 + .08 * sin(t * .05), .10 + .06 * cos(t * .08));
         float s = mix(1.0, 1.35, dark);
-        vec3 col = vec3(.29, .71, .47) * glow(v, a, .42) * .24 * s + vec3(.43, .55, 1.0) * glow(v, b, .40) * .20 * s + vec3(.75, .55, 1.0) * glow(v, c, .46) * .16 * s;
+        vec3 col = vec3(.29, .71, .47) * glow(v, a, .42) * .24 * s + vec3(.43, .55, 1.0) * glow(v, b, .40) * .20 * s + vec3(.78, .70, .55) * glow(v, c, .46) * .12 * s;
         gl_FragColor = vec4(col, clamp(max(col.r, max(col.g, col.b)) * 2.2, 0.0, 1.0));
       }`,
   });
