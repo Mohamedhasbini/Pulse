@@ -120,6 +120,7 @@ export function mountCoach(app, BIZ, audit, wrap) {
     }
     if (rules.length >= MAX_RULES && changes.some(c => c.type === 'rule')) done.push(`(Rules are full at ${MAX_RULES}. Remove one to add more.)`);
     await q('UPDATE businesses SET ai_rules=$1 WHERE id=$2', [JSON.stringify(rules), BIZ()]);
+    if (done.some(d => /^(New rule|Removed)/.test(d))) await q('INSERT INTO ai_versions (business_id, note) VALUES ($1,$2)', [BIZ(), done.join(' | ').slice(0, 200)]);
     if (done.length) await audit(req, 'coach_applied', done.join(' | ').slice(0, 500));
     res.json({ ok: true, done, ...(await state()) });
   }));

@@ -5,6 +5,7 @@
 // test channel and checks the replies with plain rules, so a run costs one AI call per line and only when asked.
 import { q, one } from './db.js';
 import { handleMessage } from './brain.js';
+import { addRule } from './rules.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const STARTERS = [
@@ -53,33 +54,31 @@ async function run(biz, s) {
 }
 const scenarioRow = r => ({ ...r, lines: JSON.parse(r.opening || '[]') });
 
+// lessons worked out from the business's own chats, minus the ones already approved or dismissed
+export async function lessonSuggestions(B) {
+    const [gaps, low, reasons, decided] = await Promise.all([
+    q(`SELECT lower(question) AS k, min(question) AS question, count(*)::int AS n FROM learning WHERE business_id=$1 AND status='open' GROUP BY 1 HAVING count(*) >= 2 ORDER BY 3 DESC LIMIT 5`, [B]),
+    q(`SELECT initcap(topic) AS topic, round(avg(rating),1)::float AS r, count(*)::int AS n FROM conversations WHERE business_id=$1 AND rating IS NOT NULL AND topic IS NOT NULL
+        AND created_at > now() - interval '60 days' GROUP BY 1 HAVING avg(rating) < 4 AND count(*) >= 2 ORDER BY 2 LIMIT 3`, [B]),
+    q(`SELECT attention_reason AS reason, count(*)::int AS n FROM conversations WHERE business_id=$1 AND attention_reason IS NOT NULL AND created_at > now() - interval '30 days' GROUP BY 1 ORDER BY 2 DESC LIMIT 3`, [B]),
+    q(`SELECT title FROM ai_lessons WHERE business_id=$1 AND status IN ('approved','dismissed')`, [B])]);
+  const done = new Set(decided.map(d => d.title)), out = [];
+  gaps.forEach(g => out.push({ kind: 'answer', title: `Answer “${g.question}”`, body: g.question, evidence: `asked ${g.n} times, the AI couldn't answer` }));
+  low.forEach(t => out.push({ kind: 'rule', title: `Handle “${t.topic}” with more care`, body: `When a customer writes about ${t.topic.toLowerCase()}, apologise first if something went wrong, explain clearly, and offer a concrete next step.`, evidence: `rated ${t.r} over ${t.n} chats` }));
+  reasons.filter(r => /know|answer/i.test(r.reason)).forEach(r => out.push({ kind: 'rule', title: 'Say when you need to check', body: 'If you are not sure of an answer, say you will check with the team instead of guessing, and hand the chat over.', evidence: `${r.n} handovers in 30 days` }));
+  return out.filter(l => !done.has(l.title));
+}
+
 export function mountLab(app, BIZ) {
   // lessons worked out from the business's own chats
-  app.get('/api/lessons', wrap(async (_req, res) => {
-    const B = BIZ();
-    const [gaps, low, reasons, decided] = await Promise.all([
-      q(`SELECT lower(question) AS k, min(question) AS question, count(*)::int AS n FROM learning WHERE business_id=$1 AND status='open' GROUP BY 1 HAVING count(*) >= 2 ORDER BY 3 DESC LIMIT 5`, [B]),
-      q(`SELECT initcap(topic) AS topic, round(avg(rating),1)::float AS r, count(*)::int AS n FROM conversations WHERE business_id=$1 AND rating IS NOT NULL AND topic IS NOT NULL
-          AND created_at > now() - interval '60 days' GROUP BY 1 HAVING avg(rating) < 4 AND count(*) >= 2 ORDER BY 2 LIMIT 3`, [B]),
-      q(`SELECT attention_reason AS reason, count(*)::int AS n FROM conversations WHERE business_id=$1 AND attention_reason IS NOT NULL AND created_at > now() - interval '30 days' GROUP BY 1 ORDER BY 2 DESC LIMIT 3`, [B]),
-      q(`SELECT title FROM ai_lessons WHERE business_id=$1 AND status IN ('approved','dismissed')`, [B])]);
-    const done = new Set(decided.map(d => d.title)), out = [];
-    gaps.forEach(g => out.push({ kind: 'answer', title: `Answer “${g.question}”`, body: g.question, evidence: `asked ${g.n} times, the AI couldn't answer` }));
-    low.forEach(t => out.push({ kind: 'rule', title: `Handle “${t.topic}” with more care`, body: `When a customer writes about ${t.topic.toLowerCase()}, apologise first if something went wrong, explain clearly, and offer a concrete next step.`, evidence: `rated ${t.r} over ${t.n} chats` }));
-    reasons.filter(r => /know|answer/i.test(r.reason)).forEach(r => out.push({ kind: 'rule', title: 'Say when you need to check', body: 'If you are not sure of an answer, say you will check with the team instead of guessing, and hand the chat over.', evidence: `${r.n} handovers in 30 days` }));
-    res.json(out.filter(l => !done.has(l.title)));
-  }));
+  app.get('/api/lessons', wrap(async (_req, res) => res.json(await lessonSuggestions(BIZ()))));
   // approve a rule lesson: it becomes a strict rule and a new version is saved. Answer lessons go through Knowledge gaps
   app.post('/api/lessons', wrap(async (req, res) => {
     const B = BIZ(), title = String(req.body.title || '').slice(0, 200), body = String(req.body.body || '').slice(0, 400), approve = req.body.action !== 'dismiss';
     if (!title) return res.status(400).json({ error: 'Missing lesson.' });
     await q('INSERT INTO ai_lessons (business_id, title, body, source, status, decided_at) VALUES ($1,$2,$3,$4,$5,now())', [B, title, body, req.body.kind || 'rule', approve ? 'approved' : 'dismissed']);
-    if (approve && req.body.kind === 'rule') {
-      const b = await one('SELECT ai_rules FROM businesses WHERE id=$1', [B]), rules = b.ai_rules || [];
-      if (!rules.some(r => r.text === body)) await q('UPDATE businesses SET ai_rules=$1 WHERE id=$2', [JSON.stringify([...rules, { text: body }].slice(-40)), B]);
-      await q('INSERT INTO ai_versions (business_id, note) VALUES ($1,$2)', [B, title]);
-    }
-    res.json({ ok: true });
+    const r = approve && req.body.kind === 'rule' ? await addRule(B, body, title) : null;
+    res.json({ ok: true, ...(r && !r.added && { note: r.reason === 'full' ? 'Rules are full (40). Remove one in Teach AI to add this.' : 'The receptionist already follows this rule.' }) });
   }));
   // versions, each with the average score of the test runs made on it
   app.get('/api/versions', wrap(async (_req, res) => {

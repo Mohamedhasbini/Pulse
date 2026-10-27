@@ -9,6 +9,7 @@ import { loadBusiness, takeAiSlot } from './brain.js';
 import { freeSlots, bufferOf, hoursText } from './slots.js';
 import { agentFindings } from './agents.js';
 import * as metrics from './metrics.js';
+import { addRule } from './rules.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const DAILY_CAP = +process.env.TEAM_DAILY_CALLS || 80, MAX_STEPS = 4;
@@ -377,9 +378,8 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
     const B = await biz(), a = req.body || {};
     if (a.type === 'add_rule') {
       const text = String(a.text || '').trim().slice(0, 400); if (!text) return res.status(400).json({ error: 'Empty rule.' });
-      const r = (await one('SELECT ai_rules FROM businesses WHERE id=$1', [B.id])).ai_rules || [];
-      await q('UPDATE businesses SET ai_rules=$1 WHERE id=$2', [JSON.stringify([...r, { text }].slice(-40)), B.id]);
-      await q('INSERT INTO ai_versions (business_id, note) VALUES ($1,$2)', [B.id, `Rule: ${text.slice(0, 80)}`]);
+      const r = await addRule(B.id, text);
+      if (!r.added) return res.json({ ok: false, done: r.reason === 'full' ? 'Rules are full (40). Remove one in Teach AI first.' : 'The receptionist already follows this rule.' });
       await audit(req, 'team_rule', text); return res.json({ ok: true, done: 'Rule added. The receptionist follows it from now on.' });
     }
     if (a.type === 'teach_answer') {

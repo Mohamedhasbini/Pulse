@@ -12,7 +12,7 @@ const ICON={
 };
 // [entry, label, view, [[host pane, sub-tab label, panes folded into it, from another section?], …]]
 const PAGES=[
-  ["inbox","Inbox","overview",[["conversations","Conversations",["conversations"]],["approvals","Approvals",["approvals"]],["queue","AI queue",["queue"]]]],
+  ["inbox","Inbox","overview",[["conversations","Conversations",["conversations"]],["queue","Delivery queue",["queue"]]]],
   ["support","Support","overview",[["live","Overview",[],"analytics:ai"],["trends","Topics",[],"analytics:questions"],["reviews","Satisfaction",["reviews"]],["gaps","Knowledge gaps",[],"new"]]],
   ["performance","Performance","overview",[["flow","Live flow",["flow","live"]],["summary","Trends",["summary","trends"]],["channels","Channels",["channels"]],["services","Services",["services"]]]],
   ["analytics","Insights","analytics",[["highlights","Highlights",[]],["overview","Money",["overview","services"]],["timing","Timing",["timing"]],["next","Next steps",["next"]]]],
@@ -88,12 +88,12 @@ document.addEventListener("click",e=>{const b=e.target.closest("nav button[data-
 addEventListener("tabshown",()=>setTimeout(mark,30));
 
 // links elsewhere (Home buttons, notifications) still name the old tabs: send them to the right page
-const OLD={live:"performance",flow:"performance",summary:"performance",trends:"performance",channels:"performance",services:"performance",conversations:"inbox",approvals:"inbox",queue:"inbox",reviews:"support"};
+const OLD={live:"performance",flow:"performance",summary:"performance",trends:"performance",channels:"performance",services:"performance",conversations:"inbox",queue:"inbox",reviews:"support"};
 const RAW={};
 function hookLinks(){["overview","analytics","people","setup"].forEach(v=>{if(window.tabsOf?.[v]&&!RAW[v])RAW[v]=tabsOf[v]});
   const t=RAW.overview;if(!t||tabsOf.overview.pg)return;
   // while a page is opening, the section's own opener asks for its default tab: let it, the page then shows its own
-  const f=k=>{const id=OLD[k];if(!id||Date.now()-opening<400)return t(k);const p=page(id),host=p[3].find(x=>x[0]===k||x[2].includes(k))?.[0]||p[3][0][0];active=id;if($("#overview").hidden)orig("overview")?.click();setTimeout(()=>{showTab(id,host);mark()},60)};
+  const f=k=>{if(k==="approvals"&&window.openPulse)return openPulse("approvals");const id=OLD[k];if(!id||Date.now()-opening<400)return t(k);const p=page(id),host=p[3].find(x=>x[0]===k||x[2].includes(k))?.[0]||p[3][0][0];active=id;if($("#overview").hidden)orig("overview")?.click();setTimeout(()=>{showTab(id,host);mark()},60)};
   f.pg=1;tabsOf.overview=f}
 function boot(){build();draw();hookLinks();mark()}
 if(document.readyState==="complete")setTimeout(boot,0);else addEventListener("load",()=>setTimeout(boot,0));

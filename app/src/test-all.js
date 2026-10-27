@@ -1,7 +1,7 @@
 // Runs every platform test. Nothing is released unless this passes.
 //   docker compose exec app npm test
 import { spawnSync } from 'node:child_process';
-const suites = [['Client data separation', 'isolation-test.js'], ['End-to-end platform', 'smoke-test.js'], ['Client websites', 'site-test.js'], ['Coach', 'coach-test.js'], ['Metrics agree', 'metrics-test.js']];
+const suites = [['Client data separation', 'isolation-test.js'], ['End-to-end platform', 'smoke-test.js'], ['Client websites', 'site-test.js'], ['Coach', 'coach-test.js'], ['Metrics agree', 'metrics-test.js'], ['Pulse AI', 'pulse-test.js']];
 let failed = 0;
 for (const [name, file] of suites) {
   console.log(`\n=== ${name} ===`);

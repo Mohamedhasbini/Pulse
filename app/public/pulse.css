@@ -2351,3 +2351,14 @@ body .sg-track i.ink:not(#_){min-width:38px;color:#fff!important;font-style:norm
 :root[data-theme="dark"] body .sg-track i.ink:not(#_){color:#0a0a0b!important}
 /* small text that sits straight on the dusk scene */
 :root[data-theme="light"] body main .top p.sub:not(#_),:root[data-theme="light"] body main .top small:not(#_){color:rgba(21,26,23,.78)}
+
+/* Pulse AI approvals: one row per thing waiting for the owner */
+.pa-n{display:inline-block;min-width:18px;margin-left:4px;padding:0 5px;border-radius:99px;background:var(--need);color:#fff;font:600 11px/18px 'Geist Mono',monospace;text-align:center}
+.pa-list{padding:6px 18px}
+.pa-item{display:grid;grid-template-columns:150px 1fr auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--gl-grid)}
+.pa-item:last-child{border-bottom:0}
+.pa-k{font-size:11px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--gp-meta)}
+.pa-request{color:var(--need)}.pa-lesson,.pa-question{color:var(--aic)}.pa-agent{color:var(--p-green)}
+.pa-t b{display:block;font-weight:500;color:var(--gp-text)}.pa-t small{color:var(--gp-meta)}
+.pa-a{display:flex;gap:6px}
+@media(max-width:700px){.pa-item{grid-template-columns:1fr}.pa-a{justify-content:flex-start}}
