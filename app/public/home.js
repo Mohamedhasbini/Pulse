@@ -44,7 +44,7 @@ main>section.today:not([hidden]){overflow:auto}
 .td-link{all:unset;cursor:pointer;margin-inline-start:auto;font-size:12.5px;color:var(--td-ink2)}.td-link:hover{color:var(--td-ink)}
 .td-pill:empty{display:none}.td-pill{margin-inline-start:auto;font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:99px;background:var(--td-soft);color:var(--td-ink2)}
 .td-say{margin:-4px 0 10px;font-size:14px;color:var(--td-ink2)}.td-say:empty{display:none}
-/* hero: the one strong card. Its colour comes from glass.css */
+/* hero: the one strong card. Its colour comes from pulse.css */
 .td-hero{padding:24px;display:flex;flex-direction:column;gap:16px}
 .td-hero-in{display:flex;gap:16px;align-items:center}
 .td-logo{width:60px;height:60px;flex:none;border-radius:18px;background:#fff center/cover no-repeat;display:grid;place-items:center;font-weight:700;font-size:26px;line-height:1;color:#1f4d37;cursor:pointer;border:2px solid rgba(255,255,255,.6)}
