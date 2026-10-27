@@ -2657,3 +2657,7 @@ body .p10-on .spane[data-pane="flow"] .sg-flowcard:not(#_),body .p10-on .spane[d
 .ls-steps li::before{content:counter(s);width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--p-green) 18%,transparent);color:var(--p-green)}
 .ls-run{padding:10px 20px!important;font-size:14px!important}
 @media(max-width:1100px){.ls-steps{display:none}}
+/* Train › Rules & coach: the side card shows name, tone and the rule count; the rules themselves are listed
+   once, in the Rules card below (with Edit / Remove), so the side card never spills over it */
+.p10-on #tchCoach .co-side ol,.p10-on #tchCoach .co-side ul{display:none!important}
+.p10-on #tchCoach .co-side{overflow:hidden!important}
