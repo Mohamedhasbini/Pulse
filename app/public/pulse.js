@@ -168,6 +168,7 @@
   function fitTab() {
     const sec = $('main > section:not([hidden])'); if (!sec || window.LAB) return;
     sec.style.zoom = '';
+    if (innerWidth < 768) return; // phones scroll like phones; shrinking text there only hurts
     // scaling reflows the content (cards get wider and shorter), so step down until it fits
     for (let z = 1, k = 0; k < 12 && sec.scrollHeight > sec.clientHeight + 2 && z > 0.85; k++) {
       z = Math.max(0.85, z * Math.min(0.97, sec.clientHeight / sec.scrollHeight)); sec.style.zoom = z.toFixed(3);

@@ -2842,7 +2842,7 @@ main :is(.kpi,.td-card,.sg-tile,.sc):hover{border-color:color-mix(in srgb,var(--
   radial-gradient(40% 46% at 72% 95%,rgba(180,150,110,.10),transparent 70%),
   radial-gradient(70% 60% at 50% 30%,#1c1c20,#0d0d0f 75%)!important}
 /* nothing under 12px for reading; 11px only for counts and chart axes */
-main :is(small,em,.sub,.num,.tag,.chip,.lbl,.meta,.pa-k,.sc-tip):not(#_){font-size:max(12px,.85em)!important}
+main :is(small,em,.sub,.num:not(.v),.tag,.chip,.lbl,.meta,.pa-k,.sc-tip):not(#_){font-size:max(12px,.85em)!important}
 :is(.badge-n,.hx,.hy,#inHeat span,kbd):not(#_){font-size:max(11px,.85em)!important}
 /* figures: 40px at most on a working screen */
 /* navigation recedes: the active item is a neutral pill, not a coloured row */
@@ -2857,3 +2857,40 @@ nav[aria-label="Main"] :is([aria-current="page"],[aria-pressed="true"],.on):not(
 .sc-ic:not(#_),.sc.ask .sc-ic:not(#_){background:none;width:18px}
 .sc-go:not(#_){padding-left:12px}
 .kp-spark{display:none}
+
+/* ===== phone (iPhone and other narrow screens): pages scroll, fingers fit, nothing spills ===== */
+@media (max-width:767px){
+  /* text fields at 16px or iOS zooms the page when one is tapped */
+  :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea):not(#_){font-size:16px!important}
+  /* tap targets: 40px for controls in content, 44px+ for navigation (ui-ux-pro-max: touch 44x44) */
+  main :is(button,.btn,a.btn,select,input:not([type=checkbox]):not([type=radio]):not([type=range])):not(.sc-x):not(.cp-it):not(#_){min-height:40px}
+  .pa-switch button:not(#_){min-height:40px;padding:8px 14px}
+  /* the sub-tabs swipe sideways instead of wrapping or spilling */
+  .p10-bar .pa-switch:not(#_){max-width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+  .p10-bar .pa-switch::-webkit-scrollbar{display:none}
+  .p10-bar .pa-switch button{flex:none;scroll-snap-align:start}
+  .p10-bar{flex-wrap:wrap;row-gap:8px}
+  .p10-need{margin-left:0!important;width:100%;overflow-x:auto;flex-wrap:nowrap!important;scrollbar-width:none}
+  .p10-need .need{flex:none}
+  /* keyboard hints mean nothing on a phone */
+  .sc-add kbd,.cmd kbd,.cp-in kbd{display:none!important}
+  /* nothing wider than the screen: long rows wrap, wide tables scroll inside their card */
+  main section{overflow-x:hidden}
+  main :is(.card,.td-card) :is(table){display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* leave room for the iPhone home bar */
+  nav[aria-label="Main"]{padding-bottom:max(6px,env(safe-area-inset-bottom))!important}
+  main{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}
+}
+@media (max-width:767px){
+  .p10-on #wsMain>.wsedit:not(#_){grid-template-columns:1fr!important}
+  .p10-on #wsMain .card:not(#_){min-width:0;max-width:100%}
+  .p10-on #svcList .svc:not(#_){grid-template-columns:1fr 1fr!important;row-gap:8px!important;padding-bottom:10px}
+  .p10-on #svcList .svc>*:not(#_){grid-row:auto!important;grid-column:auto!important;min-width:0}
+  .p10-on #svcList .svc>input:nth-child(1):not(#_),.p10-on #svcList .svc>.svcDesc:not(#_){grid-column:1/-1!important}
+  .cu-row:not(#_){flex-wrap:wrap;grid-template-columns:1fr!important}
+  .cu-seg:not(#_){flex-wrap:wrap;max-width:100%}
+  .wsstyles:not(#_){grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  main :is(.form,.ch,.card,.full,.k-l):not(#_){min-width:0;max-width:100%}
+}
+@media (max-width:767px){section.p10-multi:not([hidden]):not(#_){display:flex!important;flex-direction:column;--p10n:1}section.p10-multi>.spane:not(#_){width:100%;max-width:100%;min-width:0}}
+@media (max-width:767px){#inKpis:not(#_){grid-template-columns:1fr 1fr!important;gap:8px}#inKpis .kpi:not(#_){padding:12px 14px!important}#inKpis .kpi .v:not(#_){font-size:26px!important}}
