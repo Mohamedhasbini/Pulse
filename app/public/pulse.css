@@ -2451,7 +2451,13 @@ section.p10-multi>.spane{min-width:0;min-height:0}
 .p-wave{position:fixed!important;pointer-events:none}
 /* Settings › Services: one line per service (name · what's included · price · minutes · at once · remove) */
 .p10-on #svcList .svc{grid-template-columns:minmax(150px,1fr) minmax(200px,1.6fr) 70px 70px 80px 26px!important;row-gap:0!important;margin-bottom:6px}
-.p10-on #svcList .svc>.svcDesc{grid-column:2;grid-row:1}
+.p10-on #svcList .svc>*{grid-row:1!important}
+.p10-on #svcList .svc>input:nth-child(1){grid-column:1!important}
+.p10-on #svcList .svc>.svcDesc{grid-column:2!important}
+.p10-on #svcList .svc>input:nth-child(2){grid-column:3!important}
+.p10-on #svcList .svc>input:nth-child(3){grid-column:4!important}
+.p10-on #svcList .svc>.svcCap{grid-column:5!important}
+.p10-on #svcList .svc>button{grid-column:6!important}
 .p10-on #svcList .svc>input{padding-top:7px!important;padding-bottom:7px!important}
 /* Live flow: its cards show whole, not with inner scrollbars */
 .p10-on .spane[data-pane="flow"] .card{overflow:visible!important;height:auto!important;max-height:none!important}
@@ -2473,3 +2479,26 @@ section.p10-on:not([hidden]){row-gap:6px!important}
 body .p10-on #sgFlow:not(#_){height:400px!important;max-height:400px!important}
 body .p10-on .spane[data-pane="flow"] .sg-tile:not(#_){height:auto!important;min-height:0!important;padding-top:12px!important;padding-bottom:12px!important}
 body .p10-on .spane[data-pane="flow"] .sg-flowcard:not(#_),body .p10-on .spane[data-pane="flow"] .sg-side:not(#_){height:auto!important;min-height:0!important}
+
+/* sidebar sub-tabs: the open page lists its tabs under it */
+.p10-sub{display:flex;flex-direction:column;gap:1px;margin:2px 0 6px 30px;padding-left:10px;border-left:1px solid var(--gl-grid)}
+.p10-sub[hidden]{display:none!important}
+.p10-sub button{all:unset;cursor:pointer;font-size:12.5px;padding:5px 10px;border-radius:8px;color:var(--gp-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p10-sub button:hover{background:var(--gp-nest);color:var(--gp-text)}
+.p10-sub button[aria-current="true"]{background:var(--gp-nest2);color:var(--gp-text);font-weight:600}
+.p10-sub button:focus-visible{outline:2px solid var(--p-green)}
+/* desktop: tabs live in the sidebar; the row above the page keeps the title and what needs you */
+@media(min-width:901px){.p10-bar .pa-switch{display:none!important}}
+@media(max-width:900px){.p10-sub{display:none!important}}
+.p10-purpose b i{font-style:normal;color:var(--gp-meta);font-weight:400;margin:0 2px}
+.p10-need{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.p10-need .need{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:99px;
+  background:color-mix(in srgb,var(--need) 14%,transparent);color:var(--need);border:1px solid color-mix(in srgb,var(--need) 35%,transparent)}
+.p10-need .need:hover{background:color-mix(in srgb,var(--need) 22%,transparent)}
+/* the floating AI-team bubbles covered page text; Ask Pulse (Pulse AI) replaces them */
+.td-dock{display:none!important}
+/* phone: the bottom menu is solid enough that page text never shows through it */
+@media(max-width:900px){:root[data-theme="light"] body nav:not(#_){background:rgba(250,246,240,.95)!important}:root[data-theme="dark"] body nav:not(#_){background:rgba(14,14,16,.95)!important}}
+
+/* sidebar sub-tabs: compact rows so the open list never runs under the plan card */
+.p10-sub button{padding:4px 10px!important;font-size:12px!important;line-height:18px}

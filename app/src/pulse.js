@@ -24,7 +24,8 @@ export async function waiting(B) {
     ...lessons.filter(l => l.kind === 'rule').map(l => ({ kind: 'lesson', title: l.title, why: l.evidence, body: l.body })),
     ...questions.map(x => ({ kind: 'question', id: x.id, title: `Answer “${x.question}”`, why: `asked ${x.n} time${x.n === 1 ? '' : 's'}, the AI couldn't answer` })),
     ...agents.map(a => ({ kind: 'agent', id: a.id, title: `${a.name}: ${a.list.length} customer${a.list.length === 1 ? '' : 's'} to contact`, why: a.does }))];
-  return { count: items.length, items };
+  const [{ chats }] = await q(`SELECT count(*)::int AS chats FROM conversations WHERE business_id=$1 AND needs_attention AND channel<>'test'`, [B]);
+  return { count: items.length, items, chats };
 }
 
 // The weekly brief: this week against last week, in three wins, three risks and three next steps, from the data

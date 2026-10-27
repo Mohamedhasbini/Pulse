@@ -42,11 +42,11 @@
       ['Agents', { entry: 'agents' }],
       ['Website', { entry: 'website' }]]],
     ['pulse', 'Pulse AI', 'Your AI assistant', [['Approvals', { own: 'approvals' }], ['Ask Pulse', { own: 'ask' }], ['Brief', { own: 'brief' }]]],
-    ['train', 'Train AI', 'Make the receptionist smarter', [
+    ['train', 'Train Nora', 'Make Nora smarter', [
       ['Rules & coach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach', 'tchRules'] }],
       ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'] }],
       ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'] }]]],
-    ['lab', 'Test lab', 'Prove it works before customers see it', [
+    ['lab', 'Test lab', 'Try Nora before your customers do', [
       ['Scenarios', { entry: 'demo', only: ['top', 'lab'] }],
       ['Test chat', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
       ['Versions', { entry: 'training', only: ['top', 'learn'] }]]],
@@ -67,12 +67,13 @@
       ['Tools', { page: 'settings', tab: 'booking', cards: ['Tools'] }],
       ['Channels', { page: 'settings', tab: 'channels', cards: ['Channels'] }],
       ['Reminders', { page: 'settings', tab: 'channels', cards: ['Reminders'] }],
-      ['Security', { page: 'account', tab: 's2fa', panes: ['s2fa'] }],
-      ['Devices', { page: 'account', tab: 'sdev', panes: ['sdev'] }],
-      ['Look', { page: 'account', tab: 'look', panes: ['look'] }],
-      ['Layout', { page: 'account', tab: 'look', panes: ['dash'] }]]],
+      ['Security & devices', { page: 'account', tab: 's2fa', panes: ['s2fa', 'sdev'] }],
+      ['Look & layout', { page: 'account', tab: 'look', panes: ['look', 'dash'] }]]],
   ];
   const BADGE = { inbox: 'apprN', pulse: 'paN', train: 'trN' };
+  // the receptionist's name as the owner set it (Settings › Assistant), Nora by default
+  const nora = () => (typeof biz !== 'undefined' && biz?.assistant_name) || 'Nora';
+  const named = t => t.replace(/Nora/g, nora());
   let current = null, nav = null, count = 0;
 
   // ---------- sidebar ----------
@@ -87,10 +88,21 @@
       b.innerHTML = `<svg viewBox="0 0 24 24">${ICON[id]}</svg><span>${label}</span>${BADGE[id] ? `<b class="badge-n p10-n" data-for="${id}" hidden></b>` : ''}`;
       b.addEventListener('click', ev => { ev.stopImmediatePropagation(); go(id, 0) });
       pills.insertBefore(b, $('#adminNav')); nav[id] = b;
+      const tabs = PAGES.find(p => p[0] === id)[3];
+      if (tabs.length > 1) {
+        const sub = document.createElement('div'); sub.className = 'p10-sub'; sub.dataset.for = id; sub.hidden = true;
+        sub.innerHTML = tabs.map(([l], k) => `<button type="button" data-k="${k}">${e(l)}</button>`).join('');
+        sub.addEventListener('click', ev => { const t = ev.target.closest('[data-k]'); if (t) { ev.stopImmediatePropagation(); go(id, +t.dataset.k) } });
+        pills.insertBefore(sub, $('#adminNav'));
+      }
     }
     return true;
   }
-  function mark(id) { Object.entries(nav || {}).forEach(([k, b]) => b.setAttribute('aria-current', String(k === id))) }
+  function mark(id) {
+    Object.entries(nav || {}).forEach(([k, b]) => { b.setAttribute('aria-current', String(k === id)); b.querySelector('span').textContent = named(PAGES.find(p => p[0] === k)[1]) });
+    // only the open page shows its tabs in the sidebar
+    $$('.p10-sub').forEach(x => { x.hidden = x.dataset.for !== id; x.querySelectorAll('[data-k]').forEach(t => t.setAttribute('aria-current', String(x.dataset.for === id && +t.dataset.k === current?.[1]))) });
+  }
 
   // ---------- opening a page and tab ----------
   async function go(id, i) {
@@ -150,10 +162,29 @@
     $$('.p10-bar').forEach(x => x.remove());
     const sec = $('main > section:not([hidden])'); if (!sec) return;
     const b = document.createElement('div'); b.className = 'p10-bar';
-    b.innerHTML = `<p class="p10-purpose"><b>${e(PAGES.find(p => p[0] === id)[1])}</b> ${e(purpose)}</p>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l], k) =>
+    const title = named(PAGES.find(p => p[0] === id)[1]), tab = tabs.length > 1 ? tabs[i][0] : '';
+    b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l], k) =>
       `<button type="button" role="tab" data-t="${k}" aria-selected="${k === i}" aria-pressed="${k === i}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}</div>` : '');
     b.addEventListener('click', ev => { const t = ev.target.closest('[data-t]'); if (t) go(id, +t.dataset.t) });
     sec.prepend(b); sec.classList.add('p10-on');
+    need(id);
+  }
+  // what needs the owner on this page, first: at most 3 items, each one click from done
+  let waitingNow = null;
+  function need(id) {
+    const box = $('#p10Need'); if (!box || !waitingNow) return;
+    const it = waitingNow.items || [], n = k => it.filter(x => x.kind === k).length, chats = waitingNow.chats || 0;
+    const L = {
+      today: [[chats, `${chats} chat${chats === 1 ? '' : 's'} waiting for you`, ['inbox', 1]], [it.length, `${it.length} thing${it.length === 1 ? '' : 's'} to approve`, ['pulse', 0]]],
+      inbox: [[chats, `${chats} chat${chats === 1 ? '' : 's'} need${chats === 1 ? 's' : ''} you`, ['inbox', 1]]],
+      calendar: [[n('request'), `${n('request')} cancel/move request${n('request') === 1 ? '' : 's'}`, ['calendar', 1]]],
+      marketing: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['marketing', 2]]],
+      pulse: [[it.length, `${it.length} waiting for your OK`, ['pulse', 0]]],
+      train: [[n('question'), `${n('question')} question${n('question') === 1 ? '' : 's'} ${nora()} couldn't answer`, ['train', 1]], [n('lesson'), `${n('lesson')} suggested rule${n('lesson') === 1 ? '' : 's'}`, ['pulse', 0]]],
+    }[id] || [];
+    const todo = L.filter(x => x[0] > 0).slice(0, 3);
+    box.innerHTML = todo.map(([, t, to], k) => `<button type="button" class="need" data-to="${to}">${e(t)} →</button>`).join('');
+    box.onclick = ev => { const t = ev.target.closest('[data-to]'); if (t) { const [p, k] = t.dataset.to.split(','); go(p, +k) } };
   }
 
   // ---------- Pulse AI's own pages ----------
@@ -260,7 +291,7 @@
     void w;
   }
   const poll = () => !document.hidden && req('/api/pulse/waiting').then(d => {
-    count = d.count; badges();
+    count = d.count; waitingNow = d; badges(); if (current) need(current[0]); set2('inbox', d.chats || 0);
     set2('train', d.items.filter(x => x.kind === 'question').length);
   }).catch(() => {});
   const set2 = (id, n) => { const b = $(`.p10-n[data-for="${id}"]`); if (b) { b.hidden = !n; b.textContent = n || '' } };
