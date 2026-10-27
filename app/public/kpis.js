@@ -39,8 +39,7 @@
     document.getElementById('tdKpis').addEventListener('click', e => {
       const k = e.target.closest('[data-kp]')?.dataset.kp; if (!k) return;
       if (k === 'retry') return load();
-      if (k === 'calendar') return document.querySelector('nav button[data-view="calendar"]')?.click();
-      window.openPulse?.(k);
+      window.openP10?.(k === 'calendar' ? 'calendar' : 'insights', k === 'analytics' ? 1 : 0);
     });
     load(); setInterval(() => !document.hidden && load(), 5 * 60e3);
     return true;

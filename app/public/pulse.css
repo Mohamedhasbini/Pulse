@@ -2392,3 +2392,38 @@ body .td-kpis .kp:hover:not(#_){background:var(--gp-nest)!important}
 .pa-score td{padding:10px 0;border-top:1px solid var(--gl-grid);color:var(--gp-text)}.pa-score small{color:var(--gp-meta)}
 @media(max-width:800px){.pa-cols{grid-template-columns:1fr}}
 @media(max-width:700px){body .td-kpis .kp:nth-child(3):not(#_){border-left:0!important}body .td-kpis .kp:nth-child(n+3):not(#_){border-top:1px solid var(--gl-grid)!important}}
+
+/* 10-page navigation (pulse.js): one row per page with its purpose and up to 3 tabs; old tab rows hidden */
+[data-p10hide="1"]{display:none!important}
+.p10-on .ptabs,.p10-on #tchMode{display:none!important}
+.p10-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px}
+.p10-purpose{margin:0;font-size:13px;color:var(--gp-meta)}
+.p10-bar .pa-switch{margin:0}
+.nav-gone{display:none!important}
+/* Inbox: Conversations and Needs you are the two cards of one pane, one per tab */
+#overview.pn-conv .spane[data-pane="conversations"] .fit-side>.card:first-child{display:none}
+#overview.pn-needs .spane[data-pane="conversations"] .fit-side>.card:nth-child(2){display:none}
+#overview.pn-needs .spane[data-pane="conversations"] .fit-side,#overview.pn-conv .spane[data-pane="conversations"] .fit-side{grid-template-columns:1fr!important}
+/* Ask Pulse */
+.ask{display:flex;flex-direction:column;gap:12px;padding:18px;min-height:60vh}
+.ask-skills{font-size:12px;color:var(--gp-meta);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ask-skills span{padding:2px 9px;border-radius:99px;background:var(--gp-nest);color:var(--gp-2)}
+.ask-log{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;max-height:56vh}
+.ask-m{max-width:78%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5}
+.ask-m p{margin:0}.ask-m.me{align-self:flex-end;background:var(--p-green);color:#fff}
+.ask-m.ai{align-self:flex-start;background:var(--gp-nest2);color:var(--gp-text)}.ask-m.busy{opacity:.6}
+.ask-skill{display:block;font-size:11px;font-weight:600;color:var(--aic);margin-bottom:4px}
+.ask-src{display:block;margin-top:6px;font-size:11px;color:var(--gp-meta)}
+.ask-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ask-sugg{display:flex;gap:6px;flex-wrap:wrap}.ask-sugg .chip{border:1px solid var(--gl-rim);background:var(--gp-nest);color:var(--gp-2);border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.ask-form{display:flex;gap:8px}.ask-form input{flex:1;padding:11px 14px;border-radius:12px;border:1px solid var(--gl-rim);background:var(--gp-card);color:var(--gp-text);font:inherit}
+/* the purpose line in the tab row replaces each borrowed section's old intro */
+.p10-on>.top p.sub,.p10-on>.top .eyebrow{display:none!important}
+.p10-on>*{flex-shrink:0}
+/* the old page heads carry their own intro line; the tab row's purpose replaces it */
+.p10-on>.top .pg-head>p,.p10-on>.top>div>p:not(.sub){display:none!important}
+/* a tab that borrows one panel: just the heading and that panel */
+.p10-bare>.top>*:not(.pg-head),.p10-bare>.pbar{display:none!important}
+/* Train AI › Rules & coach: the coach card grows with its content instead of a fixed screen height */
+.p10-on #tchCoach,.p10-on #tchRules{height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important}
+.p10-on #tchCoach>*{min-height:0}
