@@ -3,7 +3,7 @@
 // Parts are opened through their sidebar entries (window.pulsePages), so each section keeps its own loading logic.
 // Approvals is Pulse AI's own page: everything the AI prepared that waits for the owner (/api/pulse/waiting).
 (() => {
-  const PARTS = [['approvals', 'Approvals'], ['training', 'Teach'], ['agents', 'AI team'], ['demo', 'Test lab'], ['support', 'Support'], ['performance', 'Performance'], ['analytics', 'Insights']];
+  const PARTS = [['approvals', 'Overview'], ['training', 'Teach'], ['agents', 'AI team'], ['demo', 'Test lab'], ['support', 'Support'], ['performance', 'Performance'], ['analytics', 'Insights']];
   const $$ = s => [...document.querySelectorAll(s)];
   const e = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const clear = () => $$('.pa-switch').forEach(x => x.remove());
@@ -32,10 +32,19 @@
   function section() {
     if (page) return page;
     page = document.createElement('section'); page.className = 'wrap'; page.id = 'pulse-approvals'; page.hidden = true;
-    page.innerHTML = `<div class="top"><div><h1>Approvals</h1><p class="sub">Everything Pulse AI prepared that waits for you. Nothing happens until you press a button.</p></div></div><div class="card glass pa-list" id="paList"></div>`;
+    page.innerHTML = `<div class="top"><div><h1>Pulse AI</h1><p class="sub">Your week at a glance and everything the AI prepared for you. Nothing happens until you press a button.</p></div></div><div class="pa-brief" id="paBrief"></div><h2 class="pa-h">Waiting for you</h2><div class="card glass pa-list" id="paList"></div>`;
     document.querySelector('main').append(page);
     page.addEventListener('click', act);
     return page;
+  }
+  // the weekly brief and what each agent earned (/api/pulse/brief)
+  async function loadBrief() {
+    const box = page.querySelector('#paBrief'); let d;
+    try { d = await req('/api/pulse/brief'); } catch { box.innerHTML = ''; return; }
+    const col = (t, cls, list, none) => `<div class="card glass pa-col ${cls}"><h3>${t}</h3>${list.length ? `<ul>${list.map(x => `<li>${e(x)}</li>`).join('')}</ul>` : `<p class="empty">${none}</p>`}</div>`;
+    const money = n => '$' + Math.round(n || 0).toLocaleString();
+    box.innerHTML = `<h2 class="pa-h">This week</h2><div class="pa-cols">${col('Wins', 'win', d.wins, 'No clear wins yet this week.')}${col('Risks', 'risk', d.risks, 'Nothing worrying this week.')}${col('Next steps', 'next', d.next, 'Nothing to do. Pulse AI has it.')}</div>`
+      + `<h2 class="pa-h">Agents, last 30 days</h2><div class="card glass pa-score">${d.agents.length ? `<table><thead><tr><th>Agent</th><th>Sent</th><th>Booked after</th><th>Value</th></tr></thead><tbody>${d.agents.map(a => `<tr><td>${e(a.name)}</td><td>${a.sent}</td><td>${a.booked}${a.sent ? ` <small>(${Math.round(a.booked / a.sent * 100)}%)</small>` : ''}</td><td>${money(a.value)}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">No agent messages sent yet. When you send one, its results show here.</p>'}</div>`;
   }
   async function load() {
     const box = page.querySelector('#paList'); let d;
@@ -44,7 +53,7 @@
     box.innerHTML = d.items.length ? d.items.map((x, i) => `<div class="pa-item" data-i="${i}"><span class="pa-k pa-${x.kind}">${KIND[x.kind]}</span>
       <div class="pa-t"><b>${e(x.title)}</b><small>${e(x.why || '')}</small></div><div class="pa-a">${ACT[x.kind](x)}</div></div>`).join('')
       : `<p class="empty">Nothing waiting. Pulse AI is handling everything.</p>`;
-    const n = document.querySelector('.pa-switch [data-go="approvals"]'); if (n) n.innerHTML = 'Approvals' + (count ? ` <b class="pa-n">${count}</b>` : '');
+    badge(); const n = document.querySelector('.pa-switch [data-go="approvals"]'); if (n) n.innerHTML = 'Overview' + (count ? ` <b class="pa-n">${count}</b>` : '');
   }
   async function act(ev) {
     const b = ev.target.closest('[data-a]'); if (!b) return;
@@ -61,7 +70,7 @@
   }
   function openApprovals() {
     $$('main > section.wrap').forEach(s => s.hidden = true);
-    section().hidden = false; show('approvals'); load();
+    section().hidden = false; show('approvals'); load(); loadBrief();
   }
 
   function open(id) {
@@ -75,9 +84,12 @@
     const n = ev.target.closest('nav button[data-view]'); if (!n || n.closest('.pa-switch')) return;
     if (!ev.isTrusted && n !== window.pulsePages?.training) return; // the sidebar's own clicks while opening a part
     if (page) page.hidden = true;
-    // Pulse AI opens on Approvals when something waits, otherwise on Teach
-    if (n === window.pulsePages?.training && !jump) setTimeout(() => count ? openApprovals() : show('training'), 180); else if (n !== window.pulsePages?.training) clear();
+    // Pulse AI always opens on its Overview: the weekly brief, what waits for you, and the agents' results
+    if (n === window.pulsePages?.training && !jump) setTimeout(openApprovals, 180); else if (n !== window.pulsePages?.training) clear();
   });
   // the count for the first open of Pulse AI
-  addEventListener('load', () => setTimeout(() => req('/api/pulse/waiting').then(d => { count = d.count }).catch(() => {}), 1500));
+  // the Pulse AI badge in the sidebar is the Approvals count, refreshed every minute
+  const badge = () => { const b = document.getElementById('trN'); if (b) { b.hidden = !count; b.textContent = count || '' } };
+  const poll = () => !document.hidden && req('/api/pulse/waiting').then(d => { count = d.count; badge() }).catch(() => {});
+  addEventListener('load', () => { setTimeout(poll, 1500); setInterval(poll, 60000) });
 })();

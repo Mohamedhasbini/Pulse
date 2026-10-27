@@ -120,3 +120,19 @@ Overlaps: Teach AI ↔ Lab lessons (both change the receptionist's rules); Agent
 1. ✅ Decided 2026-10-27: **Light mode = Dusk lounge** (bright frosted glass over the dusk scene), **Dark mode = Graphite plain**.
 2. OK to collapse nav to the 5 tabs above and merge all AI into one "Pulse AI".
 3. OK to delete the old stylesheets once Phase 1 screenshots are approved.
+
+---
+
+## 7. Status — 2026-10-27
+
+| Phase | Status | What landed |
+|---|---|---|
+| 1 Foundation | Done | Dusk lounge (light) + Graphite (dark); 10 stylesheets merged into `pulse.css`; 356 dead overrides removed (verified no change) |
+| 2 Structure | Done | 5 tabs + Pulse AI; inline script split into `app/public/js/` (14 files) |
+| 3 Data | Done for "today", AI bookings and the daily series | `src/metrics.js`; `metrics-test.js` checks Home agrees. Insights revenue still uses its own query |
+| 4 Pulse AI | Done | One rule writer (`src/rules.js`), one Overview/Approvals list, Approvals out of Inbox, badge = Approvals count, false "questions" no longer logged |
+| 5 Value | Done | Today KPI tiles with 14-day sparklines; weekly brief (wins/risks/next steps); agent scorecard (sent → booked → value) |
+| 6 Hardening | Done | 6 suites / 95 checks green; 200 concurrent dashboard requests, 0 errors, p95 < 0.6s; phone width 390px both themes, no overflow |
+
+Still open: ~600 `!important` that need hand rewrites; AI team chat suggestions still act from the chat (each is a button you press);
+Insights and the AI team's longer-range tools not yet on `metrics.js`; demo has no data, so tiles and brief were checked by tests, not by eye with real numbers.

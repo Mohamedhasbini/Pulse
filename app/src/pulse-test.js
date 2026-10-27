@@ -37,6 +37,13 @@ try {
   check('Approvals lists the customer request and the open question', kinds.has('request') && kinds.has('question'), JSON.stringify(w.items?.map(x => x.title)));
   const wb = await get('/api/pulse/waiting', OB);
   check("Business B never sees A's approvals", !(wb.items || []).some(x => /Pulse Test|parking/.test(x.title)));
+
+  // an agent message, then a booking from that customer: the scorecard credits the agent
+  await q(`INSERT INTO agent_actions (business_id, agent, customer_id, status, message, created_at) VALUES ($1,'winback',$2,'sent','Come back soon', now() - interval '1 day')`, [A.id, cu.id]);
+  const br = await get('/api/pulse/brief', OA), wb2 = br.agents?.find(a => a.agent === 'winback');
+  check('Agent scorecard counts the booking that followed the message', wb2?.sent === 1 && wb2?.booked === 1 && wb2?.value === 40, JSON.stringify(br.agents));
+  check('The weekly brief has wins, risks and next steps', ['wins', 'risks', 'next'].every(k => Array.isArray(br[k])) && br.next.length > 0, JSON.stringify(br.next));
+  check('The KPI series has one row per day', (await get('/api/kpis?days=14', OA)).length === 14);
 } catch (e) { check('Pulse test ran', false, e.message) } finally {
   for (const id of made) await closeBusiness(id).catch(() => {});
   console.log(`\n${results.filter(Boolean).length} passed, ${results.filter(x => !x).length} failed`);

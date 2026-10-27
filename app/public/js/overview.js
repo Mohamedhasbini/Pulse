@@ -25,7 +25,7 @@ function render(s){
   $("#kRate").textContent=s.conv?Math.round(s.booked_conv/s.conv*100)+"%":"—";$("#kRateSub").textContent=s.conv?`${s.booked_conv} of ${s.conv} chats ended in a booking`:"No chats yet";
   $("#kMs").textContent=s.ai.avg_ms?(s.ai.avg_ms/1000).toFixed(1)+"s":"—";
   $("#kMsSub").innerHTML=s.ai.replies?(s.ai.failures?`<span style="color:var(--bad)">${s.ai.failures} of ${s.ai.replies} replies failed</span>`:`${s.ai.replies} replies, none failed`):"No replies yet";
-  $("#apprN").hidden=!s.approvals;$("#apprN").textContent=s.approvals;$("#trN").hidden=!s.to_learn;$("#trN").textContent=s.to_learn;
+  $("#apprN").hidden=!s.approvals;$("#apprN").textContent=s.approvals;
   if(lastStats&&s.to_learn>lastStats.to_learn)toast("The AI couldn't answer a question. See Training.");
   area(s.daily);heat(s.heat);svcBars(s.services);funnel(s);attention(s.attention);today(s.today,s.upcoming);insights(s);feed();
 }

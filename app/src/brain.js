@@ -10,6 +10,7 @@ import { unify } from './customers.js';
 import { hasFeature } from './features.js';
 import { availability, isFree, freeSlots, bufferOf, label, hoursText, localDate, parseLocal } from './slots.js';
 
+const looksLikeQuestion = t => /[?؟]/.test(t) || /^\s*(how|what|when|where|which|who|why|do|does|did|is|are|can|could|will|would|should|have|has|shu|sho|kif|wen|ade|qué|cómo|cuándo|dónde|cuánto|tienen|hay|هل|كم|شو|كيف|وين|متى|ماذا|ما)(?=\s|$)/iu.test(t);
 const FALLBACK = 'Thanks for your message! A team member will get back to you shortly.';
 const SLOW = "Sorry, I'm a bit slow right now. Could you send that again in a moment? 🙏";
 
@@ -234,7 +235,8 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     if (outcome !== 'booked') outcome = 'handoff';
     attention = failed ? 'The AI did not respond; please reply' : decision.unknown_question ? "The AI didn't know the answer; please reply" : 'Customer needs a person';
     // Questions the AI couldn't answer go to AI Training, so staff can teach it once.
-    if (failed || decision.unknown_question) {
+    // When the AI simply failed, only a real question is logged ("tomorrow at 2pm" is an answer, not a question).
+    if ((failed && looksLikeQuestion(text)) || decision.unknown_question) {
       const exists = await one(`SELECT id FROM learning WHERE conversation_id=$1 AND status='open' AND question=$2`, [conv.id, text]);
       if (!exists) await q(`INSERT INTO learning (business_id, conversation_id, question, reason) VALUES ($1,$2,$3,$4)`,
         [biz.id, conv.id, text.slice(0, 1000), failed ? 'ai_failed' : 'unknown']);

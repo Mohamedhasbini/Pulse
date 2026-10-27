@@ -29,7 +29,7 @@ async function loadTraining(){const [list,b]=await Promise.all([req("/api/learni
         <div style="display:flex;gap:8px"><button class="btn trGo" type="button">Answer</button><button class="btn ghost trSkip" type="button">Dismiss</button></div></div>`
       :`<div class="ins"><span class="dot" style="--c:var(--good)"></span><div><b>Answer</b>${esc(l.answer||"(dismissed)")}</div></div>`}</div>`).join("")
     :`<div class="card glass"><div class="empty">${trStatus==="open"?"Nothing to answer. When the AI can't answer something, it appears here.":"Nothing here yet."}</div></div>`;
-  const n=trStatus==="open"?list.length:null;if(n!==null){$("#trN").dataset.q=n;$("#trN").hidden=!n;$("#trN").textContent=n}}
+  const n=trStatus==="open"?list.length:null;}
 document.getElementById("trTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;document.querySelectorAll("#trTabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));trStatus=b.dataset.s;loadTraining()};
 document.getElementById("trList").addEventListener("click",async e=>{const card=e.target.closest("[data-l]");if(!card)return;const id=card.dataset.l;
   if(e.target.closest("[data-open]")){e.preventDefault();return}
@@ -68,7 +68,7 @@ async function loadChannels(){const [c,d]=await Promise.all([req("/api/channels"
 let rvFilter="todo";
 async function loadTeach(){const [st,list,rules]=await Promise.all([req("/api/review/stats"),req("/api/review?filter="+rvFilter),req("/api/ai-rules")]);
   $("#tchStats").innerHTML=`<div><b>${st.accuracy===null?"–":st.accuracy+"%"}</b>Replies you rated good</div><div><b>${st.todo}</b>Replies to review</div><div><b style="color:${st.low?"var(--bad)":"inherit"}">${st.low}</b>The AI wasn't sure</div><div><b>${st.corrected}</b>Answers you taught</div><div><b>${rules.length}</b>Strict rules</div>`;
-  const trOpen=+($("#trN").dataset.q||0),n=st.low+trOpen;$("#trN").hidden=!n;$("#trN").textContent=n;
+  
   $("#rvList").innerHTML=list.length?list.map(m=>`<div class="card glass" data-m="${m.id}">
     <div class="ch"><small>${esc(m.name||(m.phone&&!/^(test|e2e|walk-in|tg-)/.test(m.phone)?m.phone:"Customer"))} · ${ago(m.at)} · ${esc(CH[m.channel]||m.channel)}</small>${m.confidence==="low"?'<span class="tag t-attn">AI not sure</span>':""}</div>
     <div class="ins"><span class="dot" style="--c:var(--muted)"></span><div><b>Customer asked</b>${esc(m.question||"(start of chat)")}</div></div>
