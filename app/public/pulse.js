@@ -80,6 +80,8 @@
   function draw() {
     const pills = $('nav .navpills'); if (!pills || pills.dataset.p10) return !!pills;
     if (!P().training || !P().inbox) return false; // sidebar.js not ready yet
+    if (typeof me === 'undefined' || !me) return false; // who is signed in decides the menu
+    if (window.LAB) return true; // the admin's Lab shows only the Command center
     pills.dataset.p10 = '1';
     $$('nav .navpills > button, nav .navpills > .ns').forEach(x => { if (x.id !== 'adminNav') x.classList.add('nav-gone') });
     nav = {};
@@ -343,6 +345,6 @@
   }, true);
 
   addEventListener('load', () => {
-    const t = setInterval(() => { if (draw()) { clearInterval(t); go('today', 0); poll(); setInterval(poll, 60000); setTimeout(loadShortcuts, 600); } }, 200);
+    const t = setInterval(() => { if (draw()) { clearInterval(t); if (window.LAB) return; go('today', 0); poll(); setInterval(poll, 60000); setTimeout(loadShortcuts, 600); } }, 200);
   });
 })();

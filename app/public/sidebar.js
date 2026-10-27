@@ -77,7 +77,8 @@ function draw(){const nav=$("nav .navpills");if(!nav||nav.dataset.pg)return;nav.
   window.pulsePages=entry;["support","performance","analytics","agents","demo"].forEach(i=>entry[i]?.classList.add("nav-gone"));
   for(const [g,ids] of ORDER){const h=document.createElement("p");h.className="ns";h.textContent=g;nav.append(h);ids.forEach(i=>entry[i]&&nav.append(entry[i]))}
   // a page from a shared section mirrors that section's permission
-  new MutationObserver(()=>PAGES.forEach(([id,,v])=>{const o=orig(v),b=entry[id];if(o&&b)b.hidden=o.hidden})).observe(nav,{subtree:true,attributes:true,attributeFilter:["hidden"]});
+  // only change what differs: re-setting hidden on a hidden button fires this observer again, forever (it froze the Lab)
+  new MutationObserver(()=>PAGES.forEach(([id,,v])=>{const o=orig(v),b=entry[id];if(o&&b&&b.hidden!==o.hidden)b.hidden=o.hidden})).observe(nav,{subtree:true,attributes:true,attributeFilter:["hidden"]});
   PAGES.forEach(([id,,v])=>{const o=orig(v);if(o)entry[id].hidden=o.hidden})}
 function mark(){const s=$("main > section:not([hidden])")?.id;
   $$("nav .navpills > button[data-view]").forEach(b=>{const on=b.dataset.page?(b.dataset.page===active&&s===b.dataset.view):(b===homeBtn?s==="today":s===b.dataset.view&&!PAGES.some(p=>p[2]===s));b.setAttribute("aria-current",String(on))});
