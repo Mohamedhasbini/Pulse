@@ -229,7 +229,7 @@ function mentions(results) {
 export const PAGE_TABS = {
   today: ['Today'], inbox: ['Conversations', 'Needs you', 'Delivery queue'], calendar: ['Schedule', 'Requests', 'Booking page'],
   customers: ['Clients', 'Board', 'Win back', 'Reviews'], marketing: ['Offers', 'Discount codes', 'Agents', 'Website texts', 'Website photos', 'Website design', 'Website address'],
-  pulse: ['Approvals', 'Ask Pulse', 'Brief'], train: ['Rules & coach', 'Answers', 'Review replies'], lab: ['Scenarios', 'Test chat', 'Versions'],
+  pulse: ['Approvals', 'Ask Pulse', 'Brief'], train: ['Coach', 'Rules', 'Answers', 'Review replies'], lab: ['Scenarios', 'Test chat', 'Versions'],
   insights: ['AI performance', 'Live flow', 'Topics', 'Business', 'Services', 'Timing', 'Channels'],
   settings: ['Profile', 'Assistant', 'Hours & team', 'Services', 'FAQs', 'Policies & payments', 'Tools', 'Channels', 'Reminders', 'Security & devices', 'Look & layout'],
 };

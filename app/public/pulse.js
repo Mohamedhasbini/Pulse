@@ -46,7 +46,8 @@
       ['Website address', { entry: 'website', ws: 3 }]]],
     ['pulse', 'Pulse AI', 'Your AI assistant', [['Approvals', { own: 'approvals' }], ['Ask Pulse', { own: 'ask' }], ['Brief', { own: 'brief' }]]],
     ['train', 'Train Nora', 'Make Nora smarter', [
-      ['Rules & coach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach', 'tchRules'] }],
+      ['Coach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach'] }],
+      ['Rules', { entry: 'training', mode: 'coach', only: ['top', 'tchRules'] }],
       ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'] }],
       ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'] }]]],
     ['lab', 'Test lab', 'Try Nora before your customers do', [
