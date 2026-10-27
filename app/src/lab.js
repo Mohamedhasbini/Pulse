@@ -9,7 +9,7 @@ import { addRule } from './rules.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const STARTERS = [
-  { name: 'Book an appointment', goal: 'book', mood: 'neutral', language: 'English', lines: ['Hi, I would like to book an appointment', 'The first one is fine', 'My name is Test Lab'] },
+  { name: 'Book an appointment', goal: 'book', mood: 'neutral', language: 'English', lines: ['Hi, I would like to book an appointment', 'The first one is fine', 'Tomorrow', 'The first time is fine', 'Yes please'] },
   { name: 'Ask the price', goal: 'answer', mood: 'neutral', language: 'English', lines: ['How much is your most popular service?'] },
   { name: 'Upset about waiting', goal: 'calm', mood: 'negative', language: 'English', lines: ['I waited 20 minutes last time, this is not okay.'] },
   { name: 'Wants a person', goal: 'handoff', mood: 'neutral', language: 'English', lines: ['Can I talk to a real person please?'] },

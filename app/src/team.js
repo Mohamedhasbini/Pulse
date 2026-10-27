@@ -227,7 +227,7 @@ function mentions(results) {
 // actions are only proposed; the owner approves each one
 // the dashboard's pages and tabs, for shortcuts (same order as public/pulse.js)
 export const PAGE_TABS = {
-  today: ['Today'], inbox: ['Conversations', 'Needs you', 'Delivery queue'], calendar: ['Week', 'Requests', 'Booking page'],
+  today: ['Today'], inbox: ['Conversations', 'Needs you', 'Delivery queue'], calendar: ['Schedule', 'Requests', 'Booking page'],
   customers: ['Clients', 'Board', 'Win back', 'Reviews'], marketing: ['Offers', 'Discount codes', 'Agents', 'Website texts', 'Website photos', 'Website design', 'Website address'],
   pulse: ['Approvals', 'Ask Pulse', 'Brief'], train: ['Rules & coach', 'Answers', 'Review replies'], lab: ['Scenarios', 'Test chat', 'Versions'],
   insights: ['AI performance', 'Live flow', 'Topics', 'Business', 'Timing', 'Channels'],

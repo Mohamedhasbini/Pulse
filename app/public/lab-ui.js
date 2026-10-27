@@ -25,6 +25,14 @@ if(demo){$("#demo .top h1").innerHTML="Test <b>lab</b>";
   const manual=demo.querySelector(".demo");if(manual){const h=document.createElement("h3");h.className="lab-h";h.textContent="Try it yourself";manual.before(h)}}
 async function loadLab(){try{data=await req("/api/tests")}catch{return}drawLab()}
 function drawLab(){if(!data)return;$("#labN").textContent=`${data.scenarios.length} tests`;
+  // the summary on top: the score, how many pass, when it last ran, and the one button most owners need
+  {let sum=$("#labSum");if(!sum){sum=document.createElement("div");sum.id="labSum";sum.className="lab-sum";$("#demo .lab")?.before(sum);
+     sum.addEventListener("click",e=>{if(e.target.closest("[data-all]"))$("#labAll")?.click()})}
+   const ran=data.scenarios.filter(x=>x.score!=null),pass=ran.filter(x=>x.score===100).length,avg=ran.length?Math.round(ran.reduce((n,x)=>n+x.score,0)/ran.length):null,last=data.runs?.[0]?.at||"never";
+   sum.innerHTML=`<div class="ls-score ${avg==null?"":avg>=90?"ok":avg>=70?"mid":"bad"}"><b>${avg==null?"–":avg+"%"}</b><small>quality score</small></div>
+     <div class="ls-facts"><span><b>${pass}</b> of ${data.scenarios.length} tests pass</span><span>Last run: <b>${esc(last)}</b></span></div>
+     <ol class="ls-steps"><li>Pick a customer type below</li><li>Watch the chat on the right</li><li>See what passed and fix what didn't</li></ol>
+     <button class="btn ls-run" type="button" data-all="1">Run all tests</button>`}
   $("#labList").innerHTML=data.scenarios.map(s=>`<div class="lab-row" data-id="${s.id}"><span class="dot ${s.score==null?"":s.score===100?"ok":"bad"}"></span>
     <span class="t"><b>${esc(s.name)}</b><small>${GOAL[s.goal]||s.goal}${s.mood==="negative"?" · upset":""} · ${esc(s.language||"")}</small></span>
     <span class="v">${s.score==null?"—":s.score+"%"}</span><button class="mini" type="button" data-run="${s.id}">Run</button></div>`).join("");

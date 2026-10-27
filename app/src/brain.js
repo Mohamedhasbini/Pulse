@@ -118,7 +118,8 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
          GROUP BY s.name ORDER BY count(*) DESC, max(b2.starts_at) DESC LIMIT 1) AS favourite_service,
       count(*) FILTER (WHERE b.status='no_show')::int AS no_shows
       FROM bookings b WHERE b.customer_id=$1`, [customer.id]);
-  const phoneKnown = !/^(test|e2e|walk-in|tg-)/.test(customer.phone) || !!customer.contact_phone;
+  // Test lab customers play WhatsApp customers, whose number is always known (test-lab-…); other test chats play web visitors
+  const phoneKnown = !/^(test(?!-lab-)|e2e|walk-in|tg-)/.test(customer.phone) || !!customer.contact_phone;
   const options = reminderOptions(channel);
   const needEmail = customer.reminder_channel === 'email' && !customer.email;
 

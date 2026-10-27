@@ -28,7 +28,7 @@
       ['Needs you', { own: 'inbox', folder: 'needs' }],
       ['Delivery queue', { page: 'inbox', tab: 'queue' }]]],
     ['calendar', 'Calendar', 'Run your schedule', [
-      ['Week', { entry: 'calendar' }],
+      ['Schedule', { own: 'calendar' }],
       ['Requests', { page: 'inbox', tab: 'conversations', panes: ['approvals'], bare: true }],
       ['Booking page', { page: 'settings', tab: 'booking', bare: true, cards: ['Online booking page'] }]]],
     ['customers', 'Customers', 'Know every client', [
@@ -50,7 +50,7 @@
       ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'] }],
       ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'] }]]],
     ['lab', 'Test lab', 'Try Nora before your customers do', [
-      ['Scenarios', { entry: 'demo', only: ['top', 'lab'] }],
+      ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'] }],
       ['Test chat', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
       ['Versions', { entry: 'training', only: ['top', 'learn'] }]]],
     ['insights', 'Insights', 'Numbers only: how the AI and the business are doing', [
@@ -205,6 +205,7 @@
   function hideOwn() { Object.values(own).forEach(s => s.hidden = true) }
   function showOwn(key, spec = {}) {
     $$('main > section.wrap').forEach(s => s.hidden = true);
+    if (key === 'calendar') { const s = page('calendar', 'Calendar', '', '<div id="gcRoot"></div>'); s.hidden = false; window.PulseCal?.mount(s); }
     if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }
     if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything Pulse AI prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
     if (key === 'brief') { const s = page('brief', 'Weekly brief', 'This week against last week, and the agents\' results. Worked out from your own numbers.', '<div id="paBrief"></div>'); s.hidden = false; loadBrief(); }
