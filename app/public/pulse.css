@@ -2821,3 +2821,7 @@ main :is(.kpi,.td-card,.sg-tile,.sc):hover{border-color:color-mix(in srgb,var(--
 /* without backdrop-filter support, fall back to an opaque card so text stays readable */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   main :is(.card,.kpi,.td-card,.p10-side,.sg-tile,.ib,.gc,.lab-sum):not(#_){background:var(--gp-card)!important}}
+
+/* Three.js scene (scene.js): sits on the page ground, under every panel, never catches clicks */
+.scene3d{position:fixed;inset:0;width:100vw!important;height:100vh!important;z-index:0;pointer-events:none;filter:blur(30px)}
+.shell{position:relative;z-index:1}
