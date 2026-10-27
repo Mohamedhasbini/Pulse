@@ -85,6 +85,11 @@ async function understandWithAI(text, current) {
     const changes = (Array.isArray(j.changes) ? j.changes : []).filter(c =>
       (c.type === 'rule' && clean(c.text)) || (c.type === 'tone' && TONES[c.value]) || (c.type === 'name' && clean(c.value)) || (c.type === 'remove_rule' && Number.isInteger(c.index) && current.rules?.[c.index]))
       .map(c => c.type === 'rule' ? { type: 'rule', text: sentence(c.text).slice(0, 300) } : c.type === 'tone' ? { ...c, text: TONES[c.value] } : c.type === 'remove_rule' ? { ...c, text: current.rules[c.index].text || current.rules[c.index] } : { type: 'name', value: clean(c.value).slice(0, 40) });
+    // The AI sometimes folds a clear instruction into another one ("formal, no emojis" → only a tone). Anything the
+    // built-in understanding is sure of and the AI left out is added back.
+    for (const c of understand(text, current).changes || []) {
+      if (c.type === 'rule' ? !changes.some(x => x.type === 'rule' && sameRule(x.text, c.text)) : !changes.some(x => x.type === c.type)) changes.push(c);
+    }
     // Drop rules the assistant already follows (in any wording) and repeats within this answer.
     for (let i = changes.length - 1; i >= 0; i--) if (changes[i].type === 'rule' && (known(current.rules || [], changes[i].text) || changes.slice(0, i).some(c => c.type === 'rule' && sameRule(c.text, changes[i].text)))) changes.splice(i, 1);
     // Our own wording when there are changes: nothing is saved until the owner presses Apply.
