@@ -20,7 +20,8 @@ const PAGES=[
   ["settings","Settings","setup",[["details","Business",["start","details"]],["channels","Channels & reminders",["channels","reminders"]],["booking","Booking & payments",["tools","booking"]],["codes","Discount codes",["codes"]]]],
   ["account","Account","setup",[["s2fa","Security",["s2fa","spw"]],["sdev","Devices",["sdev"]],["look","Look & feel",["look"]],["dash","Dashboard layout",["dash"]]]],
 ];
-const ORDER=[["Main",["home","inbox","support","calendar","agents"]],["Business",["performance","analytics","people"]],["AI receptionist",["training","demo"]],["Setup",["website","settings","account","admin"]]];
+// five tabs; Support, Performance, Insights, the AI team and Test lab open from the Pulse AI switcher (pulse.js)
+const ORDER=[["Main",["home","inbox","calendar","people","training"]],["Setup",["settings","account","website","admin"]]];
 const homeBtn=$('nav button[data-view="overview"]:not([data-sub])');
 // the button that opens a section; the Dashboard section opens through its own entry, since the plain one is Home
 const orig=v=>v==="overview"?$('nav button[data-view="overview"][data-sub]:not([data-page])'):$(`nav button[data-view="${v}"]:not([data-sub]):not([data-page])`);
@@ -73,6 +74,7 @@ function draw(){const nav=$("nav .navpills");if(!nav||nav.dataset.pg)return;nav.
     const icon=ICON[id]||orig(v)?.querySelector("svg")?.innerHTML||"";b.innerHTML=`<svg viewBox="0 0 24 24">${icon}</svg><span>${label}</span>`;
     b.addEventListener("click",e=>{e.stopImmediatePropagation();openPage(id)});entry[id]=b}
   const dm=entry.demo?.querySelector("span");if(dm)dm.textContent="Test lab";
+  window.pulsePages=entry;["support","performance","analytics","agents","demo"].forEach(i=>entry[i]?.classList.add("nav-gone"));
   for(const [g,ids] of ORDER){const h=document.createElement("p");h.className="ns";h.textContent=g;nav.append(h);ids.forEach(i=>entry[i]&&nav.append(entry[i]))}
   // a page from a shared section mirrors that section's permission
   new MutationObserver(()=>PAGES.forEach(([id,,v])=>{const o=orig(v),b=entry[id];if(o&&b)b.hidden=o.hidden})).observe(nav,{subtree:true,attributes:true,attributeFilter:["hidden"]});

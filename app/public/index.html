@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="/signature.css">
 <link rel="stylesheet" href="/alive.css">
 <link rel="stylesheet" href="/glass.css">
+<link rel="stylesheet" href="/pulse.css">
 <link rel="icon" href="/pulse-logo.svg" type="image/svg+xml">
 <style>body{margin:0}[hidden]{display:none!important}</style>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("rb-theme")||"dark"}catch{document.documentElement.dataset.theme="dark"}</script>
@@ -26,18 +27,15 @@
   <nav aria-label="Main">
     <div class="brand pl-brand"><div class="pl-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><defs><linearGradient id="plgn" x1="4" y1="46" x2="44" y2="2" gradientUnits="userSpaceOnUse"><stop offset="0" style="stop-color:var(--pg,#25d366)"/><stop offset=".55" style="stop-color:var(--pg,#25d366)"/><stop offset="1" style="stop-color:color-mix(in srgb,var(--pg,#25d366) 55%,#000)"/></linearGradient><radialGradient id="plhn" cx="14" cy="8" r="30" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><rect x="2" y="2" width="44" height="44" rx="14" fill="url(#plgn)"/><rect x="2" y="2" width="44" height="44" rx="14" fill="url(#plhn)"/><rect x="2.5" y="2.5" width="43" height="43" rx="13.5" fill="none" stroke="#fff" stroke-opacity=".35"/><path d="M7 27h7l3-5 4 12 5-22 4 18 3-3h8" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path class="pl-trace" pathLength="100" d="M7 27h7l3-5 4 12 5-22 4 18 3-3h8" fill="none" stroke="#fff" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/><circle class="pl-ping" cx="41" cy="27" r="3" fill="#fff"/><circle class="pl-dot" cx="41" cy="27" r="2.8" fill="#fff"/></svg></div><span class="pl-word">pulse</span></div>
     <div class="navpills">
-    <p class="ns">Main</p>
-    <button data-view="overview" aria-current="true" title="Home" aria-label="Home"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span>Home</span></button>
+    <button data-view="overview" aria-current="true" title="Today" aria-label="Today"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span>Today</span></button>
     <button data-view="overview" data-sub="live" title="Live now" aria-label="Live now"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg><span>Live now</span></button>
-    <button data-view="overview" data-sub="conversations" title="Conversations" aria-label="Conversations"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8 11h8M8 14h5"/></svg><span>Conversations</span></button>
+    <button data-view="overview" data-sub="conversations" title="Inbox" aria-label="Inbox"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8 11h8M8 14h5"/></svg><span>Inbox</span></button>
     <button data-view="overview" data-sub="approvals" title="Approvals" aria-label="Approvals"><svg viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"/></svg><span>Approvals</span></button>
     <button data-view="calendar" title="Calendar" aria-label="Calendar"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>Calendar</span></button>
     <button data-view="people" title="Customers" aria-label="Customers"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.8.8 3 2.6 3.5 5.4"/></svg><span data-term="Customers">Customers</span></button>
     <button data-view="people" data-sub="offers" title="Offers" aria-label="Offers"><svg viewBox="0 0 24 24"><path d="M4 12h3l8-6v12l-8-6"/><path d="M18 9a4 4 0 0 1 0 6"/></svg><span>Offers</span></button>
-    <p class="ns">AI receptionist</p>
-    <button data-view="training" title="Teach AI" aria-label="Teach AI"><svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5zM6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/></svg><span>Teach AI</span><b class="badge-n" id="trN" hidden style="margin-left:2px"></b></button>
+    <button data-view="training" title="Pulse AI" aria-label="Pulse AI"><svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5zM6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/></svg><span>Pulse AI</span><b class="badge-n" id="trN" hidden style="margin-left:2px"></b></button>
     <button data-view="demo" title="Test chat" aria-label="Test chat"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>Test chat</span></button>
-    <p class="ns">Business</p>
     <button data-view="analytics" title="Insights" aria-label="Insights"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Insights</span></button>
     <button data-view="setup" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Settings</span></button>
     <button data-view="admin" id="adminNav" hidden title="All businesses" aria-label="All businesses"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg><span>Businesses</span></button>
@@ -1579,6 +1577,7 @@ setInterval(()=>{if(!document.hidden){refresh();loadApprovals();pollTestChat();i
 <script src="/support.js"></script>
 <script src="/lab-ui.js"></script>
 <script src="/team-dock.js"></script>
+<script src="/pulse.js"></script>
 <script src="/page-head.js"></script>
 </body>
 </html>

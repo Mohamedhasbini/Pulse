@@ -1,0 +1,52 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pulse Ambient Options</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}body{font-family:Geist,system-ui;background:#0c0b0a;color:#eee;padding:24px 16px}
+h1{font-size:22px;margin-bottom:4px}p.s{opacity:.6;margin-bottom:20px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:22px}
+.opt h2{font-size:15px;margin:0 0 8px}.opt h2 b{color:#f59e3b}
+.scene{position:relative;height:340px;border-radius:18px;overflow:hidden}
+.bg{position:absolute;inset:-30px;filter:blur(14px)}
+/* LIGHT daylight lounge */
+.light .bg{background:
+ linear-gradient(180deg,transparent 62%,#c9b49a 62%,#a88f72),
+ radial-gradient(30% 22% at 78% 72%,#e9dccb,transparent 70%),
+ repeating-linear-gradient(90deg,#f7f1e6 0 18%,#d8cbb6 18% 19.5%),
+ linear-gradient(180deg,#fdf6ea,#efe2cf)}
+/* A dusk lounge */
+.a .bg{background:
+ radial-gradient(8% 12% at 12% 52%,#ffb347,transparent 70%),
+ radial-gradient(7% 10% at 88% 56%,#ff9f43cc,transparent 70%),
+ linear-gradient(180deg,transparent 62%,#2a1d14 62%,#1a120c),
+ repeating-linear-gradient(90deg,transparent 0 18%,#120d09 18% 19.5%),
+ linear-gradient(180deg,#1d2440 0%,#6b3b3a 38%,#d7814a 55%,#3a2418 62%)}
+/* B night city */
+.b .bg{background:
+ radial-gradient(2% 2% at 20% 45%,#7fb4ff,transparent),radial-gradient(2% 2% at 35% 55%,#ffd27f,transparent),
+ radial-gradient(2% 2% at 52% 40%,#7fb4ff,transparent),radial-gradient(2% 2% at 66% 58%,#ff8fb0,transparent),
+ radial-gradient(2% 2% at 80% 46%,#9fe0ff,transparent),radial-gradient(3% 3% at 90% 62%,#ffd27f,transparent),
+ linear-gradient(180deg,transparent 55%,#0a1020 55%),
+ linear-gradient(180deg,#070b18,#14204a 50%,#1c2c5e)}
+/* C graphite */
+.c .bg{background:radial-gradient(70% 60% at 50% 30%,#2a2a2e,#121214 70%,#0a0a0b)}
+.ui{position:relative;padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;grid-template-rows:auto auto 1fr;gap:10px;height:100%}
+.g{border-radius:16px;padding:10px 12px;backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px)}
+.dark .g{background:rgba(22,20,18,.42);border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 30px rgba(0,0,0,.35)}
+.light .g{background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.8);box-shadow:0 10px 30px rgba(120,90,50,.15);color:#2a2219}
+.hd{grid-column:1/-1;font-weight:600;font-size:15px}.light .hd{color:#2a2219}
+.k small{display:block;font-size:10px;opacity:.6}.k b{font-size:18px}.k i{font-style:normal;font-size:10px;color:#34c77b}
+.ch{grid-column:1/4;display:flex;align-items:flex-end;gap:12px;padding-bottom:14px}
+.ch span{flex:1;border-radius:8px;background:rgba(255,255,255,.18)}.light .ch span{background:rgba(255,255,255,.75)}
+.ch span.on{background:linear-gradient(#5aa2ff,#2f6fe0);box-shadow:0 0 20px #3b82f688}
+.td{font-size:11px;line-height:1.9}.td div{border-left:3px solid #f59e3b;padding-left:6px;margin-bottom:5px;opacity:.85}
+</style></head><body>
+<h1>Pulse ambient — your choice</h1><p class="s">Light mode: bright frosted glass over the dusk lounge. Dark mode: dark glass on plain graphite. Mock-ups only: the real build uses a licensed blurred photo.</p>
+<div class="grid" id="g"></div>
+<script>
+const opts=[["a light","Light mode — Dusk lounge"," (chosen)"],["c dark","Dark mode — Graphite plain"," (chosen)"]];
+const ui=`<div class="ui"><div class="hd">Good evening, Mohamad</div>
+${[["Bookings","42","+12%"],["Revenue","$4.8k","+8%"],["Reply time","9s","−3s"],["AI handled","86%","+4%"]].map(k=>`<div class="g k"><small>${k[0]}</small><b>${k[1]}</b> <i>${k[2]}</i></div>`).join("")}
+<div class="g ch">${[40,62,48,90,70,35,22].map((h,i)=>`<span class="${i==3?'on':''}" style="height:${h}%"></span>`).join("")}</div>
+<div class="g td"><b>Today</b><div>10:00 Layla · cut</div><div>12:30 Rami · color</div><div>15:00 Nour · nails</div></div></div>`;
+g.innerHTML=opts.map(o=>`<div class="opt"><h2>${o[1]}<b>${o[2]}</b></h2><div class="scene ${o[0]}"><div class="bg"></div>${ui}</div></div>`).join("");
+</script></body></html>

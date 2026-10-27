@@ -1,0 +1,23 @@
+/* Pulse ambient (design/pulse-dark-options.html, approved 2026-10-27). Loaded last.
+   Light = bright frosted glass over the dusk lounge. Dark = dark glass on plain graphite. */
+:root[data-theme="light"]{
+  --gp-ground:#3a2418;--gp-card:rgba(255,255,255,.62);--gl-frame:rgba(255,255,255,.55);--gl-rim:rgba(255,255,255,.8);
+  --gl-veil:rgba(255,246,236,.5)}
+/* text that sits straight on the scene needs the light veil above, and the dark first button keeps light text */
+:root[data-theme="light"] .td-btn:first-child:not(#_){color:#fff!important}
+:root[data-theme="light"] body::before{filter:blur(22px)!important;background:
+  radial-gradient(8% 12% at 12% 52%,#ffb347,transparent 70%),radial-gradient(7% 10% at 88% 56%,#ff9f43cc,transparent 70%),
+  linear-gradient(180deg,transparent 62%,#2a1d14 62%,#1a120c),repeating-linear-gradient(90deg,transparent 0 18%,#120d09 18% 19.5%),
+  linear-gradient(180deg,#1d2440 0%,#6b3b3a 38%,#d7814a 55%,#3a2418 62%)!important}
+:root[data-theme="dark"],:root:not([data-theme]){--gp-ground:#0a0a0b;--gp-card:rgba(30,30,34,.62);--gl-frame:rgba(22,22,25,.55);--gl-veil:transparent}
+:root[data-theme="dark"] body::before{filter:none!important;background:radial-gradient(70% 60% at 50% 30%,#2a2a2e,#121214 70%,#0a0a0b)!important}
+
+/* the scene sits behind body, so body itself must stay see-through */
+:root body:not(#_):not(#_){background:none!important}
+
+/* the Pulse AI switcher */
+.pa-switch{display:flex;gap:4px;padding:4px;margin:0 0 16px;width:max-content;max-width:100%;overflow-x:auto;border-radius:14px;
+  background:var(--gl-frame);border:1px solid var(--gl-rim);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.pa-switch button{border:0;background:none;color:var(--gp-2);font:inherit;font-size:13px;font-weight:500;padding:7px 14px;border-radius:10px;cursor:pointer;white-space:nowrap}
+.pa-switch button:hover{color:var(--gp-text)}
+.pa-switch button[aria-pressed="true"]{background:var(--gp-card);color:var(--gp-text);box-shadow:0 1px 0 var(--gl-rim-hi) inset,0 4px 14px rgba(0,0,0,.12)}
