@@ -393,3 +393,4 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS review_url text;
 CREATE TABLE IF NOT EXISTS team_calls (id serial PRIMARY KEY, business_id int NOT NULL REFERENCES businesses(id) ON DELETE CASCADE, employee text, at timestamptz DEFAULT now());
 CREATE INDEX IF NOT EXISTS team_calls_biz ON team_calls (business_id, at DESC);
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS shortcuts jsonb;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS owner_seen_at timestamptz;

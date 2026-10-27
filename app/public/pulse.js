@@ -24,8 +24,8 @@
   const PAGES = [
     ['today', 'Today', 'What is happening and what needs you now', [['Today', { entry: 'home' }]]],
     ['inbox', 'Inbox', 'Talk to your customers', [
-      ['Conversations', { page: 'inbox', tab: 'conversations', cls: 'pn-conv' }],
-      ['Needs you', { page: 'inbox', tab: 'conversations', cls: 'pn-needs' }],
+      ['Conversations', { own: 'inbox', folder: 'all' }],
+      ['Needs you', { own: 'inbox', folder: 'needs' }],
       ['Delivery queue', { page: 'inbox', tab: 'queue' }]]],
     ['calendar', 'Calendar', 'Run your schedule', [
       ['Week', { entry: 'calendar' }],
@@ -110,7 +110,7 @@
     const [, , purpose, tabs] = page, t = tabs[i] || tabs[0], spec = t[1];
     current = [id, i]; hideOwn();
     $$('[data-p10hide]').forEach(c => delete c.dataset.p10hide); // the last tab's hiding never leaks into this one
-    if (spec.own) { showOwn(spec.own); }
+    if (spec.own) { showOwn(spec.own, spec); }
     else {
       if (spec.page) dispatchEvent(new CustomEvent('openpage', { detail: { page: spec.page, tab: spec.tab } }));
       else P()[spec.entry]?.click();
@@ -196,8 +196,9 @@
     $('main').append(s); return own[key] = s;
   }
   function hideOwn() { Object.values(own).forEach(s => s.hidden = true) }
-  function showOwn(key) {
+  function showOwn(key, spec = {}) {
     $$('main > section.wrap').forEach(s => s.hidden = true);
+    if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }
     if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything Pulse AI prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
     if (key === 'brief') { const s = page('brief', 'Weekly brief', 'This week against last week, and the agents\' results. Worked out from your own numbers.', '<div id="paBrief"></div>'); s.hidden = false; loadBrief(); }
     if (key === 'ask') { const s = page('ask', 'Ask Pulse', 'Ask anything about your business. Pulse looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); }
@@ -326,7 +327,7 @@
     const w = +($('#apprN')?.textContent || 0); set('inbox', $('#attnN') && !$('#attnN').hidden ? +$('#attnN').textContent : 0);
     void w;
   }
-  const poll = () => !document.hidden && req('/api/pulse/waiting').then(d => {
+  const poll = () => !document.hidden && (current?.[0] === 'inbox' && window.PulseInbox?.refresh(), req('/api/pulse/waiting')).then(d => {
     count = d.count; waitingNow = d; badges(); if (current) need(current[0]); set2('inbox', d.chats || 0);
     set2('train', d.items.filter(x => x.kind === 'question').length);
   }).catch(() => {});

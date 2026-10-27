@@ -61,7 +61,7 @@ export const canOpen = (user, module) => user.role !== 'staff' || (user.permissi
 
 // Which section an API path belongs to (null = available to every signed-in login).
 const ROUTES = [
-  [/^\/api\/(stats|conversations|live|kpis)/, 'overview'],
+  [/^\/api\/(stats|conversations|live|kpis|inbox)/, 'overview'],
   [/^\/api\/(calendar|bookings|time-off|requests)/, 'calendar'],
   [/^\/api\/(customers|marketing)/, 'customers'],
   [/^\/api\/tools/, 'setup'],

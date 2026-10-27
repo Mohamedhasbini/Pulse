@@ -11,6 +11,7 @@ import { mountAgents } from './agents.js';
 import { mountTeam } from './team.js';
 import { mountPulse } from './pulse.js';
 import { mountShortcuts } from './shortcuts.js';
+import { mountInbox } from './inbox.js';
 import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
 import { mountLive } from './live.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
@@ -635,6 +636,7 @@ mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
 mountTeam(app, () => BIZ(), { sendWhatsApp, sendTelegram, audit });
 mountPulse(app, () => BIZ());
 mountShortcuts(app, () => BIZ());
+mountInbox(app, () => BIZ(), LOCAL);
 
 // Reviews: customers rate a chat 1-5 when it ends. Satisfaction = share of ratings that are 4 or 5.
 app.get('/api/ratings', wrap(async (req, res) => {
