@@ -90,5 +90,6 @@ window.PulseInbox = (() => {
       requestAnimationFrame(load);
     },
     refresh: () => root && load(),
+    openChat: id => root && open(+id),
   };
 })();

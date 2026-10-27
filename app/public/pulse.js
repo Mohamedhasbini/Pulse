@@ -317,32 +317,21 @@
     let box = $('#tdSc');
     if (!box) {
       kp.insertAdjacentHTML('afterend', '<div class="td-card td-sc" id="tdSc" aria-label="Your shortcuts"></div>');
-      box = $('#tdSc'); box.addEventListener('click', scClick); box.addEventListener('submit', scAdd);
+      box = $('#tdSc'); box.addEventListener('click', scClick);
     }
     const list = sc.shortcuts || [];
-    box.innerHTML = `<div class="sc-row">${list.map((x, k) => `<span class="sc"><button type="button" class="sc-go" data-i="${k}" title="${e(x.ask ? 'Ask Pulse: ' + x.ask : pageLabel(x.page) + ' › ' + (sc.pages[x.page]?.[x.tab] || ''))}">${x.ask ? '<i>✦</i>' : ''}${e(x.label)}</button><button type="button" class="sc-x" data-x="${k}" aria-label="Remove ${e(x.label)}">×</button></span>`).join('')}
-      ${list.length < sc.max ? '<button type="button" class="sc-add" data-add="1">+ Shortcut</button>' : ''}
-      <small class="sc-tip">${list.length ? '' : 'Pin what you use most. '}Or tell Pulse AI: “add a shortcut to this week's revenue”.</small></div>`;
-  }
-  function scForm() {
-    const opts = Object.entries(sc.pages).map(([p, tabs]) => `<optgroup label="${e(pageLabel(p))}">${tabs.map((t, k) => `<option value="${p}:${k}">${e(pageLabel(p))} › ${e(t)}</option>`).join('')}</optgroup>`).join('');
-    return `<form class="sc-form"><select name="to" aria-label="Opens"><option value="ask">Ask Pulse AI a question…</option>${opts}</select>
-      <input name="ask" placeholder="Question, e.g. How did this week go?" aria-label="Question"><input name="label" maxlength="32" placeholder="Button name" aria-label="Button name" required>
-      <button class="btn" type="submit">Add</button><button class="btn ghost" type="button" data-cancel="1">Cancel</button></form>`;
+    const sv = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`, SPARK = '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>';
+    box.innerHTML = `<div class="sc-row">${list.map((x, k) => `<span class="sc${x.ask ? ' ask' : ''}"><button type="button" class="sc-go" data-i="${k}" title="${e(x.ask ? 'Asks Pulse AI: ' + x.ask : 'Opens ' + pageLabel(x.page) + ' › ' + (sc.pages[x.page]?.[x.tab] || ''))}"><span class="sc-ic">${sv(x.ask ? SPARK : ICON[x.page] || SPARK)}</span>${e(x.label)}</button><button type="button" class="sc-x" data-x="${k}" aria-label="Remove ${e(x.label)}">${sv('<path d="M6 6l12 12M18 6 6 18"/>')}</button></span>`).join('')}
+      ${list.length < sc.max ? `<button type="button" class="sc-add" data-add="1">${sv('<path d="M12 5v14M5 12h14"/>')}Add shortcut<kbd>Ctrl K</kbd></button>` : ''}
+      ${list.length ? '' : '<small class="sc-tip">Pin the pages and questions you use most.</small>'}</div>`;
   }
   async function scClick(ev) {
     const t = ev.target;
-    if (t.closest('[data-add]')) { $('#tdSc .sc-row').insertAdjacentHTML('afterend', scForm()); t.closest('[data-add]').hidden = true;
-      const f = $('#tdSc .sc-form'); f.to.onchange = () => { f.ask.hidden = f.to.value !== 'ask'; if (f.to.value !== 'ask' && !f.label.value) f.label.value = f.to.selectedOptions[0].textContent.split(' › ').pop(); }; f.ask.focus(); return; }
-    if (t.closest('[data-cancel]')) return drawShortcuts();
+    if (t.closest('[data-add]')) return window.openPalette?.({ pin: true });
     const x = t.closest('[data-x]'); if (x) { const list = sc.shortcuts.filter((_, k) => k !== +x.dataset.x); try { sc.shortcuts = (await req('/api/shortcuts', 'PUT', { shortcuts: list })).shortcuts } catch {} return drawShortcuts(); }
     const g = t.closest('[data-i]'); if (g) { const s2 = sc.shortcuts[+g.dataset.i]; if (s2.ask) { await go('pulse', 1); setTimeout(() => ask(s2.ask), 300); } else go(s2.page, s2.tab); }
   }
-  async function scAdd(ev) {
-    ev.preventDefault(); const f = ev.target, to = f.to.value, body = { label: f.label.value };
-    if (to === 'ask') body.ask = f.ask.value; else { const [p, k] = to.split(':'); body.page = p; body.tab = +k; }
-    try { sc.shortcuts = (await req('/api/shortcuts', 'POST', body)).shortcuts; drawShortcuts(); } catch (err) { window.toast?.(err.message || 'Could not add it.'); }
-  }
+
 
   // ---------- badges: Inbox = chats waiting, Pulse AI = approvals, Train AI = open questions ----------
   function badges() {
@@ -360,6 +349,8 @@
   // ---------- old links land on the new pages ----------
   window.openPulse = k => go('pulse', ['approvals', 'ask', 'brief'].indexOf(k) < 0 ? 0 : ['approvals', 'ask', 'brief'].indexOf(k));
   window.openP10 = go;
+  // for the search box (palette.js)
+  window.P10 = { pages: PAGES, icon: ICON, named, ask: x => ask(x), shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts() };
   // any other way of opening a section (Today's buttons, notifications) drops our tab row so the page isn't mislabelled
   document.addEventListener('click', ev => {
     const n = ev.target.closest('nav button[data-view]'); if (!n || n.classList.contains('p10')) return;

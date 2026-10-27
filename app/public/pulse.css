@@ -2692,3 +2692,94 @@ section.p10-on:not([hidden]){row-gap:6px!important}
 .p10-on #coMsgs .co-m,.p10-on #coIn,.p10-on #coIdeas button{font-size:15px!important}
 .p10-on #tchCoach h2,.p10-on #tchCoach .co-side h2{font-size:18px!important}
 .p10-on #tchCoach .co-side :is(div,span,p,b){font-size:14px!important}
+
+/* ===== command menu (palette.js): Linear / Raycast / Magic UI style ===== */
+.cp{position:fixed;inset:0;z-index:400;display:flex;justify-content:center;align-items:flex-start;padding:14vh 16px 16px;
+  background:color-mix(in srgb,var(--gp-ground) 55%,transparent);backdrop-filter:blur(6px) saturate(120%);-webkit-backdrop-filter:blur(6px) saturate(120%);
+  animation:cpFade .16s ease-out}
+.cp[hidden]{display:none}
+.cp-panel{width:min(660px,100%);max-height:min(560px,72vh);display:flex;flex-direction:column;overflow:hidden;border-radius:20px;
+  background:color-mix(in srgb,var(--gp-card) 94%,transparent);backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%);
+  border:1px solid var(--gp-edge);box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 0 0 1px rgba(0,0,0,.04),0 30px 80px -20px rgba(0,0,0,.45),0 12px 24px -12px rgba(0,0,0,.25);
+  animation:cpIn .2s cubic-bezier(.2,.9,.25,1)}
+.cp.out{animation:cpFade .12s ease-in reverse forwards}.cp.out .cp-panel{animation:cpIn .12s ease-in reverse forwards}
+@keyframes cpFade{from{opacity:0}}
+@keyframes cpIn{from{opacity:0;transform:translateY(-6px) scale(.975)}}
+@media (prefers-reduced-motion:reduce){.cp,.cp-panel,.cp.out,.cp.out .cp-panel{animation:none}}
+.cp-in{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--gp-edge)}
+.cp-in[hidden]{display:none}
+.cp-in>svg{width:20px;height:20px;flex:none;fill:none;stroke:var(--gp-meta);stroke-width:2;stroke-linecap:round}
+.cp-in input{all:unset;flex:1;min-width:0;font-size:17px;color:var(--gp-text);caret-color:var(--p-green,#22c55e)}
+.cp-in input::placeholder{color:var(--gp-meta)}
+.cp kbd{font:600 11px/1 ui-sans-serif,system-ui;padding:4px 6px;border-radius:6px;color:var(--gp-2);background:var(--gp-nest);border:1px solid var(--gp-edge);box-shadow:0 1px 0 var(--gp-edge)}
+.cp-chip{display:inline-flex;align-items:center;gap:6px;flex:none;padding:5px 10px 5px 8px;border-radius:999px;font-size:12.5px;font-weight:600;
+  color:var(--p-green,#16a34a);background:color-mix(in srgb,var(--p-green,#22c55e) 13%,transparent)}
+.cp-chip[hidden]{display:none}
+.cp-chip svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+.cp-res{overflow:auto;overscroll-behavior:contain;padding:6px 8px 8px;scrollbar-width:thin}
+.cp-res[hidden]{display:none}
+.cp-g{padding:12px 10px 6px;font-size:11.5px;font-weight:600;letter-spacing:.02em;color:var(--gp-meta)}
+.cp-it{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:12px;cursor:pointer;transition:background .1s}
+.cp-it[aria-selected="true"]{background:var(--gp-nest);box-shadow:0 0 0 1px var(--gp-edge) inset}
+.cp-ic{flex:none;width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:var(--gp-nest);border:1px solid var(--gp-edge);color:var(--gp-2)}
+.cp-it[aria-selected="true"] .cp-ic{background:var(--gp-card);color:var(--gp-text)}
+.cp-ic svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.cp-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.cp-tx b{font-size:14.5px;font-weight:500;color:var(--gp-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-tx small{font-size:12.5px;color:var(--gp-meta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp mark{background:none;color:var(--gp-text);font-weight:700;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--p-green,#22c55e) 70%,transparent);text-decoration-thickness:2px;text-underline-offset:3px}
+.cp-tag{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;color:var(--p-green,#16a34a)}
+.cp-tag svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.4}
+.cp-ret{font-size:12px;color:var(--gp-meta);opacity:0;transition:opacity .1s}
+.cp-it[aria-selected="true"] .cp-ret{opacity:1}
+.cp-none{margin:0;padding:28px 12px;text-align:center;color:var(--gp-meta);font-size:14px}
+.cp-foot{display:flex;gap:18px;padding:10px 16px;border-top:1px solid var(--gp-edge);font-size:12px;color:var(--gp-meta)}
+.cp-foot span{display:inline-flex;align-items:center;gap:4px}
+.cp-name{padding:20px 20px 16px;display:flex;flex-direction:column;gap:16px}
+.cp-name[hidden]{display:none}
+.cp-step{margin:0;font-size:13px;font-weight:600;color:var(--gp-meta)}
+.cp-prev{display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;background:var(--gp-nest);border:1px solid var(--gp-edge)}
+.cp-prev .cp-ic{width:42px;height:42px;border-radius:12px;background:color-mix(in srgb,var(--p-green,#22c55e) 14%,var(--gp-card));color:var(--p-green,#16a34a)}
+.cp-prev .cp-ic svg{width:20px;height:20px}
+.cp-prev>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.cp-prev input{all:unset;font-size:18px;font-weight:600;color:var(--gp-text);border-bottom:1.5px solid transparent;padding:2px 0;transition:border-color .15s}
+.cp-prev input:focus{border-bottom-color:var(--p-green,#22c55e)}
+.cp-prev small{font-size:12.5px;color:var(--gp-meta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-acts{display:flex;justify-content:flex-end;gap:8px}
+.cp-btn{all:unset;cursor:pointer;padding:9px 16px;border-radius:11px;font-size:14px;font-weight:600;background:var(--gp-text);color:var(--gp-ground);transition:transform .1s,opacity .15s}
+.cp-btn:hover{opacity:.9}.cp-btn:active{transform:scale(.97)}
+.cp-btn.ghost{background:transparent;color:var(--gp-2);box-shadow:0 0 0 1px var(--gp-edge) inset}
+.cp-btn:focus-visible,.cp-it:focus-visible{outline:2px solid var(--p-green,#22c55e);outline-offset:2px}
+@media (max-width:600px){.cp{padding:8px}.cp-panel{max-height:86vh}.cp-foot{display:none}}
+
+/* ===== Today shortcuts: pills with an icon, remove on hover, add opens the command menu ===== */
+.sc-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sc{position:relative;display:inline-flex;align-items:center;border-radius:14px;background:var(--gp-card);border:1px solid var(--gp-edge);
+  box-shadow:0 1px 2px rgba(0,0,0,.05);transition:transform .15s cubic-bezier(.2,.9,.25,1),box-shadow .15s,border-color .15s}
+.sc:hover{transform:translateY(-1px);box-shadow:0 6px 18px -8px rgba(0,0,0,.25);border-color:color-mix(in srgb,var(--gp-text) 16%,transparent)}
+.sc-go{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:9px;padding:6px 14px 6px 6px;font-size:13.5px;font-weight:600;color:var(--gp-text)}
+.sc-ic{width:26px;height:26px;display:grid;place-items:center;border-radius:9px;background:var(--gp-nest);color:var(--gp-2)}
+.sc.ask .sc-ic{background:color-mix(in srgb,var(--p-green,#22c55e) 15%,transparent);color:var(--p-green,#16a34a)}
+.sc-ic svg,.sc-x svg,.sc-add svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sc-x{all:unset;cursor:pointer;position:absolute;top:-7px;right:-7px;width:20px;height:20px;display:grid;place-items:center;border-radius:50%;
+  background:var(--gp-text);color:var(--gp-ground);opacity:0;transform:scale(.7);transition:opacity .12s,transform .12s}
+.sc-x svg{width:11px;height:11px;stroke-width:2.6}
+.sc:hover .sc-x,.sc-x:focus-visible{opacity:1;transform:scale(1)}
+.sc-add{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:8px 10px 8px 12px;border-radius:14px;font-size:13.5px;font-weight:600;
+  color:var(--gp-2);border:1px dashed color-mix(in srgb,var(--gp-text) 22%,transparent);transition:color .15s,border-color .15s,background .15s}
+.sc-add:hover{color:var(--gp-text);background:var(--gp-nest);border-style:solid}
+.sc-add kbd{font:600 10.5px/1 ui-sans-serif,system-ui;padding:3px 5px;border-radius:5px;background:var(--gp-nest);border:1px solid var(--gp-edge);color:var(--gp-meta)}
+.sc-tip{color:var(--gp-meta);font-size:12.5px;margin-left:4px}
+.sc-go:focus-visible,.sc-add:focus-visible{outline:2px solid var(--p-green,#22c55e);outline-offset:2px;border-radius:12px}
+
+/* ===== the top search bar opens the command menu ===== */
+.cmd{cursor:text;transition:border-color .15s,box-shadow .15s}
+
+/* ===== one input style everywhere: soft fill, accent focus ring ===== */
+main :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea){transition:border-color .15s,box-shadow .15s,background .15s}
+main :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea):focus{
+  outline:none!important;border-color:color-mix(in srgb,var(--p-green,#22c55e) 70%,transparent)!important;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--p-green,#22c55e) 16%,transparent)!important}
+main :is(input,textarea)::placeholder{color:var(--gp-meta);opacity:1}
+.cp .cp-in input,.cp .cp-prev input{border:0!important;box-shadow:none!important;background:transparent!important;padding:2px 0!important;outline:none!important;min-height:0!important;height:auto!important;border-radius:0!important}
+.cp .cp-prev input{border-bottom:1.5px solid transparent!important}.cp .cp-prev input:focus{border-bottom-color:var(--p-green,#22c55e)!important}
