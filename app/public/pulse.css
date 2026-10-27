@@ -2847,3 +2847,13 @@ main :is(small,em,.sub,.num,.tag,.chip,.lbl,.meta,.pa-k,.sc-tip):not(#_){font-si
 /* figures: 40px at most on a working screen */
 /* navigation recedes: the active item is a neutral pill, not a coloured row */
 nav[aria-label="Main"] :is([aria-current="page"],[aria-pressed="true"],.on):not(#_){background:color-mix(in srgb,var(--gp-text) 8%,transparent)!important;color:var(--gp-text)!important;box-shadow:none!important}
+
+/* taste pass 2: status pills are quiet (ink text, a small coloured dot), icons stand plain in lists */
+.p10-need .need:not(#_){background:var(--glass-bg);color:var(--gp-text);border:1px solid var(--glass-edge);display:inline-flex;align-items:center;gap:7px;font-weight:500}
+.p10-need .need::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--need);flex:none}
+.p10-need .need:hover:not(#_){background:var(--glass-bg2)}
+.cp-it .cp-ic:not(#_){background:none;border:0;width:22px;color:var(--gp-meta)}
+.cp-it[aria-selected="true"] .cp-ic:not(#_){background:none;color:var(--gp-text)}
+.sc-ic:not(#_),.sc.ask .sc-ic:not(#_){background:none;width:18px}
+.sc-go:not(#_){padding-left:12px}
+.kp-spark{display:none}
