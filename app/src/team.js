@@ -230,7 +230,7 @@ export const PAGE_TABS = {
   today: ['Today'], inbox: ['Conversations', 'Needs you', 'Delivery queue'], calendar: ['Schedule', 'Requests', 'Booking page'],
   customers: ['Clients', 'Board', 'Win back', 'Reviews'], marketing: ['Offers', 'Discount codes', 'Agents', 'Website texts', 'Website photos', 'Website design', 'Website address'],
   pulse: ['Approvals', 'Ask Pulse', 'Brief'], train: ['Rules & coach', 'Answers', 'Review replies'], lab: ['Scenarios', 'Test chat', 'Versions'],
-  insights: ['AI performance', 'Live flow', 'Topics', 'Business', 'Timing', 'Channels'],
+  insights: ['AI performance', 'Live flow', 'Topics', 'Business', 'Services', 'Timing', 'Channels'],
   settings: ['Profile', 'Assistant', 'Hours & team', 'Services', 'FAQs', 'Policies & payments', 'Tools', 'Channels', 'Reminders', 'Security & devices', 'Look & layout'],
 };
 const SHORTCUT_PAGES = Object.entries(PAGE_TABS).map(([p, t]) => `${p} [${t.map((x, i) => `${i} ${x}`).join(', ')}]`).join('; ');

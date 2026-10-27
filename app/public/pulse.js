@@ -57,7 +57,8 @@
       ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true }],
       ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' }],
       ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true }],
-      ['Business', { page: 'analytics', tab: 'overview', panes: ['highlights', 'overview', 'next'] }],
+      ['Business', { page: 'analytics', tab: 'overview', panes: ['overview', 'next'], drop: ['Services'] }],
+      ['Services', { page: 'analytics', tab: 'overview', panes: ['services'] }],
       ['Timing', { page: 'analytics', tab: 'timing', panes: ['timing'] }],
       ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] }]]],
     ['settings', 'Settings', 'Set it up once', [
@@ -145,6 +146,8 @@
         const h = c.querySelector('h2,h3')?.textContent.trim() || '';
         c.dataset.p10hide = spec.cards.some(t => h.startsWith(t)) ? '' : '1';
       });
+      // drop: hide the cards with these headings (they have their own tab)
+      if (spec.drop) sec.querySelectorAll(':scope > .spane:not([hidden]) > *').forEach(c => { if (spec.drop.some(t => c.querySelector('h2')?.textContent.trim().startsWith(t))) c.dataset.p10hide = '1' });
       // only: keep just these children; bare: a tab that borrows one panel keeps the heading and its panes, not the
       // section's own toolbar (period chips, search, quick actions)
       [...sec.children].forEach(c => {
@@ -158,7 +161,18 @@
     }
     bar(id, i, purpose, tabs);
     mark(id);
+    fitTab(); setTimeout(fitTab, 400); setTimeout(fitTab, 1300); setTimeout(fitTab, 2600); // again once the tab's data has loaded
   }
+  // a tab never scrolls: if its content is taller than the screen, it is scaled down to fit (not below 72%)
+  function fitTab() {
+    const sec = $('main > section:not([hidden])'); if (!sec || window.LAB) return;
+    sec.style.zoom = '';
+    // scaling reflows the content (cards get wider and shorter), so step down until it fits
+    for (let z = 1, k = 0; k < 6 && sec.scrollHeight > sec.clientHeight + 2 && z > 0.72; k++) {
+      z = Math.max(0.72, z * Math.min(0.98, sec.clientHeight / sec.scrollHeight)); sec.style.zoom = z.toFixed(3);
+    }
+  }
+  addEventListener('resize', () => { clearTimeout(fitTab.t); fitTab.t = setTimeout(fitTab, 150); });
   // panes that live in another section (Discount codes, Channels) move once into the section that shows them
   function adopt(sec, panes) {
     for (const k of panes) if (!sec.querySelector(`:scope > .spane[data-pane="${k}"]`)) {

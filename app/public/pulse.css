@@ -1632,7 +1632,7 @@ main>section>.top h1::before{color:var(--pg)!important}
 
 /* ---------- light mode: frosted white glass on a soft tinted ground ---------- */
 :root[data-theme="light"]{--gl-ground:#eef0f6;--gl-card:rgba(255,255,255,.62);--gl-card2:rgba(255,255,255,.85);--gl-edge:rgba(20,24,40,.08);--gl-edge2:rgba(20,24,40,.15);--gl-hi:rgba(255,255,255,.7);--gl-float:rgba(255,255,255,.8);--gl-shadow:0 24px 60px -24px rgba(30,30,70,.3);--gl-text:#10131c;--gl-2:#4a5163;--gl-meta:#6f7686}
-:root[data-theme="light"] body{background:radial-gradient(70vw 60vh at 100% 0%,color-mix(in srgb,var(--pg,#8b7cff) 22%,transparent),transparent 65%),radial-gradient(60vw 55vh at 0% 100%,color-mix(in srgb,var(--pg2,#38d3f5) 18%,transparent),transparent 65%),var(--gl-ground)!important}
+:root[data-theme="light"] body{background:radial-gradient(70vw 55vh at 100% 0%,color-mix(in srgb,var(--pg) 8%,transparent),transparent 70%),linear-gradient(180deg,#e4e6ea,#d9dce1);background-attachment:fixed}
 :root[data-theme="light"] nav{background:rgba(255,255,255,.45)!important}
 :root[data-theme="light"] nav button[data-view]{color:#4a5163!important}
 :root[data-theme="light"] nav button[data-view][aria-current="true"]{color:#10131c!important;background:rgba(255,255,255,.8)!important}
@@ -1996,7 +1996,7 @@ body,body[data-page]{--c-green:var(--p-green);--c-orange:var(--p-orange);--c-blu
 .td-av{color:#111!important}
 
 /* ---- Light theme in the Pulse identity: a soft green-tinted ground instead of plain white ---- */
-:root[data-theme="light"]{--gp-ground:#e3ece6;--gp-card:#f3f8f4;--gp-nest:#e6efe9;--gp-nest2:#d9e6dd;--gp-edge:rgba(18,80,45,.10);--gp-text:#0f1f16;--gp-2:#3f5548;--gp-meta:#6a7f72}
+:root[data-theme="light"]{--gp-ground:#dfe1e5;--gp-card:#eceef1;--gp-nest:#e3e5e9;--gp-nest2:#d7dadf;--gp-edge:rgba(20,24,34,.08);--gp-text:#14171d;--gp-2:#474c56;--gp-meta:#737884}
 :root[data-theme="light"] body{background:radial-gradient(70vw 55vh at 100% 0%,color-mix(in srgb,var(--pg) 20%,transparent),transparent 70%),radial-gradient(60vw 50vh at 0% 100%,color-mix(in srgb,var(--p-green) 12%,transparent),transparent 70%),var(--gp-ground)}
 :root[data-theme="light"] input,:root[data-theme="light"] textarea,:root[data-theme="light"] select{background:#fbfdfb!important;border-color:rgba(18,80,45,.18)!important}
 :root[data-theme="light"] .ptabs button[aria-pressed="true"],:root[data-theme="light"] nav button[data-view][aria-current="true"],:root[data-theme="light"] .sg-row[aria-current="true"],:root[data-theme="light"] tbody tr:hover td{background:#0f3a24!important}
@@ -2322,14 +2322,11 @@ main>section.wrap>*,main section.wrap :is(.spane,.sg-pane,.fx-main,.g12,.grid,.r
 /* Pulse ambient (design/pulse-dark-options.html, approved 2026-10-27). Loaded last.
    Light = bright frosted glass over the dusk lounge. Dark = dark glass on plain graphite. */
 :root[data-theme="light"]{
-  --gp-ground:#3a2418;--gp-card:rgba(255,255,255,.62);--gl-frame:rgba(255,255,255,.55);--gl-rim:rgba(255,255,255,.8);
-  --gl-veil:rgba(255,246,236,.5)}
+  --gp-ground:#dcdfe3;--gp-card:rgba(240,241,244,.78);--gl-frame:rgba(236,238,241,.7);--gl-rim:rgba(255,255,255,.55);
+  --gl-veil:transparent}
 /* text that sits straight on the scene needs the light veil above, and the dark first button keeps light text */
 :root[data-theme="light"] .td-btn:first-child:not(#_){color:#fff!important}
-:root[data-theme="light"] body::before{filter:blur(22px)!important;background:
-  radial-gradient(8% 12% at 12% 52%,#ffb347,transparent 70%),radial-gradient(7% 10% at 88% 56%,#ff9f43cc,transparent 70%),
-  linear-gradient(180deg,transparent 62%,#2a1d14 62%,#1a120c),repeating-linear-gradient(90deg,transparent 0 18%,#120d09 18% 19.5%),
-  linear-gradient(180deg,#1d2440 0%,#6b3b3a 38%,#d7814a 55%,#3a2418 62%)!important}
+:root[data-theme="light"] body::before{filter:none!important;background:radial-gradient(70% 60% at 85% 0%,#eceef1,transparent 70%),linear-gradient(180deg,#e2e4e8,#d6d9de)!important}
 :root[data-theme="dark"],:root:not([data-theme]){--gp-ground:#0a0a0b;--gp-card:rgba(30,30,34,.62);--gl-frame:rgba(22,22,25,.55);--gl-veil:transparent}
 :root[data-theme="dark"] body::before{filter:none!important;background:radial-gradient(70% 60% at 50% 30%,#2a2a2e,#121214 70%,#0a0a0b)!important}
 
@@ -2663,3 +2660,16 @@ section.p10-on:not([hidden]){row-gap:6px!important}
 .p10-on .spane[data-pane="flow"] .sg-tile,.p10-on .spane[data-pane="flow"] .sg-tile *:not(svg *){color:var(--gp-text)!important}
 .p10-on .spane[data-pane="flow"] .sg-tile small,.p10-on .spane[data-pane="flow"] .sg-tile .sub{color:var(--gp-meta)!important}
 #sgFlow .sg-t{font-size:16px!important}#sgFlow .sg-n{font-size:18px!important}
+
+/* light mode: soft grey like the reference, no bright white surfaces */
+:root[data-theme="light"] :is(.card,.kpi,.p10-side,.sg-tile,.ib,.gc,.sc-btn){box-shadow:0 1px 2px rgba(20,24,34,.05),0 8px 24px -16px rgba(20,24,34,.18)!important}
+
+/* Insights › Business: nothing clipped. Chart fills its card, "Already booked" boxes stack, services table fits its width */
+.p10-on #inAhead .statrow{grid-template-columns:1fr!important;gap:8px}
+.p10-on #inAhead *{min-width:0;overflow-wrap:anywhere}
+.p10-on #inAhead :is(b,strong,.big,[style*="font-size"]){font-size:clamp(20px,2vw,30px)!important}
+.p10-on #inTrend{height:220px!important}
+.p10-on .spane table{width:100%!important;min-width:0!important;table-layout:auto}
+.p10-on .spane :is(.tbl,.table-wrap,.tw):has(table){overflow-x:hidden!important}
+.p10-on .spane table :is(th,td){padding-left:6px!important;padding-right:6px!important;white-space:nowrap}
+.p10-on .spane table td:has(.bar),.p10-on .spane table th:nth-child(4):has(+th){}
