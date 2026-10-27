@@ -2568,3 +2568,20 @@ body .p10-on .spane[data-pane="flow"] .sg-flowcard:not(#_),body .p10-on .spane[d
 /* more room for the message preview; the channel shows in the open chat */
 .ib-row{grid-template-columns:30px 120px 1fr 46px!important}.ib-row .ib-ch{display:none}
 .ib{height:calc(100vh - 104px)!important}
+
+/* long lists: Gmail-style range above the list (listfit.js) */
+.lf-bar{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin:0 0 6px}
+.lf-bar span{font:12px 'Geist Mono',monospace;color:var(--gp-meta);margin-right:6px}
+.lf-bar button{all:unset;cursor:pointer;width:26px;height:26px;border-radius:50%;text-align:center;line-height:26px;font-size:17px;color:var(--gp-text)}
+.lf-bar button:hover{background:var(--gp-nest)}.lf-bar button:disabled{opacity:.3;cursor:default}
+
+/* Website: its four parts are sidebar tabs; the editor uses the full width with its cards side by side,
+   and "Open website" in the header shows the live site */
+.p10-on #wsTabs{display:none!important}
+.p10-on #wsMain{grid-template-columns:1fr!important}
+.p10-on #wsMain>.wsprev{display:none!important}
+.p10-on #wsMain>.wsedit{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:12px;align-items:start}
+/* Insights: AI performance and Topics put their cards in two columns */
+.p10-on .spane[data-pane="live"]:not([hidden]),.p10-on .spane[data-pane="trends"]:not([hidden]){display:grid!important;grid-template-columns:1fr 1fr;gap:12px;align-content:start}
+.p10-on .spane[data-pane="live"]>.row,.p10-on .spane[data-pane="trends"]>.row{grid-column:1/-1}
+.p10-on .spane[data-pane="live"] .card,.p10-on .spane[data-pane="live"] #spKpis,.p10-on .spane[data-pane="live"] #spReasons{height:auto!important;max-height:none!important;overflow:visible!important}

@@ -15,6 +15,8 @@ window.PulseInbox = (() => {
     if (now - d < 6 * 864e5) return d.toLocaleDateString('en-GB', { weekday: 'short' });
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   }
+  // the receptionist's name as this business set it (Settings › Assistant), Nora by default
+  const ai = () => (typeof biz !== 'undefined' && biz?.assistant_name) || 'Nora';
   const who = r => r.name || (r.phone && !/^test-|^e2e-/.test(r.phone) ? r.phone : 'Test customer');
   const initials = n => n.split(/\s+/).map(x => x[0]).slice(0, 2).join('').toUpperCase();
 
@@ -43,9 +45,9 @@ window.PulseInbox = (() => {
     root.querySelector('#ibRows').innerHTML = d.rows.length ? d.rows.map(r => `<button type="button" class="ib-row${r.unread ? ' unread' : ''}${r.id === st.open ? ' on' : ''}" data-c="${r.id}">
         <span class="ib-av">${e(initials(who(r)))}</span>
         <span class="ib-who">${e(who(r))}</span>
-        <span class="ib-what">${r.needs_attention ? '<i class="chip need">Needs you</i>' : KIND[r.kind] ? `<i class="chip k-${r.kind}">${KIND[r.kind]}</i>` : ''}<span class="ib-snip">${r.last ? (r.last.role === 'customer' ? '' : r.last.role === 'staff' ? 'You: ' : 'Nora: ') + e(r.last.text) : ''}</span></span>
+        <span class="ib-what">${r.needs_attention ? '<i class="chip need">Needs you</i>' : KIND[r.kind] ? `<i class="chip k-${r.kind}">${KIND[r.kind]}</i>` : ''}<span class="ib-snip">${r.last ? (r.last.role === 'customer' ? '' : r.last.role === 'staff' ? 'You: ' : ai() + ': ') + e(r.last.text) : ''}</span></span>
         <span class="ib-ch">${e(CH[r.channel] || r.channel)}</span><span class="ib-at">${e(when(r.at))}</span></button>`).join('')
-      : `<p class="ib-none">${st.q ? 'No chats match your search.' : st.folder === 'needs' ? 'Nothing needs you. Nora is handling every chat.' : 'No chats here yet.'}</p>`;
+      : `<p class="ib-none">${st.q ? 'No chats match your search.' : st.folder === 'needs' ? `Nothing needs you. ${ai()} is handling every chat.` : 'No chats here yet.'}</p>`;
   }
 
   async function open(id) {
@@ -56,10 +58,10 @@ window.PulseInbox = (() => {
     req(`/api/inbox/${id}/seen`, 'POST', {}).then(() => { const r = root.querySelector(`.ib-row[data-c="${id}"]`); r?.classList.remove('unread'); }).catch(() => {});
     read.innerHTML = `<header class="ib-head"><div><h2>${e(who(row))}</h2><small>${e(CH[row.channel] || row.channel || '')}${row.phone && !/^test-/.test(row.phone) ? ' · ' + e(row.phone) : ''}${row.attention_reason ? ' · ' + e(row.attention_reason) : ''}</small></div>
         <div class="ib-acts">${row.needs_attention ? '<button type="button" class="btn" data-a="done">Mark done</button>' : ''}
-        <button type="button" class="btn ghost" data-a="ai">${row.ai_paused ? 'Let Nora answer' : 'Take over'}</button></div></header>
+        <button type="button" class="btn ghost" data-a="ai">${row.ai_paused ? 'Let ' + ai() + ' answer' : 'Take over'}</button></div></header>
       <div class="ib-cust">${cu.id ? `<span><b>${cu.visits || 0}</b> visits</span><span><b>$${Math.round(cu.spent || 0)}</b> spent</span><span>${cu.next ? 'Next: <b>' + e(cu.next.replace('T', ' ')) + '</b>' : 'No upcoming visit'}</span>` : ''}</div>
-      <div class="ib-msgs" id="ibMsgs">${msgs.map(m => `<div class="ib-m ${m.role}"><p>${e(m.text)}</p><small>${m.role === 'customer' ? '' : m.role === 'staff' ? 'You · ' : 'Nora · '}${e(when(m.at))}</small></div>`).join('')}</div>
-      <form class="ib-reply" id="ibReply"><input name="t" placeholder="${row.ai_paused ? 'Reply to ' + e(who(row)) : 'Reply (Nora pauses while you handle it)'}" autocomplete="off" aria-label="Reply"><button class="btn" type="submit">Send</button></form>`;
+      <div class="ib-msgs" id="ibMsgs">${msgs.map(m => `<div class="ib-m ${m.role}"><p>${e(m.text)}</p><small>${m.role === 'customer' ? '' : m.role === 'staff' ? 'You · ' : ai() + ' · '}${e(when(m.at))}</small></div>`).join('')}</div>
+      <form class="ib-reply" id="ibReply"><input name="t" placeholder="${row.ai_paused ? 'Reply to ' + e(who(row)) : 'Reply (' + ai() + ' pauses while you handle it)'}" autocomplete="off" aria-label="Reply"><button class="btn" type="submit">Send</button></form>`;
     const m = read.querySelector('#ibMsgs'); m.scrollTop = m.scrollHeight;
     read.querySelector('#ibReply').addEventListener('submit', async ev => {
       ev.preventDefault(); const t = ev.target.t.value.trim(); if (!t) return;

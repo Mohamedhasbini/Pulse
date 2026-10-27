@@ -3,7 +3,8 @@
 import { q, one } from './db.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
-// folder → the conversations it holds (test chats only in their own folder)
+// folder → the conversations it holds (test chats only in their own folder). Counts are unread chats, like Gmail;
+// Needs you counts every chat waiting for the owner.
 const FOLDERS = {
   needs: `c.needs_attention AND c.channel<>'test'`,
   all: `c.channel<>'test'`,
@@ -30,7 +31,7 @@ export function mountInbox(app, BIZ, LOCAL) {
         FROM conversations c JOIN customers cu ON cu.id=c.customer_id WHERE ${where}
         ORDER BY c.needs_attention DESC, c.updated_at DESC LIMIT ${limit} OFFSET ${offset}`, args),
       q(`SELECT count(*)::int AS total FROM conversations c JOIN customers cu ON cu.id=c.customer_id WHERE ${where}`, args),
-      q(`SELECT ${Object.entries(FOLDERS).map(([k, w]) => `count(*) FILTER (WHERE ${w}${k === 'all' || k === 'test' ? ` AND ${UNREAD}` : ''})::int AS ${k}`).join(', ')}
+      q(`SELECT ${Object.entries(FOLDERS).map(([k, w]) => `count(*) FILTER (WHERE ${w}${k === 'needs' ? '' : ` AND ${UNREAD}`})::int AS ${k}`).join(', ')}
         FROM conversations c WHERE c.business_id=$1`, [B])]);
     res.json({ folder, total, offset, limit, rows, counts });
   }));

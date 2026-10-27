@@ -40,7 +40,10 @@
       ['Offers', { page: 'people', tab: 'offers' }],
       ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'] }],
       ['Agents', { entry: 'agents' }],
-      ['Website', { entry: 'website' }]]],
+      ['Website texts', { entry: 'website', ws: 0 }],
+      ['Website photos', { entry: 'website', ws: 1 }],
+      ['Website design', { entry: 'website', ws: 2 }],
+      ['Website address', { entry: 'website', ws: 3 }]]],
     ['pulse', 'Pulse AI', 'Your AI assistant', [['Approvals', { own: 'approvals' }], ['Ask Pulse', { own: 'ask' }], ['Brief', { own: 'brief' }]]],
     ['train', 'Train Nora', 'Make Nora smarter', [
       ['Rules & coach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach', 'tchRules'] }],
@@ -127,6 +130,8 @@
       const n = spec.panes ? sec.querySelectorAll(':scope > .spane:not([hidden])').length : 0;
       sec.classList.toggle('p10-multi', n > 1); if (n > 1) sec.style.setProperty('--p10n', n === 4 ? 2 : Math.min(n, 3));
       if (spec.mode) $(`#tchMode button[data-m="${spec.mode}"]`)?.click();
+      // the website editor's own tabs become sidebar tabs
+      if (spec.ws != null) $$('#wsTabs button')[spec.ws]?.click();
       // a long form shows only the fields of this tab (Save stays); the other cards of its panel wait for their own tab
       const form = $('#setupForm');
       if (spec.form && form) {
