@@ -4,12 +4,12 @@
 // Test lab scenarios are scripted customers; a run sends their lines through the real receptionist on the
 // test channel and checks the replies with plain rules, so a run costs one AI call per line and only when asked.
 import { q, one } from './db.js';
-import { handleMessage } from './brain.js';
+import { handleMessage, aiRoom } from './brain.js';
 import { addRule } from './rules.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const STARTERS = [
-  { name: 'Book an appointment', goal: 'book', mood: 'neutral', language: 'English', lines: ['Hi, I would like to book an appointment', 'The first one is fine', 'Tomorrow', 'The first time is fine', 'Yes please'] },
+  { name: 'Book an appointment', goal: 'book', mood: 'neutral', language: 'English', lines: ['Hi, I would like to book a haircut tomorrow', 'The first time is fine', 'Yes please', 'No email, WhatsApp is fine'] },
   { name: 'Ask the price', goal: 'answer', mood: 'neutral', language: 'English', lines: ['How much is your most popular service?'] },
   { name: 'Upset about waiting', goal: 'calm', mood: 'negative', language: 'English', lines: ['I waited 20 minutes last time, this is not okay.'] },
   { name: 'Wants a person', goal: 'handoff', mood: 'neutral', language: 'English', lines: ['Can I talk to a real person please?'] },
@@ -36,6 +36,9 @@ async function run(biz, s) {
   const phone = `test-lab-${s.id}-${Date.now().toString(36)}`, turns = [];
   for (const line of s.lines) {
     turns.push({ role: 'customer', text: line });
+    // pace like a real customer: wait (up to a minute) for room under the shared per-minute AI limit, so a test
+    // never fails just because the AI was busy
+    for (let w = 0; w < 30 && !(await aiRoom()); w++) await new Promise(r => setTimeout(r, 2000));
     const t0 = Date.now(), r = await handleMessage({ businessId: biz, phone, name: 'Test lab', text: line, channel: 'test' });
     const m = r.conversationId && await one(`SELECT source FROM messages WHERE conversation_id=$1 AND role='assistant' ORDER BY id DESC LIMIT 1`, [r.conversationId]);
     const c = r.conversationId && await one('SELECT outcome, needs_attention FROM conversations WHERE id=$1', [r.conversationId]);
@@ -47,6 +50,9 @@ async function run(biz, s) {
   const checks = judge(s.goal, s.mood, turns), score = Math.round(checks.filter(c => c.ok).length / checks.length * 100);
   // the test conversation is only a test: keep it out of Needs you
   await q(`UPDATE conversations SET needs_attention=false WHERE business_id=$1 AND customer_id IN (SELECT id FROM customers WHERE business_id=$1 AND phone=$2)`, [biz, phone]);
+  // and its booking is only a test too: remove it so it never blocks a real customer's time
+  await q(`DELETE FROM requests WHERE booking_id IN (SELECT b.id FROM bookings b JOIN customers cu ON cu.id=b.customer_id WHERE b.business_id=$1 AND cu.phone=$2)`, [biz, phone]);
+  await q(`DELETE FROM bookings WHERE business_id=$1 AND customer_id IN (SELECT id FROM customers WHERE business_id=$1 AND phone=$2)`, [biz, phone]);
   const ver = await one('SELECT id FROM ai_versions WHERE business_id=$1 ORDER BY id DESC LIMIT 1', [biz]);
   const r = await one('INSERT INTO test_runs (business_id, scenario_id, version_id, transcript, checks, score) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, created_at',
     [biz, s.id, ver?.id || null, JSON.stringify(turns), JSON.stringify(checks), score]);

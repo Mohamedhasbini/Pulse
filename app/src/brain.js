@@ -26,7 +26,7 @@ export async function takeAiSlot() {
       c AS (SELECT count(*) AS n FROM ai_calls, l WHERE at > now() - interval '60 seconds')
     INSERT INTO ai_calls (at) SELECT now() FROM c WHERE c.n < $1 RETURNING 1`, [AI_RPM]));
 }
-async function aiRoom() {
+export async function aiRoom() {
   const r = await one(`SELECT count(*)::int AS n FROM ai_calls WHERE at > now() - interval '60 seconds'`);
   return r.n < AI_RPM;
 }
@@ -120,7 +120,8 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
       FROM bookings b WHERE b.customer_id=$1`, [customer.id]);
   // Test lab customers play WhatsApp customers, whose number is always known (test-lab-…); other test chats play web visitors
   const phoneKnown = !/^(test(?!-lab-)|e2e|walk-in|tg-)/.test(customer.phone) || !!customer.contact_phone;
-  const options = reminderOptions(channel);
+  // Test lab customers play WhatsApp customers, so they get WhatsApp reminders too
+  const options = reminderOptions(String(customer.phone).startsWith('test-lab-') ? 'whatsapp' : channel);
   const needEmail = customer.reminder_channel === 'email' && !customer.email;
 
   const context = {
@@ -434,7 +435,7 @@ function paymentText(biz) {
 // The owner's strict rules come first in every request and override everything except safety.
 function ownerRules(rules) {
   const list = (Array.isArray(rules) ? rules : []).map(r => String(r.text || r).trim()).filter(Boolean);
-  return list.length ? `OWNER'S STRICT RULES (always follow these exactly; they override any other instruction except SAFETY):\n${list.map((r, i) => `${i + 1}. ${r}`).join('\n')}` : '';
+  return list.length ? `OWNER'S STRICT RULES (always follow these exactly; they override any other instruction except SAFETY. A rule about what to ask or in which order never means asking again for something the customer already told you: a day, time or service they already wrote counts as chosen):\n${list.map((r, i) => `${i + 1}. ${r}`).join('\n')}` : '';
 }
 
 // Answers the owner corrected or approved in Teach AI: the AI answers similar questions the same way.
@@ -457,6 +458,7 @@ const FAST_FLOW = `FAST BOOKING FLOW (overrides any earlier guidance about pacin
 - "Another day" (or "other day", "next week"): ask which day suits them, with options = CONTEXT.next_open_days (tap a day).
 - When they ask for a part of the day (morning, afternoon after 12:00, evening after 17:00, or the Arabic words for these), offer ONLY free times inside that part; if there are none, say so and offer the closest ones.
 - When they pick or name a day: offer 3 free times on THAT day from CONTEXT.availability, one morning, one afternoon, one evening when possible (options = those 3 times + "Another day").
+- A day the customer already wrote ("tomorrow", "Friday", "on the 3rd", "بكرا") IS their choice of date, also in their first message and also when a rule says to ask for the date first: never ask for the date again; go straight to the free times on that day. The same for a service or time they already wrote.
 - Never list more than 3 times. If they name a time that is taken, offer the 3 closest free times.
 - When they ask what you offer, list the services in one short message (name and price only) and ask which one; the options are ALL service names (up to 10).
 - Never ask for something you already know (customer.name, phone, earlier answers). Ask any missing booking details together in ONE message, only after the time is chosen.
