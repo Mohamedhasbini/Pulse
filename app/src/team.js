@@ -12,7 +12,11 @@ import * as metrics from './metrics.js';
 import { addRule } from './rules.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
-const DAILY_CAP = +process.env.TEAM_DAILY_CALLS || 80, MAX_STEPS = 4;
+// The daily limit counts questions the owner asked (one row per question, however many AI steps it took),
+// over the business's own calendar day. The receptionist is protected separately by takeAiSlot's per-minute pacing.
+const DAILY_CAP = +process.env.TEAM_DAILY_QUESTIONS || 150, MAX_STEPS = 4;
+const USED_TODAY = `SELECT count(*)::int AS n FROM team_calls WHERE business_id=$1
+  AND (at AT TIME ZONE COALESCE((SELECT timezone FROM businesses WHERE id=$1),'Asia/Beirut'))::date = (now() AT TIME ZONE COALESCE((SELECT timezone FROM businesses WHERE id=$1),'Asia/Beirut'))::date`;
 const URL_ = () => process.env.ASSISTANT_WEBHOOK_URL || String(process.env.N8N_WEBHOOK_URL || '').replace(/\/webhook\/.*$/, '/webhook/pulse-assistant');
 const TZ = `COALESCE(bz.timezone,'Asia/Beirut')`;
 const day = d => `to_char(${d} AT TIME ZONE ${TZ},'Dy DD Mon HH24:MI')`;
@@ -336,22 +340,23 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
     ] });
   }));
   app.get('/api/team', wrap(async (_req, res) => {
-    const B = await biz(), [used] = await q(`SELECT count(*)::int AS n FROM team_calls WHERE business_id=$1 AND at > now() - interval '24 hours'`, [B.id]);
+    const B = await biz(), [used] = await q(USED_TODAY, [B.id]);
     res.json({ team: Object.entries(TEAM).map(([id, e]) => ({ id, name: e.name, role: e.role, avatar: e.avatar, skills: e.skills })), calls_left: Math.max(0, DAILY_CAP - used.n), cap: DAILY_CAP });
   }));
   app.post('/api/team/ask', wrap(async (req, res) => {
     const B = await biz(), convo = (Array.isArray(req.body.messages) ? req.body.messages : []).slice(-10).filter(m => m && m.text);
     if (!convo.length || convo[convo.length - 1].role !== 'owner') return res.status(400).json({ error: 'Ask a question first.' });
     const e = TEAM[req.body.employee] ? req.body.employee : route(convo[convo.length - 1].text);
-    const [used] = await q(`SELECT count(*)::int AS n FROM team_calls WHERE business_id=$1 AND at > now() - interval '24 hours'`, [B.id]);
-    if (used.n >= DAILY_CAP) return res.status(429).json({ error: `Your team answered ${DAILY_CAP} questions today; they’re back tomorrow. This keeps the receptionist’s AI free for your customers.` });
+    const [used] = await q(USED_TODAY, [B.id]);
+    if (used.n >= DAILY_CAP) return res.status(429).json({ error: `You've asked your team ${DAILY_CAP} questions today, the daily limit. They're back at midnight. Your receptionist keeps answering customers as normal.` });
+    let counted = false;
     // today's snapshot comes with every question, so simple ones need no lookup
     const results = [{ name: 'today', args: {}, data: await TOOLS.today.run(B).catch(() => ({})) }], used_tools = [];
     let out = null;
     for (let step = 0; step < MAX_STEPS; step++) {
       try { out = await ask(prompt(B, e, convo, results, String(req.body.page || '').slice(0, 40))); }
       catch (err) { if (step === 0) return res.status(err.status || 503).json({ error: err.status ? err.message : 'The AI isn’t reachable right now. Try again in a minute.' }); out = { busy: true }; break; }
-      await q('INSERT INTO team_calls (business_id, employee) VALUES ($1,$2)', [B.id, e]);
+      if (!counted) { await q('INSERT INTO team_calls (business_id, employee) VALUES ($1,$2)', [B.id, e]); counted = true; }
       if (out.broken) { convo.push({ role: 'system', text: 'Your last reply was not valid JSON. Reply with one valid JSON object only.' }); continue; }
       // an answer that offers to look something up instead of looking: send it back to do the work
       if (out.answer && step < MAX_STEPS - 1 && /\b(shall|should|would you like|do you want|want) (me to |i )?(pull|check|fetch|look|get|dig|find)\b|\bi (can|could|need to) (pull|fetch|check|look)\b/i.test(out.answer)) {
