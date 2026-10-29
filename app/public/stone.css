@@ -67,3 +67,60 @@
 
 /* Pulse AI chat follows the Stone palette in light */
 :root[data-theme="light"] .pc{--pc-bg:var(--st-ground);--pc-side:#e1dfd9;--pc-raise:var(--st-raise);--pc-line:#1e1d1b12;--pc-line2:#1e1d1b21;--pc-ink:var(--st-ink);--pc-mut:var(--st-2);--pc-dim:var(--st-meta);--pc-acc:var(--st-acc);--pc-acc-ink:#fff}
+
+/* ===== data: tables, charts, meters, KPIs (2026-10-29) =====
+   Numbers in tabular figures and aligned right, quiet headers, a hover row, thin accent bars, sparklines on KPIs. */
+:root[data-theme="light"] main table:not(#_){font-variant-numeric:tabular-nums;border-collapse:separate;border-spacing:0}
+:root[data-theme="light"] main table th:not(#_):not(#_){font-size:11.5px!important;font-weight:600!important;text-transform:uppercase;letter-spacing:.06em;color:var(--st-meta)!important;background:transparent!important;border-bottom:1px solid var(--st-line2)!important;padding-top:10px;padding-bottom:10px}
+:root[data-theme="light"] main table td:not(#_){border-bottom:1px solid var(--st-line)!important;border-top:0!important}
+:root[data-theme="light"] main table tbody tr:hover td:not(#_){background:#1e1d1b05}
+:root[data-theme="light"] main table tbody tr:last-child td:not(#_){border-bottom:0!important}
+:root[data-theme="light"] main :is(td,th).num:not(#_),:root[data-theme="light"] main td.n:not(#_){text-align:right}
+:root[data-theme="light"] main .num:not(#_){font-variant-numeric:tabular-nums}
+/* bars: a hairline track with a solid accent fill */
+:root[data-theme="light"] main .bar:not(#_){height:6px!important;border-radius:99px!important;background:#1e1d1b0d!important;overflow:hidden}
+:root[data-theme="light"] main .bar i:not(#_){background:var(--st-acc)!important;border-radius:99px!important;background-image:none!important;opacity:.85}
+/* Today meters: quiet track, deep green fill instead of black */
+:root[data-theme="light"] .sg-track:not(#_){background:#1e1d1b0d!important}
+:root[data-theme="light"] .sg-track i:not(#_):not(#_){background:var(--st-acc)!important;color:#fff!important}
+:root[data-theme="light"] .sg-track i.ink:not(#_):not(#_){background:var(--st-acc)!important}
+/* KPI cards: big serif-free figure, label above, delta and sparkline below */
+:root[data-theme="light"] main .kpi:not(#_){position:relative;overflow:hidden}
+:root[data-theme="light"] main .kpi .k-l:not(#_){font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--st-meta)}
+:root[data-theme="light"] main .kpi .v:not(#_){letter-spacing:-.02em}
+:root[data-theme="light"] main .delta:not(#_){color:var(--st-acc)!important;font-weight:600}
+:root[data-theme="light"] main .delta.neg:not(#_){color:var(--bad)!important}
+.k-spark{display:block;width:100%;height:30px;margin-top:10px}
+/* charts: thin grid, muted axis text */
+:root[data-theme="light"] main svg text:not(#_){fill:var(--st-meta);font-size:11px}
+:root[data-theme="light"] main .legend span::before:not(#_){border-radius:2px}
+/* heatmap cells in the accent */
+:root[data-theme="light"] #inHeat i:not(#_){background:var(--st-acc)!important;border-radius:3px}
+
+/* ===== Agents page: live analyst cards (works in both themes through the shared tokens) ===== */
+.desk{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:4px 0 22px}
+.desk-c{display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:14px;background:var(--gp-card,var(--glass));border:1px solid var(--gp-edge,var(--edge));box-shadow:var(--st-shadow,none)}
+.desk-c header{display:flex;align-items:center;gap:12px}
+.desk-c header .av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:650;flex:none}
+.desk-c header b{display:block;font-size:15px}
+.desk-c header small{color:var(--gp-meta,var(--muted));font-size:12.5px}
+.desk-st{margin-left:auto;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+.desk-st.on{background:color-mix(in srgb,var(--need,#b4622e) 14%,transparent);color:var(--need,#b4622e)}
+.desk-read{margin:0;font-size:14px;line-height:1.55;color:var(--gp-text,var(--ink))}
+.desk-pg i{display:block;height:5px;border-radius:99px;background:color-mix(in srgb,var(--gp-text,var(--ink)) 9%,transparent);overflow:hidden}
+.desk-pg u{display:block;height:100%;background:var(--accent);border-radius:99px}
+.desk-pg small{display:block;margin-top:6px;font-size:12px;color:var(--gp-meta,var(--muted))}
+.desk-pg b{color:var(--gp-text,var(--ink))}
+.desk-flags{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.desk-flags button{all:unset;box-sizing:border-box;cursor:pointer;width:100%;display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:var(--gp-nest,var(--glass2));font-size:13.5px}
+.desk-flags button:hover{background:var(--gp-nest2,var(--glass2))}
+.desk-flags em{margin-left:auto;font-style:normal;color:var(--gp-meta,var(--muted))}
+.desk-tag{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border-radius:5px;flex:none;background:color-mix(in srgb,var(--need,#b4622e) 15%,transparent);color:var(--need,#b4622e)}
+.desk-tag.bad{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+.desk-tag.good{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.desk-c footer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:auto;padding-top:4px}
+.desk-lk{all:unset;cursor:pointer;font-size:12.5px;color:var(--gp-2,var(--muted));padding:5px 9px;border-radius:7px;border:1px solid var(--gp-edge,var(--edge))}
+.desk-lk:hover{color:var(--gp-text,var(--ink))}
+.desk-ask{margin-left:auto;font:inherit;font-size:13px;font-weight:600;padding:7px 13px;border-radius:9px;border:0;cursor:pointer;background:var(--gp-text,var(--ink));color:var(--gp-ground,#fff)}
+.desk-ask:hover{background:var(--accent);color:#fff}
+.ag-n:not(#_){font-family:var(--body,inherit)!important;font-size:12px!important;font-weight:600;padding:3px 9px;border-radius:99px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)!important;white-space:nowrap}

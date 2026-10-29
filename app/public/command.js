@@ -264,4 +264,6 @@
   }, 400);
   setTimeout(() => clearInterval(launch), 20000);
   window.PulseCommand = { open, close, ask: q => open(q) };
+  // the old side-panel team chat is retired: every "talk to the team" link opens this chat instead
+  window.openTeam = (_id, text) => open(text || undefined);
 })();

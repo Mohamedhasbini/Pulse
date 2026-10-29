@@ -59,7 +59,7 @@
       ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' }],
       ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true }],
       ['Business', { page: 'analytics', tab: 'overview', panes: ['overview', 'next'], drop: ['Services'] }],
-      ['Services', { page: 'analytics', tab: 'overview', panes: ['services'] }],
+      ['Services', { page: 'analytics', tab: 'overview', panes: ['overview'], cards: ['Services'] }],
       ['Timing', { page: 'analytics', tab: 'timing', panes: ['timing'] }],
       ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] }]]],
     ['settings', 'Settings', 'Set it up once', [
@@ -128,6 +128,8 @@
       const h = sec.querySelector(':scope > .top h1'); if (h) h.textContent = page[1];
       sec.classList.remove('pn-conv', 'pn-needs', 'p10-bare'); if (spec.cls) sec.classList.add(spec.cls); if (spec.bare) sec.classList.add('p10-bare');
       if (spec.panes) { adopt(sec, spec.panes); sec.querySelectorAll(':scope > .spane').forEach(p => p.hidden = !spec.panes.includes(p.dataset.pane)); }
+      // cards hidden by another tab (drop, cards, form) come back first, so each tab starts from its full panel
+      sec.querySelectorAll(':scope > .spane > *').forEach(c => { delete c.dataset.p10hide });
       // several panels in one tab sit side by side (2 or 3 columns) so the tab fits the screen without scrolling
       const n = spec.panes ? sec.querySelectorAll(':scope > .spane:not([hidden])').length : 0;
       sec.classList.toggle('p10-multi', n > 1); if (n > 1) sec.style.setProperty('--p10n', n === 4 ? 2 : Math.min(n, 3));

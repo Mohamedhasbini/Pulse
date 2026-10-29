@@ -36,7 +36,7 @@ export const TEAM = {
   sam: { name: 'Sam', role: 'Business analyst', avatar: 'S', skills: 'revenue, trends, services, channels, no-shows, busiest times, what to improve',
     tools: ['overview', 'revenue', 'by_service', 'by_channel', 'busy_times', 'top_customers', 'support', 'today'], actions: [] },
   // Pulse AI: one assistant for the whole dashboard, with every tool and every action of the four above
-  pulse: { name: 'Pulse AI', role: 'business partner: senior consultant and chief of staff with deep expertise in strategy, marketing, sales, operations, finance, pricing, customer experience, HR and data analysis', avatar: 'P',
+  pulse: { name: 'Pulse AI', title: 'Business partner', role: 'business partner: senior consultant and chief of staff with deep expertise in strategy, marketing, sales, operations, finance, pricing, customer experience, HR and data analysis', avatar: 'P',
     skills: 'everything in the dashboard: bookings and the calendar, customers, conversations and support, Nora the receptionist and her rules, growth and offers, revenue and trends, and the dashboard itself (shortcuts, where to find things, how to use each page)',
     tools: ['today', 'bookings', 'free_slots', 'find_customer', 'customer', 'services', 'support', 'conversations', 'conversation', 'unanswered', 'reviews', 'rules', 'opportunities', 'top_customers', 'quiet_days', 'overview', 'revenue', 'by_service', 'by_channel', 'busy_times'],
     actions: ['send_message', 'teach_answer', 'add_rule', 'run_agent', 'add_shortcut', 'book', 'move_booking', 'set_booking_status', 'block_time', 'open_page'] },
@@ -363,7 +363,7 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
       (SELECT to_char(min(starts_at) AT TIME ZONE $2,'HH24:MI') FROM bookings WHERE business_id=$1 AND status='confirmed' AND starts_at > now() AND (starts_at AT TIME ZONE $2)::date=(now() AT TIME ZONE $2)::date) AS next_at,
       (SELECT count(*) FROM conversations WHERE business_id=$1 AND needs_attention AND channel<>'test')::int AS open_cases,
       (SELECT count(*) FROM conversations c WHERE business_id=$1 AND attention_reason IS NOT NULL AND NOT needs_attention AND updated_at > now() - interval '7 days')::int AS solved_cases_7d,
-      (SELECT count(DISTINCT lower(question)) FROM learning WHERE business_id=$1 AND status='open')::int AS unanswered,
+      (SELECT count(DISTINCT lower(l.question)) FROM learning l LEFT JOIN conversations c ON c.id=l.conversation_id WHERE l.business_id=$1 AND l.status='open' AND c.channel IS DISTINCT FROM 'test')::int AS unanswered,
       (SELECT count(*) FROM learning WHERE business_id=$1 AND status='answered' AND answered_at > now() - interval '7 days')::int AS taught_7d,
       (SELECT count(*) FROM agent_actions WHERE business_id=$1 AND status='sent' AND created_at > now() - interval '7 days')::int AS sent_7d,
       (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND status<>'cancelled' AND starts_at >= date_trunc('week', now() AT TIME ZONE $2) AT TIME ZONE $2 AND starts_at < now()) AS week_rev,
@@ -399,7 +399,7 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
   }));
   app.get('/api/team', wrap(async (_req, res) => {
     const B = await biz(), [used] = await q(USED_TODAY, [B.id]);
-    res.json({ team: Object.entries(TEAM).map(([id, e]) => ({ id, name: e.name, role: e.role, avatar: e.avatar, skills: e.skills })), calls_left: Math.max(0, DAILY_CAP - used.n), cap: DAILY_CAP });
+    res.json({ team: Object.entries(TEAM).map(([id, e]) => ({ id, name: e.name, role: e.title || e.role, avatar: e.avatar, skills: e.skills })), calls_left: Math.max(0, DAILY_CAP - used.n), cap: DAILY_CAP });
   }));
   app.post('/api/team/ask', wrap(async (req, res) => {
     const B = await biz(), convo = (Array.isArray(req.body.messages) ? req.body.messages : []).slice(-10).filter(m => m && m.text);

@@ -11,11 +11,14 @@ async function loadInsights(){if(inSampleOn)return renderInsights(sampleInsights
 function renderInsights(d){window.inD=d;const t=d.totals,p=d.prev,past=t.completed+t.no_show,ppast=p.completed+p.no_show,ret=d.customers.returning,nw=d.customers.new,empty=!t.bookings&&!d.conversations;
   $("#inBanner").hidden=!inSampleOn;$("#inSample").hidden=inSampleOn||t.bookings>=3;
   $("#inSub").textContent=empty?"No bookings or chats in this period yet. Everything below fills in automatically.":`Last ${d.days===365?"12 months":d.days+" days"}: ${plural(t.bookings,"booking")}, ${plural(d.conversations,"conversation")}, ${plural(t.customers,"customer")}.`;
-  const k=(l,v,sub,hero)=>`<div class="kpi glass${hero?" hero":""}"><span class="k-l">${l}</span><span class="v num">${v}</span>${sub}</div>`;
+  // each KPI carries a sparkline of the period, so the number has a shape, not just a value
+  const spark=key=>{const v=d.trend.map(x=>typeof key==="function"?key(x):x[key]||0),m=Math.max(...v,0);if(v.length<3||!m)return"";const w=120,h=30,X=i=>i*(w/(v.length-1)),Y=x=>h-2-x/m*(h-6);
+    const pts=v.map((x,i)=>`${X(i).toFixed(1)},${Y(x).toFixed(1)}`).join(" ");return`<svg class="k-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,${h} ${pts} ${w},${h}" fill="var(--accent-soft)"/><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>`};
+  const k=(l,v,sub,hero,sk)=>`<div class="kpi glass${hero?" hero":""}"><span class="k-l">${l}</span><span class="v num">${v}</span>${sub}${sk||""}</div>`;
   const cap=d.capacity.past;
-  $("#inKpis").innerHTML=k("Revenue",fmt(t.revenue),delta(t.revenue,p.revenue)||`<span class="delta">${t.bookings} bookings</span>`,1)
-    +k("Bookings",t.bookings,delta(t.bookings,p.bookings)||`<span class="k-sub">—</span>`)
-    +k("Average ticket",t.bookings?fmt(t.avg_ticket):"—",delta(t.avg_ticket,p.avg_ticket)||`<span class="k-sub">per booking</span>`)
+  $("#inKpis").innerHTML=k("Revenue",fmt(t.revenue),delta(t.revenue,p.revenue)||`<span class="delta">${t.bookings} bookings</span>`,1,spark("revenue"))
+    +k("Bookings",t.bookings,delta(t.bookings,p.bookings)||`<span class="k-sub">—</span>`,0,spark("bookings"))
+    +k("Average ticket",t.bookings?fmt(t.avg_ticket):"—",delta(t.avg_ticket,p.avg_ticket)||`<span class="k-sub">per booking</span>`,0,spark(x=>x.bookings?x.revenue/x.bookings:0))
     +k("Capacity used",cap===null?"—":Math.round(cap*100)+"%",`<span class="k-sub">${cap===null?"set opening hours in Setup":"of your open hours were booked"}</span>`)
     +k("No-show rate",past?pct(t.no_show,past):"—",past?delta(t.no_show/past,ppast?p.no_show/ppast:0,true)||`<span class="k-sub">${t.no_show} of ${past}</span>`:`<span class="k-sub">mark bookings Came / No-show</span>`)
     +k("Returning customers",ret+nw?pct(ret,ret+nw):"—",`<span class="k-sub">${ret} returning · ${nw} new</span>`);
@@ -26,11 +29,11 @@ function renderInsights(d){window.inD=d;const t=d.totals,p=d.prev,past=t.complet
   const rawR=Math.max(0,...d.trend.map(x=>x.revenue)),maxR=rawR?niceTop(rawR):1,maxB=niceTop(Math.max(4,...d.trend.map(x=>Math.max(x.bookings,x.chats))));
   const X=i=>l+(n<2?0:i*(W-l-r)/(n-1)),bw=Math.max(2,Math.min(18,(W-l-r)/Math.max(n,1)*.6)),YR=v=>H-bt-v/maxR*(H-bt-top),YB=v=>H-bt-v/maxB*(H-bt-top);
   let g="";for(let i=0;i<=4;i++){const v=maxR*i/4;g+=`<line x1="${l}" x2="${W-r}" y1="${YR(v)}" y2="${YR(v)}" stroke="var(--grid)"/><text x="${l-6}" y="${YR(v)+4}" text-anchor="end">${rawR?fmt(v):""}</text><text x="${W-r+6}" y="${YB(maxB*i/4)+4}">${Math.round(maxB*i/4)}</text>`}
-  d.trend.forEach((x,i)=>{if(x.revenue)g+=`<rect x="${X(i)-bw/2}" y="${YR(x.revenue)}" width="${bw}" height="${H-bt-YR(x.revenue)}" rx="3" fill="url(#revFill)"><title>${x.d}: ${fmt(x.revenue)}</title></rect>`});
-  if(n>1)g+=`<polyline points="${d.trend.map((x,i)=>X(i)+","+YB(x.bookings)).join(" ")}" fill="none" stroke="#3ee0ff" stroke-width="2.25" stroke-linejoin="round"/><polyline points="${d.trend.map((x,i)=>X(i)+","+YB(x.chats)).join(" ")}" fill="none" stroke="#e0a400" stroke-width="1.75" stroke-dasharray="3 4"/>`;
+  d.trend.forEach((x,i)=>{if(x.revenue)g+=`<rect x="${X(i)-bw/2}" y="${YR(x.revenue)}" width="${bw}" height="${H-bt-YR(x.revenue)}" rx="3" fill="var(--accent)" fill-opacity=".78"><title>${x.d}: ${fmt(x.revenue)}</title></rect>`});
+  if(n>1)g+=`<polyline points="${d.trend.map((x,i)=>X(i)+","+YB(x.bookings)).join(" ")}" fill="none" stroke="var(--ink)" stroke-width="1.75" stroke-linejoin="round"/><polyline points="${d.trend.map((x,i)=>X(i)+","+YB(x.chats)).join(" ")}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 4"/>`;
   const ticks=n<=8?d.trend.map((_,i)=>i):[0,Math.round((n-1)/3),Math.round(2*(n-1)/3),n-1];
   ticks.forEach(i=>g+=`<text x="${X(i)}" y="${H-6}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${nice(L(d.trend[i].d),{day:"numeric",month:"short"})}</text>`);
-  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.innerHTML=`<defs><linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d65cff"/><stop offset="1" stop-color="#5b8cff"/></linearGradient></defs>`+g+(rawR?"":`<text x="${l}" y="${top+12}" fill="var(--muted)">No paid revenue in this period yet</text>`);$("#inTrendNote").textContent=d.unit==="week"?"per week":"per day";
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.innerHTML=g+(rawR?"":`<text x="${l}" y="${top+12}" fill="var(--muted)">No paid revenue in this period yet</text>`);$("#inTrendNote").textContent=d.unit==="week"?"per week":"per day";
   const c7=d.capacity.next7;
   $("#inAhead").innerHTML=`<div class="statrow" style="grid-template-columns:1fr 1fr;margin:0"><div><b style="color:var(--good)">${fmt(d.upcoming.next7.revenue)}</b>next 7 days · ${d.upcoming.next7.n} bookings</div><div><b style="color:var(--good)">${fmt(d.upcoming.next30.revenue)}</b>next 30 days · ${d.upcoming.next30.n} bookings</div></div>
     <div class="fun" style="margin-top:16px">${barRow("Next 7 days booked",c7||0,1,c7===null?"closed":`${Math.round((c7||0)*100)}% · ${d.capacity.bookedHoursNext7} of ${d.capacity.openHoursNext7} h`)}</div>
@@ -46,7 +49,7 @@ function renderInsights(d){window.inD=d;const t=d.totals,p=d.prev,past=t.complet
   $("#inHeat").style.gridTemplateColumns=`34px repeat(${hrs.length},1fr)`;$("#inHeat").innerHTML=hh;
   const wd=[1,2,3,4,5,6,0].map(dw=>d.weekday.find(x=>x.dow===dw)||{dow:dw,n:0,revenue:0,no_show:0}),mx=Math.max(1,...wd.map(x=>x.revenue)),best=Math.max(...wd.map(x=>x.revenue));
   $("#inDays").innerHTML=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:210px">${wd.map(x=>`<div style="display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end" title="${DAYNAME[x.dow]}: ${x.n} bookings, ${fmt(x.revenue)}">
-      <small class="num" style="color:var(--muted);font-size:11px">${x.revenue?fmt(x.revenue):""}</small><div style="width:100%;max-width:46px;border-radius:10px 10px 4px 4px;height:${Math.max(4,x.revenue/mx*140)}px;background:${x.revenue&&x.revenue===best?"var(--good)":x.revenue?"var(--blue)":"var(--grid)"}"></div>
+      <small class="num" style="color:var(--muted);font-size:11px">${x.revenue?fmt(x.revenue):""}</small><div style="width:100%;max-width:46px;border-radius:10px 10px 4px 4px;height:${Math.max(4,x.revenue/mx*140)}px;background:${x.revenue&&x.revenue===best?"var(--accent)":x.revenue?"color-mix(in srgb,var(--ink) 22%,transparent)":"var(--grid)"}"></div>
       <small style="font-size:12px">${DAYNAME[x.dow].slice(0,3)}</small><small class="num" style="color:var(--muted);font-size:11px">${x.n} bk</small></div>`).join("")}</div>`;
   const tot=d.services.reduce((s1,x)=>s1+x.revenue,0),askedOf=nm=>(d.asked.find(x=>x.name===nm)||{n:0}).n;
   $("#inSvc").innerHTML=d.services.map(x=>{const all=x.n+x.cancelled,ak=askedOf(x.name);return`<tr><td><b>${esc(x.name)}</b></td><td class="num">${x.n}</td><td class="num" style="color:var(--good)">${fmt(x.revenue)}</td>
