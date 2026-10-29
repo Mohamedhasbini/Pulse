@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const money = v => `${(window.biz?.currency || 'USD') === 'USD' ? '$' : (window.biz?.currency || '') + ' '}${Math.round(v).toLocaleString()}`;
-  const OPEN = { inbox: ['inbox', 0], requests: ['calendar', 1] };
+  const OPEN = { inbox: ['inbox', 1], requests: ['calendar', 1] };
   let box = null;
 
   function mount() {

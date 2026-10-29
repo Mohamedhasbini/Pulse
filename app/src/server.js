@@ -1143,9 +1143,10 @@ async function segmentOf(seg = {}, everyone = false) {
       AND NOT (EXISTS (SELECT 1 FROM conversations x WHERE x.customer_id=cu.id AND x.channel='test') AND NOT EXISTS (SELECT 1 FROM conversations x WHERE x.customer_id=cu.id AND x.channel<>'test'))
       AND CASE $2
         WHEN 'inactive' THEN NOT EXISTS (SELECT 1 FROM bookings b WHERE b.customer_id=cu.id AND b.starts_at > now() - make_interval(days => $3))
+          AND EXISTS (SELECT 1 FROM bookings b WHERE b.customer_id=cu.id AND b.status IN ('confirmed','completed'))
         WHEN 'service' THEN EXISTS (SELECT 1 FROM bookings b WHERE b.customer_id=cu.id AND b.service_id=$4 AND b.status <> 'cancelled')
         WHEN 'regulars' THEN (SELECT count(*) FROM bookings b WHERE b.customer_id=cu.id AND b.status IN ('confirmed','completed')) >= $5
-        WHEN 'new' THEN cu.created_at > now() - make_interval(days => $3)
+        WHEN 'new' THEN (SELECT min(b.starts_at) FROM bookings b WHERE b.customer_id=cu.id AND b.status IN ('confirmed','completed')) > now() - make_interval(days => $3)
         ELSE true END`, [BIZ(), type, days, +seg.service_id || 0, min, everyone]);
 }
 // Which channel can carry an offer right now. WhatsApp only inside 24h of the client's last message (templates come later).
@@ -1181,7 +1182,9 @@ app.get('/api/marketing/studio', wrap(async (_req, res) => {
     { id: 'vip', name: 'Thank you, regulars', goal: 'Reward loyal clients so they keep coming', segment: { type: 'regulars', min: 3 }, audience: 'Clients with 3+ visits', pct: 0, code: null, rate: 0.25,
       message: `You're one of our favourite clients at ${biz.name}. As a thank-you, you get first pick of next week's times. Reply and we'll hold one for you.` },
   ].filter(Boolean);
+  const recent = await q(`SELECT name, sent, created_at FROM campaigns WHERE business_id=$1 AND created_at > now() - interval '7 days' ORDER BY id DESC`, [BIZ()]);
   for (const d of drafts) {
+    const ran = recent.find(c => c.name === d.name); if (ran) d.ran = { sent: ran.sent, at: ran.created_at };
     const list = await segmentOf(d.segment), reachable = list.filter(marketingRoute).length, price = d.price || t, size = (await segmentOf(d.segment, true)).length;
     const bookings = reachable * d.rate, revenue = bookings * price, cost = revenue * d.pct / 100, pot = size * d.rate * price * (1 - d.pct / 100);
     Object.assign(d, { size, potential: Math.round(pot), matched: list.length, reachable, estimate: { bookings: Math.round(bookings * 10) / 10, revenue: Math.round(revenue), discount_cost: Math.round(cost), net: Math.round(revenue - cost), reply_rate: Math.round(d.rate * 100) },

@@ -16,7 +16,11 @@ const CLIENT = `cu.id, cu.name, cu.phone, cu.telegram_chat_id, cu.marketing_ok,
   (SELECT max(m.created_at) FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.customer_id=cu.id AND m.role='customer') AS last_msg`;
 // real clients only: no test phones, and not people whose latest chat is a test chat
 const REAL = `cu.phone !~ '^(test|e2e|walk-in|tg-)' AND COALESCE((SELECT c.channel FROM conversations c WHERE c.customer_id=cu.id ORDER BY c.updated_at DESC LIMIT 1),'') <> 'test'`;
-const fresh = (agent, days) => `NOT EXISTS (SELECT 1 FROM agent_actions a WHERE a.customer_id=cu.id AND a.agent='${agent}' AND a.created_at > now() - interval '${days} days')`;
+// not contacted by this agent lately; promotional agents also skip clients who got an offer or any other agent message
+// in the last 7 days (no-show confirmations are about a booking, so they still go)
+const fresh = (agent, days) => `NOT EXISTS (SELECT 1 FROM agent_actions a WHERE a.customer_id=cu.id AND a.agent='${agent}' AND a.created_at > now() - interval '${days} days')`
+  + (agent === 'noshow' ? '' : ` AND NOT EXISTS (SELECT 1 FROM campaign_sends s WHERE s.customer_id=cu.id AND s.status='sent' AND s.at > now() - interval '7 days')
+  AND NOT EXISTS (SELECT 1 FROM agent_actions a WHERE a.customer_id=cu.id AND a.status='sent' AND a.agent<>'noshow' AND a.created_at > now() - interval '7 days')`);
 function route(c) {
   if (c.channel === 'telegram' && c.telegram_chat_id) return 'telegram';
   if (c.channel === 'whatsapp' && c.last_msg && Date.now() - new Date(c.last_msg) < 23.5 * 3600e3) return 'whatsapp';

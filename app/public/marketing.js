@@ -61,7 +61,8 @@ window.PulseMarketing = (() => {
         <div class="mk-row">${d.code ? `<label>Code<input data-f="code" value="${esc(d.code)}"></label><label>% off<input data-f="pct" type="number" min="1" max="60" value="${d.pct}"></label>` : '<span class="mk-nocode">No discount: a perk instead</span>'}</div>
         <dl class="mk-est"><div><dt>Expected bookings</dt><dd>${d.estimate.bookings}</dd></div><div><dt>Revenue</dt><dd>${money(d.estimate.revenue)}</dd></div><div><dt>Discount cost</dt><dd>${money(d.estimate.discount_cost)}</dd></div><div><dt>Reply rate</dt><dd>~${d.estimate.reply_rate}%</dd></div></dl>
         ${d.warning ? `<p class="mk-wn">${esc(d.warning)}</p>` : ''}
-        <footer><button type="button" class="mk-launch" ${d.reachable ? '' : 'disabled title="Nobody in this audience can be reached yet"'}>Launch to ${d.reachable}</button><button type="button" class="mk-ai">Improve with AI</button><button type="button" class="mk-copy">Copy</button></footer>
+        ${d.ran ? `<p class="mk-ran">Sent ${new Date(d.ran.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} to ${d.ran.sent}. Results show in Offers below; wait a week before sending it again.</p>` : ''}
+        <footer><button type="button" class="mk-launch" ${d.reachable && !d.ran ? '' : `disabled title="${d.ran ? 'Already sent this week' : 'Nobody in this audience can be reached yet'}"`}>${d.ran ? 'Sent this week' : `Launch to ${d.reachable}`}</button><button type="button" class="mk-ai">Improve with AI</button><button type="button" class="mk-copy">Copy</button></footer>
         <p class="mk-res" aria-live="polite"></p></article>`).join('')}</div></div>`;
   }
   function ideas(list) {

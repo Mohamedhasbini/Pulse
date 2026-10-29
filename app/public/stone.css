@@ -296,3 +296,4 @@
 .mk-d .mk-launch:disabled{opacity:.4;cursor:not-allowed}
 .mk-res{margin:0;font-size:12.5px;color:var(--gp-2,var(--muted))}
 @media (max-width:600px){.mk-est{grid-template-columns:repeat(2,1fr)}}
+.mk-ran{margin:0;font-size:12.5px;padding:7px 9px;border-radius:8px;background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--gp-2,var(--muted))}
