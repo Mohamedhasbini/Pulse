@@ -111,14 +111,14 @@
     return `<details class="pc-trail"${live ? ' open' : ''}><summary>${live ? `<span class="pc-spin"></span>${esc(items.length ? (items[items.length - 1].k === 'step' ? stepText(items[items.length - 1].t) : 'Thinking') : 'Thinking')}…` : `Worked through ${n || 1} step${n === 1 ? '' : 's'}`}</summary>${list ? `<ol>${list}</ol>` : ''}</details>`;
   }
   function msgHtml(m, i) {
-    if (m.role === 'owner') return `<div class="pc-m me"><div class="pc-b">${esc(m.text)}</div></div>`;
+    if (m.role === 'owner') return `<div class="pc-m you"><div class="pc-b">${esc(m.text)}</div></div>`;
     const shown = m.reveal != null ? m.text.slice(0, m.reveal) : m.text;
     const acts = m.pending || m.reveal != null ? '' : (m.actions || []).map((a, k) => a.type === 'open_page'
       ? `<button type="button" class="pc-go" data-go="${k}"><span>↗</span>${esc(a.label || 'Open page')}</button>`
       : `<div class="pc-act ${a.state || ''}"><div class="pc-ak">${esc(KIND(a))}</div><div class="pc-ab"><b>${esc(LABEL(a))}</b>${a.text || a.answer ? `<q>${esc(a.text || a.answer)}</q>` : ''}${a.result ? `<em>${esc(a.result)}</em>` : ''}</div>
           ${a.state ? `<span class="pc-ast">${a.state === 'done' ? '✓ Done' : 'Dismissed'}</span>` : `<span class="pc-abtn"><button type="button" class="pc-no" data-no="${k}">Dismiss</button><button type="button" class="pc-yes" data-yes="${k}">Approve</button></span>`}</div>`).join('');
     const done = !m.pending && m.reveal == null;
-    return `<div class="pc-m ai${m.error ? ' err' : ''}" data-i="${i}"><div class="pc-mark" aria-hidden="true"></div><div class="pc-body">${trail(m)}
+    return `<div class="pc-m bot${m.error ? ' err' : ''}" data-i="${i}"><div class="pc-mark" aria-hidden="true"></div><div class="pc-body">${trail(m)}
       ${m.pending ? '' : `<div class="pc-a">${md(shown)}${m.reveal != null ? '<span class="pc-caret"></span>' : ''}</div>`}
       ${done && m.learned?.length ? `<div class="pc-learned"><span>◆</span> Saved to memory: ${m.learned.map(esc).join(' · ')}</div>` : ''}
       ${done ? (m.tables || []).map((t, k) => tableHtml(t, k, m.all?.[k])).join('') : ''}${acts ? `<div class="pc-acts">${acts}</div>` : ''}

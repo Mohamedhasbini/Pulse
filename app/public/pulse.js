@@ -37,6 +37,7 @@
       ['Win back', { page: 'people', tab: 'winback' }],
       ['Reviews', { page: 'support', tab: 'reviews', bare: true }]]],
     ['marketing', 'Marketing', 'Bring customers in', [
+      ['Overview', { own: 'growth' }],
       ['Offers', { page: 'people', tab: 'offers' }],
       ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'] }],
       ['Agents', { entry: 'agents' }],
@@ -204,7 +205,7 @@
       today: [[chats, `${chats} chat${chats === 1 ? '' : 's'} waiting for you`, ['inbox', 1]], [it.length, `${it.length} thing${it.length === 1 ? '' : 's'} to approve`, ['pulse', 0]]],
       inbox: [[chats, `${chats} chat${chats === 1 ? '' : 's'} need${chats === 1 ? 's' : ''} you`, ['inbox', 1]]],
       calendar: [[n('request'), `${n('request')} cancel/move request${n('request') === 1 ? '' : 's'}`, ['calendar', 1]]],
-      marketing: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['marketing', 2]]],
+      marketing: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['marketing', 3]]],
       pulse: [[it.length, `${it.length} waiting for your OK`, ['pulse', 0]]],
       train: [[n('question'), `${n('question')} question${n('question') === 1 ? '' : 's'} ${nora()} couldn't answer`, ['train', 1]], [n('lesson'), `${n('lesson')} suggested rule${n('lesson') === 1 ? '' : 's'}`, ['pulse', 0]]],
     }[id] || [];
@@ -227,6 +228,7 @@
     if (key === 'calendar') { const s = page('calendar', 'Calendar', '', '<div id="gcRoot"></div>'); s.hidden = false; window.PulseCal?.mount(s); }
     if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }
     if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything Pulse AI prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
+    if (key === 'growth') { const s = page('growth', 'Marketing', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }
     if (key === 'brief') { const s = page('brief', 'Weekly brief', 'This week against last week, and the agents\' results. Worked out from your own numbers.', '<div id="paBrief"></div>'); s.hidden = false; loadBrief(); }
     if (key === 'ask') { const s = page('ask', 'Ask Pulse', 'Ask anything about your business. Pulse looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); window.PulseCommand?.open(); }
   }
@@ -253,7 +255,7 @@
     const a = b.dataset.a, x = own.approvals._items?.[+b.closest('.pa-item')?.dataset.i];
     if (a === 'retry') return loadApprovals();
     if (a === 'teach') return go('train', 1);
-    if (a === 'agents') return go('marketing', 1);
+    if (a === 'agents') return go('marketing', 3);
     b.disabled = true;
     try {
       if (a === 'approve' || a === 'reject') await req(`/api/requests/${x.id}/${a}`, 'POST', {});

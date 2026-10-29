@@ -10,6 +10,7 @@ import { mountLab } from './lab.js';
 import { mountAgents } from './agents.js';
 import { mountTeam } from './team.js';
 import { mountPulse } from './pulse.js';
+import { mountMarketing } from './marketing.js';
 import { mountShortcuts } from './shortcuts.js';
 import { mountInbox } from './inbox.js';
 import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
@@ -635,6 +636,7 @@ mountLab(app, () => BIZ());
 mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
 mountTeam(app, () => BIZ(), { sendWhatsApp, sendTelegram, audit });
 mountPulse(app, () => BIZ());
+mountMarketing(app, () => BIZ());
 mountShortcuts(app, () => BIZ());
 mountInbox(app, () => BIZ(), LOCAL);
 

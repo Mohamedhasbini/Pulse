@@ -61,9 +61,9 @@ body.pc-on{overflow:hidden}
 .pc-hello p{color:var(--pc-mut);margin:0 auto;max-width:52ch}
 
 /* messages */
-.pc-m.me{align-self:flex-end;max-width:78%}
-.pc-m.me .pc-b{background:var(--pc-raise);border:1px solid var(--pc-line);padding:10px 16px;border-radius:18px;white-space:pre-wrap;line-height:1.55}
-.pc-m.ai{display:grid;grid-template-columns:28px 1fr;gap:14px}
+.pc-m.you{align-self:flex-end;max-width:78%}
+.pc-m.you .pc-b{background:var(--pc-raise);border:1px solid var(--pc-line);padding:10px 16px;border-radius:18px;white-space:pre-wrap;line-height:1.55}
+.pc-m.bot{display:grid;grid-template-columns:28px 1fr;gap:14px}
 .pc-mark{width:22px;height:22px;margin-top:3px;border-radius:50%;border:1.5px solid var(--pc-acc);position:relative}
 .pc-mark::after{content:"";position:absolute;inset:30%;border-radius:50%;background:var(--pc-acc)}
 .pc-body{min-width:0}
@@ -185,7 +185,7 @@ body.pc-on{overflow:hidden}
   .pc-menu{display:grid}.pc-main header kbd{display:none}.pc-x{margin-left:auto}
   .pc-log{padding:8px 16px 16px}.pc-dock{padding:0 12px calc(10px + env(safe-area-inset-bottom))}
   .pc.pc-empty .pc-log{padding-top:8vh}.pc-hello h1{font-size:27px}
-  .pc-m.me{max-width:88%}.pc-m.ai{grid-template-columns:1fr}.pc-mark{display:none}
+  .pc-m.you{max-width:88%}.pc-m.bot{grid-template-columns:1fr}.pc-mark{display:none}
   .pc-act{grid-template-columns:1fr}.pc-abtn{justify-content:flex-end}
   .pc-sugg{grid-template-columns:1fr 1fr}.pc-sugg button:nth-child(n+5){display:none}
 }

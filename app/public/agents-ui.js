@@ -60,7 +60,7 @@ async function loadTeam(){const box=$("#tmDesk");if(!box.innerHTML)box.innerHTML
         <button type="button" class="desk-ask" data-ask="${esc(e.ask||"")}">Ask ${esc(e.name)}</button></footer></article>`}).join("")}
 
 // the status API speaks in the old page names; this maps them onto today's sidebar pages and tabs
-const NAV={"view:calendar":["calendar",0],"view:agents":["marketing",2],"inbox:conversations":["inbox",0],"support:gaps":["train",2],"support:live":["insights",0],
+const NAV={"view:calendar":["calendar",0],"view:agents":["marketing",3],"inbox:conversations":["inbox",0],"support:gaps":["train",2],"support:live":["insights",0],
   "people:board":["customers",1],"analytics:overview":["insights",3],"performance:summary":["insights",3],"analytics:timing":["insights",5]};
 function nav(g){const k=g.view?`view:${g.view}`:`${g.page}:${g.tab}`,t=NAV[k]||["today",0];window.P10?.go(t[0],t[1]);scrollTo({top:0})}
 // what a flag can do in place: "mark" today's visits, "teach" open questions, "agent:<id>" open its prepared messages
@@ -75,7 +75,7 @@ async function fixTeach(box){const w=await req("/api/pulse/waiting"),qs=w.items.
   box.innerHTML=qs.length?qs.map(x=>`<div class="desk-q" data-l="${x.id}"><b>${esc(x.title.replace(/^Answer /,""))}</b><small>${esc(x.why)}</small>
     <textarea rows="2" placeholder="The answer your receptionist should give"></textarea><button type="button" class="desk-ok" data-teach>Teach</button></div>`).join(""):`<p class="desk-fh">No open questions.</p>`}
 async function fixAgent(id){let card=document.querySelector(`.ag[data-a="${id}"]`);
-  if(!card||!card.offsetParent){window.P10?.go("marketing",2);for(let k=0;k<20&&!(card=document.querySelector(`.ag[data-a="${id}"]`))?.offsetParent;k++)await new Promise(r=>setTimeout(r,250))}
+  if(!card||!card.offsetParent){window.P10?.go("marketing",3);for(let k=0;k<20&&!(card=document.querySelector(`.ag[data-a="${id}"]`))?.offsetParent;k++)await new Promise(r=>setTimeout(r,250))}
   if(!card)return;
   card.scrollIntoView({behavior:"smooth",block:"center"});const d=card.querySelector("details");if(d)d.open=true;card.classList.add("ag-flash");setTimeout(()=>card.classList.remove("ag-flash"),1600)}
 document.addEventListener("click",async ev=>{const t=ev.target,c=t.closest(".desk-c");if(!c)return;const e=team[+c.dataset.e];if(!e)return;
