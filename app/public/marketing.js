@@ -8,7 +8,7 @@ window.PulseMarketing = (() => {
     occasional: ['Occasional', '1–2 visits'], lapsed: ['Lapsed', '45–120 days away'], lost: ['Lost', '4+ months away'], never: ['Never booked', 'Chatted, no visit'] };
   const ORDER = ['vip', 'regular', 'active', 'new', 'occasional', 'lapsed', 'lost', 'never'];
   const RES = { success: ['Worked', 'good'], some: ['Some bookings', 'mid'], 'no bookings': ['No bookings', 'bad'], 'too early': ['Too early', ''], 'not sent': ['Reached nobody', 'bad'] };
-  let root = null, days = 90, data = null;
+  let root = null, days = 90, data = null, studioData = null;
 
   function kpis(k) {
     const tile = (l, v, s, cls = '') => `<div class="mk-k ${cls}"><span>${l}</span><b>${v}</b><small>${s}</small></div>`;
@@ -48,6 +48,22 @@ window.PulseMarketing = (() => {
       <div class="mk-fb"><i style="width:${Math.max(2, v / m * 100)}%"></i></div><b>${v}</b>${i && steps[i - 1][1] && v <= steps[i - 1][1] ? `<small>${Math.round(v / steps[i - 1][1] * 100)}%</small>` : '<small></small>'}</div>`).join('')}</div>
       <p class="mk-note">Bookings include clients who booked without chatting (booking page, staff).</p></div>`;
   }
+  // Campaign studio: ready drafts you can edit and launch here. Launch creates the discount code (valid 7 days) and
+  // sends through the same Offers sender, so consent, one-offer-a-day and channel rules all still apply.
+  function studio(st) {
+    if (!st) return '';
+    const a = st.audience, none = !a.opted;
+    return `<div class="mk-card mk-wide"><div class="mk-h"><h3>Campaign studio</h3><small>ready to send · edit anything · profit estimated from your average ticket (${money(st.ticket)})</small></div>
+      ${none ? `<div class="mk-warn"><b>No client has agreed to offers yet (0 of ${a.clients}).</b> From now on every booking confirmation asks “Want our occasional special offers? Reply OFFERS.”, and each yes joins your audience. Until then, launches reach nobody.</div>` : ''}
+      <div class="mk-studio">${st.drafts.map((d, i) => `<article class="mk-d" data-d="${i}"><header><div><b>${esc(d.name)}</b><small>${esc(d.goal)}</small></div>${d.reachable ? `<span class="mk-net">${money(d.estimate.net)}<small>est. net</small></span>` : `<span class="mk-net zero">${money(d.potential)}<small>potential if all ${d.size} agree</small></span>`}</header>
+        <div class="mk-aud"><span>${esc(d.audience)}</span><b>${d.size}</b> clients · <b>${d.matched}</b> agreed · <b>${d.reachable}</b> reachable now</div>
+        <textarea rows="4" data-f="message" aria-label="Message">${esc(d.message)}</textarea>
+        <div class="mk-row">${d.code ? `<label>Code<input data-f="code" value="${esc(d.code)}"></label><label>% off<input data-f="pct" type="number" min="1" max="60" value="${d.pct}"></label>` : '<span class="mk-nocode">No discount: a perk instead</span>'}</div>
+        <dl class="mk-est"><div><dt>Expected bookings</dt><dd>${d.estimate.bookings}</dd></div><div><dt>Revenue</dt><dd>${money(d.estimate.revenue)}</dd></div><div><dt>Discount cost</dt><dd>${money(d.estimate.discount_cost)}</dd></div><div><dt>Reply rate</dt><dd>~${d.estimate.reply_rate}%</dd></div></dl>
+        ${d.warning ? `<p class="mk-wn">${esc(d.warning)}</p>` : ''}
+        <footer><button type="button" class="mk-launch" ${d.reachable ? '' : 'disabled title="Nobody in this audience can be reached yet"'}>Launch to ${d.reachable}</button><button type="button" class="mk-ai">Improve with AI</button><button type="button" class="mk-copy">Copy</button></footer>
+        <p class="mk-res" aria-live="polite"></p></article>`).join('')}</div></div>`;
+  }
   function ideas(list) {
     if (!list.length) return '';
     return `<div class="mk-card mk-wide"><div class="mk-h"><h3>Next campaigns, ranked by value</h3><small>value = reachable × expected reply rate × your average ticket</small></div>
@@ -73,15 +89,32 @@ window.PulseMarketing = (() => {
     root.innerHTML = `<div class="mk-bar-top"><div class="mk-per">${[30, 90, 365].map(n => `<button type="button" data-days="${n}" aria-pressed="${n === days}">${n === 365 ? '12 months' : n + ' days'}</button>`).join('')}</div>
       <button type="button" class="mk-ask" data-ask="Review my marketing for the last ${days} days: what worked, what failed, and the next campaign I should run.">Ask Pulse AI for a review</button></div>
       ${kpis(d.kpis)}${d.lessons.length ? `<div class="mk-lessons">${d.lessons.map(t => `<p>${esc(t)}</p>`).join('')}</div>` : ''}
-      <div class="mk-grid2">${weekly(d.weekly)}${ideas(d.ideas)}${audience(d.segments)}${funnel(d.funnel)}${tables(d)}</div>`;
+      <div class="mk-grid2">${studio(studioData)}${weekly(d.weekly)}${ideas(d.ideas)}${audience(d.segments)}${funnel(d.funnel)}${tables(d)}</div>`;
   }
   async function load() {
     root.innerHTML = '<p class="mk-empty">Reading your marketing results…</p>';
-    try { data = await req(`/api/marketing/overview?days=${days}`); draw(); } catch (e) { root.innerHTML = `<p class="mk-empty">${esc(e.message)}</p>`; }
+    try { [data, studioData] = await Promise.all([req(`/api/marketing/overview?days=${days}`), req('/api/marketing/studio').catch(() => null)]); draw(); } catch (e) { root.innerHTML = `<p class="mk-empty">${esc(e.message)}</p>`; }
   }
   document.addEventListener('click', e => {
     if (!root || !root.contains(e.target)) return;
     const p = e.target.closest('[data-days]'); if (p) { days = +p.dataset.days; return load(); }
+    const card = e.target.closest('.mk-d');
+    if (card) {
+      const d = studioData.drafts[+card.dataset.d], val = f => card.querySelector(`[data-f="${f}"]`)?.value?.trim(), msg = val('message'), out = card.querySelector('.mk-res');
+      if (e.target.closest('.mk-copy')) { navigator.clipboard?.writeText(msg); out.textContent = 'Copied.'; return; }
+      if (e.target.closest('.mk-ai')) return window.PulseCommand?.open(`Improve this offer for my business and tell me if the discount is profitable. Audience: ${d.audience} (${d.matched} agreed). Draft: "${msg}"`);
+      if (e.target.closest('.mk-launch')) {
+        if (!confirm(`Send "${d.name}" to ${d.reachable} client${d.reachable === 1 ? '' : 's'} now?`)) return;
+        const b = e.target.closest('.mk-launch'); b.disabled = true; out.textContent = 'Sending…';
+        (async () => {
+          const code = val('code'), pct = +val('pct');
+          if (code && pct > 0) await req('/api/coupons', 'POST', { code, kind: 'percent', value: pct, expires_on: new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10) }).catch(err => { if (!/exist|already|duplicate/i.test(err.message)) throw err; });
+          const r = await req('/api/marketing/send', 'POST', { name: d.name, message: msg, segment: d.segment });
+          out.textContent = `Sent to ${r.sent}${r.skipped ? `, ${r.skipped} skipped` : ''}. Results appear in Offers below within 14 days.`; setTimeout(load, 2500);
+        })().catch(err => { out.textContent = err.message; b.disabled = false; });
+        return;
+      }
+    }
     const g = e.target.closest('[data-go]'); if (g) { const [pg, t] = g.dataset.go.split(','); return window.P10?.go(pg, +t); }
     const a = e.target.closest('[data-ask]'); if (a) window.PulseCommand?.open(a.dataset.ask);
   });

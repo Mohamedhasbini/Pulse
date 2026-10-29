@@ -217,6 +217,8 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
       // reservation fee through the owner's payment link: for everyone, or only for clients who missed before
       if (biz.pay_deposit && biz.payment_link && +biz.deposit_amount > 0 && (biz.deposit_for === 'all'
         || await one(`SELECT 1 FROM bookings WHERE customer_id=$1 AND status='no_show' LIMIT 1`, [customer.id]))) result.booking.deposit = +biz.deposit_amount;
+      // ask once for offers consent: only clients who never said yes or no (marketing_at is set by either answer)
+      result.booking.askOffers = !customer.marketing_ok && !customer.marketing_at;
       result.booking.contact = { ...await one('SELECT phone, contact_phone, email, reminder_channel FROM customers WHERE id=$1', [customer.id]), channel };
       reply = confirmation(biz, result.booking, decision.reply);
       if (result.booking.contact.email && emailEnabled()) {
@@ -563,6 +565,7 @@ function confirmation(biz, b, aiReply, moved = false) {
     '', ar ? `يمكنك الإلغاء أو التغيير هنا حتى ${biz.cancel_hours ?? 24} ساعة قبل الموعد. بعد ذلك يحتاج أي تغيير إلى موافقة الإدارة.`
       : `You can cancel or change this booking here up to ${biz.cancel_hours ?? 24} hours before. After that, changes need the manager's approval.`,
     biz.booking_note,
+    b.askOffers && (ar ? 'هل تريد عروضنا الخاصة أحياناً؟ أرسل كلمة "العروض".' : 'Want our occasional special offers? Reply OFFERS.'),
     biz.show_branding !== false && '', biz.show_branding !== false && `_Powered by Pulse_ · ${SITE}/go?b=${biz.id}&s=confirm`,
   ].filter(x => x !== null && x !== undefined && x !== false);
   return lines.join('\n');

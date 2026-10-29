@@ -1131,20 +1131,22 @@ app.put('/api/tools', wrap(async (req, res) => {
 
 // ---------- Marketing: offers to clients who agreed ----------
 // Segment = who gets it. Only opted-in clients are ever counted or sent to.
-async function segmentOf(seg = {}) {
+// everyone = also clients who haven't agreed (only to size an audience; sending always uses consenting clients)
+async function segmentOf(seg = {}, everyone = false) {
   const type = ['all', 'inactive', 'service', 'regulars', 'new'].includes(seg.type) ? seg.type : 'all';
   const days = Math.min(Math.max(+seg.days || 60, 7), 730), min = Math.min(Math.max(+seg.min || 3, 2), 50);
   return q(`SELECT cu.id, cu.name, cu.phone, cu.telegram_chat_id,
       (SELECT c.channel FROM conversations c WHERE c.customer_id=cu.id ORDER BY c.updated_at DESC LIMIT 1) AS channel,
       (SELECT c.id FROM conversations c WHERE c.customer_id=cu.id ORDER BY c.updated_at DESC LIMIT 1) AS conv_id,
       (SELECT max(m.created_at) FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.customer_id=cu.id AND m.role='customer') AS last_msg
-      FROM customers cu WHERE cu.business_id=$1 AND cu.marketing_ok AND cu.phone !~ '^(test|e2e|walk-in)'
+      FROM customers cu WHERE cu.business_id=$1 AND (cu.marketing_ok OR $6) AND cu.phone !~ '^(test|e2e|walk-in)'
+      AND NOT (EXISTS (SELECT 1 FROM conversations x WHERE x.customer_id=cu.id AND x.channel='test') AND NOT EXISTS (SELECT 1 FROM conversations x WHERE x.customer_id=cu.id AND x.channel<>'test'))
       AND CASE $2
         WHEN 'inactive' THEN NOT EXISTS (SELECT 1 FROM bookings b WHERE b.customer_id=cu.id AND b.starts_at > now() - make_interval(days => $3))
         WHEN 'service' THEN EXISTS (SELECT 1 FROM bookings b WHERE b.customer_id=cu.id AND b.service_id=$4 AND b.status <> 'cancelled')
         WHEN 'regulars' THEN (SELECT count(*) FROM bookings b WHERE b.customer_id=cu.id AND b.status IN ('confirmed','completed')) >= $5
         WHEN 'new' THEN cu.created_at > now() - make_interval(days => $3)
-        ELSE true END`, [BIZ(), type, days, +seg.service_id || 0, min]);
+        ELSE true END`, [BIZ(), type, days, +seg.service_id || 0, min, everyone]);
 }
 // Which channel can carry an offer right now. WhatsApp only inside 24h of the client's last message (templates come later).
 function marketingRoute(c) {
@@ -1153,6 +1155,40 @@ function marketingRoute(c) {
   if (c.channel === 'whatsapp') return c.last_msg && Date.now() - new Date(c.last_msg) < 23.5 * 3600e3 ? 'whatsapp' : null;
   return null;
 }
+// Campaign studio: five ready-to-send drafts built from this business's own numbers. Each has its audience (the same
+// segments the Offers form uses), who is reachable right now, a message with a code and deadline, and a profit estimate:
+// expected bookings = reachable x a typical reply rate; discount cost = expected revenue x the discount.
+app.get('/api/marketing/studio', wrap(async (_req, res) => {
+  const biz = await loadBusiness(BIZ()), cur = biz.currency || 'USD', money = v => `${cur === 'USD' ? '$' : cur + ' '}${Math.round(v)}`;
+  const [st] = await q(`SELECT COALESCE(avg(price),0)::float AS ticket,
+      (SELECT s.id FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.business_id=$1 AND b.status IN ('confirmed','completed') GROUP BY s.id ORDER BY sum(b.price) DESC LIMIT 1) AS top_service,
+      (SELECT extract(dow FROM starts_at)::int FROM bookings WHERE business_id=$1 AND status IN ('confirmed','completed') AND starts_at > now() - interval '60 days' GROUP BY 1 ORDER BY count(*) ASC LIMIT 1) AS quiet_dow,
+      (SELECT count(*) FROM customers cu WHERE business_id=$1 AND phone !~ '^(test|e2e|walk-in)' AND NOT (EXISTS (SELECT 1 FROM conversations x WHERE x.customer_id=cu.id AND x.channel='test') AND NOT EXISTS (SELECT 1 FROM conversations x WHERE x.customer_id=cu.id AND x.channel<>'test')))::int AS clients,
+      (SELECT count(*) FROM customers WHERE business_id=$1 AND marketing_ok AND phone !~ '^(test|e2e|walk-in)')::int AS opted
+      FROM bookings WHERE business_id=$1 AND status IN ('confirmed','completed') AND starts_at > now() - interval '90 days'`, [BIZ()]);
+  const svc = biz.services.find(s => s.id === st.top_service) || biz.services[0], DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const end = new Date(Date.now() + 7 * 864e5).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const quiet = st.quiet_dow != null ? DAY[st.quiet_dow] : 'Tuesday', t = st.ticket || svc?.price || 0;
+  const drafts = [
+    { id: 'winback', name: 'We miss you', goal: 'Bring back clients who stopped coming', segment: { type: 'inactive', days: 60 }, audience: 'Clients with no visit in 60 days', pct: 15, code: 'BACK15', rate: 0.15,
+      message: `It's been a while! Come back to ${biz.name} this week and get 15% off any service with code BACK15. Valid until ${end}. Reply here to book.` },
+    { id: 'quiet', name: `${quiet} special`, goal: `Fill your quietest day (${quiet})`, segment: { type: 'all' }, audience: 'Everyone who agreed to offers', pct: 20, code: `${quiet.slice(0, 3).toUpperCase()}20`, rate: 0.08,
+      message: `${quiet}s just got better: 20% off at ${biz.name} every ${quiet} with code ${quiet.slice(0, 3).toUpperCase()}20, until ${end}. Reply with a time and we'll book you.` },
+    { id: 'second', name: 'Second visit', goal: 'Turn new clients into regulars', segment: { type: 'new', days: 30 }, audience: 'Clients who joined in the last 30 days', pct: 10, code: 'NEXT10', rate: 0.2,
+      message: `Thanks for choosing ${biz.name}! Your next visit is 10% off with code NEXT10, valid until ${end}. Want us to find you a time?` },
+    svc && { id: 'hero', name: `Spotlight: ${svc.name}`, goal: `Sell more of your best earner (${svc.name})`, segment: { type: 'all' }, audience: 'Everyone who agreed to offers', pct: 10, code: 'STAR10', rate: 0.06,
+      message: `Our most-loved service, ${svc.name} (${svc.minutes} min, ${money(svc.price)}), is 10% off this week with code STAR10, until ${end}. Reply to grab a slot.`, price: svc.price },
+    { id: 'vip', name: 'Thank you, regulars', goal: 'Reward loyal clients so they keep coming', segment: { type: 'regulars', min: 3 }, audience: 'Clients with 3+ visits', pct: 0, code: null, rate: 0.25,
+      message: `You're one of our favourite clients at ${biz.name}. As a thank-you, you get first pick of next week's times. Reply and we'll hold one for you.` },
+  ].filter(Boolean);
+  for (const d of drafts) {
+    const list = await segmentOf(d.segment), reachable = list.filter(marketingRoute).length, price = d.price || t, size = (await segmentOf(d.segment, true)).length;
+    const bookings = reachable * d.rate, revenue = bookings * price, cost = revenue * d.pct / 100, pot = size * d.rate * price * (1 - d.pct / 100);
+    Object.assign(d, { size, potential: Math.round(pot), matched: list.length, reachable, estimate: { bookings: Math.round(bookings * 10) / 10, revenue: Math.round(revenue), discount_cost: Math.round(cost), net: Math.round(revenue - cost), reply_rate: Math.round(d.rate * 100) },
+      warning: d.pct > 20 ? 'Over 20% off often costs more than it brings in.' : null });
+  }
+  res.json({ drafts: drafts.sort((a, b) => b.estimate.net - a.estimate.net || b.potential - a.potential), audience: { clients: st.clients, opted: st.opted }, ticket: Math.round(t), currency: cur });
+}));
 app.post('/api/marketing/preview', wrap(async (req, res) => {
   const list = await segmentOf(req.body.segment);
   const by = {}; let reachable = 0;
