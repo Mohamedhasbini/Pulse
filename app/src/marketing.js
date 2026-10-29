@@ -85,7 +85,7 @@ export async function overview(B, days) {
   if (best?.booked) lessons.push(`Best offer: “${best.name}” booked ${best.booked} of ${best.sent} (${best.rate}%). Reuse its wording.`);
   const flops = campaigns.filter(c => c.result === 'no bookings').length;
   if (flops) lessons.push(`${flops} offer${flops > 1 ? 's' : ''} brought no bookings after a week: try a narrower audience or a clearer deadline.`);
-  if (k.customers && pct(k.opted_in, k.customers) < 40) lessons.push(`Only ${pct(k.opted_in, k.customers)}% of clients agreed to offers. Ask for permission in the booking confirmation to grow your audience.`);
+  if (k.customers && pct(k.opted_in, k.customers) < 40) lessons.push(`Only ${pct(k.opted_in, k.customers)}% of clients agreed to offers. Booking confirmations now ask every client once (reply OFFERS); the audience grows with each booking.`);
   const unsent = campaigns.filter(c => !c.sent).length;
   if (unsent) lessons.push(`${unsent} offer${unsent > 1 ? 's were' : ' was'} created but reached nobody, because no client in ${unsent > 1 ? 'their audiences' : 'its audience'} has agreed to offers yet.`);
   const topCode = coupons.find(c => c.bookings);

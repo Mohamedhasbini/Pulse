@@ -62,7 +62,8 @@ export function quickAnswer(biz, text) {
   if (/open|close|hours|working|دوام|بتفتح|بتسكر|ساعات/.test(t)) return (ar ? 'أوقات العمل: ' : 'Our opening hours: ') + hoursText(biz) + '.';
   if (/where|address|location|map|park|وين|عنوان|موقع/.test(t) && biz.address)
     return (ar ? `عنواننا: ${biz.address}` : `We're at ${biz.address}`) + (biz.maps_url ? ` (${biz.maps_url})` : '') + '.';
-  if (/pay|card|cash|visa|apple pay|دفع|كاش|بطاقة/.test(t) && biz.payment_methods) return (ar ? 'طرق الدفع: ' : 'Payment: ') + biz.payment_methods + '.';
+  // "gift card" or "voucher" is a product question, not a payment one: leave it to the AI (or the owner)
+  if (/pay|card|cash|visa|apple pay|دفع|كاش|بطاقة/.test(t) && !/gift|voucher|هدية|قسيمة/.test(t) && biz.payment_methods) return (ar ? 'طرق الدفع: ' : 'Payment: ') + biz.payment_methods + '.';
   if (/phone|call|number|رقم|اتصل/.test(t) && biz.phone) return (ar ? `رقمنا: ${biz.phone}` : `You can call us on ${biz.phone}.`);
   return null;
 }

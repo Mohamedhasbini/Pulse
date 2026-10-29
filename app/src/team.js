@@ -9,6 +9,7 @@ import { loadBusiness, takeAiSlot } from './brain.js';
 import { freeSlots, bufferOf, hoursText } from './slots.js';
 import { agentFindings } from './agents.js';
 import { credentials } from './integrations.js';
+import { overview as marketingOverview } from './marketing.js';
 import * as metrics from './metrics.js';
 import { addShortcut } from './shortcuts.js';
 import { addRule } from './rules.js';
@@ -239,6 +240,9 @@ TOOLS.forecast = { about: 'forecast revenue and bookings for the next N weeks (d
       growth_path: { total: total + lift, extra: lift, actions, weeks: path, note: lift ? 'If you send the prepared messages now, at typical reply rates.' : 'No prepared campaigns right now, so the growth path equals the current pace.' },
       confidence: young ? `low: ${span < 6 ? `${span.toFixed(1)} weeks of history` : `only ${active.length} full weeks with bookings`}, treat as a rough guide` : 'normal', weeks, history: past.map(r => ({ week_of: d(r.wk), revenue: r.revenue, bookings: r.bookings })) };
   } };
+TOOLS.marketing = { about: 'marketing results for N days (default 30): messages sent, clients reached, bookings and revenue won by each offer, discount code and agent (a booking within 14 days of a message), audience segments and how many agreed to offers, and lessons. Use this for ANY question about offers, campaigns, codes or agents results.', args: '{"days":30}',
+  run: async (B, a) => { const d = await marketingOverview(B.id, Math.min(Math.max(+a.days || 30, 7), 365));
+    return { period: `last ${d.days} days`, rule: d.rule, totals: d.kpis, offers: d.campaigns.map(({ message, segment, ...c }) => c), codes: d.coupons, agents: d.agents, segments: d.segments, lessons: d.lessons }; } };
 TOOLS.business_info = { about: 'the business itself: name, address, opening hours, services with prices, policies, FAQ answers, team, payment methods, languages', args: '{}',
   run: async B => { const b = await loadBusiness(B.id);
     return { name: b.name, type: b.vertical, address: b.address, phone: b.phone, opening_hours: hoursText(b), services: b.services.map(s => ({ name: s.name, price: Number(s.price), minutes: s.minutes })),
@@ -526,6 +530,8 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
       const b = await one('SELECT faqs FROM businesses WHERE id=$1', [B.id]), faqs = (b.faqs || []).filter(f => f.q.toLowerCase() !== l.question.toLowerCase());
       await q('UPDATE businesses SET faqs=$1 WHERE id=$2', [JSON.stringify([...faqs, { q: l.question.slice(0, 300), a: answer }].slice(-60)), B.id]);
       await q(`UPDATE learning SET status='answered', answer=$1, answered_at=now() WHERE business_id=$2 AND status='open' AND lower(question)=lower($3)`, [answer, B.id, l.question]);
+      // the chat was flagged only because the AI didn't know; now it does, so it no longer waits for the owner
+      if (l.conversation_id) await q(`UPDATE conversations SET needs_attention=false WHERE id=$1 AND business_id=$2 AND attention_reason ILIKE '%didn''t know%'`, [l.conversation_id, B.id]);
       await audit(req, 'team_teach', l.question); return res.json({ ok: true, done: 'Saved. The receptionist uses this answer from now on.' });
     }
     if (a.type === 'send_message') {

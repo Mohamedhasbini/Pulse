@@ -136,6 +136,8 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
       terms: (VERTICALS[biz.vertical] || VERTICALS.salon).terms },
     services: biz.services.map(s => ({ name: s.name, price: Number(s.price), minutes: s.minutes, description: s.description || undefined })),
     availability: availability(biz, bookings, timeOff, 14),
+    // spelled out so "today" / "tomorrow" / "بكرا" are never guessed: free times, "fully booked" or "closed"
+    today_and_tomorrow: (([a, b]) => ({ today: a && `${a.day}: ${a.free}`, tomorrow: b && `${b.day}: ${b.free}` }))(availability(biz, bookings, timeOff, 2)),
     quick_slots: quickSlots(biz, bookings, timeOff),
     next_open_days: openDays(biz, bookings, timeOff),
     customer: {
@@ -194,6 +196,21 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     }
   }
   const ms = Date.now() - t0;
+  if (decision?.reply && !decision.quick && /\b(closed|not open|fully booked|no (free )?(times|slots|availability))\b|مغلق|مسكر|مسكّر|مقفل|محجوز بالكامل|ما في مواعيد/i.test(decision.reply)) {
+    const days = availability(biz, bookings, timeOff, 2), ar = AR.test(text);
+    // the day in question is the one the client asked about; only when they named none, the one the reply names
+    const T = /tomorrow|بكرا|بكره|غدا|غداً/i, N = /today|اليوم/i;
+    const k = T.test(text) ? 1 : N.test(text) ? 0 : T.test(decision.reply) ? 1 : N.test(decision.reply) ? 0 : -1, d = days[k];
+    if (d && !/closed|fully booked/.test(d.free)) {
+      // every free start time of the day (ranges like 10:00-19:30 expanded hourly), then one early, one middle, one late
+      const mm = h => +h.slice(0, 2) * 60 + +h.slice(3, 5), hh = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+      const starts = d.free.split(', ').flatMap(r => { const [a, b = a] = r.split('-'), out = []; for (let m = mm(a); m <= mm(b); m += 60) out.push(hh(m)); return out; });
+      const pick = [...new Set([starts[0], starts[Math.floor(starts.length / 2)], starts[starts.length - 1]])];
+      const when = k ? (ar ? 'بكرا' : 'tomorrow') : (ar ? 'اليوم' : 'today');
+      decision = { ...decision, action: 'none', options: [...pick, ar ? 'يوم آخر' : 'Another day'],
+        reply: ar ? `نحن مفتوحون ${when} (${d.day}). أوقات متاحة: ${pick.join('، ')}. أي وقت يناسبك؟` : `We're open ${when} (${d.day}). Free times: ${pick.join(', ')}. Which suits you?` };
+    }
+  }
 
   let reply = decision.reply || FALLBACK;
   let outcome = conv.outcome === 'booked' ? 'booked' : 'answered';
@@ -262,7 +279,7 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
 
   // The chat just ended (booked, or thanks/bye): ask once how it went.
   let asked = false;
-  if (!conv.rating_asked_at && ((bookedNow && decision.action === 'book') || (smallTalk(text) && await one(`SELECT 1 FROM messages WHERE conversation_id=$1 AND role='assistant' LIMIT 1`, [conv.id])))) {
+  if (!conv.rating_asked_at && !bookedNow && ((smallTalk(text) && await one(`SELECT 1 FROM messages WHERE conversation_id=$1 AND role='assistant' LIMIT 1`, [conv.id])))) {
     reply += AR.test(text) || AR.test(reply) ? '\n\nسؤال سريع: كيف كانت المحادثة معي؟ أرسل رقماً من 1 إلى 5 ⭐' : '\n\nOne quick thing: how was this chat? Reply with a number from 1 to 5 ⭐';
     asked = true;
   }
@@ -463,6 +480,7 @@ const SPECIALIST = `YOUR ROLE: you are the front desk of this business: a senior
 - EFFICIENT: solve it in as few messages as possible. Never ask for something you already have, never repeat a question, never send filler ("Great question!").
 - SUPPORT: for a complaint, refund, damage, injury, or anything you cannot fix within the policies, take the key details (what happened, when, booking) in one message, tell them the manager will follow up, and use action "handoff". Never promise refunds, discounts or exceptions the business hasn't given you.
 - HONEST: only state facts from the business information and CONTEXT. If you don't know, say you'll check with the team (handoff with unknown_question) instead of guessing.
+- OFFERS LIST: never say a customer joined or left the offers list. Only the system does that, when they send the single word OFFERS (or العروض) or STOP. If they seem to want offers, tell them to reply OFFERS.
 - CLOSE WELL: after a booking or a solved issue, end with one short helpful line (what to bring, arrive early, how to change it), not a question that reopens the chat.`;
 
 // How every conversation should feel: forward in every message, few choices, no repeated questions.
@@ -636,6 +654,9 @@ export function startAiQueue(deliver) {
         const job = await one(`UPDATE ai_queue SET status='working', attempts=attempts+1 WHERE id = (
             SELECT id FROM ai_queue WHERE status='waiting' AND next_at <= now() ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING *`);
         if (!job) break;
+        // a person already answered this chat after the message was queued: it's handled, don't answer it again
+        if (await one(`SELECT 1 FROM messages WHERE conversation_id=$1 AND role='staff' AND created_at > $2`, [job.conversation_id, job.created_at])) {
+          await q(`UPDATE ai_queue SET status='answered', answered_at=now(), reply='(handled by staff)' WHERE id=$1`, [job.id]); continue; }
         try {
           const r = await handleMessage({ businessId: job.business_id, phone: job.phone, name: job.name, text: job.text, channel: job.channel, queued: true });
           await q(`UPDATE ai_queue SET status='answered', answered_at=now(), reply=$2 WHERE id=$1`, [job.id, r.reply || null]);
