@@ -8,6 +8,7 @@ import { q, one, pool } from './db.js';
 import { loadBusiness, takeAiSlot } from './brain.js';
 import { freeSlots, bufferOf, hoursText } from './slots.js';
 import { agentFindings } from './agents.js';
+import { credentials } from './integrations.js';
 import * as metrics from './metrics.js';
 import { addShortcut } from './shortcuts.js';
 import { addRule } from './rules.js';
@@ -211,12 +212,32 @@ TOOLS.forecast = { about: 'forecast revenue and bookings for the next N weeks (d
       const slope = y.reduce((a, v, i) => a + (i - xm) * (v - ym), 0) / (y.reduce((a, _, i) => a + (i - xm) ** 2, 0) || 1);
       const sd = Math.sqrt(y.reduce((a, v, i) => a + (v - (ym + slope * (i - xm))) ** 2, 0) / Math.max(m - 2, 1));
       return { at: i => Math.max(0, ym + slope * (m - xm + i)), slope, sd, avg: ym }; };
-    const R = fit('revenue'), K = fit('bookings'), d = x => x.toISOString().slice(0, 10), r0 = x => Math.round(x);
+    const active = past.filter(r => r.bookings), young = active.length < 6, d = x => x.toISOString().slice(0, 10), r0 = x => Math.round(x);
+    // Short history: a straight line through mostly empty weeks says "zero", which is wrong. Use the run-rate of the
+    // weeks that had bookings instead (the business as it runs now), with a wider ±35% range.
+    // fewer than 3 full weeks with bookings: revenue per week since the very first booking (this week included)
+    const [st] = await q(`SELECT min(starts_at) AS first, COALESCE(sum(price) FILTER (WHERE starts_at < now()),0)::float AS revenue, count(*) FILTER (WHERE starts_at < now())::int AS bookings
+        FROM bookings WHERE business_id=$1 AND status IN ('completed','confirmed')`, [B.id]);
+    const span = st.first ? Math.max(1, (Date.now() - new Date(st.first)) / 6048e5) : 1;
+    const runRate = k => active.length >= 3 ? active.reduce((a, r) => a + r[k], 0) / active.length : (st[k] || 0) / span;
+    const R = young ? { at: () => runRate('revenue'), slope: 0, sd: runRate('revenue') * 0.35, avg: runRate('revenue') } : fit('revenue');
+    const K = young ? { at: () => runRate('bookings') } : fit('bookings');
     const weeks = booked.map((w, i) => { const rev = Math.max(R.at(i), w.revenue), bk = Math.max(K.at(i), w.bookings);
       return { week_of: d(w.wk), already_booked_revenue: w.revenue, already_booked: w.bookings, forecast_revenue: r0(rev), low: r0(Math.max(w.revenue, rev - R.sd)), high: r0(rev + R.sd), forecast_bookings: r0(bk) }; });
-    return { method: 'linear trend over the last 12 full weeks, never below what is already booked; low/high = ±1 typical weekly swing', currency: B.currency || 'USD',
-      last_12_weeks_avg_revenue: r0(R.avg), trend_per_week: r0(R.slope), total_forecast_revenue: weeks.reduce((a, w) => a + w.forecast_revenue, 0),
-      confidence: past.filter(r => r.bookings).length >= 6 ? 'normal' : 'low: fewer than 6 weeks with bookings, treat as a rough guide', weeks, history: past.map(r => ({ week_of: d(r.wk), revenue: r.revenue, bookings: r.bookings })) };
+    // The growth path: what the clients the agents found are worth if contacted now, at typical reply rates, spread
+    // over the forecast weeks. Each action names its count, rate and value so the owner sees how the path is built.
+    const [tk] = await q(`SELECT COALESCE(avg(price),0)::float AS t FROM bookings WHERE business_id=$1 AND status IN ('completed','confirmed') AND starts_at > now() - interval '90 days'`, [B.id]);
+    const ag = await agentFindings(B.id).catch(() => ({ out: [] })), found = id => ag.out.find(a => a.id === id && !a.blocked)?.list.length || 0;
+    const actions = [['winback', 'Win back lapsed regulars', 0.15], ['leads', 'Follow up warm leads', 0.25], ['fill', 'Invite regulars to quiet days', 0.2], ['noshow', 'Confirm risky bookings', 0.5]]
+      .map(([id, label, rate]) => ({ id, label, clients: found(id), reply_rate: `${rate * 100}%`, value: r0(found(id) * rate * tk.t) })).filter(a => a.clients);
+    const lift = actions.reduce((a, x) => a + x.value, 0);
+    const path = weeks.map(w => ({ week_of: w.week_of, revenue: r0(w.forecast_revenue + lift / weeks.length) }));
+    const total = weeks.reduce((a, w) => a + w.forecast_revenue, 0);
+    return { method: young ? `run-rate: ${active.length >= 3 ? `average of the ${active.length} recent weeks with bookings` : `revenue per week since your first booking (${span.toFixed(1)} weeks)`}, never below what is already booked; low/high = ±35%`
+        : 'linear trend over the last 12 full weeks, never below what is already booked; low/high = ±1 typical weekly swing', currency: B.currency || 'USD',
+      last_12_weeks_avg_revenue: r0(R.avg), trend_per_week: r0(R.slope), total_forecast_revenue: total, total_low: weeks.reduce((a, w) => a + w.low, 0), total_high: weeks.reduce((a, w) => a + w.high, 0),
+      growth_path: { total: total + lift, extra: lift, actions, weeks: path, note: lift ? 'If you send the prepared messages now, at typical reply rates.' : 'No prepared campaigns right now, so the growth path equals the current pace.' },
+      confidence: young ? `low: ${span < 6 ? `${span.toFixed(1)} weeks of history` : `only ${active.length} full weeks with bookings`}, treat as a rough guide` : 'normal', weeks, history: past.map(r => ({ week_of: d(r.wk), revenue: r.revenue, bookings: r.bookings })) };
   } };
 TOOLS.business_info = { about: 'the business itself: name, address, opening hours, services with prices, policies, FAQ answers, team, payment methods, languages', args: '{}',
   run: async B => { const b = await loadBusiness(B.id);
@@ -275,7 +296,7 @@ function prompt(B, e, convo, results, page, memory = []) {
 Your skills: ${emp.skills}. You are accurate, brief and practical, like a senior employee who owns this area.
 Today is ${B.now} (${B.tz}). Currency: ${B.currency || 'USD'}.${page ? `\nThe owner is looking at the ${page} page of the dashboard right now; questions like "this" or "here" mean that page.` : ''}
 
-${e === 'pulse' ? `WHO YOU ARE: the owner's full-time partner. Think like a top consultant who knows this business inside out: diagnose with the data, then recommend the single best move and why, with the expected impact. Push back politely when the owner's idea is weaker than an alternative. Be proactive: point out risks and opportunities you see in the data. For forecasts use the forecast tool and always give the range and how sure it is.
+${e === 'pulse' ? `WHO YOU ARE: the owner's full-time partner. Think like a top consultant who knows this business inside out: diagnose with the data, then recommend the single best move and why, with the expected impact. Push back politely when the owner's idea is weaker than an alternative. Be proactive: point out risks and opportunities you see in the data. For forecasts use the forecast tool: give the current pace with its range, how sure it is, and the growth path (the extra revenue if the owner runs the listed actions, action by action). The chart under your answer shows the timeline, so don't list every week.
 WHAT YOU REMEMBER ABOUT THIS OWNER AND BUSINESS (from earlier chats; use it, don't repeat it back):
 ${memory.length ? memory.map(m => `- ${m}`).join('\n') : '- nothing yet'}
 MEMORY: when the owner tells you a lasting preference, goal, fact or decision (e.g. "I want 20% more revenue by December", "never discount haircuts", "my busiest stylist is Rana"), add "remember":["one short fact"] to your JSON. Only lasting things, never one-off questions or numbers you can fetch.
@@ -320,11 +341,12 @@ Your JSON:`;
 const TEAM_MODEL = () => process.env.TEAM_MODEL || 'models/gemini-3.5-flash';
 // Claude for Pulse AI: used when ANTHROPIC_API_KEY is set (PULSE_MODEL picks the model). The receptionist keeps its
 // own model; only the owner's assistant moves. Without a key, the n8n workflow below answers as before.
-let claude = null;
-async function askClaude(text) {
-  claude ||= new (await import('@anthropic-ai/sdk')).default();
-  const r = await claude.beta.messages.create({
-    model: process.env.PULSE_MODEL || 'claude-opus-5-5', max_tokens: 16000,
+const claudes = new Map(); // one client per API key
+async function askClaude(text, own) {
+  const key = own?.api_key || process.env.ANTHROPIC_API_KEY;
+  if (!claudes.has(key)) claudes.set(key, new (await import('@anthropic-ai/sdk')).default({ apiKey: key }));
+  const r = await claudes.get(key).beta.messages.create({
+    model: own?.model || process.env.PULSE_MODEL || 'claude-opus-5-5', max_tokens: 16000,
     output_config: { effort: process.env.PULSE_EFFORT || 'medium' },
     // a safety decline is re-run on a suitable model inside the same call
     betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
@@ -333,9 +355,10 @@ async function askClaude(text) {
   if (r.stop_reason === 'refusal') return readReply('{"answer":"I can\'t help with that one. Ask me about your business."}');
   return readReply(r.content.filter(b => b.type === 'text').map(b => b.text).join(''));
 }
-async function ask(text) {
-  if (process.env.ANTHROPIC_API_KEY) {
-    try { return await askClaude(text); }
+async function ask(text, B) {
+  const own = B ? await credentials(B.id, 'anthropic').catch(() => null) : null;
+  if (own?.api_key || process.env.ANTHROPIC_API_KEY) {
+    try { return await askClaude(text, own); }
     catch (e) { console.warn('Claude call failed, falling back to the default model:', e.status || '', e.message); }
   }
   // the per-minute allowance is shared with the receptionist: wait a little for a free slot before giving up
@@ -344,7 +367,7 @@ async function ask(text) {
   if (!slot) throw Object.assign(new Error('The AI is busy right now. Try again in a minute.'), { status: 429 });
   let r;
   for (const model of [TEAM_MODEL(), process.env.AI_MODEL].filter(Boolean)) {
-    r = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: text, model }), signal: AbortSignal.timeout(40000) }).catch(() => null);
+    r = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: text, model }), signal: AbortSignal.timeout(20000) }).catch(() => null);
     if (r && r.ok) break;
   }
   if (!r || !r.ok) throw new Error(`The AI didn't respond (${r ? r.status : 'no connection'}).`);
@@ -446,7 +469,7 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
 
 `); };
     for (let step_ = 0; step_ < MAX_STEPS; step_++) { const step0 = step_;
-      try { out = await ask(prompt(B, e, convo, results, String(req.body.page || '').slice(0, 40), memory)); }
+      try { out = await ask(prompt(B, e, convo, results, String(req.body.page || '').slice(0, 40), memory), B); }
       catch (err) { if (step0 === 0 && !res.headersSent) return res.status(err.status || 503).json({ error: err.status ? err.message : 'The AI isn’t reachable right now. Try again in a minute.' }); out = { busy: true }; break; }
       if (!counted) { await q('INSERT INTO team_calls (business_id, employee) VALUES ($1,$2)', [B.id, e]); counted = true; }
       if (out.broken) { convo.push({ role: 'system', text: 'Your last reply was not valid JSON. Reply with one valid JSON object only.' }); continue; }
@@ -477,7 +500,7 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
     // the rows behind the answer, straight from the database: shown as tables and downloadable as CSV
     const tables = results.slice(1).map(r => {
       const d = r.data, rows = Array.isArray(d) ? d : Array.isArray(d?.rows) ? d.rows : Object.values(d || {}).find(v => Array.isArray(v) && v.length && typeof v[0] === 'object');
-      return rows?.length && typeof rows[0] === 'object' ? { title: `${r.name.replace(/_/g, ' ')}${d?.period ? ` · ${d.period}` : ''}`, rows: rows.slice(0, 200) } : null;
+      return rows?.length && typeof rows[0] === 'object' ? { title: `${r.name.replace(/_/g, ' ')}${d?.period ? ` · ${d.period}` : ''}`, rows: rows.slice(0, 200), ...(r.name === 'forecast' ? { forecast: d } : {}) } : null;
     }).filter(Boolean).slice(0, 4);
     const payload = { employee: e, answer, learned, actions: actions.filter(a => a.type !== 'send_message' || a.client), tools, sources, tables, ...mentions(results) };
     if (res.headersSent) { res.write(`data: ${JSON.stringify({ done: payload })}

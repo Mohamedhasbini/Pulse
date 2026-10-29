@@ -1,5 +1,6 @@
 // Notification center: every event the business should know about is stored (the dashboard bell reads it),
 // and the kinds the owner switched on are also pushed instantly to the owner's own Telegram chat.
+import { emitWebhook } from './integrations.js';
 import crypto from 'node:crypto';
 import { q, one } from './db.js';
 import { sendTelegram } from './telegram.js';
@@ -13,6 +14,8 @@ export async function notify(bizId, kind, title, body = null, refs = {}) {
   try {
     // Test lab chats are rehearsals: they never ring the bell or the owner's phone
     if (refs.conversationId && (await one(`SELECT channel FROM conversations WHERE id=$1`, [refs.conversationId]))?.channel === 'test') return null;
+    emitWebhook(bizId, { booking: 'booking.created', cancel: 'booking.cancelled', approval: 'approval.needed', handoff: 'chat.handoff', unsure: 'ai.unsure', review: 'review.received', marketing: 'marketing.sent' }[kind] || kind,
+      { title: String(title), body: body || null, conversation_id: refs.conversationId || null, booking_id: refs.bookingId || null });
     const n = await one(`INSERT INTO notifications (business_id, kind, title, body, conversation_id, booking_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
       [bizId, kind, String(title).slice(0, 200), body ? String(body).slice(0, 600) : null, refs.conversationId || null, refs.bookingId || null]);
     const b = await one('SELECT alert_kinds, owner_telegram_chat FROM businesses WHERE id=$1', [bizId]);

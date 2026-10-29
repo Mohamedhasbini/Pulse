@@ -11,6 +11,7 @@ import { mountAgents } from './agents.js';
 import { mountTeam } from './team.js';
 import { mountPulse } from './pulse.js';
 import { mountMarketing } from './marketing.js';
+import { mountIntegrations, mountPublicApi } from './integrations.js';
 import { mountShortcuts } from './shortcuts.js';
 import { mountInbox } from './inbox.js';
 import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
@@ -193,6 +194,9 @@ app.post('/api/login/email-code', wrap(async (req, res) => {
   res.json({ ok: true, email: maskEmail(u.email) });
 }));
 app.post('/api/logout', (_req, res) => { res.set('Set-Cookie', 'rb_session=; Path=/; Max-Age=0').json({ ok: true }); });
+
+// The public API authenticates with a business API key, so it sits before the session check.
+mountPublicApi(app);
 
 // Who is signed in, and which business this request is about. Owners and staff only ever get their own business;
 // the admin works on whichever business they switched to (rb_biz cookie).
@@ -637,6 +641,7 @@ mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
 mountTeam(app, () => BIZ(), { sendWhatsApp, sendTelegram, audit });
 mountPulse(app, () => BIZ());
 mountMarketing(app, () => BIZ());
+mountIntegrations(app, () => BIZ());
 mountShortcuts(app, () => BIZ());
 mountInbox(app, () => BIZ(), LOCAL);
 

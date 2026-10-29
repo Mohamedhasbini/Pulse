@@ -411,3 +411,19 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS deposit_for TEXT DEFAULT 'risky'
 
 -- Monthly revenue goal the owner sets in Insights (tracked against month to date and the current pace)
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS revenue_goal NUMERIC;
+
+-- Integrations: each business's own connected accounts (secrets encrypted in config) and its API keys (hash only)
+CREATE TABLE IF NOT EXISTS integrations (
+  business_id INT REFERENCES businesses(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  config JSONB DEFAULT '{}',
+  status TEXT DEFAULT 'saved',            -- saved | connected | error | off
+  checked_at TIMESTAMPTZ, error TEXT, updated_at TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (business_id, provider)
+);
+CREATE TABLE IF NOT EXISTS api_keys (
+  id SERIAL PRIMARY KEY,
+  business_id INT REFERENCES businesses(id) ON DELETE CASCADE,
+  name TEXT, hash TEXT UNIQUE NOT NULL, prefix TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(), last_used_at TIMESTAMPTZ
+);

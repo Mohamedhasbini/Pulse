@@ -70,13 +70,40 @@
   const cell = v => v == null ? '—' : typeof v === 'number' ? v.toLocaleString() : typeof v === 'object' ? JSON.stringify(v) : String(v);
   const hidden = c => /^(client_id|customer_id|conversation_id|service_id)$/.test(c);
   const isNum = (rows, c) => rows.every(r => r[c] == null || typeof r[c] === 'number');
+  // the forecast timeline: past weeks solid, the forecast dashed inside its low-high band, the growth path above it
+  function forecastChart(f) {
+    const hist = (f.history || []).slice(-8), wk = f.weeks || [], gp = f.growth_path?.weeks || [], all = [...hist.map(h => h.week_of), ...wk.map(w => w.week_of)], n = all.length;
+    if (n < 3) return '';
+    const W = 680, H = 220, l = 44, r = 14, t = 14, b = 26, mx = Math.max(1, ...hist.map(h => h.revenue), ...wk.map(w => w.high), ...gp.map(g => g.revenue)) * 1.1;
+    const X = i => l + i * (W - l - r) / (n - 1), Y = v => H - b - v / mx * (H - b - t), h0 = hist.length, cur = f.currency === 'USD' || !f.currency ? '$' : f.currency + ' ';
+    const pts = (arr, k, off) => arr.map((v, i) => `${X(i + off).toFixed(1)},${Y(v[k]).toFixed(1)}`).join(' ');
+    let g = '';
+    for (let i = 0; i <= 3; i++) { const v = mx * i / 3; g += `<line x1="${l}" x2="${W - r}" y1="${Y(v)}" y2="${Y(v)}" class="fc-grid"/><text x="${l - 6}" y="${Y(v) + 4}" text-anchor="end">${cur}${Math.round(v)}</text>`; }
+    if (h0) g += `<line x1="${X(h0 - 0.5)}" x2="${X(h0 - 0.5)}" y1="${t}" y2="${H - b}" class="fc-today"/><text x="${X(h0 - 0.5) + 4}" y="${t + 10}" class="fc-lbl">forecast →</text>`;
+    const band = wk.map((w, i) => `${X(h0 + i)},${Y(w.high)}`).join(' ') + ' ' + [...wk].reverse().map((w, i) => `${X(h0 + wk.length - 1 - i)},${Y(w.low)}`).join(' ');
+    g += `<polygon points="${band}" class="fc-band"><title>Likely range</title></polygon>`;
+    if (h0) g += `<polyline points="${pts(hist, 'revenue', 0)}" class="fc-act"/>`;
+    const bridge = h0 ? `${X(h0 - 1)},${Y(hist[h0 - 1].revenue)} ` : '';
+    if (f.growth_path?.extra) g += `<polyline points="${bridge}${pts(gp, 'revenue', h0)}" class="fc-path"/>`;
+    g += `<polyline points="${bridge}${pts(wk, 'forecast_revenue', h0)}" class="fc-fc"/>` + wk.map((w, i) => `<circle cx="${X(h0 + i)}" cy="${Y(w.forecast_revenue)}" r="3" class="fc-dot"><title>${w.week_of}: ${cur}${w.forecast_revenue} (${cur}${w.low}–${cur}${w.high})</title></circle>`).join('');
+    [0, h0, n - 1].filter((v, i, a) => a.indexOf(v) === i && v < n).forEach(i => { g += `<text x="${X(i)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}">${all[i].slice(5)}</text>`; });
+    const m = v => `${cur}${Math.round(v).toLocaleString()}`, p = f.growth_path || {};
+    return `<figure class="fc"><div class="fc-sum"><div><small>Current pace</small><b>${m(f.total_forecast_revenue)}</b><span>${m(f.total_low)}–${m(f.total_high)}</span></div>
+      ${p.extra ? `<div class="fc-up"><small>Growth path</small><b>${m(p.total)}</b><span>+${m(p.extra)} from ${p.actions.length} action${p.actions.length > 1 ? 's' : ''}</span></div>` : ''}
+      <div><small>Confidence</small><b class="fc-conf">${esc(String(f.confidence).split(':')[0])}</b><span>${esc(String(f.confidence).split(':')[1] || 'enough history')}</span></div></div>
+      <svg viewBox="0 0 ${W} ${H}" class="fc-svg" role="img" aria-label="Revenue: past weeks and forecast">${g}</svg>
+      <div class="fc-leg"><span class="a">Actual</span><span class="f">Forecast</span><span class="r">Likely range</span>${p.extra ? '<span class="p">Growth path</span>' : ''}</div>
+      ${p.actions?.length ? `<ul class="fc-acts">${p.actions.map(a => `<li><b>${esc(a.label)}</b><span>${a.clients} clients × ${a.reply_rate} reply</span><em>+${m(a.value)}</em></li>`).join('')}</ul>` : ''}
+      <figcaption>${esc(f.method)}</figcaption></figure>`;
+  }
   function chart(t) {
+    if (t.forecast) return forecastChart(t.forecast);
     const cols = Object.keys(t.rows[0]), x = cols.find(c => /week|day|date|month|^at$/.test(c));
     const y = ['forecast_revenue', 'revenue', 'bookings', 'booked_hours'].find(c => cols.includes(c) && isNum(t.rows, c));
     if (!x || !y || t.rows.length < 3 || t.rows.length > 24) return '';
     const vals = t.rows.map(r => +r[y] || 0), max = Math.max(...vals, 1), W = 100 / vals.length;
-    return `<figure class="pc-chart" aria-label="${esc(head(y))} by ${esc(head(x))}"><figcaption>${esc(head(y))}</figcaption><div class="pc-bars">${t.rows.map((r, k) =>
-      `<div class="pc-bar" style="width:${W}%" title="${esc(cell(r[x]))}: ${esc(cell(r[y]))}"><i style="height:${Math.max(2, vals[k] / max * 100)}%"></i><span>${esc(String(cell(r[x])).replace(/^\d{4}-/, ''))}</span></div>`).join('')}</div></figure>`;
+    return `<figure class="pcx-chart" aria-label="${esc(head(y))} by ${esc(head(x))}"><figcaption>${esc(head(y))}</figcaption><div class="pcx-bars">${t.rows.map((r, k) =>
+      `<div class="pcx-bar" style="width:${W}%" title="${esc(cell(r[x]))}: ${esc(cell(r[y]))}"><i style="height:${Math.max(2, vals[k] / max * 100)}%"></i><span>${esc(String(cell(r[x])).replace(/^\d{4}-/, ''))}</span></div>`).join('')}</div></figure>`;
   }
   function tableHtml(t, k, all) {
     const cols = Object.keys(t.rows[0]).filter(c => !hidden(c)), rows = all ? t.rows : t.rows.slice(0, 6);

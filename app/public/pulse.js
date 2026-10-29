@@ -74,7 +74,8 @@
       ['Channels', { page: 'settings', tab: 'channels', cards: ['Channels'] }],
       ['Reminders', { page: 'settings', tab: 'channels', cards: ['Reminders'] }],
       ['Security & devices', { page: 'account', tab: 's2fa', panes: ['s2fa', 'sdev'] }],
-      ['Look & layout', { page: 'account', tab: 'look', panes: ['look', 'dash'] }]]],
+      ['Look & layout', { page: 'account', tab: 'look', panes: ['look', 'dash'] }],
+      ['Integrations', { own: 'integrations' }]]],
   ];
   const BADGE = { inbox: 'apprN', pulse: 'paN', train: 'trN' };
   // the receptionist's name as the owner set it (Settings › Assistant), Nora by default
@@ -228,6 +229,7 @@
     if (key === 'calendar') { const s = page('calendar', 'Calendar', '', '<div id="gcRoot"></div>'); s.hidden = false; window.PulseCal?.mount(s); }
     if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }
     if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything Pulse AI prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
+    if (key === 'integrations') { const s = page('integrations', 'Integrations', '', '<div id="igRoot"></div>'); s.hidden = false; window.PulseIntegrations?.mount(s); }
     if (key === 'growth') { const s = page('growth', 'Marketing', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }
     if (key === 'brief') { const s = page('brief', 'Weekly brief', 'This week against last week, and the agents\' results. Worked out from your own numbers.', '<div id="paBrief"></div>'); s.hidden = false; loadBrief(); }
     if (key === 'ask') { const s = page('ask', 'Ask Pulse', 'Ask anything about your business. Pulse looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); window.PulseCommand?.open(); }
