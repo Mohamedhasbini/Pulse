@@ -11,6 +11,8 @@ export const KINDS = {
 
 export async function notify(bizId, kind, title, body = null, refs = {}) {
   try {
+    // Test lab chats are rehearsals: they never ring the bell or the owner's phone
+    if (refs.conversationId && (await one(`SELECT channel FROM conversations WHERE id=$1`, [refs.conversationId]))?.channel === 'test') return null;
     const n = await one(`INSERT INTO notifications (business_id, kind, title, body, conversation_id, booking_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
       [bizId, kind, String(title).slice(0, 200), body ? String(body).slice(0, 600) : null, refs.conversationId || null, refs.bookingId || null]);
     const b = await one('SELECT alert_kinds, owner_telegram_chat FROM businesses WHERE id=$1', [bizId]);

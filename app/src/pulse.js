@@ -17,7 +17,8 @@ export async function waiting(B) {
         FROM requests r JOIN bookings b ON b.id=r.booking_id JOIN services s ON s.id=b.service_id JOIN customers cu ON cu.id=b.customer_id JOIN businesses bz ON bz.id=r.business_id
         WHERE r.business_id=$1 AND r.status='pending' ORDER BY r.created_at LIMIT 30`, [B]),
     lessonSuggestions(B),
-    q(`SELECT min(id) AS id, min(question) AS question, count(*)::int AS n FROM learning WHERE business_id=$1 AND status='open' GROUP BY lower(question) ORDER BY 3 DESC LIMIT 10`, [B]),
+    q(`SELECT min(l.id) AS id, min(l.question) AS question, count(*)::int AS n FROM learning l LEFT JOIN conversations c ON c.id=l.conversation_id
+        WHERE l.business_id=$1 AND l.status='open' AND c.channel IS DISTINCT FROM 'test' GROUP BY lower(question) ORDER BY 3 DESC LIMIT 10`, [B]),
     agentFindings(B).then(r => r.out.filter(a => a.list.length && !a.blocked))]);
   const items = [
     ...requests.map(r => ({ kind: 'request', id: r.id, title: `${r.name} wants to ${r.type === 'cancel' ? 'cancel' : r.type === 'reschedule' ? 'move' : 'change'} ${r.service}`, why: [r.start, r.details].filter(Boolean).join(' · ') })),
@@ -39,7 +40,7 @@ export async function brief(B) {
   const share = x => x.chats ? Math.round(x.handled / x.chats * 100) : null;
   const [extra] = await q(`SELECT
       (SELECT count(*) FROM bookings WHERE business_id=$1 AND status='no_show' AND starts_at > now() - interval '7 days')::int AS no_shows,
-      (SELECT count(*) FROM conversations WHERE business_id=$1 AND needs_attention)::int AS waiting,
+      (SELECT count(*) FROM conversations WHERE business_id=$1 AND needs_attention AND channel<>'test')::int AS waiting,
       (SELECT count(DISTINCT lower(question)) FROM learning WHERE business_id=$1 AND status='open')::int AS questions,
       (SELECT count(*) FROM bookings WHERE business_id=$1 AND status='confirmed' AND starts_at BETWEEN now() AND now() + interval '7 days')::int AS next_week`, [B]);
   const wins = [], risks = [], next = [];

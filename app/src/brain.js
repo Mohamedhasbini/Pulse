@@ -275,8 +275,9 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   await q('INSERT INTO messages (conversation_id, role, text, latency_ms, failed, source, confidence, options) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
     [conv.id, 'assistant', reply, ms, failed, source, source === 'ai' ? (String(decision.confidence).toLowerCase() === 'low' || decision.unknown_question || decision.action === 'handoff' ? 'low' : 'high') : null, choices.length ? JSON.stringify(choices) : null]);
   await q(`UPDATE conversations SET outcome=$1, updated_at=now(),
-      needs_attention = needs_attention OR $2, attention_reason = COALESCE($3, attention_reason)${asked ? ', rating_asked_at=now()' : ''} WHERE id=$4`,
-    [outcome, !!attention, attention, conv.id]);
+      needs_attention = CASE WHEN $2 THEN true WHEN $5 THEN false ELSE needs_attention END, attention_reason = COALESCE($3, attention_reason)${asked ? ', rating_asked_at=now()' : ''} WHERE id=$4`,
+    // a booking made or moved this turn settles the chat: an earlier "needs you" flag is cleared, not left as a false alarm
+    [outcome, !!attention, attention, conv.id, bookedNow && !attention]);
   // what the conversation is about (Inbox types, Support topics). A booking stays a booking unless the customer later
   // complains, cancels or changes it; a booking made now always counts as one. A complaint and an unhappy mood stick,
   // so Support still sees them after the chat moves on
