@@ -145,10 +145,46 @@ window.PulseCal = (() => {
   // after a booking or time off is saved through the old forms, redraw
   if (typeof loadCal === 'function') { const old = loadCal; loadCal = async function () { try { await old(); } catch {} if (root && !root.closest('[hidden]')) load(); }; }
 
+  // drag a booking to another time or day: it snaps to 15 minutes and goes through the same checks as the booking form
+  // (opening hours, clashes, time off); a clash asks before overriding. A plain click still opens the booking.
+  let drag = null, dragged = false;
+  function dragStart(ev) {
+    const b = ev.target.closest('.gc-b'); if (!b || ev.button !== 0) return;
+    const x = (st.data.bookings || []).find(y => y.id === +b.dataset.b); if (!x || x.status !== 'confirmed') return;
+    drag = { el: b, x, sx: ev.clientX, sy: ev.clientY, grab: ev.clientY - b.getBoundingClientRect().top, on: false };
+  }
+  function dragMove(ev) {
+    if (!drag) return;
+    const dx = ev.clientX - drag.sx, dy = ev.clientY - drag.sy;
+    if (!drag.on && Math.hypot(dx, dy) < 6) return;
+    drag.on = true; drag.el.classList.add('gc-drag'); drag.el.style.transform = `translate(${dx}px,${dy}px)`;
+  }
+  async function dragEnd(ev) {
+    if (!drag) return; const d = drag; drag = null;
+    if (!d.on) return;
+    dragged = true; setTimeout(() => { dragged = false; }, 0);
+    d.el.style.visibility = 'hidden'; const col = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('[data-col]'); d.el.style.visibility = '';
+    d.el.classList.remove('gc-drag'); d.el.style.transform = '';
+    if (!col) return;
+    const rowH = parseFloat(getComputedStyle(col.closest('.gc-grid')).getPropertyValue('--row'));
+    const mins = Math.max(0, Math.round((ev.clientY - d.grab - col.getBoundingClientRect().top) / rowH * 4) * 15), h = +col.dataset.h0 + Math.floor(mins / 60);
+    const start = `${col.dataset.col}T${p2(h)}:${p2(mins % 60)}`;
+    if (start === d.x.start.replace(' ', 'T').slice(0, 16)) return;
+    if (!confirm(`Move ${d.x.customer} (${d.x.service}) to ${col.dataset.col} at ${p2(h)}:${p2(mins % 60)}?`)) return;
+    const send = force => fetch(`/api/bookings/${d.x.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start, force }) });
+    let r = await send(false);
+    if (r.status === 409 && confirm(`${(await r.json()).error} Move anyway?`)) r = await send(true);
+    else if (!r.ok) { const j = await r.json().catch(() => ({})); if (r.status !== 409) window.toast?.(j.error || 'Could not move it.'); }
+    if (r.ok) window.toast?.(`Moved to ${p2(h)}:${p2(mins % 60)}. Tell ${d.x.customer} about the change.`);
+    load();
+  }
+
   return {
     mount(section) {
       root = section.querySelector('#gcRoot');
-      if (!root.dataset.on) { root.dataset.on = 1; st.at = now(); frame(); }
+      if (!root.dataset.on) { root.dataset.on = 1; st.at = now(); frame();
+        root.addEventListener('pointerdown', dragStart); addEventListener('pointermove', dragMove); addEventListener('pointerup', dragEnd);
+        root.addEventListener('click', ev => { if (dragged) { ev.stopImmediatePropagation(); ev.preventDefault(); } }, true); }
       requestAnimationFrame(load);
     },
     refresh: () => root && load(),

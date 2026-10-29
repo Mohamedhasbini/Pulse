@@ -74,7 +74,9 @@ async function fixMark(box){const d=new Date(),day=`${d.getFullYear()}-${String(
 async function fixTeach(box){const w=await req("/api/pulse/waiting"),qs=w.items.filter(x=>x.kind==="question");
   box.innerHTML=qs.length?qs.map(x=>`<div class="desk-q" data-l="${x.id}"><b>${esc(x.title.replace(/^Answer /,""))}</b><small>${esc(x.why)}</small>
     <textarea rows="2" placeholder="The answer your receptionist should give"></textarea><button type="button" class="desk-ok" data-teach>Teach</button></div>`).join(""):`<p class="desk-fh">No open questions.</p>`}
-function fixAgent(id){const card=document.querySelector(`.ag[data-a="${id}"]`);if(!card)return;
+async function fixAgent(id){let card=document.querySelector(`.ag[data-a="${id}"]`);
+  if(!card||!card.offsetParent){window.P10?.go("marketing",2);for(let k=0;k<20&&!(card=document.querySelector(`.ag[data-a="${id}"]`))?.offsetParent;k++)await new Promise(r=>setTimeout(r,250))}
+  if(!card)return;
   card.scrollIntoView({behavior:"smooth",block:"center"});const d=card.querySelector("details");if(d)d.open=true;card.classList.add("ag-flash");setTimeout(()=>card.classList.remove("ag-flash"),1600)}
 document.addEventListener("click",async ev=>{const t=ev.target,c=t.closest(".desk-c");if(!c)return;const e=team[+c.dataset.e];if(!e)return;
   const a=t.closest(".desk-ask");if(a){window.PulseCommand?.open(a.dataset.ask||undefined);return}
@@ -91,4 +93,6 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=t.closest(".des
     tc.disabled=true;try{const r=await req("/api/team/act","POST",{type:"teach_answer",learning_id:+q.dataset.l,answer:ans});q.innerHTML=`<b>${esc(r.done||"Saved.")}</b>`;
       if(!c.querySelector("[data-teach]"))setTimeout(()=>{c.querySelector(".desk-fix").hidden=true;loadTeam()},1200)}catch(err){toast(err.message);tc.disabled=false}}});
 setInterval(()=>{if(!sec.hidden&&!document.hidden)loadTeam()},60000);
+// the same fixes power Today's briefing
+window.DeskFix={mark:fixMark,teach:fixTeach,agent:fixAgent,nav};
 })();

@@ -403,3 +403,11 @@ CREATE TABLE IF NOT EXISTS pulse_memory (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS pulse_memory_biz ON pulse_memory (business_id);
+
+-- Deposits without a payment integration: the owner's own payment link (Stripe Payment Link, Whish, bank page). The
+-- confirmation asks for the reservation fee through it, for clients who missed before ('risky') or for everyone ('all').
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS payment_link TEXT;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS deposit_for TEXT DEFAULT 'risky';
+
+-- Monthly revenue goal the owner sets in Insights (tracked against month to date and the current pace)
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS revenue_goal NUMERIC;

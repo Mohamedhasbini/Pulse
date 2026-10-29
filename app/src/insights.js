@@ -102,6 +102,17 @@ export async function insights(BIZ, days) {
       (SELECT count(*) FROM conversations c WHERE c.business_id=$1 AND date_trunc('${unit}', c.created_at)=g)::int AS chats
       FROM generate_series(date_trunc('${unit}', now() - make_interval(days => $2::int - 1)), date_trunc('${unit}', now()), '1 ${unit}') g`, P);
 
+  // the same span one period earlier, point by point, so the chart can draw last period as a dashed line
+  const trendPrev = await q(`SELECT COALESCE((SELECT sum(price) FROM bookings b WHERE b.business_id=$1 AND ${live} AND date_trunc('${unit}', b.starts_at)=g),0)::float AS revenue
+      FROM generate_series(date_trunc('${unit}', now() - make_interval(days => $2::int * 2 - 1)), date_trunc('${unit}', now() - make_interval(days => $2::int)), '1 ${unit}') g`, P);
+  trend.forEach((t, i) => { t.prev = trendPrev[i]?.revenue ?? 0; });
+  // the owner's monthly revenue goal: month to date against it, and where the month lands at this pace
+  const [goal] = await q(`SELECT z.revenue_goal::float AS target,
+      COALESCE((SELECT sum(price) FROM bookings b WHERE b.business_id=$1 AND ${live} AND b.starts_at >= date_trunc('month', now()) AND b.starts_at < now()),0)::float AS mtd,
+      COALESCE((SELECT sum(price) FROM bookings b WHERE b.business_id=$1 AND b.status='confirmed' AND b.starts_at >= now() AND b.starts_at < date_trunc('month', now()) + interval '1 month'),0)::float AS booked_rest,
+      extract(day FROM now())::int AS day, extract(day FROM date_trunc('month', now()) + interval '1 month - 1 day')::int AS days_in_month
+      FROM businesses z WHERE z.id=$1`, [P[0]]);
+
   // When the business is busy: bookings by weekday × hour (counts each hour the appointment covers).
   const heat = await q(`SELECT extract(dow FROM h)::int AS dow, extract(hour FROM h)::int AS hour, count(*)::int AS n
       FROM bookings b, generate_series(date_trunc('hour', b.starts_at), b.ends_at - interval '1 minute', '1 hour') h
@@ -147,7 +158,8 @@ export async function insights(BIZ, days) {
       count(*) FILTER (WHERE r.type='reschedule')::int AS late_move_requests, count(*) FILTER (WHERE r.type='extra')::int AS extra_requests
       FROM requests r WHERE r.business_id=$1 AND r.created_at > ${since}`, P);
 
-  return { days, unit, totals, prev: { ...prev, conversations: prevConv.n }, services, weekday, hours, lead, channels, trend, heat, capacity,
+  const [hist] = await q(`SELECT GREATEST(0, extract(day FROM now() - min(starts_at)))::int AS days FROM bookings WHERE business_id=$1`, [P[0]]);
+  return { history_days: hist?.days ?? 0, goal, days, unit, totals, prev: { ...prev, conversations: prevConv.n }, services, weekday, hours, lead, channels, trend, heat, capacity,
     upcoming: { next7: { n: bookedNext.n, revenue: bookedNext.revenue }, next30 }, ai, lost, value, requests: cancelLead,
     customers: { ...cust, top, atRisk, repeatNoShow }, hoursOpen: biz.hours,
     topics, asked, handoff: handoff.n, conversations: convs.n, reminders: rem, currency: biz.currency || 'USD',

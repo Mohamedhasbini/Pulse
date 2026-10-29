@@ -32,11 +32,11 @@ loadNotifs(true);setInterval(()=>loadNotifs(),15000);
 async function loadTools(){let t;try{t=await req("/api/tools")}catch{$("#toolsCard").hidden=true;return}
   $("#tlBuf").value=String(t.buffer_minutes);if(!$("#tlBuf").value){$("#tlBuf").insertAdjacentHTML("beforeend",`<option value="${t.buffer_minutes}">${t.buffer_minutes} minutes</option>`);$("#tlBuf").value=String(t.buffer_minutes)}
   $("#tlSvc").innerHTML=t.services.map(s=>`<label style="font-size:13px">${esc(s.name)} <span style="color:var(--muted)">(${s.minutes} min)</span><select data-s="${s.id}"><option value="">Business default</option>${[0,5,10,15,20,30,45,60].map(m=>`<option value="${m}" ${s.buffer_minutes===m?"selected":""}>${m?m+" min after":"No buffer"}</option>`).join("")}</select></label>`).join("");
-  $("#tlLater").checked=t.pay_later;$("#tlNow").checked=t.pay_now;$("#tlDep").checked=t.pay_deposit;$("#tlDepAmt").value=t.deposit_amount||"";
-  $("#tlNow").disabled=$("#tlDep").disabled=$("#tlDepAmt").disabled=!t.payments_live;
+  $("#tlLater").checked=t.pay_later;$("#tlNow").checked=t.pay_now;$("#tlDep").checked=t.pay_deposit;$("#tlDepAmt").value=t.deposit_amount||"";$("#tlPayLink").value=t.payment_link||"";$("#tlDepFor").value=t.deposit_for||"risky";
+  $("#tlNow").disabled=!t.payments_live;
   $("#tlPayNote").textContent=t.payments_live?`All off by default. Only the options you tick are offered by the AI. Amounts in ${t.currency}.`
-    :"All off by default. Online payment and reservation fees unlock when payments are connected to your account; until then the AI never asks for money or card details."}
-$("#tlSave").onclick=async()=>{try{await req("/api/tools","PUT",{buffer_minutes:+$("#tlBuf").value,pay_later:$("#tlLater").checked,pay_now:$("#tlNow").checked,pay_deposit:$("#tlDep").checked,deposit_amount:+$("#tlDepAmt").value||0,
+    :"All off by default. Reservation fees work with your own payment link below; card payments in the chat unlock when payments are connected. The AI never asks for card details."}
+$("#tlSave").onclick=async()=>{try{await req("/api/tools","PUT",{buffer_minutes:+$("#tlBuf").value,pay_later:$("#tlLater").checked,pay_now:$("#tlNow").checked,pay_deposit:$("#tlDep").checked,deposit_amount:+$("#tlDepAmt").value||0,payment_link:$("#tlPayLink").value.trim(),deposit_for:$("#tlDepFor").value,
   services:[...$("#tlSvc").querySelectorAll("select")].map(x=>({id:+x.dataset.s,buffer_minutes:x.value===""?null:+x.value}))});toast("Tools saved. The AI uses them from the next message.");loadTools()}catch(err){toast(err.message)}};
 document.querySelector('nav button[data-view="setup"]').addEventListener("click",loadTools);
 

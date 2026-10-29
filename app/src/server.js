@@ -1105,15 +1105,17 @@ app.post('/api/notifications/link-telegram', wrap(async (_req, res) => {
 app.get('/api/tools', wrap(async (_req, res) => {
   const b = await loadBusiness(BIZ());
   res.json({ buffer_minutes: b.buffer_minutes || 0, pay_later: !!b.pay_later, pay_now: !!b.pay_now, pay_deposit: !!b.pay_deposit, deposit_amount: +b.deposit_amount || 0,
+    payment_link: b.payment_link || '', deposit_for: b.deposit_for || 'risky',
     currency: b.currency || 'USD', payments_live: !!process.env.PAYMENTS_LIVE,
     services: b.services.map(s => ({ id: s.id, name: s.name, minutes: s.minutes, buffer_minutes: s.buffer_minutes })) });
 }));
 app.put('/api/tools', wrap(async (req, res) => {
   const b = req.body, clampMin = v => Math.min(Math.max(Math.round(+v || 0), 0), 240);
+  const link = /^https:\/\/\S{4,300}$/.test(String(b.payment_link || '').trim()) ? String(b.payment_link).trim() : null;
   const live = !!process.env.PAYMENTS_LIVE;
-  // Online payment and reservation fees stay off until a payment provider is connected.
-  await q(`UPDATE businesses SET buffer_minutes=$1, pay_later=$2, pay_now=$3, pay_deposit=$4, deposit_amount=$5 WHERE id=$6`,
-    [clampMin(b.buffer_minutes), !!b.pay_later, live && !!b.pay_now, live && !!b.pay_deposit, Math.max(0, +b.deposit_amount || 0), BIZ()]);
+  // Online payment stays off until a payment provider is connected; a reservation fee also works with the owner's own payment link.
+  await q(`UPDATE businesses SET buffer_minutes=$1, pay_later=$2, pay_now=$3, pay_deposit=$4, deposit_amount=$5, payment_link=$6, deposit_for=$7 WHERE id=$8`,
+    [clampMin(b.buffer_minutes), !!b.pay_later, live && !!b.pay_now, (live || !!link) && !!b.pay_deposit, Math.max(0, +b.deposit_amount || 0), link, b.deposit_for === 'all' ? 'all' : 'risky', BIZ()]);
   for (const s of Array.isArray(b.services) ? b.services : [])
     await q('UPDATE services SET buffer_minutes=$1 WHERE id=$2 AND business_id=$3', [s.buffer_minutes === '' || s.buffer_minutes === null || s.buffer_minutes === undefined ? null : clampMin(s.buffer_minutes), +s.id, BIZ()]);
   await audit(req, 'tools_saved', `buffer ${clampMin(b.buffer_minutes)}m, pay later ${!!b.pay_later}`);
@@ -1211,6 +1213,9 @@ app.post('/api/webook-demo/remove', wrap(async (_req, res) => res.json({ removed
 app.post('/api/webook-demo/add', wrap(async (_req, res) => res.json({ added: await seedDemo({ force: true }) })));
 
 // ---------- Insights ----------
+app.put('/api/insights/goal', wrap(async (req, res) => {
+  const v = Math.round(+req.body.goal || 0); await q('UPDATE businesses SET revenue_goal=$1 WHERE id=$2', [v > 0 ? v : null, BIZ()]); res.json({ ok: true });
+}));
 app.get('/api/insights', wrap(async (req, res) => res.json(await insights(BIZ(), Math.min(Math.max(+req.query.days || 30, 1), 365)))));
 
 // ---------- Reminders ----------

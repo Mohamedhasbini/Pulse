@@ -74,6 +74,37 @@ export function mountPulse(app, BIZ) {
     const names = (await agentFindings(B)).out.reduce((m, a) => ({ ...m, [a.id]: a.name }), {});
     res.json({ ...b, agents: agents.map(a => ({ ...a, name: names[a.agent] || a.agent })) });
   }));
+  app.get('/api/briefing', wrap(async (_req, res) => res.json(await briefing(BIZ()))));
   // the Today tiles: one row per day, from metrics.js
   app.get('/api/kpis', wrap(async (req, res) => res.json(await metrics.daily(BIZ(), Math.min(Math.max(+req.query.days || 14, 7), 90)))));
+}
+
+// The daily briefing on Today: what to do today, ranked by money, each with the fix that does it. Money figures are
+// from the data: "at risk" = upcoming bookings (7 days) of clients who missed before; "to win" = clients the agents
+// found × the average ticket of the last 90 days. Nothing here acts on its own.
+export async function briefing(B) {
+  const [[d], ag] = await Promise.all([q(`SELECT
+      (SELECT COALESCE(avg(price),0)::float FROM bookings WHERE business_id=$1 AND status IN ('completed','confirmed') AND starts_at > now() - interval '90 days' AND starts_at < now()) AS ticket,
+      (SELECT count(*) FROM conversations WHERE business_id=$1 AND needs_attention AND channel<>'test')::int AS chats,
+      (SELECT count(*) FROM requests WHERE business_id=$1 AND status='pending')::int AS requests,
+      (SELECT count(*) FROM bookings b JOIN businesses z ON z.id=b.business_id WHERE b.business_id=$1 AND b.status='confirmed' AND b.ends_at < now()
+         AND (b.starts_at AT TIME ZONE COALESCE(z.timezone,'Asia/Beirut'))::date = (now() AT TIME ZONE COALESCE(z.timezone,'Asia/Beirut'))::date)::int AS unmarked,
+      (SELECT count(DISTINCT lower(l.question)) FROM learning l LEFT JOIN conversations c ON c.id=l.conversation_id WHERE l.business_id=$1 AND l.status='open' AND c.channel IS DISTINCT FROM 'test')::int AS questions,
+      (SELECT COALESCE(sum(b.price),0)::float FROM bookings b WHERE b.business_id=$1 AND b.status='confirmed' AND b.starts_at BETWEEN now() AND now() + interval '7 days'
+         AND EXISTS (SELECT 1 FROM bookings x WHERE x.customer_id=b.customer_id AND x.status='no_show')) AS risk_value`, [B]),
+    agentFindings(B).catch(() => ({ out: [] }))]);
+  const n = id => ag.out.find(a => a.id === id && !a.blocked)?.list.length || 0, t = d.ticket || 0;
+  const items = [
+    d.chats && { kind: 'chats', text: `${d.chats} chat${d.chats > 1 ? 's' : ''} waiting for a reply`, why: 'Customers are waiting for a person', fix: 'open:inbox', urgent: true },
+    d.requests && { kind: 'requests', text: `${d.requests} change request${d.requests > 1 ? 's' : ''} to approve`, why: 'Late cancellations or moves need your OK', fix: 'open:requests', urgent: true },
+    n('noshow') && { kind: 'risk', text: `Confirm ${n('noshow')} risky booking${n('noshow') > 1 ? 's' : ''}`, why: 'These clients missed before', value: d.risk_value, money: 'at risk', fix: 'agent:noshow' },
+    d.unmarked && { kind: 'mark', text: `Mark ${d.unmarked} visit${d.unmarked > 1 ? 's' : ''} as came or no-show`, why: 'Keeps revenue and no-show numbers right', fix: 'mark' },
+    n('fill') && { kind: 'fill', text: `Invite ${n('fill')} regular${n('fill') > 1 ? 's' : ''} to fill quiet days`, why: 'Empty hours this week', value: n('fill') * t, money: 'to win', fix: 'agent:fill' },
+    n('winback') && { kind: 'winback', text: `Win back ${n('winback')} regular${n('winback') > 1 ? 's' : ''}`, why: "They haven't been back in 45 days", value: n('winback') * t, money: 'to win', fix: 'agent:winback' },
+    n('leads') && { kind: 'leads', text: `Follow up ${n('leads')} warm lead${n('leads') > 1 ? 's' : ''}`, why: "They asked but didn't book", value: n('leads') * t, money: 'to win', fix: 'agent:leads' },
+    d.questions && { kind: 'teach', text: `Teach ${d.questions} answer${d.questions > 1 ? 's' : ''} the AI didn't know`, why: 'Customers asked and got no answer', fix: 'teach' },
+    n('reviews') && { kind: 'reviews', text: `Ask ${n('reviews')} happy client${n('reviews') > 1 ? 's' : ''} for a review`, why: 'They rated their chat 5 stars', fix: 'agent:reviews' },
+  ].filter(Boolean).sort((a, b) => (b.urgent ? 1e9 : 0) + (b.value || 0) - (a.urgent ? 1e9 : 0) - (a.value || 0));
+  const sum = m => Math.round(items.filter(i => i.money === m).reduce((a, i) => a + (i.value || 0), 0));
+  return { items, at_risk: sum('at risk'), to_win: sum('to win'), ticket: Math.round(t) };
 }

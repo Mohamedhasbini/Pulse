@@ -1,0 +1,11 @@
+{
+  "name": "Pulse",
+  "short_name": "Pulse",
+  "description": "Your AI front desk: bookings, chats and insights.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#e8e6e1",
+  "theme_color": "#e8e6e1",
+  "icons": [{ "src": "/pulse-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

@@ -214,6 +214,9 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     if (result.ok) {
       outcome = 'booked'; bookedNow = true;
       // The confirmation is built from the saved booking, so every detail is exactly what was stored.
+      // reservation fee through the owner's payment link: for everyone, or only for clients who missed before
+      if (biz.pay_deposit && biz.payment_link && +biz.deposit_amount > 0 && (biz.deposit_for === 'all'
+        || await one(`SELECT 1 FROM bookings WHERE customer_id=$1 AND status='no_show' LIMIT 1`, [customer.id]))) result.booking.deposit = +biz.deposit_amount;
       result.booking.contact = { ...await one('SELECT phone, contact_phone, email, reminder_channel FROM customers WHERE id=$1', [customer.id]), channel };
       reply = confirmation(biz, result.booking, decision.reply);
       if (result.booking.contact.email && emailEnabled()) {
@@ -428,8 +431,9 @@ const CHANNEL = { whatsapp: ['WhatsApp', 'واتساب'], sms: ['SMS', 'رسال
 function paymentText(biz) {
   const opts = [biz.pay_later && 'pay at the appointment'];
   const live = !!process.env.PAYMENTS_LIVE;
+  if (biz.pay_deposit && biz.payment_link && +biz.deposit_amount > 0) opts.push(`a reservation fee of ${+biz.deposit_amount} ${biz.currency || 'USD'}${biz.deposit_for === 'all' ? '' : ' for clients who missed before'}, paid through the link in the confirmation`);
   if (live && biz.pay_now) opts.push('pay online now when booking');
-  if (live && biz.pay_deposit && +biz.deposit_amount > 0) opts.push(`a reservation fee of ${+biz.deposit_amount} ${biz.currency || 'USD'} to hold the booking`);
+  if (live && !biz.payment_link && biz.pay_deposit && +biz.deposit_amount > 0) opts.push(`a reservation fee of ${+biz.deposit_amount} ${biz.currency || 'USD'} to hold the booking`);
   return opts.filter(Boolean).length ? `Offer only these payment options: ${opts.filter(Boolean).join('; ')}. Never ask for card details in chat.` : 'Do not discuss online payment; never ask for card details.';
 }
 
@@ -554,6 +558,7 @@ function confirmation(biz, b, aiReply, moved = false) {
     biz.address && `• ${L[8]}: ${biz.address}`,
     `• ${L[9]}: ${ref}`,
     b.notes && `• ${L[10]}: ${b.notes} (${L[11]})`,
+    b.deposit && (ar ? `• عربون لتثبيت الحجز: ${b.deposit} ${cur} عبر ${biz.payment_link}` : `• Reservation fee: ${b.deposit} ${cur} to hold your booking, pay here: ${biz.payment_link}`),
     ...contactLines(biz, b.contact, ar),
     '', ar ? `يمكنك الإلغاء أو التغيير هنا حتى ${biz.cancel_hours ?? 24} ساعة قبل الموعد. بعد ذلك يحتاج أي تغيير إلى موافقة الإدارة.`
       : `You can cancel or change this booking here up to ${biz.cancel_hours ?? 24} hours before. After that, changes need the manager's approval.`,

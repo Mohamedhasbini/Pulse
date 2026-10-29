@@ -9,6 +9,7 @@
     "test": "node src/test-all.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0",
     "express": "4.21.2",
     "pg": "8.13.1"
   }

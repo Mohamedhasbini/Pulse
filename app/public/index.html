@@ -10,6 +10,10 @@
 <link rel="stylesheet" href="/command.css">
 <link rel="stylesheet" href="/stone.css">
 <link rel="icon" href="/pulse-logo.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#e8e6e1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/pulse-logo.svg">
 <style>body{margin:0}[hidden]{display:none!important}</style>
 <script>try{if(!localStorage.getItem("rb-stone")){localStorage.setItem("rb-theme","light");localStorage.setItem("rb-stone","1")}document.documentElement.dataset.theme=localStorage.getItem("rb-theme")||"light"}catch{document.documentElement.dataset.theme="light"}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -218,7 +222,7 @@
       <div class="kpis" id="inKpis"></div>
       <div class="row r2">
         <div class="card glass"><div class="ch"><h2>Revenue and bookings over time</h2><small id="inTrendNote"></small></div><svg id="inTrend" role="img" aria-label="Revenue and bookings over time" style="display:block;width:100%;height:240px"></svg>
-          <div class="legend"><span style="--c:var(--accent)">Revenue</span><span style="--c:var(--ink)">Bookings</span><span style="--c:var(--muted)">Conversations</span></div></div>
+          <div class="legend"><span style="--c:var(--accent)">Revenue</span><span style="--c:var(--ink)">Bookings</span><span style="--c:var(--muted)">Conversations</span><span style="--c:var(--accent);opacity:.55">Previous period</span></div></div>
         <div class="card glass"><div class="ch"><h2>Already booked</h2><small>money in the calendar</small></div><div id="inAhead"></div></div>
       </div>
       <div class="card glass"><div class="ch"><h2>What to do next</h2><small>based on your numbers</small></div><div class="list" id="inRecs"></div></div>
@@ -379,6 +383,8 @@
               <label class="switch"><input type="checkbox" id="tlNow"> Pay online when booking</label>
               <label class="switch"><input type="checkbox" id="tlDep"> Reservation fee to hold the booking</label>
               <label style="max-width:220px">Reservation fee amount<input type="number" min="0" step="1" id="tlDepAmt"></label>
+              <label>Your payment link (Stripe Payment Link, Whish, bank page)<input type="url" id="tlPayLink" placeholder="https://buy.stripe.com/…"></label>
+              <label style="max-width:320px">Ask for the fee from<select id="tlDepFor"><option value="risky">Clients who missed an appointment before</option><option value="all">Every new booking</option></select></label>
             </div></div>
           <button class="btn full" type="button" id="tlSave">Save tools</button>
         </div>
@@ -545,6 +551,8 @@
 <script src="/gcal.js"></script>
 <script src="/pulse.js"></script>
 <script src="/command.js"></script>
+<script src="/briefing.js"></script>
+<script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}))</script>
 <script src="/palette.js"></script>
 <script src="/mobile.js"></script>
 <script type="module" src="/scene.js"></script>
