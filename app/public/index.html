@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pulse</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
 <link rel="stylesheet" href="/pulse.css">
 <link rel="stylesheet" href="/command.css">
+<link rel="stylesheet" href="/stone.css">
 <link rel="icon" href="/pulse-logo.svg" type="image/svg+xml">
 <style>body{margin:0}[hidden]{display:none!important}</style>
-<script>try{document.documentElement.dataset.theme=localStorage.getItem("rb-theme")||"dark"}catch{document.documentElement.dataset.theme="dark"}</script>
+<script>try{if(!localStorage.getItem("rb-stone")){localStorage.setItem("rb-theme","light");localStorage.setItem("rb-stone","1")}document.documentElement.dataset.theme=localStorage.getItem("rb-theme")||"light"}catch{document.documentElement.dataset.theme="light"}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -51,7 +52,7 @@
       <div class="top">
         <div><h1><span id="greet">Hello</span>, <b id="bizName">…</b></h1><p class="sub" id="subline">Loading…</p></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <label class="switch"><input type="checkbox" id="incTest" checked> Include test chats</label>
+          <label class="switch"><input type="checkbox" id="incTest"> Include test chats</label>
           <div class="tabs glass" role="group" aria-label="Period"><button aria-pressed="false" data-d="1">Today</button><button aria-pressed="false" data-d="7">7 days</button><button aria-pressed="true" data-d="30">30 days</button><button aria-pressed="false" data-d="90">90 days</button><button aria-pressed="false" data-d="365">12 months</button></div>
           <span class="pill glass idle" id="aiPill" title=""><i></i><span>AI: no messages yet</span></span>
         </div>

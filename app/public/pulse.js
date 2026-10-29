@@ -338,8 +338,7 @@
   function badges() {
     const set = (id, n) => { const b = $(`.p10-n[data-for="${id}"]`); if (b) { b.hidden = !n; b.textContent = n || '' } };
     set('pulse', count);
-    const w = +($('#apprN')?.textContent || 0); set('inbox', $('#attnN') && !$('#attnN').hidden ? +$('#attnN').textContent : 0);
-    void w;
+    // the Inbox badge comes only from /api/pulse/waiting (real chats waiting, never test chats)
   }
   const poll = () => !document.hidden && (current?.[0] === 'inbox' && window.PulseInbox?.refresh(), req('/api/pulse/waiting')).then(d => {
     count = d.count; waitingNow = d; badges(); if (current) need(current[0]); set2('inbox', d.chats || 0);

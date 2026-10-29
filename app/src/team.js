@@ -15,7 +15,7 @@ import { addRule } from './rules.js';
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 // The daily limit counts questions the owner asked (one row per question, however many AI steps it took),
 // over the business's own calendar day. The receptionist is protected separately by takeAiSlot's per-minute pacing.
-const DAILY_CAP = +process.env.TEAM_DAILY_QUESTIONS || 150, MAX_STEPS = 4;
+const DAILY_CAP = +process.env.TEAM_DAILY_QUESTIONS || 150, MAX_STEPS = 5;
 const USED_TODAY = `SELECT count(*)::int AS n FROM team_calls WHERE business_id=$1
   AND (at AT TIME ZONE COALESCE((SELECT timezone FROM businesses WHERE id=$1),'Asia/Beirut'))::date = (now() AT TIME ZONE COALESCE((SELECT timezone FROM businesses WHERE id=$1),'Asia/Beirut'))::date`;
 const URL_ = () => process.env.ASSISTANT_WEBHOOK_URL || String(process.env.N8N_WEBHOOK_URL || '').replace(/\/webhook\/.*$/, '/webhook/pulse-assistant');
@@ -290,11 +290,16 @@ MEMORY: when the owner tells you a lasting preference, goal, fact or decision (e
 - Always say the period a number covers, exactly as the tool's "period" or dates say ("last 30 days", "today"). If the owner asked for a different period, fetch that period (e.g. days: 7 for this week).
 - FILES AND TABLES: every tool result you fetch is shown under your answer as a table the owner can download as CSV or print as a PDF report. So for "export", "list", "download", "report" or "send me a file", fetch the data with the right tool (or query) and say the file is ready below; never say exports aren't possible.
 - You can act in the dashboard: book, move, cancel or mark bookings, block time, message clients, teach the receptionist, add rules and shortcuts, and open any page. Propose these as actions; the owner approves each one. Never tell the owner to do something by hand that an action can do.
-- Fetch everything you need in as few rounds as possible: you may call up to 3 tools at once.
+- Fetch everything you need in as few rounds as possible: you may call up to 4 tools at once. For a big question (advice, a plan, a diagnosis) fetch from several angles first: the numbers, the trend, the customers and the capacity.
 - Reply with ONE JSON object and nothing else:
-  {"tools":[{"name":"tool","args":{...}}]}  to fetch data (up to 3 tools at once), or
+  {"thinking":"one short sentence: what you need to find out and why","tools":[{"name":"tool","args":{...}}]}  to fetch data (up to 4 tools at once), or
   {"answer":"your reply to the owner","actions":[...],"remember":[...]}  when you can answer (actions and remember are optional).
-- The answer: plain language, short paragraphs or a short list, the key numbers first, then one practical recommendation when useful.
+- WRITE LIKE A TOP ANALYST (Markdown):
+  1. Start with the direct answer in one or two sentences, with the key number in **bold**. No preamble, no "Here is", no "Great question".
+  2. Then the evidence: a short list, or a Markdown table (| a | b |) when you compare 3+ things. Every figure with its period.
+  3. Then "### Recommendation": the single best move, why it works, and the expected impact in numbers. Add a second move only if it is clearly worth it.
+  4. Use ### headings only in longer answers; short questions get short answers (2-4 lines, no headings).
+  Never pad, never repeat the question, never list generic tips that ignore the data. Be specific: names, dates, amounts.
 - LANGUAGE: write your answer in ${/[؀-ۿ]/.test(convo.filter(m => m.role === 'owner').pop()?.text || '') ? 'Arabic' : 'English'}, the language of the owner's question (customer messages stay in the client's language).
 - Actions are proposals the owner approves with one click. Only propose an action when it clearly helps; write customer messages warm, short and in the client's language.
 - Never invent facts about the business (prices, products, policies, opening times, offers). In a teach_answer or a message, any fact the tools didn't give you goes in square brackets for the owner to fill, e.g. "[Yes / No], we [do / don't] sell gift cards[, from amount]." Even yes or no goes in brackets when the tools don't say.
@@ -356,7 +361,7 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
       (SELECT count(*) FROM bookings WHERE business_id=$1 AND status IN ('confirmed','completed','no_show') AND starts_at < now() AND (starts_at AT TIME ZONE $2)::date=(now() AT TIME ZONE $2)::date)::int AS past_today,
       (SELECT count(*) FROM bookings WHERE business_id=$1 AND status IN ('completed','no_show') AND (starts_at AT TIME ZONE $2)::date=(now() AT TIME ZONE $2)::date)::int AS marked_today,
       (SELECT to_char(min(starts_at) AT TIME ZONE $2,'HH24:MI') FROM bookings WHERE business_id=$1 AND status='confirmed' AND starts_at > now() AND (starts_at AT TIME ZONE $2)::date=(now() AT TIME ZONE $2)::date) AS next_at,
-      (SELECT count(*) FROM conversations WHERE business_id=$1 AND needs_attention)::int AS open_cases,
+      (SELECT count(*) FROM conversations WHERE business_id=$1 AND needs_attention AND channel<>'test')::int AS open_cases,
       (SELECT count(*) FROM conversations c WHERE business_id=$1 AND attention_reason IS NOT NULL AND NOT needs_attention AND updated_at > now() - interval '7 days')::int AS solved_cases_7d,
       (SELECT count(DISTINCT lower(question)) FROM learning WHERE business_id=$1 AND status='open')::int AS unanswered,
       (SELECT count(*) FROM learning WHERE business_id=$1 AND status='answered' AND answered_at > now() - interval '7 days')::int AS taught_7d,
@@ -410,7 +415,7 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
     // ?stream=1: the owner sees each step live ("Reading bookings…"); headers go out only with the first step,
     // so an early error still answers as plain JSON
     const stream = req.query.stream === '1';
-    const step = label => { if (!stream) return; if (!res.headersSent) res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' }); res.write(`data: ${JSON.stringify({ step: label })}
+    const step = (label, thought) => { if (!stream) return; if (!res.headersSent) res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' }); res.write(`data: ${JSON.stringify(thought ? { thought: label } : { step: label })}
 
 `); };
     for (let step_ = 0; step_ < MAX_STEPS; step_++) { const step0 = step_;
@@ -421,7 +426,8 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
       // an answer that offers to look something up instead of looking: send it back to do the work
       if (out.answer && step0 < MAX_STEPS - 1 && /\b(shall|should|would you like|do you want|want) (me to |i )?(pull|check|fetch|look|get|dig|find)\b|\bi (can|could|need to) (pull|fetch|check|look)\b/i.test(out.answer)) {
         convo.push({ role: 'system', text: 'Do not offer to look it up: fetch that data now with a tool and give the complete answer.' }); continue; }
-      const calls = Array.isArray(out.tools) ? out.tools.slice(0, 3) : [];
+      const calls = Array.isArray(out.tools) ? out.tools.slice(0, 4) : [];
+      if (calls.length && out.thinking) step(String(out.thinking).slice(0, 160), true);
       if (!calls.length || out.answer) break;
       for (const c of calls) {
         const t = TOOLS[c.name]; step(`Reading ${String(c.name).replace(/_/g, ' ')}`);

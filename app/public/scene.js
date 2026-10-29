@@ -4,7 +4,8 @@
 import * as THREE from '/vendor/three.module.min.js';
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-if (!reduce.matches) start();
+// the Stone (light) look has no scene: it only runs in the dark theme
+if (!reduce.matches && document.documentElement.dataset.theme !== 'light') start();
 
 function start() {
   let renderer;

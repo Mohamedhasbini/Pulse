@@ -1,0 +1,69 @@
+/* ===== Stone: the default look (2026-10-29). Warm light grey ground, soft paper panels, hairline borders, one deep
+   green for actions, a serif for page titles. Loaded after pulse.css and replaces its glass, glow and 3D scene in
+   the light theme. Dark stays available under Settings › Look. ===== */
+:root[data-theme="light"]{
+  --st-ground:#e8e6e1;--st-panel:#f6f5f2;--st-raise:#fbfaf8;--st-nest:#efede8;--st-line:#dcd9d2;--st-line2:#cfcbc3;
+  --st-ink:#1e1d1b;--st-2:#4a4741;--st-meta:#7c776e;--st-acc:#2e6a52;--st-acc-soft:#2e6a5214;--st-acc-line:#2e6a5240;
+  --st-serif:"Newsreader","Iowan Old Style",Charter,Georgia,serif;
+  --st-shadow:0 1px 0 #ffffffb3 inset,0 1px 2px #1e1d1b0a,0 6px 20px -14px #1e1d1b26;
+  /* every older token points at the Stone palette */
+  --bg:var(--st-ground);--ink:var(--st-ink);--muted:var(--st-meta);--edge:var(--st-line);
+  --glass:var(--st-panel);--glass2:var(--st-raise);--chat:var(--st-nest);--ai:var(--st-raise);--me:#e3ebe6;--grid:#1e1d1b0f;
+  --gp-ground:var(--st-ground);--gp-card:var(--st-panel);--gp-nest:var(--st-nest);--gp-nest2:#e7e4de;--gp-edge:var(--st-line);
+  --gp-text:var(--st-ink);--gp-2:var(--st-2);--gp-meta:var(--st-meta);
+  --glass-bg:var(--st-panel);--glass-bg2:var(--st-nest);--glass-edge:var(--st-line);--glass-line:var(--st-line);--glass-hi:0 0 0 transparent;--glass-shadow:var(--st-shadow);
+  --gl-frame:var(--st-panel);--gl-rim:var(--st-line);--gl-rim-hi:var(--st-line2);--gl-veil:transparent;--gl-grid:#1e1d1b0f;
+  --tb-ground:var(--st-ground);--tb-card:var(--st-panel);--tb-nest:var(--st-nest);
+  --p-green:var(--st-acc);--p-orange:#b4622e;--p-violet:#5b5291;--bad:#b4373f;--warn:#a8741a;
+  color-scheme:light}
+:root[data-theme="light"] body:not(#_):not(#_){--pg:var(--st-acc);--accent:var(--st-acc);--accent-ink:#fff;--accent-text:var(--st-acc);
+  --accent-soft:var(--st-acc-soft);--accent-line:var(--st-acc-line);--good:var(--st-acc);--good-soft:var(--st-acc-soft);--blue:var(--st-acc);--d1:var(--st-acc)}
+
+/* ground: one calm surface, no blurred room, no colour wash, no 3D scene */
+:root[data-theme="light"],:root[data-theme="light"] body:not(#_):not(#_){background:var(--st-ground)!important;background-image:none!important}
+:root[data-theme="light"] body::before,:root[data-theme="light"] body::after{display:none!important;background:none!important}
+:root[data-theme="light"] .scene3d{display:none!important}
+:root[data-theme="light"] body{color:var(--st-ink);-webkit-font-smoothing:antialiased}
+
+/* panels: paper, hairline, a whisper of shadow; no frosted glass anywhere */
+:root[data-theme="light"] main :is(.card,.kpi,.td-card,.p10-side,.sg-tile,.ib,.gc,.lab-sum,.glass):not(#_):not(#_){
+  background:var(--st-panel)!important;border:1px solid var(--st-line)!important;box-shadow:var(--st-shadow)!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-radius:14px}
+:root[data-theme="light"] main :is(.card,.td-card,.ib,.gc) :is(.ins,.statrow>div,.sg-detail,.row2,.td-row,.ib-row.on,.co-m.ai):not(#_):not(#_){
+  background:var(--st-nest)!important;border-color:var(--st-line)!important;backdrop-filter:none!important}
+:root[data-theme="light"] .glass:not(#_){backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root[data-theme="light"] main :is(.kpi,.td-card,.sg-tile,.sc):hover:not(#_){border-color:var(--st-line2)!important}
+
+/* sidebar: a quieter shade of the ground, set apart by one hairline */
+:root[data-theme="light"] :is(nav.side,aside.side,.sidebar,#side,body > .shell > nav):not(#_):not(#_){
+  background:#e1dfd9!important;border-right:1px solid var(--st-line)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important}
+:root[data-theme="light"] nav :is(button,.p10):not(#_){color:var(--st-2)}
+:root[data-theme="light"] nav :is(button,.p10):hover:not(#_){background:#1e1d1b0a!important;color:var(--st-ink)!important}
+:root[data-theme="light"] nav :is(button[aria-current="true"],.p10.on,.p10[aria-current="true"],.p10[aria-current="page"]):not(#_):not(#_){
+  background:var(--st-panel)!important;color:var(--st-ink)!important;box-shadow:0 1px 2px #1e1d1b12,0 0 0 1px var(--st-line)!important}
+:root[data-theme="light"] .badge-n:not(#_){background:var(--st-acc)!important;color:#fff!important;box-shadow:none!important}
+
+/* type: serif page titles for calm and character, Geist for everything you read and use */
+:root[data-theme="light"] main :is(.top h1,.p10-purpose b,h1.ph,.page-head h1,.td-hello,.td-hero h1):not(#_){font-family:var(--st-serif)!important;font-weight:500!important;letter-spacing:-.01em!important;color:var(--st-ink)!important}
+:root[data-theme="light"] main :is(h2,h3):not(#_){color:var(--st-ink);letter-spacing:-.005em}
+:root[data-theme="light"] main :is(small,.sub,.meta,.muted,.lbl):not(#_){color:var(--st-meta)}
+
+/* controls: buttons and fields that feel made, not generated */
+:root[data-theme="light"] :is(.btn,button.btn,.td-btn):not(.ghost):not(#_):not(#_){background:var(--st-ink)!important;color:#fff!important;border:0!important;box-shadow:none!important;background-image:none!important}
+:root[data-theme="light"] :is(.btn,button.btn,.td-btn):not(.ghost):hover:not(#_):not(#_){background:var(--st-acc)!important}
+:root[data-theme="light"] .btn.ghost:not(#_):not(#_){background:transparent!important;color:var(--st-ink)!important;border:1px solid var(--st-line2)!important}
+:root[data-theme="light"] :is(input,textarea,select):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(#_):not(#_){
+  background:var(--st-raise)!important;border:1px solid var(--st-line)!important;color:var(--st-ink)!important;box-shadow:none!important}
+:root[data-theme="light"] :is(input,textarea,select):focus:not(#_):not(#_){border-color:var(--st-acc)!important;outline:none;box-shadow:0 0 0 3px var(--st-acc-soft)!important}
+:root[data-theme="light"] :is(.ptabs,.pg-tabs,.pa-switch,.cu-seg):not(#_):not(#_){background:#dfddd7!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}
+:root[data-theme="light"] :is(.ptabs,.pg-tabs,.p10-bar,.pa-switch,.cu-seg) button[aria-pressed="true"]:not(#_):not(#_),
+:root[data-theme="light"] :is(.p10-bar) button[aria-selected="true"]:not(#_):not(#_){background:var(--st-panel)!important;color:var(--st-ink)!important;box-shadow:0 1px 2px #1e1d1b14!important}
+
+/* status pills and accents stay quiet */
+:root[data-theme="light"] :is(.chip,.tag,.pill):not(#_){background:var(--st-nest);border-color:var(--st-line);color:var(--st-2)}
+:root[data-theme="light"] table :is(th):not(#_){color:var(--st-meta)}
+:root[data-theme="light"] table :is(td,th):not(#_){border-color:var(--st-line)!important}
+:root[data-theme="light"] ::selection{background:#2e6a5233}
+
+/* Pulse AI chat follows the Stone palette in light */
+:root[data-theme="light"] .pc{--pc-bg:var(--st-ground);--pc-side:#e1dfd9;--pc-raise:var(--st-raise);--pc-line:#1e1d1b12;--pc-line2:#1e1d1b21;--pc-ink:var(--st-ink);--pc-mut:var(--st-2);--pc-dim:var(--st-meta);--pc-acc:var(--st-acc);--pc-acc-ink:#fff}
