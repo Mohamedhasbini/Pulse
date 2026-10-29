@@ -226,7 +226,7 @@
     if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }
     if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything Pulse AI prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
     if (key === 'brief') { const s = page('brief', 'Weekly brief', 'This week against last week, and the agents\' results. Worked out from your own numbers.', '<div id="paBrief"></div>'); s.hidden = false; loadBrief(); }
-    if (key === 'ask') { const s = page('ask', 'Ask Pulse', 'Ask anything about your business. Pulse looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); }
+    if (key === 'ask') { const s = page('ask', 'Ask Pulse', 'Ask anything about your business. Pulse looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); window.PulseCommand?.open(); }
   }
 
   // Approvals
@@ -330,7 +330,7 @@
     const t = ev.target;
     if (t.closest('[data-add]')) return window.openPalette?.({ pin: true });
     const x = t.closest('[data-x]'); if (x) { const list = sc.shortcuts.filter((_, k) => k !== +x.dataset.x); try { sc.shortcuts = (await req('/api/shortcuts', 'PUT', { shortcuts: list })).shortcuts } catch {} return drawShortcuts(); }
-    const g = t.closest('[data-i]'); if (g) { const s2 = sc.shortcuts[+g.dataset.i]; if (s2.ask) { await go('pulse', 1); setTimeout(() => ask(s2.ask), 300); } else go(s2.page, s2.tab); }
+    const g = t.closest('[data-i]'); if (g) { const s2 = sc.shortcuts[+g.dataset.i]; if (s2.ask) window.P10.ask(s2.ask); else go(s2.page, s2.tab); }
   }
 
 
@@ -351,7 +351,7 @@
   window.openPulse = k => go('pulse', ['approvals', 'ask', 'brief'].indexOf(k) < 0 ? 0 : ['approvals', 'ask', 'brief'].indexOf(k));
   window.openP10 = go;
   // for the search box (palette.js)
-  window.P10 = { pages: PAGES, icon: ICON, named, ask: x => ask(x), shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts() };
+  window.P10 = { pages: PAGES, icon: ICON, named, ask: x => window.PulseCommand ? window.PulseCommand.open(x) : ask(x), go: (id, t) => go(id, t), current: () => current?.[0], shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts() };
   // any other way of opening a section (Today's buttons, notifications) drops our tab row so the page isn't mislabelled
   document.addEventListener('click', ev => {
     const n = ev.target.closest('nav button[data-view]'); if (!n || n.classList.contains('p10')) return;

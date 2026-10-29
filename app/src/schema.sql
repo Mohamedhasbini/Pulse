@@ -394,3 +394,12 @@ CREATE TABLE IF NOT EXISTS team_calls (id serial PRIMARY KEY, business_id int NO
 CREATE INDEX IF NOT EXISTS team_calls_biz ON team_calls (business_id, at DESC);
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS shortcuts jsonb;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS owner_seen_at timestamptz;
+
+-- Pulse AI memory: what it learned about the owner and the business from their chats (shown and deletable in the chat)
+CREATE TABLE IF NOT EXISTS pulse_memory (
+  id SERIAL PRIMARY KEY,
+  business_id INT REFERENCES businesses(id) ON DELETE CASCADE,
+  fact TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS pulse_memory_biz ON pulse_memory (business_id);
