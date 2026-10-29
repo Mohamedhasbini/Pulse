@@ -46,16 +46,49 @@ document.addEventListener("click",async e=>{
 // progress on it this week, and the flags that need you, each a link to where you fix it. "Ask" opens Pulse AI with
 // their question, so every conversation happens in one place.
 const TONE={need:"Needs you",bad:"Problem",good:"Good"};
+let team=[];
 async function loadTeam(){const box=$("#tmDesk");if(!box.innerHTML)box.innerHTML=`<p class="sub">Reading your data…</p>`;
-  let t;try{t=(await req("/api/team/status")).team}catch(e){box.innerHTML=`<p class="sub">${esc(e.message)}</p>`;return}
-  box.innerHTML=t.map(e=>{const flags=(e.items||[]).filter(i=>i.tone),more=(e.items||[]).filter(i=>!i.tone);
-    return `<article class="desk-c${e.open?" busy":""}"><header><span class="av av-${e.id}">${esc(e.name[0])}</span><div><b>${esc(e.name)}</b><small>${esc(e.role)}</small></div>
+  try{team=(await req("/api/team/status")).team}catch(e){box.innerHTML=`<p class="sub">${esc(e.message)}</p>`;return}
+  if(box.querySelector(".desk-fix:not([hidden])"))return; // never wipe a fix the owner is in the middle of
+  box.innerHTML=team.map((e,ei)=>{const flags=(e.items||[]).filter(i=>i.tone),more=(e.items||[]).filter(i=>!i.tone);
+    return `<article class="desk-c${e.open?" busy":""}" data-e="${ei}"><header><span class="av av-${e.id}">${esc(e.name[0])}</span><div><b>${esc(e.name)}</b><small>${esc(e.role)}</small></div>
       <span class="desk-st ${e.open?"on":""}">${e.open?`${e.open} open`:"All clear"}</span></header>
       <p class="desk-read">${esc(e.advice)}</p>
       ${e.progress==null?"":`<div class="desk-pg"><i><u style="width:${e.progress}%"></u></i><small><b>${e.progress}%</b> ${esc(e.of)}</small></div>`}
-      ${flags.length?`<ul class="desk-flags">${flags.map(i=>`<li><button type="button" class="tp-link ${i.tone}" data-go='${esc(JSON.stringify(i.go||{}))}'><span class="desk-tag ${i.tone}">${TONE[i.tone]||"Flag"}</span>${esc(i.text)}<em>→</em></button></li>`).join("")}</ul>`:""}
-      <footer>${more.map(i=>`<button type="button" class="tp-link desk-lk" data-go='${esc(JSON.stringify(i.go||{}))}'>${esc(i.text)}</button>`).join("")}
+      ${flags.length?`<ul class="desk-flags">${flags.map((i,k)=>{const f=fixOf(e,i);return`<li><button type="button" data-flag="${k}" data-fix="${f}"><span class="desk-tag ${i.tone}">${TONE[i.tone]||"Flag"}</span>${esc(i.text)}<em>${f?"Fix":"Open"} →</em></button></li>`}).join("")}</ul><div class="desk-fix" hidden></div>`:""}
+      <footer>${more.map((i,k)=>`<button type="button" class="desk-lk" data-more="${k}">${esc(i.text)}</button>`).join("")}
         <button type="button" class="desk-ask" data-ask="${esc(e.ask||"")}">Ask ${esc(e.name)}</button></footer></article>`}).join("")}
-document.addEventListener("click",e=>{const a=e.target.closest(".desk-ask");if(a)window.PulseCommand?.open(a.dataset.ask||undefined)});
+
+// the status API speaks in the old page names; this maps them onto today's sidebar pages and tabs
+const NAV={"view:calendar":["calendar",0],"view:agents":["marketing",2],"inbox:conversations":["inbox",0],"support:gaps":["train",2],"support:live":["insights",0],
+  "people:board":["customers",1],"analytics:overview":["insights",3],"performance:summary":["insights",3],"analytics:timing":["insights",5]};
+function nav(g){const k=g.view?`view:${g.view}`:`${g.page}:${g.tab}`,t=NAV[k]||["today",0];window.P10?.go(t[0],t[1]);scrollTo({top:0})}
+// what a flag can do in place: "mark" today's visits, "teach" open questions, "agent:<id>" open its prepared messages
+function fixOf(e,i){if(/mark came/.test(i.text))return"mark";if(/couldn.t answer/.test(i.text))return"teach";
+  if(/risky/.test(i.text))return"agent:noshow";if(/win back/.test(i.text))return"agent:winback";if(/warm leads/.test(i.text))return"agent:leads";
+  if(/quiet days/.test(i.text))return"agent:fill";if(/review/.test(i.text))return"agent:reviews";return""}
+async function fixMark(box){const d=new Date(),day=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const r=await req(`/api/calendar?from=${day}T00:00&to=${day}T23:59`),now=r.now||"",list=r.bookings.filter(b=>b.status==="confirmed"&&b.start<now);
+  box.innerHTML=list.length?`<p class="desk-fh">Did they come?</p>${list.map(b=>`<div class="desk-row" data-b="${b.id}"><span><b>${esc(b.customer)}</b><small>${esc(b.start.slice(11,16))} · ${esc(b.service)}</small></span>
+    <button type="button" class="desk-ok" data-mark="completed">Came</button><button type="button" class="desk-no" data-mark="no_show">No-show</button></div>`).join("")}`:`<p class="desk-fh">All of today's visits are marked.</p>`}
+async function fixTeach(box){const w=await req("/api/pulse/waiting"),qs=w.items.filter(x=>x.kind==="question");
+  box.innerHTML=qs.length?qs.map(x=>`<div class="desk-q" data-l="${x.id}"><b>${esc(x.title.replace(/^Answer /,""))}</b><small>${esc(x.why)}</small>
+    <textarea rows="2" placeholder="The answer your receptionist should give"></textarea><button type="button" class="desk-ok" data-teach>Teach</button></div>`).join(""):`<p class="desk-fh">No open questions.</p>`}
+function fixAgent(id){const card=document.querySelector(`.ag[data-a="${id}"]`);if(!card)return;
+  card.scrollIntoView({behavior:"smooth",block:"center"});const d=card.querySelector("details");if(d)d.open=true;card.classList.add("ag-flash");setTimeout(()=>card.classList.remove("ag-flash"),1600)}
+document.addEventListener("click",async ev=>{const t=ev.target,c=t.closest(".desk-c");if(!c)return;const e=team[+c.dataset.e];if(!e)return;
+  const a=t.closest(".desk-ask");if(a){window.PulseCommand?.open(a.dataset.ask||undefined);return}
+  const m=t.closest("[data-more]");if(m){nav((e.items||[]).filter(i=>!i.tone)[+m.dataset.more].go||{});return}
+  const fl=t.closest("[data-flag]");if(fl){const it=(e.items||[]).filter(i=>i.tone)[+fl.dataset.flag],f=fl.dataset.fix,box=c.querySelector(".desk-fix");
+    if(!f)return nav(it.go||{});
+    if(f.startsWith("agent:"))return fixAgent(f.slice(6));
+    if(!box.hidden){box.hidden=true;return}box.hidden=false;box.innerHTML=`<p class="desk-fh">Loading…</p>`;
+    try{await(f==="mark"?fixMark(box):fixTeach(box))}catch(err){box.innerHTML=`<p class="desk-fh">${esc(err.message)}</p>`}return}
+  const mk=t.closest("[data-mark]");if(mk){const row=mk.closest("[data-b]");row.querySelectorAll("button").forEach(b=>b.disabled=true);
+    try{await req(`/api/bookings/${row.dataset.b}`,"PATCH",{status:mk.dataset.mark});row.innerHTML=`<span><b>${mk.dataset.mark==="completed"?"Marked as came":"Marked as no-show"}</b></span>`;
+      if(!c.querySelector("[data-mark]"))setTimeout(()=>{c.querySelector(".desk-fix").hidden=true;loadTeam()},900)}catch(err){toast(err.message);row.querySelectorAll("button").forEach(b=>b.disabled=false)}return}
+  const tc=t.closest("[data-teach]");if(tc){const q=tc.closest("[data-l]"),ans=q.querySelector("textarea").value.trim();if(!ans){toast("Write the answer first.");return}
+    tc.disabled=true;try{const r=await req("/api/team/act","POST",{type:"teach_answer",learning_id:+q.dataset.l,answer:ans});q.innerHTML=`<b>${esc(r.done||"Saved.")}</b>`;
+      if(!c.querySelector("[data-teach]"))setTimeout(()=>{c.querySelector(".desk-fix").hidden=true;loadTeam()},1200)}catch(err){toast(err.message);tc.disabled=false}}});
 setInterval(()=>{if(!sec.hidden&&!document.hidden)loadTeam()},60000);
 })();

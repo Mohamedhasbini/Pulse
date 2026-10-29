@@ -124,3 +124,15 @@
 .desk-ask{margin-left:auto;font:inherit;font-size:13px;font-weight:600;padding:7px 13px;border-radius:9px;border:0;cursor:pointer;background:var(--gp-text,var(--ink));color:var(--gp-ground,#fff)}
 .desk-ask:hover{background:var(--accent);color:#fff}
 .ag-n:not(#_){font-family:var(--body,inherit)!important;font-size:12px!important;font-weight:600;padding:3px 9px;border-radius:99px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)!important;white-space:nowrap}
+
+.desk-fix{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;border:1px dashed var(--gp-edge,var(--edge))}
+.desk-fix[hidden]{display:none}
+.desk-fh{margin:0;font-size:12.5px;font-weight:600;color:var(--gp-2,var(--muted))}
+.desk-row{display:flex;align-items:center;gap:6px;font-size:13px}
+.desk-row span{flex:1;min-width:0}.desk-row small,.desk-q small{display:block;color:var(--gp-meta,var(--muted));font-size:12px}
+.desk-q{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.desk-q textarea{font:inherit;font-size:13px;padding:8px;border-radius:8px;resize:vertical}
+.desk-ok,.desk-no{font:inherit;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:8px;cursor:pointer;border:1px solid var(--gp-edge,var(--edge));background:transparent;color:var(--gp-text,var(--ink))}
+.desk-ok{background:var(--accent);border-color:var(--accent);color:#fff;align-self:flex-start}
+.desk-no:hover{border-color:var(--bad);color:var(--bad)}
+.ag-flash{outline:2px solid var(--accent);outline-offset:3px}

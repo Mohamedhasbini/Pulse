@@ -366,6 +366,8 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
       (SELECT count(DISTINCT lower(l.question)) FROM learning l LEFT JOIN conversations c ON c.id=l.conversation_id WHERE l.business_id=$1 AND l.status='open' AND c.channel IS DISTINCT FROM 'test')::int AS unanswered,
       (SELECT count(*) FROM learning WHERE business_id=$1 AND status='answered' AND answered_at > now() - interval '7 days')::int AS taught_7d,
       (SELECT count(*) FROM agent_actions WHERE business_id=$1 AND status='sent' AND created_at > now() - interval '7 days')::int AS sent_7d,
+      (SELECT count(*) FROM bookings WHERE business_id=$1 AND status='no_show' AND starts_at > now() - interval '7 days')::int AS no_shows_7d,
+      (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND status='no_show' AND starts_at > now() - interval '7 days') AS no_show_value_7d,
       (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND status<>'cancelled' AND starts_at >= date_trunc('week', now() AT TIME ZONE $2) AT TIME ZONE $2 AND starts_at < now()) AS week_rev,
       (SELECT COALESCE(sum(price),0)::float FROM bookings WHERE business_id=$1 AND status<>'cancelled' AND starts_at >= (date_trunc('week', now() AT TIME ZONE $2) - interval '7 days') AT TIME ZONE $2 AND starts_at < now() - interval '7 days') AS last_week_rev`, P),
       agentFindings(B.id).catch(() => ({ out: [] }))]);
@@ -390,11 +392,14 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
         progress: pct(d.sent_7d, growth), of: 'prepared messages sent this week', ask: 'Who should I contact this week to get more bookings?',
         items: [...[['winback', 'to win back'], ['leads', 'warm leads'], ['fill', 'to invite for quiet days'], ['reviews', 'to ask for a review']].filter(([k]) => found(k)).map(([k, l]) => ({ text: `${found(k)} ${l}`, tone: 'need', go: { view: 'agents' } })),
           { text: 'Clients', go: { page: 'people', tab: 'board' } }] },
-      { id: 'sam', name: 'Sam', role: 'Analyst', open: 0,
+      { id: 'sam', name: 'Sam', role: 'Analyst', open: (delta !== null && delta <= -10 ? 1 : 0) + (d.no_shows_7d ? 1 : 0),
         advice: `This week so far: ${money(d.week_rev)}${delta === null ? '' : `, ${delta >= 0 ? 'up' : 'down'} ${Math.abs(delta)}% on the same days last week`}.`,
         progress: d.last_week_rev ? Math.min(100, Math.round(d.week_rev / d.last_week_rev * 100)) : null, of: 'of last week’s revenue at this point', ask: 'How is this week going and what should I improve?',
-        items: [{ text: `This week: ${money(d.week_rev)}${delta === null ? '' : ` (${delta >= 0 ? '+' : '−'}${Math.abs(delta)}%)`}`, go: { page: 'analytics', tab: 'overview' } },
-          { text: 'Trends', go: { page: 'performance', tab: 'summary' } }, { text: 'Busiest times', go: { page: 'analytics', tab: 'timing' } }] },
+        // Sam flags what moves the money: a drop against last week and no-shows this week
+        items: [delta !== null && delta <= -10 && { text: `Revenue down ${-delta}% on the same days last week`, tone: 'bad', go: { page: 'analytics', tab: 'overview' } },
+          d.no_shows_7d && { text: `${d.no_shows_7d} no-show${d.no_shows_7d > 1 ? 's' : ''} this week (${money(d.no_show_value_7d)} lost)`, tone: 'bad', go: { view: 'calendar' } },
+          { text: `This week: ${money(d.week_rev)}${delta === null ? '' : ` (${delta >= 0 ? '+' : '−'}${Math.abs(delta)}%)`}`, go: { page: 'analytics', tab: 'overview' } },
+          { text: 'Trends', go: { page: 'performance', tab: 'summary' } }, { text: 'Busiest times', go: { page: 'analytics', tab: 'timing' } }].filter(Boolean) },
     ] });
   }));
   app.get('/api/team', wrap(async (_req, res) => {
