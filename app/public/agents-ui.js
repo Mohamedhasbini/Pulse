@@ -6,6 +6,7 @@ const sec=document.createElement("section");sec.className="wrap";sec.id="agents"
 sec.innerHTML=`<div class="top"><div><h1>Your <b>team</b></h1><p class="sub">Four AI specialists watch your business live: each one checks the real data, flags what needs you and proposes the fix. Nothing is sent or changed until you approve it.</p></div>
   <button class="btn ghost" type="button" id="agRefresh">Check again</button></div>
   <div class="desk" id="tmDesk" aria-live="polite"></div>
+  <div class="card glass" id="apCard"></div>
   <h3 class="lab-h">Waiting for your OK</h3>
   <div id="agList" class="ag-list"></div>
   <div class="card glass"><div class="ch"><h2>What your agents did</h2><small>last 30 sends</small></div><div id="agLog"></div></div>`;
@@ -19,7 +20,7 @@ $$("nav button[data-view]").forEach(b=>{if(b!==nb)b.addEventListener("click",()=
 
 let data=null;const pick={};
 async function load(){$("#agList").innerHTML=`<p class="sub">Checking your data…</p>`;
-  try{data=await req("/api/agents")}catch(e){$("#agList").innerHTML=`<p class="sub">${esc(e.message)}</p>`;return}draw();
+  try{data=await req("/api/agents")}catch(e){$("#agList").innerHTML=`<p class="sub">${esc(e.message)}</p>`;return}draw();drawAp();
   try{const log=await req("/api/agents/log");$("#agLog").innerHTML=log.length?`<div class="tw"><table><thead><tr><th>When</th><th>Agent</th><th>Client</th><th>Result</th></tr></thead><tbody>${log.map(l=>`<tr><td>${esc(l.at)}</td><td>${esc(data.agents.find(a=>a.id===l.agent)?.name||l.agent)}</td><td>${esc(l.name||"")}</td><td>${esc(l.status)}</td></tr>`).join("")}</tbody></table></div>`:`<p class="sub">Nothing sent yet.</p>`}catch{}}
 function draw(){$("#agList").innerHTML=data.agents.map(a=>{const n=a.found.length;pick[a.id]??=new Set(a.found.filter(f=>f.reach).map(f=>f.id));
   return `<div class="card glass ag" data-a="${a.id}"><div class="ag-head"><span class="ag-dot ${n?"on":""}"></span><div class="t"><b>${esc(a.name)}</b><small>${esc(a.does)}</small></div>
@@ -95,4 +96,11 @@ document.addEventListener("click",async ev=>{const t=ev.target,c=t.closest(".des
 setInterval(()=>{if(!sec.hidden&&!document.hidden)loadTeam()},60000);
 // the same fixes power Today's briefing
 window.DeskFix={mark:fixMark,teach:fixTeach,agent:fixAgent,nav};
+
+
+// Autopilot: agents switched on send by themselves every day at 11:00 (same rules: consent, cool-downs, reachable only)
+function drawAp(){const ap=data.autopilot||{};$("#apCard").innerHTML=`<div class="ch"><h2>Autopilot</h2><small>switched-on agents send by themselves daily at 11:00 · only to clients who agreed · never twice in 7 days</small></div>
+  <div class="ap-grid">${data.agents.map(a=>`<label class="ap-row"><span><b>${esc(a.name)}</b><small>${esc(a.does)}</small></span><input type="checkbox" class="ap-sw" data-ap="${a.id}" ${ap[a.id]?"checked":""}></label>`).join("")}</div>`}
+document.addEventListener("change",async e=>{const x=e.target.closest(".ap-sw");if(!x)return;const on={};$$(".ap-sw").forEach(s=>on[s.dataset.ap]=s.checked);
+  try{await req("/api/agents/autopilot","PUT",on);data.autopilot=on;toast(x.checked?"Autopilot on for this agent.":"Autopilot off: it waits for your OK.")}catch(err){toast(err.message);x.checked=!x.checked}});
 })();

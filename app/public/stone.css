@@ -344,3 +344,11 @@ main :is(td,li,.item span){overflow-wrap:break-word}
 
 /* overview: the side column of the flow pane is narrow, so its small cards stack */
 .sg-flow>.fit3:not(#_){grid-template-columns:1fr!important;align-content:start}
+
+/* autopilot switches */
+.ap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.ap-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--gp-nest,var(--glass2));cursor:pointer}
+.ap-row b{display:block;font-size:13px;font-weight:600}.ap-row small{font-size:11.5px;color:var(--gp-meta,var(--muted))}
+.ap-sw{appearance:none;width:34px;height:20px;border-radius:99px;background:color-mix(in srgb,var(--gp-text,var(--ink)) 18%,transparent);position:relative;flex:none;cursor:pointer;transition:background .15s}
+.ap-sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.ap-sw:checked{background:var(--accent)}.ap-sw:checked::after{transform:translateX(14px)}

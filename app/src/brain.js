@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import { q, one, withBusinessLock } from './db.js';
 import { complete, hasBackup } from './ai-router.js';
+import { joinWaitlist, offerWaitlist } from './autopilot.js';
 import { VERTICALS } from './verticals.js';
 import { quickAnswer, smallTalk } from './quick.js';
 import { emailEnabled, sendEmail } from './email.js';
@@ -267,6 +268,10 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     // Policy is enforced by the app, not left to the AI: a late cancellation always becomes an approval request.
     const r = await changeBooking(biz, customer, conv, theirs, { ...decision, action: 'cancel' }, timeOff);
     reply = r.message;
+  } else if (decision.action === 'waitlist' && decision.booking?.slot) {
+    const svc = findService(biz, decision.booking.service);
+    await joinWaitlist(biz.id, customer.id, svc?.id || null, String(decision.booking.slot).slice(0, 10));
+    emit(biz.id, 'message');
   } else if (decision.action === 'handoff') {
     if (outcome !== 'booked') outcome = 'handoff';
     attention = failed ? 'The AI did not respond; please reply' : decision.unknown_question ? "The AI didn't know the answer; please reply" : 'Customer needs a person';
@@ -437,6 +442,7 @@ async function changeBooking(biz, customer, conv, theirs, decision, timeOff) {
   }
   if (decision.action === 'cancel') {
     await q("UPDATE bookings SET status='cancelled', cancelled_by='customer' WHERE id=$1", [target.id]);
+    offerWaitlist(target.id).catch(e => console.error('Waitlist:', e.message));
     await q('UPDATE conversations SET value = GREATEST(value - $1, 0) WHERE id=$2', [full.price, full.conversation_id || 0]);
     return { message: ar
       ? `*❌ تم إلغاء حجزك*\n\n• رقم الحجز: ${ref(target.id)}\n• كان: ${label(new Date(target.starts_at))}، ${target.service}\n\nنتمنى رؤيتك قريباً! إذا أردت موعداً جديداً، أخبرني فقط.`
@@ -503,6 +509,7 @@ const SPECIALIST = `YOUR ROLE: you are the front desk of this business: a senior
 - RUDE OR TESTING MESSAGES: insults, "stupid bot", jokes or off-topic requests are not a reason to hand off. Stay polite, steer back to booking, and only hand off when they ask for a person or describe a real problem with a visit.
 - NO DATE LOOPS: if the customer says any / whenever / soonest, or gives only a part of the day (morning, afternoon, evening), never ask for the date again: offer 3 free times on the nearest open day that fits (their part of day if given). If they already said today or tomorrow, use that day. Never send the same question twice in a row.
 - NEVER CHOOSE FOR THEM: only use a time the customer tapped, typed or clearly accepted. If they answer with something else (their name, "any"), offer the times again or ask which one; never assume the first option.
+- WAITLIST: if the day the customer wants is fully booked, offer other days AND offer to put them on the waitlist for that day. If they agree, use action "waitlist" with booking.service and booking.slot (that day, any time, "YYYY-MM-DD HH:MM") and tell them we'll message them if a time opens.
 - UNKNOWN EXTRAS: only say the business does not offer something when it is clearly a service not in the services list. For anything else not in CONTEXT (gift cards, vouchers, packages, products, group deals) you do not know: say you'll check with the team and set confidence low. Never invent a yes or a no.
 - OFFERS LIST: never say a customer joined or left the offers list. Only the system does that, when they send the single word OFFERS (or العروض) or STOP. If they seem to want offers, tell them to reply OFFERS.
 - CLOSE WELL: after a booking or a solved issue, end with one short helpful line (what to bring, arrive early, how to change it), not a question that reopens the chat.`;

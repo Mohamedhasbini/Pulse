@@ -32,6 +32,7 @@ import { unify, unifyAll } from './customers.js';
 import { insights } from './insights.js';
 import { VERTICALS, listVerticals, termsOf } from './verticals.js';
 import { startReminders, runReminders, fill } from './reminders.js';
+import { setSenders, startAutopilot, offerWaitlist } from './autopilot.js';
 
 const app = express();
 app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
@@ -603,6 +604,7 @@ app.patch('/api/bookings/:id', wrap(async (req, res) => withBusinessLock(BIZ(), 
       [st, new Date(st.getTime() + chk.svc.minutes * 60000), chk.svc.id, chk.svc.price, cur.id]);
   }
   if (['confirmed', 'cancelled', 'completed', 'no_show'].includes(status)) await q('UPDATE bookings SET status=$1 WHERE id=$2', [status, cur.id]);
+  if (status === 'cancelled' && cur.status !== 'cancelled') offerWaitlist(cur.id).catch(e => console.error('Waitlist:', e.message));
   res.json({ ok: true });
 })));
 
@@ -638,6 +640,7 @@ app.get('/api/ai-queue/list', wrap(async (req, res) => res.json(await aiQueueLis
 mountLive(app, () => BIZ());
 mountLab(app, () => BIZ());
 mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
+setSenders({ sendWhatsApp, sendTelegram }); startAutopilot();
 mountTeam(app, () => BIZ(), { sendWhatsApp, sendTelegram, audit });
 mountPulse(app, () => BIZ());
 mountMarketing(app, () => BIZ());
@@ -1240,8 +1243,9 @@ app.put('/api/customers/:id', wrap(async (req, res) => {
   const b = req.body, email = String(b.email || '').trim().toLowerCase();
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Check the email address.' });
   if (!String(b.name || '').trim()) return res.status(400).json({ error: 'Add a name.' });
-  await q(`UPDATE customers SET name=$1, email=NULLIF($2,''), reminder_channel=$3, staff_notes=NULLIF($4,'') WHERE id=$5 AND business_id=$6`,
-    [String(b.name).trim(), email, ['whatsapp', 'sms', 'email'].includes(b.reminder_channel) ? b.reminder_channel : 'whatsapp', String(b.staff_notes || '').trim(), req.params.id, BIZ()]);
+  const bday = /^\d{4}-\d{2}-\d{2}$/.test(b.birthday || '') ? b.birthday.slice(5) : null;
+  await q(`UPDATE customers SET name=$1, email=NULLIF($2,''), reminder_channel=$3, staff_notes=NULLIF($4,''), birthday=$7 WHERE id=$5 AND business_id=$6`,
+    [String(b.name).trim(), email, ['whatsapp', 'sms', 'email'].includes(b.reminder_channel) ? b.reminder_channel : 'whatsapp', String(b.staff_notes || '').trim(), req.params.id, BIZ(), bday]);
   const u = await unify(BIZ(), +req.params.id);
   res.json({ ok: true, merged_into: u && u.id !== +req.params.id ? u.id : null });
 }));

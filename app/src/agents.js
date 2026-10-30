@@ -21,7 +21,7 @@ const REAL = `cu.phone !~ '^(test|e2e|walk-in|tg-)' AND COALESCE((SELECT c.chann
 const fresh = (agent, days) => `NOT EXISTS (SELECT 1 FROM agent_actions a WHERE a.customer_id=cu.id AND a.agent='${agent}' AND a.created_at > now() - interval '${days} days')`
   + (agent === 'noshow' ? '' : ` AND NOT EXISTS (SELECT 1 FROM campaign_sends s WHERE s.customer_id=cu.id AND s.status='sent' AND s.at > now() - interval '7 days')
   AND NOT EXISTS (SELECT 1 FROM agent_actions a WHERE a.customer_id=cu.id AND a.status='sent' AND a.agent<>'noshow' AND a.created_at > now() - interval '7 days')`);
-function route(c) {
+export function route(c) {
   if (c.channel === 'telegram' && c.telegram_chat_id) return 'telegram';
   if (c.channel === 'whatsapp' && c.last_msg && Date.now() - new Date(c.last_msg) < 23.5 * 3600e3) return 'whatsapp';
   return null;
@@ -44,7 +44,14 @@ async function quietDays(biz) {
   return out;
 }
 
-const AGENTS = {
+export const AGENTS = {
+  birthday: { name: 'Birthday wishes', does: 'Wishes clients a happy birthday on the day, with a small treat.', promo: true, cool: 300,
+    async find(biz, B) {
+      return (await q(`SELECT ${CLIENT} FROM customers cu WHERE cu.business_id=$1 AND ${REAL} AND cu.marketing_ok AND ${fresh('birthday', 300)}
+          AND cu.birthday = to_char(now() AT TIME ZONE COALESCE((SELECT timezone FROM businesses WHERE id=$1),'Asia/Beirut'), 'MM-DD') LIMIT 50`, [biz])).map(c => ({ ...c,
+          why: 'birthday today',
+          message: `Happy birthday ${first(c.name)}! 🎉 Everyone at ${B.name} wishes you a lovely day. Book this month and your treat is on us: just mention your birthday.` }));
+    } },
   winback: { name: 'Win back regulars', does: 'Finds regulars who haven’t been back in 45 days and invites them again.', promo: true, cool: 30,
     async find(biz, B) {
       return (await q(`SELECT ${CLIENT}, (SELECT s.name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.customer_id=cu.id AND b.status IN ('confirmed','completed') ORDER BY b.starts_at DESC LIMIT 1) AS service,
@@ -99,6 +106,28 @@ const AGENTS = {
 };
 
 // what every agent finds right now for one business (also read by Lina in team.js)
+// sends one agent's messages to the chosen clients (manual Send and the 11:00 autopilot share this)
+export async function sendAgent(B, agentId, ids, edits, manual, { sendWhatsApp, sendTelegram }) {
+  const a = AGENTS[agentId], found = await a.find(B.id, B), list = Array.isArray(found) ? found : [];
+  const pick = new Set(ids.map(Number)); let sent = 0, skipped = 0;
+    for (const c of list.filter(x => pick.has(x.id))) {
+      let text = String(edits[c.id] || c.message).slice(0, 900);
+      if (a.promo) text += `\n\n${B.name}. Reply STOP to stop offers.`;
+      let status = manual ? 'sent manually' : 'skipped: not reachable now';
+      const r = manual ? null : route(c);
+      if (r === 'telegram') { const x = await sendTelegram(c.telegram_chat_id, text, B.id); status = x.ok ? 'sent' : 'failed: ' + x.reason; }
+      if (r === 'whatsapp') { const x = await sendWhatsApp(B.wa_phone_number_id, c.phone, text); status = x.ok ? 'sent' : 'failed: ' + x.reason; }
+      if (status.startsWith('sent') && c.conv_id) {
+        await q(`INSERT INTO messages (conversation_id, role, text, source) VALUES ($1,'staff',$2,'agent')`, [c.conv_id, text]);
+        await q('UPDATE conversations SET updated_at=now() WHERE id=$1', [c.conv_id]);
+      }
+      await q('INSERT INTO agent_actions (business_id, agent, customer_id, status, message) VALUES ($1,$2,$3,$4,$5)', [B.id, agentId, c.id, status.startsWith('sent') ? 'sent' : status, text]);
+      status.startsWith('sent') ? sent++ : skipped++;
+    }
+  return { sent, skipped };
+}
+
+// what every agent finds right now for one business (also read by Lina in team.js)
 export async function agentFindings(bizId) {
   const B = await one('SELECT id, name, review_url FROM businesses WHERE id=$1', [bizId]), out = [];
   for (const [id, a] of Object.entries(AGENTS)) {
@@ -116,7 +145,8 @@ export function mountAgents(app, BIZ, { sendWhatsApp, sendTelegram, notify, audi
       out.push({ id, name, does, promo, blocked, sent30: last.sent, last: last.at,
         found: list.map(c => ({ id: c.id, name: c.name || c.phone, why: c.why, message: c.message, channel: c.channel, reach: route(c), wa: route(c) ? null : waLink(c.phone, c.message) })) });
     }
-    res.json({ agents: out, review_url: B.review_url || '' });
+    const ap = await one('SELECT autopilot FROM businesses WHERE id=$1', [B.id]);
+    res.json({ agents: out, review_url: B.review_url || '', autopilot: ap?.autopilot || {} });
   }));
   app.put('/api/agents/settings', wrap(async (req, res) => {
     const url = String(req.body.review_url || '').trim();
@@ -128,26 +158,19 @@ export function mountAgents(app, BIZ, { sendWhatsApp, sendTelegram, notify, audi
   app.post('/api/agents/:id/send', wrap(async (req, res) => {
     const a = AGENTS[req.params.id]; if (!a) return res.sendStatus(404);
     const B = await one('SELECT id, name, review_url, wa_phone_number_id FROM businesses WHERE id=$1', [BIZ()]);
-    const found = await a.find(B.id, B), list = Array.isArray(found) ? found : [];
-    const pick = new Set((req.body.ids || []).map(Number)), edits = req.body.messages || {}, manual = !!req.body.manual;
-    let sent = 0, skipped = 0;
-    for (const c of list.filter(x => pick.has(x.id))) {
-      let text = String(edits[c.id] || c.message).slice(0, 900);
-      if (a.promo) text += `\n\n${B.name}. Reply STOP to stop offers.`;
-      let status = manual ? 'sent manually' : 'skipped: not reachable now';
-      const r = manual ? null : route(c);
-      if (r === 'telegram') { const x = await sendTelegram(c.telegram_chat_id, text, B.id); status = x.ok ? 'sent' : 'failed: ' + x.reason; }
-      if (r === 'whatsapp') { const x = await sendWhatsApp(B.wa_phone_number_id, c.phone, text); status = x.ok ? 'sent' : 'failed: ' + x.reason; }
-      if (status.startsWith('sent') && c.conv_id) {
-        await q(`INSERT INTO messages (conversation_id, role, text, source) VALUES ($1,'staff',$2,'agent')`, [c.conv_id, text]);
-        await q('UPDATE conversations SET updated_at=now() WHERE id=$1', [c.conv_id]);
-      }
-      await q('INSERT INTO agent_actions (business_id, agent, customer_id, status, message) VALUES ($1,$2,$3,$4,$5)', [B.id, req.params.id, c.id, status.startsWith('sent') ? 'sent' : status, text]);
-      status.startsWith('sent') ? sent++ : skipped++;
-    }
+    const { sent, skipped } = await sendAgent(B, req.params.id, req.body.ids || [], req.body.messages || {}, !!req.body.manual, { sendWhatsApp, sendTelegram });
     await audit(req, 'agent_sent', `${a.name}: ${sent} sent, ${skipped} skipped`);
     if (sent) await notify(B.id, 'marketing', `${a.name}: ${sent} message${sent === 1 ? '' : 's'} sent`, skipped ? `${skipped} couldn't be reached now` : null);
     res.json({ sent, skipped });
+  }));
+  // which agents send by themselves every day at 11:00
+  app.put('/api/agents/autopilot', wrap(async (req, res) => {
+    const on = {}; for (const id of Object.keys(AGENTS)) on[id] = !!req.body[id];
+    await q('UPDATE businesses SET autopilot=$1 WHERE id=$2', [JSON.stringify(on), BIZ()]);
+    res.json({ ok: true, autopilot: on });
+  }));
+  app.post('/api/agents/:id/send-unused', wrap(async (_req, res) => {
+    res.sendStatus(404);
   }));
   app.get('/api/agents/log', wrap(async (_req, res) => {
     // agent messages and campaign sends together, so every message a client got shows in one log

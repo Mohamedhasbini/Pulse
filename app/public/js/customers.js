@@ -13,7 +13,7 @@ async function loadPeople(){const list=await req(`/api/customers?q=${encodeURICo
 $("#pplQ").oninput=()=>{clearTimeout(pplT);pplT=setTimeout(loadPeople,250)};$("#pplTest").onchange=loadPeople;
 async function openCustomer(id){const c=await req("/api/customers/"+id);pplOpen=c;$("#pErr").hidden=true;
   const shown=/^(test|e2e|walk-in)/.test(c.phone)?(c.contact_phone||"—"):c.phone;
-  $("#pTitle").textContent=c.name||"Customer";$("#pName").value=c.name||"";$("#pPhone").value=shown;$("#pEmail").value=c.email||"";$("#pRemind").value=c.reminder_channel||"whatsapp";$("#pNotes").value=c.staff_notes||"";
+  $("#pTitle").textContent=c.name||"Customer";$("#pName").value=c.name||"";$("#pPhone").value=shown;$("#pEmail").value=c.email||"";$("#pRemind").value=c.reminder_channel||"whatsapp";$("#pNotes").value=c.staff_notes||"";$("#pBday").value=c.birthday?"2000-"+c.birthday:"";
   const live=c.bookings.filter(b=>b.status!=="cancelled"),past=live.filter(b=>L(b.start)<bizNow());
   $("#pStats").innerHTML=`<div><b>${past.filter(b=>b.status!=="no_show").length}</b>Visits</div><div><b>${fmt(live.reduce((a,b)=>a+b.price,0))}</b>Spent</div><div><b>${c.bookings.filter(b=>b.status==="no_show").length}</b>No-shows</div><div><b>${live.filter(b=>L(b.start)>=bizNow()).length}</b>Upcoming</div>`;
   const ST={confirmed:["t-faq","Confirmed"],completed:["t-book","Came"],no_show:["t-attn","No-show"],cancelled:["t-test","Cancelled"]};
@@ -22,6 +22,6 @@ async function openCustomer(id){const c=await req("/api/customers/"+id);pplOpen=
   $("#pModal").hidden=false}
 document.addEventListener("click",e=>{const r=e.target.closest("[data-cust]");if(r)openCustomer(r.dataset.cust)});
 $("#pClose").onclick=()=>$("#pModal").hidden=true;
-$("#pForm").onsubmit=async e=>{e.preventDefault();try{await req("/api/customers/"+pplOpen.id,"PUT",{name:$("#pName").value,email:$("#pEmail").value,reminder_channel:$("#pRemind").value,staff_notes:$("#pNotes").value});
+$("#pForm").onsubmit=async e=>{e.preventDefault();try{await req("/api/customers/"+pplOpen.id,"PUT",{name:$("#pName").value,email:$("#pEmail").value,reminder_channel:$("#pRemind").value,birthday:$("#pBday").value,staff_notes:$("#pNotes").value});
   toast("Profile saved. The AI will use it from the next message.");$("#pModal").hidden=true;loadPeople()}catch(err){$("#pErr").textContent=err.message;$("#pErr").hidden=false}};
 

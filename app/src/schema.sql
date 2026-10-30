@@ -427,3 +427,12 @@ CREATE TABLE IF NOT EXISTS api_keys (
   name TEXT, hash TEXT UNIQUE NOT NULL, prefix TEXT,
   created_at TIMESTAMPTZ DEFAULT now(), last_used_at TIMESTAMPTZ
 );
+
+-- Autopilot (agents send by themselves at 11:00), birthdays, waitlist
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS autopilot JSONB DEFAULT '{"winback":true,"leads":true,"fill":true,"noshow":true,"reviews":true,"birthday":true}';
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS waitlist_on BOOLEAN DEFAULT true;
+UPDATE businesses SET autopilot='{"winback":true,"leads":true,"fill":true,"noshow":true,"reviews":true,"birthday":true}' WHERE autopilot IS NULL;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS birthday TEXT; -- MM-DD
+CREATE TABLE IF NOT EXISTS autopilot_runs (id SERIAL PRIMARY KEY, business_id INT, job TEXT, period TEXT, at TIMESTAMPTZ DEFAULT now(), UNIQUE (business_id, job, period));
+CREATE TABLE IF NOT EXISTS waitlist (id SERIAL PRIMARY KEY, business_id INT REFERENCES businesses(id) ON DELETE CASCADE, customer_id INT REFERENCES customers(id) ON DELETE CASCADE,
+  service_id INT, day DATE, status TEXT DEFAULT 'waiting', created_at TIMESTAMPTZ DEFAULT now(), notified_at TIMESTAMPTZ);
