@@ -120,3 +120,24 @@ html body main button.sg-row:not(#_)[aria-pressed="true"],html body main button.
 html body main button.sg-row:not(#_):not(#__){--sel:#1b1e21}
 :root[data-theme="light"] body :is(.ptabs button[aria-pressed="true"],nav button[data-view][aria-current="true"],.sg-row[aria-current="true"]):not(#_):not(#__){background:#1b1e21!important;color:#eef0f2!important}
 :root[data-theme="light"] body main tbody tr:hover td:not(.hc):not(#_):not(#__){background:color-mix(in srgb,var(--pv-ink) 6%,transparent)!important}
+
+/* ===== personalise any page: My view bar, edit/hide on built-in charts, customise mode ===== */
+.st-mine{margin:16px 24px 0}
+.st-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px 10px 16px;border-radius:16px;border:1px solid var(--pv-line);background:color-mix(in srgb,var(--pv-ink) 3%,transparent);font-size:13.5px;color:var(--pv-meta)}
+.st-bar b{color:var(--pv-ink)}.st-acts{display:flex;gap:6px;flex-wrap:wrap}
+html body main .st-acts button:not(#_){border:1px solid var(--pv-line);background:transparent;color:var(--pv-ink);border-radius:999px;padding:6px 12px;font:600 12.5px inherit;cursor:pointer;min-height:0;height:auto}
+html body main .st-acts button.pri:not(#_){background:var(--pv-ink);color:var(--h-ground,#121314);border-color:transparent}
+:root[data-theme="light"] html body main .st-acts button.pri:not(#_){color:#c6f432}
+.st-mine .st-grid{margin-top:14px}
+.pv-c>.st-ctl.pv{position:absolute;top:12px;right:12px;z-index:3;background:color-mix(in srgb,var(--h-card,#1b1c1e) 85%,transparent);border-radius:11px;padding:2px;backdrop-filter:blur(8px)}
+.pv-c:hover>.st-ctl.pv,.pv-c:focus-within>.st-ctl.pv,body.st-custom .st-ctl{opacity:1}
+.pv-c[hidden]{display:none!important}
+.pv-c::before{right:auto!important;left:auto!important;display:none}
+body.st-custom .pv-c,body.st-custom .st-w{outline:1.5px dashed color-mix(in srgb,var(--pv-ink) 30%,transparent);outline-offset:4px}
+body.st-custom .st-bar{border-color:var(--pv-ink)}
+/* Today: My view sits right under the stage, before the board */
+section.pv-today>.st-mine{grid-column:1;grid-row:2;margin:20px 24px 0}
+section.pv-today:has(> .st-mine)>.pv-board{grid-row:3}section.pv-today:has(> .st-mine)>.bf{grid-row:4}section.pv-today:has(> .st-mine)>.td-grid{grid-row:5}
+section.pv-today:has(> .st-mine) body[data-pv="today"] .pv-board{margin-top:16px}
+body[data-pv="today"] section.pv-today:has(> .st-mine)>.pv-board{margin-top:16px}
+body[data-pv="today"] section.pv-today:has(> .st-mine)>.pv-board:not(#_):not(#__){margin-top:16px!important}

@@ -443,7 +443,8 @@
     const list = SUB[id] ? SUB[id][sub] : PAGES[id];
     after?.parentElement?.querySelectorAll('.pv-board').forEach(x => x.remove()); // a sub-tab without its own board never keeps the last one
     const ov = after && id !== 'today' ? await overview(id, after) : null;
-    if (after && id !== 'studio') window.MXStudio?.page(id, ov || after); // the owner's own widgets on this page
+    // the owner's own view of this page and sub-tab (Studio may still be loading on the first page: queue it)
+    if (after && id !== 'studio') { if (window.MXStudio) await window.MXStudio.page(id, ov || after, sub); else (window.__stPending = window.__stPending || []).push(() => window.MXStudio.page(id, ov || after, sub).then(() => window.MXStudio.decorate(after.parentElement.querySelector(':scope > .pv-board'), id, sub))); }
     if (!list || !after) return;
     document.body.dataset.pv = id;
     // Today: the hero leaves the left column and spans the whole screen (layer 2); the board rises over its lower edge (layer 3)
@@ -454,10 +455,11 @@
       dock(); if (!rail._mo) { rail._mo = new MutationObserver(() => { if ([...sec.querySelectorAll('.td-sc, #tdList')].some(el => el.parentElement !== rail)) dock(); }); rail._mo.observe(sec, { childList: true, subtree: true }); }
       sec.classList.add('pv-today'); }
     const sec = after.parentElement; sec.querySelectorAll('.pv-board').forEach(x => x.remove());
-    const box = document.createElement('div'); box.className = 'pv-board'; (ov || after).after(box);
+    const box = document.createElement('div'); box.className = 'pv-board'; (after.parentElement.querySelector(':scope > .st-mine') || ov || after).after(box);
     const d = await data();
     box.innerHTML = list.map(n => { try { return F[n](d); } catch (e) { console.warn('chart', n, e); return ''; } }).join('');
     box.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i));
     countUp(box);
+    window.MXStudio?.decorate(box, id, sub); // edit or hide any built-in chart
   };
 })();

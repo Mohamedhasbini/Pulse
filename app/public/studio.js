@@ -62,7 +62,7 @@
   function card([src, view, size], i, page) {
     const s = S[src], w = window.WL.L[view]; if (!s || !w || !s[w.shape]) return '';
     let body = ''; try { body = w.render({ ...s[w.shape], id: 'w' + (++uid) }); } catch (e) { body = '<p class="wl-note">This view could not be drawn.</p>'; }
-    return `<div class="st-w ${size}" style="--i:${i}"><header><div><b>${esc(s.n)}</b><small>${esc(w.name)}</small></div><div class="st-ctl"><button type="button" data-ed="${page}:${i}" aria-label="Edit widget">✎</button><button type="button" data-rm="${page}:${i}" aria-label="Remove widget">✕</button></div></header><div class="st-body">${body}</div></div>`;
+    return `<div class="st-w ${size}" style="--i:${i}"><header><div><b>${esc(s.n)}</b><small>${esc(w.name)}</small></div><div class="st-ctl"><button type="button" data-ed="${page}|${i}" aria-label="Edit widget">✎</button><button type="button" data-rm="${page}|${i}" aria-label="Remove widget">✕</button></div></header><div class="st-body">${body}</div></div>`;
   }
   function grid(page) { const l = boards[page] || []; return `<div class="st-grid" data-page="${page}">${l.map((w, i) => card(w, i, page)).join('')}<button type="button" class="st-add" data-add="${page}"><b>＋</b>Add widget</button></div>`; }
 
@@ -80,14 +80,31 @@
       return `<div class="st-w s1 lib" style="--i:${i}"><header><div><b>${esc(w.name)}</b><small>${esc(sm[1].n)}</small></div></header><div class="st-body">${body}</div><button type="button" class="st-use" data-use="${w.key}" data-src="${sm[0]}">Use this design</button></div>`; }).join('')}</div>`).join('');
   }
   // ---------- widgets on any page ----------
-  async function page(id, after) {
+  // the built-in chart each number stands for, so "edit" opens the closest Studio widget
+  const BUILTIN = { 1: ['revenue', 'area'], 2: ['services', 'table'], 3: ['utilisation', 'gauge'], 4: ['hours', 'dotmatrix'], 5: ['services', 'donut'], 6: ['clients', 'ranked'], 7: ['funnel', 'pyramid'], 8: ['revenue', 'compare'], 9: ['bookings', 'ghost'], 10: ['weekdays', 'weekstrip'], 11: ['revenue', 'barcode'], 12: ['outcomes', 'table'], 13: ['revenue', 'capsule'], 14: ['clients', 'table'], 15: ['answered', 'ring'], 16: ['chats', 'line'], 17: ['outcomes', 'proportion'], 18: ['outcomes', 'treemap'], 19: ['answered', 'dotscore'], 20: ['services', 'sparktable'], 21: ['hours', 'clock'], 22: ['channels', 'capsules'], 23: ['clients', 'bubbles'], 24: ['clients', 'ranked'], 25: ['outcomes', 'sankey'], 26: ['chats', 'barcode'], 27: ['outcomes', 'table'], 28: ['outcomes', 'capsules'], 29: ['chats', 'lollipop'], 30: ['hours', 'clock'], 31: ['weekdays', 'weekstrip'], 32: ['bookings', 'hero'], 33: ['funnel', 'pyramid'], 34: ['revenue', 'hatched'], 35: ['outcomes', 'table'], 36: ['services', 'table'], 37: ['clients', 'capsules'], 38: ['outcomes', 'kpigrid'], 39: ['answered', 'gauge'], 40: ['answered', 'ring'], 41: ['services', 'capsules'], 42: ['weekdays', 'weekstrip'], 43: ['channels', 'capsules'], 44: ['noshow', 'segments'], 45: ['forecast', 'forecast'] };
+  const keyOf = (id, sub) => sub ? `${id}/${sub}` : id;
+  const hiddenOf = k => boards['_hide/' + k] || [];
+  let lastPage = null;
+  async function page(id, after, sub = '') {
     if (!after || id === 'studio') return; await load();
+    const k = keyOf(id, sub); lastPage = { id, sub, k };
     const sec = after.parentElement; sec.querySelectorAll(':scope > .st-mine').forEach(x => x.remove());
-    const box = document.createElement('div'); box.className = 'st-mine';
-    box.innerHTML = (boards[id] || []).length ? `<h3 class="st-g">My widgets <small>${boards[id].length}</small></h3>${grid(id)}` : `<div class="st-grid empty" data-page="${id}"><button type="button" class="st-add slim" data-add="${id}"><b>＋</b>Add a widget to this page</button></div>`;
+    const box = document.createElement('div'); box.className = 'st-mine'; box.dataset.key = k;
+    const mine = boards[k] || [], hid = hiddenOf(k);
+    box.innerHTML = `<div class="st-bar"><span><b>My view</b>${mine.length ? ` · ${mine.length} widget${mine.length === 1 ? '' : 's'}` : ''}${hid.length ? ` · ${hid.length} hidden` : ''}</span>
+      <span class="st-acts"><button type="button" data-custom>${document.body.classList.contains('st-custom') ? 'Done' : 'Customise this page'}</button>${hid.length ? `<button type="button" data-restore="${esc(k)}">Show hidden charts</button>` : ''}${mine.length || hid.length ? `<button type="button" data-clear="${esc(k)}">Reset page</button>` : ''}<button type="button" class="pri" data-add="${esc(k)}">＋ Add widget</button></span></div>${mine.length ? grid(k) : ''}`;
     after.after(box);
   }
-  function refresh() { document.querySelectorAll('.st-grid[data-page]').forEach(g => { const p = g.dataset.page, host = g.closest('.st-mine'); if (host) { const sec = host.parentElement; host.remove(); page(p, sec.querySelector('.pv-ov') || sec.querySelector('.hx') || sec.firstElementChild); } else g.outerHTML = grid(p); }); }
+  // edit and hide controls on the built-in charts of a page; hidden ones stay hidden
+  function decorate(board, id, sub = '') {
+    if (!board || !boards) return; const k = keyOf(id, sub), hid = hiddenOf(k);
+    board.querySelectorAll(':scope > .pv-c').forEach(c => {
+      const n = +c.dataset.n; c.hidden = hid.includes(n);
+      if (!c.querySelector('.st-ctl')) c.insertAdjacentHTML('beforeend', `<div class="st-ctl pv"><button type="button" data-bed="${esc(k)}|${n}" aria-label="Change this chart" title="Change design or data">✎</button><button type="button" data-bhide="${esc(k)}|${n}" aria-label="Hide this chart" title="Hide">✕</button></div>`);
+    });
+  }
+  function redraw() { const P = window.P10; if (P) P.go(P.current(), P.sub?.() || 0); }
+  function refresh() { if (document.querySelector('.st-grid[data-page="studio"]') && !document.querySelector('.st-mine')) { const g = document.querySelector('.st-grid[data-page="studio"]'); g.outerHTML = grid('studio'); return; } redraw(); }
 
   // ---------- builder drawer ----------
   let draft = null, target = 'studio', editI = null;
@@ -99,35 +116,53 @@
       <section><h4>Preview</h4><div class="st-prev" id="stPrev"></div></section><footer><button type="button" class="btn ghost" data-x>Cancel</button><button type="button" class="btn" id="stSave">Add widget</button></footer></div>`;
     document.body.append(d); return d;
   }
-  async function open(pageId, i = null, preset = null) {
-    await load(); target = pageId || 'studio'; editI = i;
+  let replaceN = null;
+  async function open(pageId, i = null, preset = null, replace = null) {
+    await load(); target = pageId || 'studio'; editI = i; replaceN = replace;
     draft = i != null ? [...boards[target][i]] : preset || ['revenue', 'area', 's2'];
-    const d = drawer(); d.classList.add('on'); $('#stT').textContent = i != null ? 'Edit widget' : 'Add a widget'; $('#stSave').textContent = i != null ? 'Save' : 'Add widget'; paint();
+    const d = drawer(); d.classList.add('on'); $('#stT').textContent = replace != null ? 'Change this chart' : i != null ? 'Edit widget' : 'Add a widget'; $('#stSave').textContent = i != null || replace != null ? 'Save' : 'Add widget'; paint();
   }
   function paint() {
     const [src, view, size] = draft, s = S[src], ok = fits(s); if (!ok.find(w => w.key === view)) draft[1] = ok[0].key;
     $('#stSrc').innerHTML = Object.entries(S).map(([k, x]) => `<button type="button" data-s="${k}" class="${k === src ? 'on' : ''}"><b>${esc(x.n)}</b><small>${fits(x).length} designs</small></button>`).join('');
     $('#stViews').innerHTML = fits(s).map(w => { let b = ''; try { b = w.render({ ...s[w.shape], id: 'p' + (++uid) }); } catch { } return `<button type="button" data-v="${w.key}" class="${w.key === draft[1] ? 'on' : ''}"><span>${esc(w.name)}</span><div class="st-th">${b}</div></button>`; }).join('');
     $('#stSize').innerHTML = Object.entries(SIZES).map(([k, n]) => `<button type="button" data-z="${k}" class="${k === draft[2] ? 'on' : ''}"><b>${n}</b></button>`).join('');
-    $('#stPage').innerHTML = editI != null ? '' : PAGES.map(([k, n]) => `<button type="button" data-p="${k}" class="${k === target ? 'on' : ''}"><b>${n}</b><small>place here</small></button>`).join('');
+    const here = target.includes('/') || (target !== 'studio' && !PAGES.find(p => p[0] === target)) ? [[target, 'This page', target.replace('/', ' › ')]] : [];
+    $('#stPage').innerHTML = editI != null || replaceN != null ? '' : [...here, ...PAGES.filter(([k]) => k !== target).map(([k, n]) => [k, n, 'place here'])].map(([k, n, sm]) => `<button type="button" data-p="${esc(k)}" class="${k === target ? 'on' : ''}"><b>${esc(n)}</b><small>${esc(sm)}</small></button>`).join('');
     const w = window.WL.L[draft[1]]; let b = ''; try { b = w.render({ ...s[w.shape], id: 'v' + (++uid) }); } catch { }
     $('#stPrev').className = 'st-prev ' + draft[2]; $('#stPrev').innerHTML = `<header><b>${esc(s.n)}</b><small>${esc(w.name)}</small></header><div class="st-body">${b}</div>`;
   }
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-add],[data-ed],[data-rm],[data-x],[data-s],[data-v],[data-z],[data-p],#stSave,[data-use],[data-lib],[data-reset]'); if (!t) return;
+    const t = e.target.closest('[data-add],[data-ed],[data-rm],[data-x],[data-s],[data-v],[data-z],[data-p],#stSave,[data-use],[data-lib],[data-reset],[data-bed],[data-bhide],[data-custom],[data-restore],[data-clear]'); if (!t) return;
+    if (t.dataset.bed) { const [k, n] = t.dataset.bed.split('|'); const m = BUILTIN[n] || ['revenue', 'area']; return open(k, null, [m[0], m[1], 's2'], +n); }
+    if (t.dataset.bhide) { const [k, n] = t.dataset.bhide.split('|'); const h = boards['_hide/' + k] = hiddenOf(k); if (!h.includes(+n)) h.push(+n); save(); window.toast?.('Chart hidden on this page. Use "Show hidden charts" to bring it back.'); return redraw(); }
+    if (t.dataset.custom != null) { document.body.classList.toggle('st-custom'); return redraw(); }
+    if (t.dataset.restore) { delete boards['_hide/' + t.dataset.restore]; save(); return redraw(); }
+    if (t.dataset.clear) { delete boards[t.dataset.clear]; delete boards['_hide/' + t.dataset.clear]; save(); window.toast?.('Page reset to the original view.'); return redraw(); }
     if (t.dataset.add) return open(t.dataset.add);
-    if (t.dataset.ed) { const [p, i] = t.dataset.ed.split(':'); return open(p, +i); }
-    if (t.dataset.rm) { const [p, i] = t.dataset.rm.split(':'); boards[p].splice(+i, 1); save(); return refresh(); }
+    if (t.dataset.ed) { const [p, i] = t.dataset.ed.split('|'); return open(p, +i); }
+    if (t.dataset.rm) { const [p, i] = t.dataset.rm.split('|'); boards[p].splice(+i, 1); save(); return refresh(); }
     if (t.dataset.x != null) return drawer().classList.remove('on');
     if (t.dataset.s) { draft[0] = t.dataset.s; return paint(); } if (t.dataset.v) { draft[1] = t.dataset.v; return paint(); }
     if (t.dataset.z) { draft[2] = t.dataset.z; return paint(); } if (t.dataset.p) { target = t.dataset.p; return paint(); }
     if (t.dataset.use) return open('studio', null, [t.dataset.src, t.dataset.use, 's2']);
     if (t.dataset.lib != null) return window.P10?.go('studio', 1);
     if (t.dataset.reset != null) { boards.studio = JSON.parse(JSON.stringify(DEFAULT.studio)); save(); return refresh(); }
-    if (t.id === 'stSave') { const l = boards[target] = boards[target] || []; editI != null ? (l[editI] = draft) : l.push(draft); save(); drawer().classList.remove('on');
-      window.toast?.(editI != null ? 'Widget updated.' : `Widget added to ${PAGES.find(p => p[0] === target)?.[1] || 'the page'}.`);
-      if (document.querySelector(`.st-grid[data-page="${target}"]`)) refresh(); else if (target !== 'studio') window.P10?.go(target, 0); }
+    if (t.id === 'stSave') { const l = boards[target] = boards[target] || []; if (editI != null) l[editI] = draft; else if (replaceN != null) { l.unshift(draft); const h = boards['_hide/' + target] = hiddenOf(target); if (!h.includes(replaceN)) h.push(replaceN); } else l.push(draft); save(); drawer().classList.remove('on');
+      window.toast?.(replaceN != null ? 'Chart changed on this page.' : editI != null ? 'Widget updated.' : 'Widget added.');
+      const [pid, sub] = target.split('/'), P = window.P10; if (target === 'studio') return refresh();
+      if (P?.current() === pid) return redraw();
+      const idx = sub ? (P.pages.find(x => x[0] === pid)?.[3] || []).findIndex(x => x[0] === sub) : 0; P?.go(pid, Math.max(0, idx)); }
   });
   addEventListener('keydown', e => { if (e.key === 'Escape') $('#stDr')?.classList.remove('on'); });
-  window.MXStudio = { mountBoard, mountLib, page };
+  window.MXStudio = { mountBoard, mountLib, page, decorate };
+  (window.__stPending || []).splice(0).forEach(f => { try { f(); } catch (e) { console.warn('studio', e); } });
+  // Today is drawn once and redrawn by its own live refresh: keep the owner's view and the chart controls on it
+  let todayT = 0;
+  const keepToday = () => { clearTimeout(todayT); todayT = setTimeout(async () => {
+    const sec = document.querySelector('main > section.today'), h = sec?.querySelector(':scope > .td-hero.pv-stage'); if (!h) return;
+    if (!sec.querySelector(':scope > .st-mine')) await page('today', h, '');
+    decorate(sec.querySelector(':scope > .pv-board'), 'today', ''); }, 250); };
+  const watch = () => { const sec = document.querySelector('main > section.today'); if (!sec) return setTimeout(watch, 500); new MutationObserver(keepToday).observe(sec, { childList: true }); keepToday(); };
+  watch();
 })();
