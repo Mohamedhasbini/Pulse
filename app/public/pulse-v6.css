@@ -180,3 +180,12 @@ html body main .pv-ovc.on:not(#_){border-color:var(--pv-lime)}
 .pv-ov.mini .pv-ovg{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
 html body main .pv-ov.mini .pv-ovc:not(#_){min-height:0;flex:0 0 auto;min-width:170px;padding:12px 16px;gap:2px;border-radius:16px}
 .pv-ov.mini .pv-ovc b{font-size:22px}.pv-ov.mini .pv-ovc small{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}.pv-ov.mini .pv-ovc em{padding-top:4px;font-size:12.5px}
+
+/* charts 25–44 */
+.pv-sbars{display:grid;gap:12px}.pv-sbars .r{display:grid;grid-template-columns:110px 1fr 44px;gap:12px;align-items:center;font-size:15px}.pv-sbars .r>div{display:flex;gap:2px;height:22px;min-width:8px}.pv-sbars i{display:block;border-radius:5px;animation:pvGrow .8s both;transform-origin:left}.pv-sbars b{text-align:right}
+.pv-cols{display:flex;align-items:flex-end;gap:3px;height:110px;margin-top:16px}.pv-cols.tall{height:170px}.pv-cols>div{flex:1;height:100%;display:flex;flex-direction:column-reverse;position:relative;padding-bottom:16px}.pv-cols i{display:block;border-radius:3px;animation:pvGrow .8s both;transform-origin:bottom}
+.pv-cols span{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:11.5px;color:var(--pv-meta)}.pv-cols .dot{position:absolute;left:50%;transform:translate(-50%,-4px);width:20px;height:20px;border-radius:50%;background:var(--pv-lime);color:#111;font-size:11px;display:grid;place-items:center;margin-bottom:16px}
+.pv-week{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;text-align:center}.pv-week>div{background:color-mix(in srgb,var(--pv-track) 50%,transparent);border-radius:16px;padding:12px 6px}.pv-week>div.on{outline:1px solid var(--pv-lime)}
+.pv-week span{font-size:13px;color:var(--pv-meta)}.pv-week>div>div{height:90px;display:flex;align-items:flex-end;justify-content:center;margin:8px 0;position:relative}.pv-week>div>div>i{width:60%;background:var(--pv-lime);border-radius:6px;animation:pvGrow .8s both;transform-origin:bottom}
+.pv-week .dual i{position:absolute;bottom:0;left:20%;width:60%}.pv-week .dual i.o{background:var(--pv-track)}.pv-week b{display:block;font-size:18px}.pv-week small{color:var(--pv-meta);font-size:12.5px}
+.pv-sw{display:inline-block;width:30px;height:30px;border-radius:9px;vertical-align:middle;border:1px solid var(--pv-line)}

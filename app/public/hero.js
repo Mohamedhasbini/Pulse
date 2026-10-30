@@ -31,7 +31,7 @@
     if (id === 'inbox') return { line: `${n.replies_today || 0} replies today`, stats: stat('Waiting for you', n.waiting || 0) + stat('Active now', n.active_now || 0) + stat('Avg reply', n.avg_ms ? (n.avg_ms / 1000).toFixed(1) + 's' : '—'),
       folders: fd('a', 'Unsure', `${n.unsure || 0} replies to check`, 'Teach the right answer once') + fd('b', 'To learn', `${n.to_learn || 0} questions`, 'Answers the AI did not know', ['Open Train'] ) };
     if (id === 'calendar') return { line: `${money(n.upcoming_value)} coming up`, stats: stat('Upcoming', n.upcoming_count || 0) + stat('Booked value', money(n.upcoming_value), 1) + stat('Approvals', n.approvals || 0),
-      folders: nextCard + fd('b', 'Today', `${todays.length} on the calendar today`, todays.slice(0, 3).map(b => hm(b.start)).join(' · ') || 'Free day', [`${n.approvals || 0} to approve`]) };
+      folders: nextCard + fd('b', 'Today', `${todays.length} still to come today`, todays.slice(0, 3).map(b => hm(b.start)).join(' · ') || 'Free day', [`${n.approvals || 0} to approve`]) };
     if (id === 'marketing' || id === 'customers') {
       const m = await get('/api/marketing/overview?days=30'), k = m?.kpis || {}, s = m?.segments || {};
       if (id === 'marketing') return { line: `${money(k.revenue)} back`, stats: stat('Revenue won', money(k.revenue), 1) + stat('Conversion', k.reached ? k.conversion + '%' : '—') + stat('Agreed to offers', (k.optin_rate || 0) + '%'),

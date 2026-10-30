@@ -14,10 +14,10 @@
 
   async function data() {
     const now = new Date(), from = new Date(now - 180 * 864e5), to = new Date(+now + 14 * 864e5);
-    const [cal, live, cust, conv] = await Promise.all([get(`/api/calendar?from=${day(from)}T00:00&to=${day(to)}T00:00`), get('/api/live?days=30'), get('/api/customers'), get('/api/conversations')]);
+    const [cal, live, cust, conv, stats, mk, biz] = await Promise.all([get(`/api/calendar?from=${day(from)}T00:00&to=${day(to)}T00:00`), get('/api/live?days=30'), get('/api/customers'), get('/api/conversations'), get('/api/stats?days=30'), get('/api/marketing/overview?days=90'), get('/api/business')]);
     const raw = cal?.bookings || [], all = raw.filter(b => b.status !== 'cancelled');
     const T = Date.now(), past = all.filter(b => new Date(b.start) <= T);
-    return { raw, all, past, live: live || {}, cust: Array.isArray(cust) ? cust : cust?.rows || [], conv: Array.isArray(conv) ? conv : [] };
+    return { raw, all, past, live: live || {}, cust: Array.isArray(cust) ? cust : cust?.rows || [], conv: Array.isArray(conv) ? conv : [], stats: stats || {}, mk: mk || {}, biz: biz || {} };
   }
   const sumIn = (list, d0, d1) => list.filter(b => { const t = new Date(b.start); return t >= d0 && t < d1; });
   const rev = l => l.reduce((s, b) => s + (+b.price || 0), 0);
@@ -196,15 +196,129 @@
   // ---- 24 win-back list
   function c24({ cust }) {
     const d = c => c.last_booking ? Math.round((Date.now() - new Date(c.last_booking)) / 864e5) : null;
-    const l = cust.filter(c => c.spent && d(c) > 35).sort((x, y) => (y.spent || 0) - (x.spent || 0)).slice(0, 8);
-    return card(24, 'Worth winning back', 'Paid before, not seen in 5+ weeks. Highest value first', l.length ? `<table class="pv-t"><thead><tr><th>Client</th><th>Away</th><th>Spent</th><th>Visits</th><th>Offers</th></tr></thead><tbody>${l.map(c => `<tr><td><b>${esc(c.name || c.phone)}</b></td><td><span class="pv-chip ${d(c) > 90 ? 'warn' : ''}">${d(c)} days</span></td><td>${money(c.spent)}</td><td>${c.visits || 0}</td><td>${c.marketing_ok ? '<span class="pv-chip on">Can message</span>' : '<span class="pv-chip">Not opted in</span>'}</td></tr>`).join('')}</tbody></table>` : empty('Nobody has drifted away. Nice.'), 1);
+    let l = cust.filter(c => c.spent && d(c) > 35).sort((x, y) => (y.spent || 0) - (x.spent || 0)).slice(0, 8);
+    const soon = !l.length; if (soon) l = cust.filter(c => c.spent && d(c) != null).sort((x, y) => d(y) - d(x)).slice(0, 8);
+    return card(24, soon ? 'Closest to drifting away' : 'Worth winning back', soon ? 'Nobody has lapsed yet. These paying clients have been away longest' : 'Paid before, not seen in 5+ weeks. Highest value first', l.length ? `<table class="pv-t"><thead><tr><th>Client</th><th>Away</th><th>Spent</th><th>Visits</th><th>Offers</th></tr></thead><tbody>${l.map(c => `<tr><td><b>${esc(c.name || c.phone)}</b></td><td><span class="pv-chip ${d(c) > 90 ? 'warn' : ''}">${d(c)} days</span></td><td>${money(c.spent)}</td><td>${c.visits || 0}</td><td>${c.marketing_ok ? '<span class="pv-chip on">Can message</span>' : '<span class="pv-chip">Not opted in</span>'}</td></tr>`).join('')}</tbody></table>` : empty('Nobody has drifted away. Nice.'), 1);
+  }
+
+  // ===== 25+: boards for Inbox, Calendar, Marketing, Pulse, Train and Settings =====
+  const chName = c => ({ test: 'Test chat', whatsapp: 'WhatsApp', telegram: 'Telegram', webook: 'WeBook', instagram: 'Instagram', web: 'Website' })[c] || (c ? c[0].toUpperCase() + c.slice(1) : 'Other');
+  const hbars = (rows, fmt = v => v) => { const mx = Math.max(1, ...rows.map(r => r[1])); return rows.length ? rows.map(([k, v], i) => `<div class="pv-hb"><span>${esc(k)}</span><div class="pv-bar lg"><i style="width:${v / mx * 100}%;${i ? `background:${S}` : ''}"></i></div><b>${fmt(v)}</b></div>`).join('') : empty('Nothing yet'); };
+  const kv = items => `<div class="pv-kv">${items.map(([l, v, s]) => `<div><span>${esc(l)}</span><b>${v}</b>${s ? `<small>${s}</small>` : ''}</div>`).join('')}</div>`;
+  const ago = t => { const m = (Date.now() - new Date(t)) / 6e4; return m < 60 ? Math.round(m) + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd'; };
+
+  // 25 outcomes by channel (stacked)
+  function c25({ live }) {
+    const f = live.flow || [], ch = [...new Set(f.map(x => x.channel))], oc = [...new Set(f.map(x => x.outcome || 'open'))], cols = [L, S, '#7d848b', '#4a4f54', '#33373b'];
+    const tot = c => f.filter(x => x.channel === c).reduce((s, x) => s + x.n, 0), mx = Math.max(1, ...ch.map(tot));
+    return card(25, 'How chats end, by channel', 'Every conversation in the last 30 days', ch.length ? `<div class="pv-sbars">${ch.sort((a, b) => tot(b) - tot(a)).map(c => `<div class="r"><span>${esc(chName(c))}</span><div style="width:${tot(c) / mx * 100}%">${oc.map((o, i) => { const n = f.find(x => x.channel === c && (x.outcome || 'open') === o)?.n || 0; return n ? `<i style="flex:${n};background:${cols[i % 5]}" title="${esc(o)} ${n}"></i>` : ''; }).join('')}</div><b>${tot(c)}</b></div>`).join('')}</div>
+      <div class="pv-leg">${oc.map((o, i) => `<span><i style="background:${cols[i % 5]}"></i>${esc(o.replace(/_/g, ' '))}</span>`).join('')}</div>` : empty('No chats yet'), 1);
+  }
+  // 26 delivery: messages + failures, last 24h
+  function c26({ live }) {
+    const h = live.h24 || [], mx = Math.max(1, ...h.map(x => x.msgs)), fail = h.reduce((s, x) => s + (x.failed || 0), 0), sent = h.reduce((s, x) => s + (x.msgs || 0), 0);
+    return card(26, 'Delivery, last 24 hours', 'Messages sent per hour. Grey = failed to deliver', kv([['Sent', sent], ['Failed', fail, sent ? Math.round(fail / Math.max(1, sent) * 100) + '%' : ''], ['Delivered', sent ? Math.round((sent - fail) / sent * 100) + '%' : '—']])
+      + `<div class="pv-cols">${h.map(x => `<div title="${String(x.slot).slice(11, 16)} · ${x.msgs} sent · ${x.failed || 0} failed"><i style="height:${(x.msgs - (x.failed || 0)) / mx * 100}%;background:${L}"></i><i style="height:${(x.failed || 0) / mx * 100}%;background:#7d848b"></i></div>`).join('')}</div>`, 1);
+  }
+  // 27 attention queue
+  function c27({ stats }) {
+    const a = stats.attention || [];
+    return card(27, 'Waiting for you', 'Oldest first. Each one is a client who asked for a person', a.length ? `<table class="pv-t"><thead><tr><th>Client</th><th>Why</th><th>Last message</th><th>Waiting</th></tr></thead><tbody>${[...a].sort((x, y) => new Date(x.at) - new Date(y.at)).slice(0, 8).map(c => `<tr><td><b>${esc(c.name || c.phone)}</b><br><small class="m">${esc(chName(c.channel))}</small></td><td><span class="pv-chip warn">${esc(c.attention_reason || 'Needs you')}</span></td><td class="ell">${esc(c.last || '')}</td><td>${ago(c.at)}</td></tr>`).join('')}</tbody></table>` : empty('Nobody is waiting. Nora has it covered.'), 1);
+  }
+  // 28 why chats need a person
+  function c28({ stats, conv }) {
+    const by = {}; (stats.attention || []).forEach(c => { const k = c.attention_reason || 'Other'; by[k] = (by[k] || 0) + 1; });
+    const hand = stats.handoff || 0, all = stats.conv || conv.length || 1;
+    return card(28, 'Why chats come to you', 'Fewer handoffs = more time for clients', `<div class="pv-big">${Math.round(hand / all * 100)}% <em>handed to you</em></div>${hbars(Object.entries(by).sort((a, b) => b[1] - a[1]))}`);
+  }
+  // 29 reply speed per hour
+  function c29({ live }) {
+    const h = (live.h24 || []).filter(x => x.ms), avg = h.length ? h.reduce((s, x) => s + x.ms, 0) / h.length / 1000 : 0, mx = Math.max(1, ...h.map(x => x.ms));
+    return card(29, 'Reply speed', 'Average seconds to answer, per hour today', h.length ? `<div class="pv-big">${avg.toFixed(1)}s <em>average</em></div><div class="pv-cols">${h.map(x => `<div title="${String(x.slot).slice(11, 16)} · ${(x.ms / 1000).toFixed(1)}s"><i style="height:${x.ms / mx * 100}%;background:${x.ms > 15000 ? '#7d848b' : L}"></i></div>`).join('')}</div>` : empty('No replies in the last 24 hours'));
+  }
+  // 30 messages vs bookings by hour of day
+  function c30({ live }) {
+    const h = live.hourly || [], mm = Math.max(1, ...h.map(x => x.msgs || 0));
+    return card(30, 'When clients write vs when they book', 'By hour of day. Bars = messages, lime dots = bookings', h.length ? `<div class="pv-cols tall">${h.map(x => `<div title="${x.h}:00 · ${x.msgs} messages · ${x.booked} booked"><i style="height:${(x.msgs || 0) / mm * 100}%;background:color-mix(in srgb,${S} 45%,transparent)"></i>${x.booked ? `<b class="dot" style="bottom:${Math.min(96, (x.msgs || 0) / mm * 100)}%">${x.booked}</b>` : ''}<span>${x.h % 3 ? '' : x.h}</span></div>`).join('')}</div>` : empty('No messages yet'), 1);
+  }
+  // 31 next 7 days load
+  function c31({ raw }) {
+    const d0 = new Date(new Date().toDateString()), days = Array.from({ length: 7 }, (_, i) => { const a = new Date(+d0 + i * 864e5), l = sumIn(raw.filter(b => b.status !== 'cancelled'), a, new Date(+a + 864e5)); return [a, l.length, rev(l)]; }), mx = Math.max(1, ...days.map(d => d[1]));
+    return card(31, 'The week ahead', 'Booked appointments and value for the next 7 days', `<div class="pv-week">${days.map(([d, n, v], i) => `<div class="${i ? '' : 'on'}"><span>${i ? DAYS[d.getDay()] : 'Today'}</span><div><i style="height:${n / mx * 100}%"></i></div><b>${n}</b><small>${money(v)}</small></div>`).join('')}</div>`, 1);
+  }
+  // 32 booking page performance
+  function c32({ stats, biz }) {
+    const web = stats.web_bookings || 0, chat = stats.chat_bookings || 0, all = Math.max(1, stats.all_bookings || web + chat);
+    return card(32, 'Booking page', biz.booking_enabled ? 'Live. Clients can book without chatting' : 'Turned off. Turn it on below to get bookings from your link', kv([['From the page', web, Math.round(web / all * 100) + '% of bookings'], ['From chats', chat], ['Notice needed', (biz.booking_min_notice_hours ?? 0) + 'h'], ['Books ahead', (biz.booking_days_ahead ?? 30) + ' days']]));
+  }
+  // 33 marketing funnel
+  function c33({ mk }) {
+    const f = mk.funnel || {}, st = [['Reached', mk.kpis?.reached || 0], ['Chatted', f.chats || 0], ['Booked', f.booked || 0], ['Came back', f.returned || 0]], mx = Math.max(1, ...st.map(s => s[1]));
+    return card(33, 'Marketing funnel', `Last ${mk.days || 90} days of offers and follow-ups`, `<div class="pv-fun">${st.map(([l, v], i) => `<div style="width:${Math.max(30, v / mx * 100)}%;background:${i < 2 ? `color-mix(in srgb,${S} ${25 + i * 15}%,transparent)` : a(L, i === 3 ? 1 : .6)}" class="${i === 3 ? 'on' : ''}"><span>${l}</span><b>${v}</b></div>`).join('')}</div>`);
+  }
+  // 34 weekly marketing revenue
+  function c34({ mk }) {
+    const w = mk.weekly || [], mx = Math.max(1, ...w.map(x => x.revenue || 0)), k = mk.kpis || {};
+    return card(34, 'What marketing brought back', 'Revenue from offers, per week', kv([['Revenue won', money(k.revenue)], ['Return on spend', k.roi ? k.roi + '×' : '—'], ['Can get offers', (k.opted_in || 0) + ' / ' + (k.customers || 0)]]) + `<div class="pv-cols">${w.map(x => `<div title="${x.week} · ${money(x.revenue)} · ${x.booked} booked"><i style="height:${(x.revenue || 0) / mx * 100}%;background:${L}"></i></div>`).join('')}</div>`, 1);
+  }
+  // 35 campaigns table
+  function c35({ mk }) {
+    const c = mk.campaigns || [];
+    return card(35, 'Every offer you sent', 'Who it went to and what it earned', c.length ? `<div class="pv-scroll"><table class="pv-t"><thead><tr><th>Offer</th><th>Audience</th><th>Sent</th><th>Booked</th><th>Rate</th><th>Revenue</th></tr></thead><tbody>${c.slice(0, 10).map(x => `<tr><td><b>${esc(x.name)}</b><br><small class="m">${esc(x.date || '')}</small></td><td>${esc(x.segment?.type || 'everyone')}${x.segment?.days ? ` · ${x.segment.days}d` : ''}</td><td>${x.sent || 0}</td><td>${x.booked || 0}</td><td>${x.sent ? Math.round((x.booked || 0) / x.sent * 100) + '%' : '—'}</td><td>${money(x.revenue)}</td></tr>`).join('')}</tbody></table></div>` : empty('No offers sent yet'), 1);
+  }
+  // 36 discount codes
+  function c36({ mk }) {
+    const c = mk.coupons || [];
+    return card(36, 'Discount codes', 'Uses, limit and what each code brought in', c.length ? `<table class="pv-t"><thead><tr><th>Code</th><th>Value</th><th class="bw">Used</th><th>Revenue</th><th>Status</th></tr></thead><tbody>${c.map(x => `<tr><td><b>${esc(x.code)}</b></td><td>${x.kind === 'percent' ? x.value + '%' : money(x.value)}</td><td><div class="pv-bar"><i style="width:${x.max_uses ? Math.min(100, x.uses / x.max_uses * 100) : 0}%"></i></div><small class="m">${x.uses}${x.max_uses ? ' / ' + x.max_uses : ''}</small></td><td>${money(x.revenue)}</td><td><span class="pv-chip ${x.status === 'live' ? 'on' : ''}">${esc(x.status || '')}</span>${x.expires ? `<br><small class="m">ends ${esc(x.expires)}</small>` : ''}</td></tr>`).join('')}</tbody></table>` : empty('No codes yet'), 1);
+  }
+  // 37 audience segments
+  function c37({ mk, cust }) {
+    const s = Object.values(mk.segments || {}), names = { vip: 'VIP', never: 'Never booked', regular: 'Regulars', lapsed: 'Lapsed', lost: 'Lost', new: 'New' };
+    return card(37, 'Who you can reach', 'Each audience, and how many agreed to get offers', s.length ? `<table class="pv-t"><thead><tr><th>Audience</th><th>Clients</th><th class="bw">Reachable</th><th>Spent so far</th></tr></thead><tbody>${s.map(x => `<tr><td><b>${esc(names[x.seg] || x.seg)}</b></td><td>${x.n}</td><td><div class="pv-bar"><i style="width:${x.n ? x.reachable / x.n * 100 : 0}%"></i></div><small class="m">${x.reachable} of ${x.n}</small></td><td>${money(x.spent)}</td></tr>`).join('')}</tbody></table>` : empty(`${cust.length} clients, no audiences yet`), 1);
+  }
+  // 38 approvals and learning queue
+  function c38({ live }) {
+    const n = live.now || {};
+    return card(38, 'Waiting on your OK', 'Things Nora prepared and the gaps it found', kv([['To approve', n.approvals || 0], ['Unsure replies', n.unsure || 0, 'check the answer'], ['To learn', n.to_learn || 0, 'questions with no answer'], ['Chats waiting', n.waiting || 0]]), 1);
+  }
+  // 39 AI coverage
+  function c39({ stats }) {
+    const all = Math.max(1, stats.conv || 0), ans = stats.answered || 0, hand = stats.handoff || 0, C = 2 * Math.PI * 45, p = ans / all;
+    return card(39, 'How much Nora handles alone', 'Chats answered without you, last 30 days', `<div class="pv-donut"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="45" fill="none" stroke="var(--pv-track)" stroke-width="18"/><circle cx="60" cy="60" r="45" fill="none" stroke="${L}" stroke-width="18" stroke-dasharray="${C * p} ${C}" transform="rotate(-90 60 60)"/><text x="60" y="66" text-anchor="middle" class="pv-dv">${Math.round(p * 100)}%</text></svg><ul><li><i style="background:${L}"></i>Answered alone<b>${ans}</b></li><li><i style="background:${S}"></i>Handed to you<b>${hand}</b></li><li><i style="background:#5d6369"></i>Booked from chat<b>${stats.booked_conv || 0}</b></li></ul></div>`);
+  }
+  // 40 knowledge base
+  function c40({ biz, live }) {
+    const f = biz.faqs || [], r = biz.ai_rules || [], n = live.now || {};
+    return card(40, 'What Nora knows', 'Answers and rules it uses in every chat', kv([['Saved answers', f.length], ['Rules', Array.isArray(r) ? r.length : r ? String(r).split('\n').filter(Boolean).length : 0], ['Unanswered', n.to_learn || 0, 'teach these next'], ['Unsure', n.unsure || 0]]) + (f.length ? `<ul class="pv-feed">${f.slice(0, 4).map(x => `<li><span>Q</span>${esc(x.q)}</li>`).join('')}</ul>` : ''), 1);
+  }
+  // 41 service economics
+  function c41({ biz, past }) {
+    const s = (biz.services || []).filter(x => x.active !== false), l = past.filter(b => new Date(b.start) > Date.now() - 90 * 864e5);
+    const rows = s.map(x => { const b = l.filter(y => y.service === x.name); return [x, b.length, rev(b), (+x.price || 0) / Math.max(1, x.minutes || 60) * 60]; }).sort((a, b) => b[3] - a[3]), mh = Math.max(1, ...rows.map(r => r[3]));
+    return card(41, 'Earnings per chair hour', 'Price ÷ duration, with how often each is booked (90 days)', rows.length ? `<div class="pv-scroll"><table class="pv-t"><thead><tr><th>Service</th><th>Price</th><th>Time</th><th class="bw">Per hour</th><th>Booked</th><th>Revenue</th></tr></thead><tbody>${rows.map(([x, n, r, ph]) => `<tr><td><b>${esc(x.name)}</b></td><td>${money(x.price)}</td><td>${x.minutes} min</td><td><div class="pv-bar"><i style="width:${ph / mh * 100}%"></i></div><small class="m">${money(ph)}/h</small></td><td>${n}</td><td>${money(r)}</td></tr>`).join('')}</tbody></table></div>` : empty('Add services to see this'), 1);
+  }
+  // 42 open hours vs booked hours per weekday
+  function c42({ biz, past }) {
+    const ord = [1, 2, 3, 4, 5, 6, 0], h = biz.hours || {}, l = past.filter(b => new Date(b.start) > Date.now() - 56 * 864e5);
+    const open = d => (h[d] || []).reduce((s, [a, b]) => s + (parseInt(b) - parseInt(a)), 0), used = d => l.filter(b => new Date(b.start).getDay() === d).reduce((s, b) => s + (new Date(b.end) - new Date(b.start)) / 36e5, 0) / 8;
+    const mx = Math.max(1, ...ord.map(open));
+    return card(42, 'Open hours vs booked hours', 'Average week, last 8 weeks. Lime = booked, grey = open but empty', `<div class="pv-week">${ord.map(d => { const o = open(d), u = Math.min(o, used(d)); return `<div><span>${DAYS[d]}</span><div class="dual"><i class="o" style="height:${o / mx * 100}%"></i><i style="height:${u / mx * 100}%"></i></div><b>${o ? Math.round(u / o * 100) + '%' : 'closed'}</b><small>${o}h open</small></div>`; }).join('')}</div>`, 1);
+  }
+  // 43 channels connected and volume
+  function c43({ stats }) {
+    return card(43, 'Chats per channel', 'Last 30 days. Connect more channels to be reachable everywhere', hbars((stats.channels || []).map(x => [chName(x.channel), x.n]).sort((a, b) => b[1] - a[1])), 1);
+  }
+  // 44 reminders and no-shows
+  function c44({ stats, biz }) {
+    const o = stats.outcomes || {}, marked = (o.completed || 0) + (o.no_show || 0), ns = marked ? Math.round((o.no_show || 0) / marked * 100) : 0;
+    return card(44, 'Reminders and no-shows', biz.reminders_enabled ? `Reminders go out ${biz.reminder_hours || 24}h before each visit` : 'Reminders are off. Turning them on cuts no-shows', kv([['No-show rate', ns + '%', `${o.no_show || 0} of ${marked} marked visits`], ['Cancelled', o.cancelled || 0], ['Not marked yet', o.unmarked || 0, 'mark them to keep this honest'], ['Reminders', biz.reminders_enabled ? 'On' : 'Off']]), 1);
   }
 
   // ---- Overview: one tile per sub-tab with its headline number; a click opens that sub-tab
   const spark = (arr, h = 30) => { const mx = Math.max(1, ...arr); return `<svg viewBox="0 0 100 ${h}" preserveAspectRatio="none" class="pv-ovs"><polyline points="${arr.map((v, i) => `${i / Math.max(1, arr.length - 1) * 100},${h - 2 - v / mx * (h - 6)}`).join(' ')}" fill="none" stroke="${L}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`; };
   const bars = arr => { const mx = Math.max(1, ...arr); return `<div class="pv-ovb">${arr.map(v => `<i style="height:${Math.max(6, v / mx * 100)}%"></i>`).join('')}</div>`; };
   function previews(d) {
-    const { past, raw, conv, cust, live } = d, n = live.now || {}, now = new Date(new Date().toDateString());
+    const { past, raw, conv, cust, live, stats, mk, biz } = d, n = live.now || {}, k = mk.kpis || {}, fq = biz.faqs || [], rl = biz.ai_rules, nr = Array.isArray(rl) ? rl.length : rl ? String(rl).split('\n').filter(Boolean).length : 0, now = new Date(new Date().toDateString());
     const daily = (l, f = x => x.length) => Array.from({ length: 14 }, (_, i) => f(sumIn(l, new Date(+now - (13 - i) * 864e5), new Date(+now - (12 - i) * 864e5))));
     const top = (arr, key) => { const by = {}; arr.forEach(x => { const k = key(x); if (k) by[k] = (by[k] || 0) + 1; }); return Object.entries(by).sort((a, b) => b[1] - a[1]); };
     const hours = Array(24).fill(0); past.forEach(b => hours[new Date(b.start).getHours()]++);
@@ -218,13 +332,44 @@
       'Live flow': [conv.length, 'recent conversations', `<ul class="pv-ovl">${conv.slice(0, 3).map(c => `<li>${esc(c.name || c.phone)} · ${esc(c.topic || c.outcome || 'chat')}</li>`).join('')}</ul>`],
       Topics: [esc(top(conv, c => c.topic)[0]?.[0] || '—'), 'asked about most', `<div class="pv-ovt">${top(conv, c => c.topic).slice(0, 4).map(([t, v]) => `<span>${esc(t)} ${v}</span>`).join('')}</div>`],
       Business: [money(rev(past.filter(b => new Date(b.start) > Date.now() - 30 * 864e5))), 'revenue, last 30 days', spark(daily(past, rev))],
-      Services: [esc(ts[0]?.[0] || '—'), ts[0] ? `top service · ${money(ts[0][1])}` : 'no bookings yet', bars(ts.slice(0, 8).map(x => x[1]))],
+      Services: biz && d.page === 'settings' ? [(biz.services || []).filter(x => x.active !== false).length, 'services on your menu', ''] : [esc(ts[0]?.[0] || '—'), ts[0] ? `top service · ${money(ts[0][1])}` : 'no bookings yet', bars(ts.slice(0, 8).map(x => x[1]))],
       Timing: [hours.indexOf(Math.max(...hours)) + ':00', 'busiest start hour', bars(hours.slice(8, 21))],
-      Channels: [esc(top(past, b => b.source === 'ai' ? 'AI' : b.source || 'You')[0]?.[0] || '—'), 'makes most bookings', ''],
+      Channels: d.page === 'settings' ? [(stats.channels || []).length, 'channels with chats', ''] : [esc(top(past, b => b.source === 'ai' ? 'AI' : b.source || 'You')[0]?.[0] || '—'), 'makes most bookings', ''],
       Clients: [cust.length, 'clients with a profile', spark(daily(past, l => new Set(l.map(b => b.phone)).size))],
       Board: [paying ? Math.round(ret / paying * 100) + '%' : '—', 'came back for a 2nd visit', ''],
       'Win back': [away.length, `away 5+ weeks · ${money(away.reduce((s, c) => s + (c.spent || 0), 0))} spent before`, ''],
       Reviews: [moods ? Math.round(happy / moods * 100) + '%' : '—', 'of clients sound happy', ''],
+      Conversations: [stats.conv || conv.length, 'chats in the last 30 days', bars((live.d14 || []).map(x => x.n))],
+      'Delivery queue': [(live.h24 || []).reduce((s, x) => s + (x.failed || 0), 0), 'failed messages, last 24h', bars((live.h24 || []).map(x => x.msgs))],
+      'Booking page': [stats.web_bookings || 0, biz.booking_enabled ? 'bookings from your page' : 'page is off', ''],
+      Overview: [money(k.revenue), 'won back by marketing', bars((mk.weekly || []).map(x => x.revenue || 0))],
+      Offers: [(mk.campaigns || []).length, `offers sent · ${k.conversion || 0}% booked`, ''],
+      'Discount codes': [(mk.coupons || []).filter(c => c.status === 'live').length, `live codes · ${(mk.coupons || []).reduce((s, c) => s + (c.uses || 0), 0)} uses`, ''],
+      Agents: [k.opted_in || 0, `of ${k.customers || 0} clients can get offers`, ''],
+      'Website texts': [biz.booking_title ? 'Set' : 'Empty', esc(biz.booking_title || 'add a headline for your page'), ''],
+      'Website photos': [biz.cover_url || biz.cover ? 'Set' : 'No cover', 'cover photo and gallery', ''],
+      'Website design': [biz.booking_color ? `<i class="pv-sw" style="background:${esc(biz.booking_color)}"></i>` : '—', 'your page colour', ''],
+      'Website address': [esc(biz.custom_domain || biz.subdomain || '—'), 'where clients find you', ''],
+      Approvals: [n.approvals || 0, 'waiting for your OK', ''],
+      'Ask Pulse': ['Ask', 'anything about your business', ''],
+      Brief: [n.visits_today || 0, `visits today · ${money(n.revenue_today)}`, ''],
+      Coach: [(stats.conv ? Math.round((stats.answered || 0) / stats.conv * 100) : 0) + '%', 'chats Nora answers alone', ''],
+      Rules: [nr, 'rules Nora follows', ''],
+      Answers: [fq.length, `saved answers · ${n.to_learn || 0} to teach`, ''],
+      'Review replies': [conv.filter(c => c.mood === 'negative').length, 'unhappy chats to look at', ''],
+      Scenarios: ['Test', 'practise tricky chats safely', ''],
+      'Test chat': [conv.filter(c => c.channel === 'test').length, 'test chats so far', ''],
+      Versions: ['Saved', 'roll back Nora any time', ''],
+      Profile: [esc(biz.name || '—'), esc(biz.city || biz.address || ''), ''],
+      Assistant: [esc(biz.assistant_name || 'Nora'), `tone: ${esc(biz.tone || 'friendly')}`, ''],
+      'Hours & team': [Object.values(biz.hours || {}).filter(x => x.length).length + ' days', 'open each week', ''],
+      FAQs: [fq.length, 'saved answers', ''],
+      'Policies & payments': [(biz.cancel_hours ?? 24) + 'h', 'cancel notice', ''],
+      Tools: [(biz.addons || []).length, 'add-ons on', ''],
+      Reminders: [biz.reminders_enabled ? 'On' : 'Off', `${biz.reminder_hours || 24}h before each visit`, ''],
+      'Security & devices': ['OK', 'sign-ins and devices', ''],
+      'Look & layout': [document.documentElement.dataset.theme === 'dark' ? 'Dark' : 'Light', 'theme', ''],
+      Integrations: [(stats.channels || []).filter(c => c.channel !== 'test').length, 'live channels', ''],
       Schedule: [n.upcoming_count || 0, 'bookings coming up', bars(daily(raw.filter(b => new Date(b.start) > Date.now() - 864e5)))],
       Requests: [n.approvals || 0, 'requests to approve', ''],
       'Needs you': [n.waiting || 0, 'chats waiting for you', ''],
@@ -236,18 +381,24 @@
     if (tabs.length < 2) return;
     const cur = window.P10?.sub?.() ?? 0, first = !cur;
     const box = document.createElement('nav'); box.className = 'pv-ov' + (first ? '' : ' mini'); box.setAttribute('aria-label', `${page[1]} overview`); after.after(box);
-    const pv = previews(await data());
+    const pv = previews(Object.assign(await data(), { page: id }));
     box.innerHTML = (first ? `<header><h2>Overview</h2><small>Everything in ${esc(page[1])} at a glance. Open any card for the details.</small></header>` : '')
       + `<div class="pv-ovg">${tabs.map(([name], i) => { const [big, sub, viz] = pv[name] || ['', esc(page[2] || ''), '']; return `<button type="button" class="pv-ovc${i === cur ? ' on' : ''}" data-i="${i}" style="--i:${i}"><span class="t">${esc(name)}</span>${big !== '' ? `<b>${big}</b>` : ''}<small>${sub}</small>${first ? viz : ''}<em>${i === cur ? 'You are here' : 'Open →'}</em></button>`; }).join('')}</div>`;
     box.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b && +b.dataset.i !== cur) { window.P10.go(id, +b.dataset.i); document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }); } });
     return box;
   }
 
-  const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24 };
-  const PAGES = { today: [16, 8, 7, 15], inbox: [12, 4], calendar: [3, 10, 17] };
+  const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44 };
+  const PAGES = { today: [16, 8, 7, 15] };
   // sub-tabs get their own board, keyed by tab name, so each one opens on something new
-  const SUB = { insights: { 'AI performance': [15, 7, 17], 'Live flow': [16, 12], Topics: [18, 19], Business: [1, 11, 13, 8], Services: [20, 2, 5], Timing: [21, 4], Channels: [22] },
-    customers: { Clients: [6, 23], Board: [9, 14], 'Win back': [24, 9], Reviews: [19, 15] } };
+  const SUB = { insights: { 'AI performance': [15, 7, 17], 'Live flow': [16, 30], Topics: [18, 19], Business: [1, 11, 13, 8], Services: [20, 2, 5], Timing: [21, 4], Channels: [22] },
+    customers: { Clients: [6, 23], Board: [9, 14], 'Win back': [24, 9], Reviews: [19, 15] },
+    inbox: { Conversations: [25, 12], 'Needs you': [27, 28], 'Delivery queue': [26, 29] },
+    calendar: { Schedule: [3, 10, 31], Requests: [17, 44], 'Booking page': [32, 31] },
+    marketing: { Overview: [34, 33], Offers: [35, 37], 'Discount codes': [36], Agents: [37, 24] },
+    pulse: { Approvals: [38, 27], Brief: [8, 31] },
+    train: { Coach: [39, 40], Rules: [40], Answers: [40, 28], 'Review replies': [19] },
+    settings: { Services: [41], 'Hours & team': [42], FAQs: [40], Channels: [43], Reminders: [44] } };
   // layer 1: a living ground behind everything (slow orbs, grid, scan line) — built once
   function ambient() {
     if ($('.pv-amb')) return;
@@ -269,7 +420,8 @@
   window.PVBoard = async (id, after) => {
     ambient();
     const sub = ($('.p10-bar [aria-selected="true"]')?.textContent || '').replace(/\s*\d+$/, '').trim();
-    const list = SUB[id] ? SUB[id][sub] || Object.values(SUB[id])[0] : PAGES[id];
+    const list = SUB[id] ? SUB[id][sub] : PAGES[id];
+    after?.parentElement?.querySelectorAll('.pv-board').forEach(x => x.remove()); // a sub-tab without its own board never keeps the last one
     const ov = after && id !== 'today' ? await overview(id, after) : null;
     if (!list || !after) return;
     document.body.dataset.pv = id;
