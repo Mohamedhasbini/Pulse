@@ -34,9 +34,10 @@ export function mountHQ(app, adminOnly, wrap, audit, aiHealth) {
          FROM generate_series(current_date - ($1::int - 1), current_date, interval '1 day') d ORDER BY d`, [Math.min(days, 90)]),
       q(`SELECT COALESCE(trail->>'provider', CASE WHEN source='ai' THEN 'ai (before trails)' ELSE source END) AS provider, count(*)::int AS n
          FROM messages WHERE role='assistant' AND created_at > now() - make_interval(days => $1) GROUP BY 1 ORDER BY 2 DESC`, [days]),
-      one(`SELECT count(*) FILTER (WHERE source='ai')::int AS ai, count(*) FILTER (WHERE failed)::int AS failed, count(*) FILTER (WHERE source='quick')::int AS quick,
-           round(avg(latency_ms) FILTER (WHERE source='ai' AND NOT failed))::int AS avg_ms, count(*) FILTER (WHERE confidence='low')::int AS unsure
-         FROM messages WHERE role='assistant' AND created_at > now() - make_interval(days => $1)`, [days]),
+      one(`SELECT count(*) FILTER (WHERE m.source='ai')::int AS ai, count(*) FILTER (WHERE m.source='ai' AND c.channel <> 'test')::int AS ai_real,
+           count(*) FILTER (WHERE m.failed)::int AS failed, count(*) FILTER (WHERE m.source='quick')::int AS quick,
+           round(avg(m.latency_ms) FILTER (WHERE m.source='ai' AND NOT m.failed))::int AS avg_ms, count(*) FILTER (WHERE m.confidence='low')::int AS unsure
+         FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE m.role='assistant' AND m.created_at > now() - make_interval(days => $1)`, [days]),
       one(`SELECT count(*) FILTER (WHERE status='waiting')::int AS waiting, count(*) FILTER (WHERE status='failed')::int AS failed FROM ai_queue`),
       one(`SELECT pg_database_size(current_database())::bigint AS bytes`),
     ]);

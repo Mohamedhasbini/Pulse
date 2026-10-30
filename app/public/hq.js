@@ -31,9 +31,9 @@
       kpi('Pipeline', money(m.pipeline_mrr), `${m.trials} on trial${m.paused ? ` · ${m.paused} paused` : ''}`),
       kpi('Value created', money(m.value_created), `booked by MXAi for clients · ${D.days} days`),
       kpi('Client return', roi == null ? '—' : roi + '×', 'value created ÷ what they pay'),
-      kpi('Running cost', money(m.cost_monthly, 2), `AI ${money(m.ai_cost_monthly, 2)} + infra ${money(m.infra_monthly)} / month`),
+      kpi('Running cost', '$0', `free AI tiers today · at paid Gemini prices it would be about ${money(m.cost_monthly, 2)} / month`),
       kpi('Gross margin', m.gross_margin == null ? '—' : m.gross_margin + '%', m.mrr ? `${money(m.mrr - m.cost_monthly)} a month after costs` : 'starts with the first paying client'),
-      kpi('AI replies', (D.ai.ai || 0).toLocaleString(), `${D.ai.failed || 0} failed · ${D.ai.avg_ms ? (D.ai.avg_ms / 1000).toFixed(1) + ' s' : '—'} average`),
+      kpi('AI replies', (D.ai.ai_real || 0).toLocaleString(), `to real clients · ${(D.ai.ai - D.ai.ai_real).toLocaleString()} more were your own tests`),
     ].join('')}</div>`;
 
     // activity across the platform, one measure at a time
@@ -84,13 +84,13 @@
     const healthC = card('Platform health', `up ${P.uptime_h} h · database ${P.db_mb} MB · ${P.node}`, `<ul class="hq-checks">${P.checks.map(c => `<li class="${c.ok ? 'ok' : 'bad'}"><i></i><b>${esc(c.name)}</b><span>${esc(c.detail || (c.ok ? 'OK' : 'Needs attention'))}</span></li>`).join('')}</ul>`, 'w6');
 
     // unit economics: a projection from your own prices, clearly labelled
-    const sim = card('Unit economics simulator', 'a projection from your prices and your measured AI cost, not real revenue', `<div class="hq-sim" id="hqSim">
+    const sim = card('Unit economics simulator', 'a projection, not real revenue: your plan prices, and AI cost per reply measured from a real turn (about 4,000 tokens in, 250 out)', `<div class="hq-sim" id="hqSim">
       <label>Clients <input type="range" min="1" max="500" value="50" data-s="n"><output>50</output></label>
       <label>On Business plan <input type="range" min="0" max="100" value="20" data-s="biz"><output>20%</output></label>
       <label>On Pro plan <input type="range" min="0" max="100" value="50" data-s="pro"><output>50%</output></label>
       <label>Take one add-on <input type="range" min="0" max="100" value="30" data-s="add"><output>30%</output></label>
-      <label>AI replies per client a month <input type="range" min="100" max="5000" step="100" value="1200" data-s="rep"><output>1,200</output></label>
-      <label>Cost per AI reply <select data-s="cpr"><option value="0.001">$0.001 (Gemini Flash-Lite)</option><option value="0.004">$0.004 (Claude Haiku)</option><option value="0.012">$0.012 (Claude Sonnet)</option><option value="0">$0 (free tiers)</option></select></label>
+      <label>AI replies per client a month <input type="range" min="50" max="5000" step="50" value="600" data-s="rep"><output>600</output></label>
+      <label>Cost per AI reply <select data-s="cpr"><option value="0">$0 · free tiers (what you use today)</option><option value="0.0005">$0.0005 · Claude Haiku 5.5</option><option value="0.001">about $0.001 · Gemini paid tier (estimate)</option><option value="0.008">$0.008 · Claude Sonnet 5.5 with caching</option><option value="0.0105">$0.0105 · Claude Sonnet 5.5 without caching</option></select></label>
       <div class="hq-sim-out" id="hqSimOut"></div></div>`, 'w12');
 
     box.innerHTML = `<div class="hq-head"><div><h2>HQ</h2><p>Your company at a glance: revenue, the value MXAi creates for clients, costs, growth, AI and health.</p></div>
