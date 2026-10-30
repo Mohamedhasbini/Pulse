@@ -125,3 +125,22 @@ html body .st-w.lib .st-body .wl-svg:not(#_){max-height:170px}
 html body :is(#p10-studio,#p10-studiolib)>.hx:not(#_):not(#__){min-height:0!important}
 html body .st-grid.lib>.st-w.lib:not(#_):not(#__):not(#___){grid-column:auto!important;grid-row:auto!important}
 html body .st-w.lib .wl-pyr:not(#_),html body .st-w.lib .st-body>*:not(#_){max-width:100%;min-width:0}
+
+/* page headers with nothing on their right side fold to a compact band, so the data starts higher */
+html body .hx.hx-compact:not(#_):not(#__){min-height:0!important;height:auto!important}
+html body .hx.hx-compact .hx-in:not(#_):not(#__){min-height:0!important;height:auto!important;padding-top:22px!important;padding-bottom:18px!important}
+html body .hx.hx-compact .hx-folders:not(#_):not(#__){display:none!important}
+html body .hx.hx-compact h1:not(#_):not(#__){font-size:clamp(28px,2.4vw,40px)!important}
+
+/* findable quotes and names: a quiet underline on hover says "this opens something" */
+[data-findable]:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--pv-meta)}
+/* the overview strip is a frame, not a button: only its cards are */
+html body .pv-ov:not(#_):not(#__){cursor:default}
+/* the short answer under the Ask bar: numbers in bold stay readable on the graphite card */
+html body .hx-ans b:not(#_),html body .hx-ans strong:not(#_){color:inherit!important;-webkit-text-fill-color:currentColor!important;font-weight:700}
+/* a version row is a container: only its buttons act */
+html body .ls-row:not(#_){cursor:default}
+/* header side cards stay inside the header with the same margin as its left side */
+html body .hx .hx-folders>.hx-fd:not(#_):not(#__){right:0!important;left:auto!important}
+/* period pills: the chosen one sits on lime, so its label is graphite */
+html body .tabs.glass button:is([aria-pressed="true"],[aria-selected="true"],.on):not(#_):not(#__){color:#15181a!important;-webkit-text-fill-color:#15181a!important}
