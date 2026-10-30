@@ -10,43 +10,59 @@ window.PulseMarketing = (() => {
   const RES = { success: ['Worked', 'good'], some: ['Some bookings', 'mid'], 'no bookings': ['No bookings', 'bad'], 'too early': ['Too early', ''], 'not sent': ['Reached nobody', 'bad'] };
   let root = null, days = 90, data = null, studioData = null;
 
-  function kpis(k) {
-    const tile = (l, v, s, cls = '') => `<div class="mk-k ${cls}"><span>${l}</span><b>${v}</b><small>${s}</small></div>`;
-    return `<div class="mk-kpis">${tile('Revenue from marketing', money(k.revenue), `${k.won} booking${k.won === 1 ? '' : 's'} won`, 'mk-hero')}
-      ${tile('Messages sent', k.sent.toLocaleString(), `${k.reached} client${k.reached === 1 ? '' : 's'} reached`)}
-      ${tile('Conversion', k.reached ? k.conversion + '%' : '—', 'reached → booked within 14 days')}
-      ${tile('Return on discounts', k.roi ? k.roi + '×' : '—', k.discounts ? `${money(k.revenue)} for ${money(k.discounts)} off` : 'no discounts given')}
-      ${tile('Audience', `${k.opted_in}<i>/${k.customers}</i>`, `${k.optin_rate}% agreed to offers`, k.optin_rate < 40 ? 'warn' : '')}</div>`;
+  // hero band: revenue won with its weekly trend, four supporting numbers, and the opt-in ring
+  const ring = (pct, size = 92) => { const r = size / 2 - 7, c = 2 * Math.PI * r;
+    return `<svg class="mk-ring" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="${pct}% agreed to offers">
+      <circle cx="${size / 2}" cy="${size / 2}" r="${r}" class="mk-ring-bg"/><circle cx="${size / 2}" cy="${size / 2}" r="${r}" class="mk-ring-fg" stroke-dasharray="${c * pct / 100} ${c}" transform="rotate(-90 ${size / 2} ${size / 2})"/>
+      <text x="50%" y="50%" dy=".35em" text-anchor="middle">${pct}%</text></svg>`; };
+  const spark = (vals, W = 260, H = 56) => { const n = vals.length; if (n < 2) return ''; const m = Math.max(1, ...vals), X = i => i * W / (n - 1), Y = v => H - 4 - v / m * (H - 10);
+    const pts = vals.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+    return `<svg class="mk-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="mkSpG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+      <polygon points="0,${H} ${pts} ${W},${H}" fill="url(#mkSpG)"/><polyline points="${pts}" class="mk-spark-l"/></svg>`; };
+  function kpis(k, w) {
+    const tile = (l, v, s) => `<div class="mk-k"><span>${l}</span><b>${v}</b><small>${s}</small></div>`;
+    return `<div class="mk-band mk-hero-band">
+      <div class="mk-lead"><span class="mk-eyebrow">Revenue from marketing · last ${days} days</span><b class="mk-big">${money(k.revenue)}</b>
+        <div class="mk-lead-meta"><span class="mk-chip ${k.won ? 'good' : ''}">${k.won} booking${k.won === 1 ? '' : 's'} won</span><span class="mk-chip">${k.reached ? k.conversion + '% conversion' : 'no sends yet'}</span></div>
+        ${spark(w.map(x => x.revenue || 0))}</div>
+      <div class="mk-kgrid">${tile('Messages sent', k.sent.toLocaleString(), `${k.reached} reached`)}${tile('Conversion', k.reached ? k.conversion + '%' : '—', 'booked within 14 days')}
+        ${tile('Return on discounts', k.roi ? k.roi + '×' : '—', k.discounts ? `${money(k.discounts)} given` : 'no discounts yet')}${tile('Clients', k.customers.toLocaleString(), `${k.opted_in} can get offers`)}</div>
+      <div class="mk-aud"><span class="mk-eyebrow">Agreed to offers</span>${ring(k.optin_rate || 0)}<small>${k.opted_in} of ${k.customers}</small></div></div>`;
   }
   // weekly: bars = messages sent, line = bookings won, both on their own scale
   function weekly(w) {
-    const W = Math.max(480, Math.round((root?.clientWidth || 900) - 40)), H = 220, l = 34, r = 34, t = 14, b = 26, n = w.length;
+    const W = Math.max(480, Math.round((root?.clientWidth || 900) * 0.62)), H = 240, l = 30, r = 30, t = 16, b = 26, n = w.length;
     if (!n) return '';
     const mS = Math.max(4, ...w.map(x => x.sent)), mB = Math.max(2, ...w.map(x => x.booked)), X = i => l + (n < 2 ? 0 : i * (W - l - r) / (n - 1));
-    const bw = Math.min(26, (W - l - r) / n * 0.55), YS = v => H - b - v / mS * (H - b - t), YB = v => H - b - v / mB * (H - b - t);
-    let g = '';
+    const bw = Math.min(22, (W - l - r) / n * 0.5), YS = v => H - b - v / mS * (H - b - t), YB = v => H - b - v / mB * (H - b - t);
+    let g = `<defs><linearGradient id="mkBarG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".55"/><stop offset="1" stop-color="var(--accent)" stop-opacity=".08"/></linearGradient>
+      <linearGradient id="mkAreaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--good)" stop-opacity=".28"/><stop offset="1" stop-color="var(--good)" stop-opacity="0"/></linearGradient>
+      <pattern id="mkHatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--accent)" stroke-opacity=".25" stroke-width="1"/></pattern></defs>`;
     for (let i = 0; i <= 3; i++) { const y = t + i * (H - b - t) / 3; g += `<line x1="${l}" x2="${W - r}" y1="${y}" y2="${y}" class="mk-grid"/><text x="${l - 6}" y="${y + 4}" text-anchor="end">${Math.round(mS * (3 - i) / 3)}</text><text x="${W - r + 6}" y="${y + 4}">${Math.round(mB * (3 - i) / 3)}</text>`; }
-    w.forEach((x, i) => { if (x.sent) g += `<rect x="${X(i) - bw / 2}" y="${YS(x.sent)}" width="${bw}" height="${H - b - YS(x.sent)}" rx="3" class="mk-bar"><title>Week of ${x.week}: ${x.sent} sent</title></rect>`; });
-    g += `<polyline points="${w.map((x, i) => `${X(i)},${YB(x.booked)}`).join(' ')}" class="mk-line"/>` + w.map((x, i) => x.booked ? `<circle cx="${X(i)}" cy="${YB(x.booked)}" r="3.5" class="mk-dot"><title>${x.booked} booked · ${money(x.revenue)}</title></circle>` : '').join('');
+    w.forEach((x, i) => { const y = x.sent ? YS(x.sent) : H - b - 2, h = H - b - y;
+      g += `<rect x="${X(i) - bw / 2}" y="${y}" width="${bw}" height="${h}" rx="4" class="mk-gbar ${x.sent ? '' : 'empty'}"><title>Week of ${x.week}: ${x.sent} sent</title></rect>${x.sent ? `<rect x="${X(i) - bw / 2}" y="${y}" width="${bw}" height="${h}" rx="4" fill="url(#mkHatch)"/>` : ''}`; });
+    const pts = w.map((x, i) => `${X(i)},${YB(x.booked)}`).join(' ');
+    g += `<polygon points="${X(0)},${H - b} ${pts} ${X(n - 1)},${H - b}" fill="url(#mkAreaG)"/><polyline points="${pts}" class="mk-line"/>` + w.map((x, i) => x.booked ? `<circle cx="${X(i)}" cy="${YB(x.booked)}" r="4" class="mk-dot"><title>${x.booked} booked · ${money(x.revenue)}</title></circle>` : '').join('');
     [0, Math.floor((n - 1) / 2), n - 1].forEach(i => { g += `<text x="${X(i)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}">${w[i].week.slice(5)}</text>`; });
-    const any = w.some(x => x.sent || x.booked);
-    return `<div class="mk-card mk-wide"><div class="mk-h"><h3>Messages and the bookings they brought</h3><div class="mk-leg"><span class="s">Sent</span><span class="b">Booked</span></div></div>
-      <svg viewBox="0 0 ${W} ${H}" class="mk-svg" role="img" aria-label="Messages sent and bookings won per week">${g}</svg>${any ? '' : '<p class="mk-empty">No messages sent in this period yet. Send an offer or run an agent and its results appear here.</p>'}</div>`;
+    const any = w.some(x => x.sent || x.booked), tot = w.reduce((a, x) => ({ s: a.s + x.sent, b: a.b + x.booked }), { s: 0, b: 0 });
+    return `<div class="mk-card mk-chart"><div class="mk-h"><div><h3>Messages → bookings</h3><small>${tot.s} sent · ${tot.b} booked · weekly</small></div><div class="mk-leg"><span class="s">Sent</span><span class="b">Booked</span></div></div>
+      <svg viewBox="0 0 ${W} ${H}" class="mk-svg" role="img" aria-label="Messages sent and bookings won per week">${g}</svg>${any ? '' : '<p class="mk-empty">Nothing sent yet in this period.</p>'}</div>`;
   }
   // audience: one stacked bar of every client, then each segment with how many you can reach
+  const COL = { vip: '#a78bfa', regular: '#34d399', active: '#38d3f5', new: '#5b8cff', occasional: '#94a3b8', lapsed: '#fbbf24', lost: '#f87171', never: '#475569' };
   function audience(s) {
-    const rows = ORDER.filter(k => s[k]), total = rows.reduce((a, k) => a + s[k].n, 0) || 1;
-    return `<div class="mk-card"><div class="mk-h"><h3>Your audience</h3><small>${total} clients</small></div>
-      <div class="mk-stack">${rows.map(k => `<i class="sg-${k}" style="flex:${s[k].n}" title="${SEG[k][0]}: ${s[k].n}"></i>`).join('')}</div>
-      <table class="mk-t"><thead><tr><th>Segment</th><th class="n">Clients</th><th class="n">Reachable</th><th class="n">Spent</th></tr></thead><tbody>
-      ${rows.map(k => `<tr><td><span class="mk-sw sg-${k}"></span><b>${SEG[k][0]}</b><small>${SEG[k][1]}</small></td><td class="n">${s[k].n}</td><td class="n ${s[k].reachable ? '' : 'mk-zero'}">${s[k].reachable}</td><td class="n">${money(s[k].spent)}</td></tr>`).join('')}</tbody></table>
-      <p class="mk-note">Reachable = agreed to receive offers. Only they can get promotions.</p></div>`;
+    const rows = ORDER.filter(k => s[k]), total = rows.reduce((a, k) => a + s[k].n, 0) || 1, R = 46, C = 2 * Math.PI * R;
+    let off = 0; const arcs = rows.map(k => { const len = s[k].n / total * C, a = `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${COL[k]}" stroke-width="14" stroke-dasharray="${Math.max(0, len - 2)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"><title>${SEG[k][0]}: ${s[k].n}</title></circle>`; off += len; return a; }).join('');
+    return `<div class="mk-card"><div class="mk-h"><div><h3>Audience</h3><small>${total} clients by segment</small></div></div>
+      <div class="mk-donut-row"><svg viewBox="0 0 120 120" class="mk-donut" role="img" aria-label="Clients by segment"><circle cx="60" cy="60" r="${R}" fill="none" class="mk-ring-bg" stroke-width="14"/>${arcs}
+        <text x="60" y="56" text-anchor="middle" class="mk-donut-n">${total}</text><text x="60" y="72" text-anchor="middle" class="mk-donut-l">clients</text></svg>
+      <table class="mk-t mk-seg"><tbody>${rows.map(k => `<tr><td><span class="mk-sw" style="background:${COL[k]}"></span>${SEG[k][0]}</td><td class="n">${s[k].n}</td><td class="n ${s[k].reachable ? 'mk-ok' : 'mk-zero'}">${s[k].reachable} reach</td></tr>`).join('')}</tbody></table></div></div>`;
   }
   function funnel(f) {
-    const steps = [['Talked to the AI', f.talked], ['Booked', f.booked], ['Came back (2+ visits)', f.returned]], m = Math.max(1, ...steps.map(x => x[1]));
-    return `<div class="mk-card"><div class="mk-h"><h3>Client journey</h3><small>last ${days} days</small></div><div class="mk-fun">${steps.map(([l, v], i) => `<div><span>${l}</span>
-      <div class="mk-fb"><i style="width:${Math.max(2, v / m * 100)}%"></i></div><b>${v}</b>${i && steps[i - 1][1] && v <= steps[i - 1][1] ? `<small>${Math.round(v / steps[i - 1][1] * 100)}%</small>` : '<small></small>'}</div>`).join('')}</div>
-      <p class="mk-note">Bookings include clients who booked without chatting (booking page, staff).</p></div>`;
+    const steps = [['Chatted', f.talked], ['Booked', f.booked], ['Returned', f.returned]], m = Math.max(1, ...steps.map(x => x[1]));
+    return `<div class="mk-card"><div class="mk-h"><div><h3>Client journey</h3><small>last ${days} days</small></div></div>
+      <div class="mk-vbars">${steps.map(([l, v], i) => `<div class="mk-vb"><small class="mk-vr">${i && steps[i - 1][1] ? Math.round(v / steps[i - 1][1] * 100) + '%' : ''}</small>
+        <div class="mk-vt"><i style="height:${Math.max(3, v / m * 100)}%"><b>${v}</b></i></div><span>${l}</span></div>`).join('')}</div></div>`;
   }
   // Campaign studio: compact cards (segment, audience, reachable, value, status, consent bar); a click opens the
   // editor under the grid: message, code, %, estimate, Launch. Launch creates the code and sends via the Offers sender.
@@ -96,11 +112,15 @@ window.PulseMarketing = (() => {
       <div class="mk-card"><div class="mk-h"><h3>Discount codes</h3></div>${codes}</div><div class="mk-card"><div class="mk-h"><h3>Agents</h3></div>${ag}</div>`;
   }
   function draw() {
-    const d = data;
+    const d = data, short = t => esc(t.split(/(?<=\.)\s/)[0]);
     root.innerHTML = `<div class="mk-bar-top"><div class="mk-per">${[30, 90, 365].map(n => `<button type="button" data-days="${n}" aria-pressed="${n === days}">${n === 365 ? '12 months' : n + ' days'}</button>`).join('')}</div>
-      <button type="button" class="mk-ask" data-ask="Review my marketing for the last ${days} days: what worked, what failed, and the next campaign I should run.">Ask Pulse AI for a review</button></div>
-      ${kpis(d.kpis)}${d.lessons.length ? `<div class="mk-lessons">${d.lessons.map(t => `<p>${esc(t)}</p>`).join('')}</div>` : ''}
-      <div class="mk-grid2">${studio(studioData)}${weekly(d.weekly)}${ideas(d.ideas)}${audience(d.segments)}${funnel(d.funnel)}${tables(d)}</div>`;
+      <button type="button" class="mk-ask" data-ask="Review my marketing for the last ${days} days: what worked, what failed, and the next campaign I should run.">✦ Ask Pulse AI for a review</button></div>
+      ${kpis(d.kpis, d.weekly)}
+      ${d.lessons.length ? `<div class="mk-insights">${d.lessons.slice(0, 3).map((t, i) => `<div class="mk-ins"><i>${['◆', '▲', '●'][i]}</i><span>${short(t)}</span></div>`).join('')}</div>` : ''}
+      <div class="mk-row2">${weekly(d.weekly)}${funnel(d.funnel)}</div>
+      ${studio(studioData)}
+      <div class="mk-row2b">${audience(d.segments)}${ideas(d.ideas)}</div>
+      <div class="mk-grid2">${tables(d)}</div>`;
   }
   async function load() {
     root.innerHTML = '<p class="mk-empty">Reading your marketing results…</p>';
