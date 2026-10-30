@@ -149,11 +149,35 @@
 
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16 };
   const PAGES = { today: [16, 8, 7, 15], inbox: [12, 4], calendar: [3, 10], insights: [1, 11, 2, 5, 13], customers: [6, 9, 14] };
+  // layer 1: a living ground behind everything (slow orbs, grid, scan line) — built once
+  function ambient() {
+    if ($('.pv-amb')) return;
+    const a = document.createElement('div'); a.className = 'pv-amb'; a.setAttribute('aria-hidden', 'true');
+    a.innerHTML = '<i class="o1"></i><i class="o2"></i><i class="o3"></i><b class="grid"></b><b class="scan"></b>';
+    document.body.prepend(a);
+    addEventListener('pointermove', e => { document.documentElement.style.setProperty('--mx', (e.clientX / innerWidth - .5).toFixed(3)); document.documentElement.style.setProperty('--my', (e.clientY / innerHeight - .5).toFixed(3)); }, { passive: true });
+  }
+  // numbers count up when a card arrives
+  function countUp(root) {
+    root.querySelectorAll('.pv-big, .pv-kpi b').forEach(el => {
+      const m = el.firstChild?.nodeType === 3 ? el.firstChild : null, t = m?.textContent || '', n = parseFloat(t.replace(/[^0-9.]/g, ''));
+      if (!m || !n || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const pre = t.match(/^[^0-9]*/)[0], suf = t.match(/[^0-9.,]*$/)[0], t0 = performance.now();
+      const step = now => { const k = Math.min(1, (now - t0) / 900), v = n * (1 - Math.pow(1 - k, 3)); m.textContent = pre + Math.round(v).toLocaleString() + suf; if (k < 1) requestAnimationFrame(step); else m.textContent = t; };
+      requestAnimationFrame(step);
+    });
+  }
   window.PVBoard = async (id, after) => {
+    ambient();
     if (!PAGES[id] || !after) return;
+    document.body.dataset.pv = id;
+    // Today: the hero leaves the left column and spans the whole screen (layer 2); the board rises over its lower edge (layer 3)
+    if (id === 'today' && after.classList.contains('td-hero')) { const sec = after.closest('section'); sec.prepend(after); after.classList.add('pv-stage'); }
     const sec = after.parentElement; sec.querySelectorAll('.pv-board').forEach(x => x.remove());
     const box = document.createElement('div'); box.className = 'pv-board'; after.after(box);
     const d = await data();
     box.innerHTML = PAGES[id].map(n => { try { return F[n](d); } catch (e) { console.warn('chart', n, e); return ''; } }).join('');
+    box.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i));
+    countUp(box);
   };
 })();

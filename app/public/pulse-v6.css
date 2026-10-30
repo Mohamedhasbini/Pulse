@@ -63,3 +63,72 @@ html body main > section .row:not(#_){height:auto!important;grid-template-rows:n
 html body main > section .row > .card:not(#_){min-height:min-content}
 html body main .heat span:not(#_){font-size:12.5px}
 html body main .co-chat:not(#_){overflow-x:hidden}
+
+/* ===== v6 layers: 1 living ground · 2 full-width stage · 3 floating board ===== */
+html body main > section.wrap:not(#_){max-width:none!important;width:auto}
+/* layer 1 */
+.pv-amb{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.pv-amb i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;will-change:transform}
+.pv-amb .o1{width:46vw;height:46vw;left:58%;top:-18%;background:radial-gradient(circle,#3a3f44,transparent 65%);animation:pvOrb 26s ease-in-out infinite alternate;transform:translate(calc(var(--mx,0)*-40px),calc(var(--my,0)*-30px))}
+.pv-amb .o2{width:30vw;height:30vw;left:-8%;top:55%;background:radial-gradient(circle,color-mix(in srgb,var(--pv-lime) 22%,transparent),transparent 65%);animation:pvOrb 32s ease-in-out -8s infinite alternate-reverse;opacity:.35}
+.pv-amb .o3{width:22vw;height:22vw;left:40%;top:40%;background:radial-gradient(circle,#2b3034,transparent 70%);animation:pvOrb 22s ease-in-out -4s infinite alternate}
+.pv-amb .grid{position:absolute;inset:-2px;background-image:linear-gradient(var(--pv-line) 1px,transparent 1px),linear-gradient(90deg,var(--pv-line) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse 70% 60% at 70% 20%,#000,transparent 75%);opacity:.55}
+.pv-amb .scan{position:absolute;left:0;right:0;height:140px;top:-140px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--pv-lime) 5%,transparent),transparent);animation:pvScan 11s linear infinite}
+:root[data-theme="light"] .pv-amb .o1{background:radial-gradient(circle,#ffffff,transparent 65%)}:root[data-theme="light"] .pv-amb .o3{background:radial-gradient(circle,#d5d9dc,transparent 70%)}
+@keyframes pvOrb{to{translate:-6vw 8vh;scale:1.15}}@keyframes pvScan{to{top:110%}}
+html body .shell:not(#_),html body main:not(#_){position:relative;z-index:1;background:transparent!important}
+
+/* layer 2: Today stage spans the full screen */
+html body .td-hero.pv-stage:not(#_){width:auto;min-height:440px;padding:40px 48px 104px!important;margin:0 0 0;border-radius:32px;overflow:hidden;
+  background:radial-gradient(900px 420px at 78% 10%,#3b4045 0%,transparent 60%),linear-gradient(115deg,#141618 0%,#1d2124 45%,#2b2f33 62%,#16191b 100%)!important;border:1px solid #2c3135!important;
+  box-shadow:0 40px 80px -40px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06)!important;color:#eef0f2}
+:root[data-theme="light"] html body .td-hero.pv-stage:not(#_),:root[data-theme="light"] .td-hero.pv-stage:not(#_){color:#eef0f2}
+.td-hero.pv-stage::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.06) 48%,transparent 60%);background-size:250% 100%;animation:pvSheen 9s ease-in-out infinite}
+@keyframes pvSheen{0%,100%{background-position:120% 0}50%{background-position:-20% 0}}
+.td-hero.pv-stage .td-hero-in{max-width:58%}
+.td-hero.pv-stage h1{font-size:clamp(44px,4.6vw,76px)!important;line-height:1!important;letter-spacing:-.035em;white-space:normal}
+.td-hero.pv-stage :is(.td-hero-in p, .td-val){font-size:17px!important;max-width:620px}
+.td-hero.pv-stage .td-val b,.td-hero.pv-stage .td-val strong{font-size:clamp(40px,4vw,64px)!important}
+.td-hero.pv-stage .hx-today{display:block!important;right:48px!important;top:44px!important;width:min(460px,36%)!important;height:240px!important;transform:translate(calc(var(--mx,0)*-14px),calc(var(--my,0)*-10px));transition:transform .3s ease-out}
+.td-hero.pv-stage .hx-today .hx-fd{right:0!important;border-radius:20px!important;width:100%!important;box-shadow:0 30px 60px -30px rgba(0,0,0,.7)}
+.td-hero.pv-stage .hx-today .hx-fd.a{width:88%!important}
+.td-hero.pv-stage .hx-fd b{font-size:20px}.td-hero.pv-stage .hx-fd small{font-size:14.5px}
+.td-hero.pv-stage .hx-tl{position:absolute;left:0;right:0;bottom:0;padding:16px 48px;background:rgba(10,12,13,.45);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,.06)}
+.td-hero.pv-stage .hx-slot{font-size:12.5px}
+@media (max-width:900px){.td-hero.pv-stage .td-hero-in{max-width:none}.td-hero.pv-stage .hx-today{display:none!important}.td-hero.pv-stage:not(#_){padding:28px 20px 110px!important}}
+
+/* layer 3: the board floats up over the stage's lower edge */
+body[data-pv="today"] .pv-board{position:relative;z-index:3;margin-top:-64px;padding:0 24px}
+.pv-c{position:relative;backdrop-filter:blur(14px);animation:pvRise .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*80ms);transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s}
+:root[data-theme="dark"] .pv-c{background:linear-gradient(160deg,rgba(32,36,39,.86),rgba(20,23,25,.92))}
+.pv-c:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--pv-lime) 35%,var(--pv-line));box-shadow:0 30px 60px -30px rgba(0,0,0,.6)}
+.pv-c::before{content:attr(data-n);position:absolute;top:18px;right:20px;font-size:11px;letter-spacing:.1em;color:var(--pv-meta);opacity:.5}
+@keyframes pvRise{from{opacity:0;transform:translateY(24px) scale(.98)}}
+.pv-area polyline:last-child,.pv-sp polyline{stroke-dasharray:2000;stroke-dashoffset:2000;animation:pvDraw 1.6s ease-out .3s forwards}
+@keyframes pvDraw{to{stroke-dashoffset:0}}
+.pv-bar i,.pv-stack i,.pv-code i{transform-origin:left bottom;animation:pvGrow .9s cubic-bezier(.2,.8,.2,1) both}
+.pv-stack i,.pv-code i{transform-origin:bottom}
+@keyframes pvGrow{from{transform:scale(0,0)}}
+.pv-heat b{animation:pvPop .5s both;animation-delay:calc(var(--i,0)*80ms + .3s)}@keyframes pvPop{from{opacity:0;transform:scale(.6)}}
+@media(prefers-reduced-motion:reduce){.pv-amb i,.pv-amb .scan,.td-hero.pv-stage::after,.pv-c,.pv-bar i,.pv-stack i,.pv-code i,.pv-heat b,.pv-area polyline,.pv-sp polyline{animation:none!important;stroke-dashoffset:0!important}}
+/* unlock Today from the one-screen grid so the stage and board can breathe */
+html body main > section.today:not(#_):not(#__){display:block!important;height:auto!important;max-height:none!important;overflow:visible!important}
+html body section.today .td-grid:not(#_):not(#__){height:auto!important;grid-template-rows:none!important;grid-auto-rows:auto!important;margin-top:28px}
+html body .td-hero.pv-stage:not(#_):not(#__){min-height:min(66vh,620px);height:auto!important;display:block!important;box-sizing:border-box}
+.td-hero.pv-stage .td-hero-in{display:flex!important;gap:28px;align-items:flex-start}
+.td-hero.pv-stage .td-hero-in>div{flex:1;min-width:0}
+.td-hero.pv-stage h1{white-space:nowrap!important}
+.td-hero.pv-stage h1 em,.td-hero.pv-stage h1 i{display:block}
+.td-hero.pv-stage .td-val{margin-top:36px!important;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.td-hero.pv-stage .td-hero-acts{margin-top:24px!important;display:flex!important;flex-direction:row!important;gap:12px}
+.td-hero.pv-stage .sg-band{max-width:58%;margin-top:28px}
+.td-hero.pv-stage .td-hero-in img,.td-hero.pv-stage .td-hero-in .td-logo{width:88px!important;height:88px!important;border-radius:22px}
+body[data-pv="today"] .pv-board{margin-top:-96px}
+html body main:not(#_):not(#__){overflow-y:auto!important;overflow-x:hidden!important;height:calc(100vh - 64px)}
+html body main > section.today:not(#_):not(#__):not(#___){display:flex!important;flex-direction:column;padding-bottom:40px}
+section.today>.pv-stage{order:-3}section.today>.pv-board{order:-2}section.today>.bf{order:-1;margin:24px 24px 0}
+.td-hero.pv-stage .td-logo:not(#_){flex:0 0 88px!important;width:88px!important;height:88px!important;background-size:cover!important;background-position:center!important}
+html body .td-hero.pv-stage:not(#_):not(#__):not(#___){padding-bottom:170px!important}
+.td-hero.pv-stage .hx-tl:not(#_){bottom:56px;border-bottom:1px solid rgba(255,255,255,.06)}
+body[data-pv="today"] .pv-board:not(#_){margin-top:-44px}
+.pv-c svg.pv-beat:not(#_),.pv-c svg.pv-area:not(#_){width:100%!important;max-width:none!important}
