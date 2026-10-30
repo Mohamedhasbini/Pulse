@@ -1,0 +1,20 @@
+# Production overlay for a cloud server: HTTPS through Caddy, the app not exposed directly, no n8n
+# (the AI router answers with Gemini/Groq/OpenRouter keys from .env).
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+services:
+  app:
+    ports: !reset []
+    environment:
+      N8N_WEBHOOK_URL: ""
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [app]
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN}
+    command: caddy reverse-proxy --from ${DOMAIN} --to app:3100
+    volumes:
+      - caddydata:/data
+volumes:
+  caddydata:
