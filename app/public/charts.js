@@ -79,7 +79,7 @@
   function c7({ live, conv, past }) {
     const n = live.now || {}, chats = Math.max(conv.length, n.conversations || 0), booked = n.ai_count ?? conv.filter(c => c.outcome === 'booked').length, asked = Math.max(booked, conv.filter(c => c.messages > 2).length), offered = Math.max(booked, Math.round((asked + booked) / 2));
     const st = [['Chats', chats], ['Engaged', asked], ['Offered a slot', offered], ['Booked', booked]], mx = Math.max(1, chats);
-    return card(7, 'From chat to booking', 'What the front desk turned into visits', `<div class="pv-fun">${st.map(([l, v], i) => `<div style="width:${Math.max(28, v / mx * 100)}%;background:${i < 2 ? `color-mix(in srgb,${S} ${25 + i * 15}%,transparent)` : a(L, i === 3 ? 1 : .55)}" class="${i === 3 ? 'on' : ''}"><span>${l}</span><b>${v}</b></div>`).join('')}</div>`);
+    return card(7, 'From chat to booking', 'What the front desk turned into visits', window.WL ? window.WL.L.pyramid.render({ c: st }) : '');
   }
   // ---- 8 KPI strip + sparklines
   function c8({ past, live }) {
@@ -255,7 +255,7 @@
   // 33 marketing funnel
   function c33({ mk }) {
     const f = mk.funnel || {}, st = [['Reached', mk.kpis?.reached || 0], ['Chatted', f.chats || 0], ['Booked', f.booked || 0], ['Came back', f.returned || 0]], mx = Math.max(1, ...st.map(s => s[1]));
-    return card(33, 'Marketing funnel', `Last ${mk.days || 90} days of offers and follow-ups`, `<div class="pv-fun">${st.map(([l, v], i) => `<div style="width:${Math.max(30, v / mx * 100)}%;background:${i < 2 ? `color-mix(in srgb,${S} ${25 + i * 15}%,transparent)` : a(L, i === 3 ? 1 : .6)}" class="${i === 3 ? 'on' : ''}"><span>${l}</span><b>${v}</b></div>`).join('')}</div>`);
+    return card(33, 'Marketing funnel', `Last ${mk.days || 90} days of offers and follow-ups`, window.WL ? window.WL.L.pyramid.render({ c: st }) : '');
   }
   // 34 weekly marketing revenue
   function c34({ mk }) {

@@ -70,3 +70,53 @@ html body .st-views button:not(#_){height:132px;display:flex;flex-direction:colu
 :root[data-theme="light"] body nav[aria-label="Main"] button.p10:not(#_):not(#__):not(#___):not(#____){color:#a9b0b6!important}
 :root[data-theme="light"] body nav[aria-label="Main"] button.p10[aria-current="true"]:not(#_):not(#__):not(#___):not(#____){color:#fff!important;background:rgba(255,255,255,.12)!important}
 :root[data-theme="light"] body nav[aria-label="Main"] :is(.pl-word,.brand span):not(#_):not(#__){color:#eef0f2!important}
+
+/* ===== restyle of the existing charts in the library's quiet language =====
+   thin marks instead of blocks: hairline columns, slim capsules, thin rings, dots; one highlighted point */
+/* progress and share bars: slim capsules */
+html body .pv-bar:not(#_){height:5px;background:color-mix(in srgb,var(--pv-ink) 9%,transparent)}
+html body .pv-bar.lg:not(#_){height:7px}
+html body .pv-c .pv-bar i:not(#_):not(#__){background:var(--pv-ink)!important;opacity:.78}
+html body .pv-c .pv-hb:first-of-type .pv-bar i:not(#_):not(#__),html body .pv-bul>div:first-child .pv-bar i:not(#_):not(#__){background:var(--pv-lime)!important;opacity:1;box-shadow:inset 0 0 0 1px var(--pv-ink)}
+.cb i{height:6px!important}
+/* columns: thin capsules on a faint track */
+.pv-stack{gap:14px!important}.pv-stack>div{align-items:center;gap:3px!important}
+.pv-stack i{width:10px!important;max-width:10px;border-radius:999px!important;align-self:center}
+.pv-stack i:first-child{background:var(--pv-ink)!important;opacity:.8}.pv-stack i:nth-child(2){background:color-mix(in srgb,var(--pv-ink) 22%,transparent)!important}
+.pv-stack>div:last-child i:first-child{background:var(--pv-lime)!important;opacity:1;box-shadow:inset 0 0 0 1px var(--pv-ink)}
+.pv-cols{gap:5px!important}.pv-cols>div{align-items:center}.pv-cols i{width:4px!important;max-width:4px;border-radius:999px!important;align-self:center;opacity:.8}
+.pv-week>div>div>i{width:10px!important;border-radius:999px!important;background:var(--pv-ink)!important;opacity:.75}
+.pv-week>div.on>div>i{background:var(--pv-lime)!important;opacity:1;box-shadow:inset 0 0 0 1px var(--pv-ink)}
+.pv-week .dual i{width:10px!important;left:calc(50% - 5px)!important}.pv-week .dual i.o{background:color-mix(in srgb,var(--pv-ink) 10%,transparent)!important;opacity:1}
+.pv-week>div{background:transparent!important;border:1px solid var(--pv-line)}
+.pv-ovb{gap:4px!important}.pv-ovb i{width:3px!important;flex:0 0 3px!important;border-radius:999px!important;background:var(--pv-ink)!important;opacity:.55}.pv-ovb i:last-child{background:var(--pv-lime)!important;opacity:1;width:5px!important;flex-basis:5px!important}
+.pv-ovb{justify-content:space-between}
+/* 90-day barcode: hairlines */
+.pv-code{gap:3px!important}.pv-code i{flex:0 0 2px!important;border-radius:2px;background:var(--pv-ink)!important;opacity:.45}.pv-code i:nth-last-child(-n+7){opacity:1}
+/* ribbons and stacked rows: slim with air */
+.pv-rib{height:8px!important;gap:4px!important}.pv-rib i{border-radius:999px!important}
+.pv-sbars .r>div{height:8px!important;gap:3px}.pv-sbars i{border-radius:999px!important}
+/* timeline lanes: slim pills */
+.pv-gantt .r>div{height:20px!important;background:transparent!important;border-bottom:1px dashed var(--pv-line)}.pv-gantt i{top:5px!important;bottom:5px!important;font-size:0!important;border-radius:999px!important;background:var(--pv-ink)!important;opacity:.8}
+.pv-gantt i:hover{opacity:1}
+/* heatmaps: dots, not blocks */
+.pv-heat{gap:6px!important}.pv-heat b{height:auto!important;aspect-ratio:1;border-radius:50%!important;width:70%;justify-self:center;transform:scale(calc(.45 + var(--s,0.55)))}
+.heat i,.cc-heat i,.cv .vh i{border-radius:50%!important}
+/* donuts and rings: thin strokes */
+.pv-donut svg circle{stroke-width:9!important}.pv-rings svg circle{stroke-width:6!important}.pv-gauge path{stroke-width:9!important}
+/* areas: lighter fill, crisper line */
+.pv-area polygon{opacity:.55}.pv-area polyline:last-child{stroke-width:2!important}
+/* KPI tiles: no heavy fill behind the number */
+.pv-kpi>div,.pv-kv>div{background:transparent!important;border:1px solid var(--pv-line)}
+/* treemap tiles: outline instead of solid fill */
+.pv-tree>div{background:transparent!important;border:1px solid var(--pv-line);color:var(--pv-ink)!important}.pv-tree>div:first-child{border-color:var(--pv-ink)}
+/* scatter dots smaller */
+.pv-scat i{width:7px!important;height:7px!important}
+/* client segments: slim strip instead of heavy blocks; selected client row in graphite, not old green */
+html body main .sg-bar:not(#_){height:6px!important;gap:4px!important;background:transparent!important}
+html body main .sg-bar i:not(#_){border-radius:999px!important;background:var(--pv-ink)!important;opacity:.7}
+html body main .sg-bar i:first-child:not(#_){background:var(--pv-lime)!important;opacity:1;box-shadow:inset 0 0 0 1px var(--pv-ink)}
+html body main button.sg-row:not(#_)[aria-pressed="true"],html body main button.sg-row.on:not(#_),html body main button.sg-row:not(#_)[style*="background"]{background:#1b1e21!important;color:#eef0f2!important}
+html body main button.sg-row:not(#_):not(#__){--sel:#1b1e21}
+:root[data-theme="light"] body :is(.ptabs button[aria-pressed="true"],nav button[data-view][aria-current="true"],.sg-row[aria-current="true"]):not(#_):not(#__){background:#1b1e21!important;color:#eef0f2!important}
+:root[data-theme="light"] body main tbody tr:hover td:not(.hc):not(#_):not(#__){background:color-mix(in srgb,var(--pv-ink) 6%,transparent)!important}
