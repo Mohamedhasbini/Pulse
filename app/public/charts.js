@@ -454,8 +454,8 @@
       // right rail: shortcuts and the to-do list stay in view next to the stage, never at the bottom
       let rail = sec.querySelector(':scope > .pv-rail'); if (!rail) { rail = document.createElement('aside'); rail.className = 'pv-rail'; rail.setAttribute('aria-label', 'Shortcuts and to-dos'); sec.prepend(rail); }
       const dock = () => { ['.td-sc', '#tdList', '#bfCard'].forEach(q => { sec.querySelectorAll(q).forEach(el => { if (el.parentElement !== rail) { rail.querySelector(q)?.remove(); rail.append(el); } }); });
-        const k = sec.querySelector('#tdKpis'); if (k && k.parentElement !== sec) sec.append(k); }; // grid order puts the week numbers under the stage
-      dock(); if (!rail._mo) { rail._mo = new MutationObserver(() => { if ([...sec.querySelectorAll('.td-sc, #tdList, #bfCard')].some(el => el.parentElement !== rail) || sec.querySelector('#tdKpis')?.parentElement !== sec) dock(); }); rail._mo.observe(sec, { childList: true, subtree: true }); }
+        const k = sec.querySelector('#tdKpis'), st = sec.querySelector(':scope > .pv-stage'); if (k && st && st.nextElementSibling !== k) st.after(k); }; // the week numbers sit right under the stage
+      dock(); if (!rail._mo) { rail._mo = new MutationObserver(() => { if ([...sec.querySelectorAll('.td-sc, #tdList, #bfCard')].some(el => el.parentElement !== rail) || sec.querySelector(':scope > .pv-stage')?.nextElementSibling?.id !== 'tdKpis') dock(); }); rail._mo.observe(sec, { childList: true, subtree: true }); }
       sec.classList.add('pv-today'); }
     const sec = after.parentElement; sec.querySelectorAll('.pv-board').forEach(x => x.remove());
     const box = document.createElement('div'); box.className = 'pv-board'; (after.parentElement.querySelector(':scope > .st-mine') || ov || after).after(box);
