@@ -160,3 +160,23 @@ html body main > section[hidden]:not(#_):not(#__):not(#___){display:none!importa
 .pv-scat i{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--pv-silver);opacity:.85;transform:translate(-50%,-50%);transition:transform .2s;animation:pvPop .5s both}.pv-scat i:hover{transform:translate(-50%,-50%) scale(1.6)}
 .pv-scat .q{position:absolute;top:8px;left:12px;font-size:12px;color:var(--pv-meta);font-weight:600;text-transform:uppercase;letter-spacing:.08em}.pv-scat .q.r{left:auto;right:12px;color:var(--pv-lime)}.pv-scat .q.b{top:auto;bottom:8px;left:auto;right:12px}
 .pv-scat .xl{position:absolute;bottom:-22px;right:0;color:var(--pv-meta)}.pv-scat .yl{position:absolute;top:0;left:-22px;writing-mode:vertical-rl;transform:rotate(180deg);color:var(--pv-meta)}
+
+/* Overview: one tile per sub-tab, click to open it; a slim strip of the same tiles on every other sub-tab */
+.pv-ov{margin:18px 0 6px}.pv-ov header{margin:0 4px 14px}.pv-ov h2{margin:0;font-size:26px;letter-spacing:-.02em}.pv-ov header small{color:var(--pv-meta);font-size:14.5px}
+.pv-ovg{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+html body main .pv-ovc:not(#_){all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:18px 18px 16px;border-radius:20px;background:var(--pv-card);border:1px solid var(--pv-line);color:var(--pv-ink);min-height:190px;position:relative;overflow:hidden;
+  animation:pvRise .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*60ms);transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .3s}
+:root[data-theme="dark"] html body main .pv-ovc:not(#_),:root[data-theme="dark"] .pv-ovc{background:linear-gradient(160deg,rgba(32,36,39,.88),rgba(20,23,25,.94))}
+html body main .pv-ovc:not(#_):hover,html body main .pv-ovc:not(#_):focus-visible{transform:translateY(-4px);border-color:color-mix(in srgb,var(--pv-lime) 45%,var(--pv-line));box-shadow:0 26px 50px -30px rgba(0,0,0,.6)}
+html body main .pv-ovc.on:not(#_){border-color:var(--pv-lime)}
+.pv-ovc .t{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--pv-meta);font-weight:600}
+.pv-ovc b{font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv-ovc small{color:var(--pv-meta);font-size:14px}
+.pv-ovc em{margin-top:auto;padding-top:10px;font-style:normal;font-size:13.5px;font-weight:600;color:var(--pv-lime)}:root[data-theme="light"] .pv-ovc em{color:#4d6400}
+.pv-ovs{width:100%;height:34px;margin-top:8px}.pv-ovb{display:flex;gap:3px;align-items:flex-end;height:34px;margin-top:8px}.pv-ovb i{flex:1;background:color-mix(in srgb,var(--pv-lime) 70%,transparent);border-radius:3px;animation:pvGrow .8s both;transform-origin:bottom}
+.pv-ovl{list-style:none;margin:6px 0 0;padding:0;font-size:13.5px;color:var(--pv-meta)}.pv-ovl li{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv-ovt{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.pv-ovt span{font-size:12.5px;padding:3px 9px;border-radius:99px;background:var(--pv-track)}
+/* slim strip on the detail sub-tabs */
+.pv-ov.mini .pv-ovg{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+html body main .pv-ov.mini .pv-ovc:not(#_){min-height:0;flex:0 0 auto;min-width:170px;padding:12px 16px;gap:2px;border-radius:16px}
+.pv-ov.mini .pv-ovc b{font-size:22px}.pv-ov.mini .pv-ovc small{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}.pv-ov.mini .pv-ovc em{padding-top:4px;font-size:12.5px}

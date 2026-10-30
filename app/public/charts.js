@@ -200,6 +200,49 @@
     return card(24, 'Worth winning back', 'Paid before, not seen in 5+ weeks. Highest value first', l.length ? `<table class="pv-t"><thead><tr><th>Client</th><th>Away</th><th>Spent</th><th>Visits</th><th>Offers</th></tr></thead><tbody>${l.map(c => `<tr><td><b>${esc(c.name || c.phone)}</b></td><td><span class="pv-chip ${d(c) > 90 ? 'warn' : ''}">${d(c)} days</span></td><td>${money(c.spent)}</td><td>${c.visits || 0}</td><td>${c.marketing_ok ? '<span class="pv-chip on">Can message</span>' : '<span class="pv-chip">Not opted in</span>'}</td></tr>`).join('')}</tbody></table>` : empty('Nobody has drifted away. Nice.'), 1);
   }
 
+  // ---- Overview: one tile per sub-tab with its headline number; a click opens that sub-tab
+  const spark = (arr, h = 30) => { const mx = Math.max(1, ...arr); return `<svg viewBox="0 0 100 ${h}" preserveAspectRatio="none" class="pv-ovs"><polyline points="${arr.map((v, i) => `${i / Math.max(1, arr.length - 1) * 100},${h - 2 - v / mx * (h - 6)}`).join(' ')}" fill="none" stroke="${L}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`; };
+  const bars = arr => { const mx = Math.max(1, ...arr); return `<div class="pv-ovb">${arr.map(v => `<i style="height:${Math.max(6, v / mx * 100)}%"></i>`).join('')}</div>`; };
+  function previews(d) {
+    const { past, raw, conv, cust, live } = d, n = live.now || {}, now = new Date(new Date().toDateString());
+    const daily = (l, f = x => x.length) => Array.from({ length: 14 }, (_, i) => f(sumIn(l, new Date(+now - (13 - i) * 864e5), new Date(+now - (12 - i) * 864e5))));
+    const top = (arr, key) => { const by = {}; arr.forEach(x => { const k = key(x); if (k) by[k] = (by[k] || 0) + 1; }); return Object.entries(by).sort((a, b) => b[1] - a[1]); };
+    const hours = Array(24).fill(0); past.forEach(b => hours[new Date(b.start).getHours()]++);
+    const booked = conv.length ? Math.round(conv.filter(c => c.outcome === 'booked').length / conv.length * 100) : 0;
+    const svc = {}; past.forEach(b => svc[b.service] = (svc[b.service] || 0) + (+b.price || 0)); const ts = Object.entries(svc).sort((a, b) => b[1] - a[1]);
+    const away = cust.filter(c => c.spent && c.last_booking && Date.now() - new Date(c.last_booking) > 35 * 864e5);
+    const ret = cust.filter(c => (c.visits || 0) > 1).length, paying = cust.filter(c => c.visits).length;
+    const happy = conv.filter(c => c.mood === 'positive').length, moods = conv.filter(c => c.mood).length;
+    return {
+      'AI performance': [booked + '%', 'of chats became bookings', bars(daily(past))],
+      'Live flow': [conv.length, 'recent conversations', `<ul class="pv-ovl">${conv.slice(0, 3).map(c => `<li>${esc(c.name || c.phone)} · ${esc(c.topic || c.outcome || 'chat')}</li>`).join('')}</ul>`],
+      Topics: [esc(top(conv, c => c.topic)[0]?.[0] || '—'), 'asked about most', `<div class="pv-ovt">${top(conv, c => c.topic).slice(0, 4).map(([t, v]) => `<span>${esc(t)} ${v}</span>`).join('')}</div>`],
+      Business: [money(rev(past.filter(b => new Date(b.start) > Date.now() - 30 * 864e5))), 'revenue, last 30 days', spark(daily(past, rev))],
+      Services: [esc(ts[0]?.[0] || '—'), ts[0] ? `top service · ${money(ts[0][1])}` : 'no bookings yet', bars(ts.slice(0, 8).map(x => x[1]))],
+      Timing: [hours.indexOf(Math.max(...hours)) + ':00', 'busiest start hour', bars(hours.slice(8, 21))],
+      Channels: [esc(top(past, b => b.source === 'ai' ? 'AI' : b.source || 'You')[0]?.[0] || '—'), 'makes most bookings', ''],
+      Clients: [cust.length, 'clients with a profile', spark(daily(past, l => new Set(l.map(b => b.phone)).size))],
+      Board: [paying ? Math.round(ret / paying * 100) + '%' : '—', 'came back for a 2nd visit', ''],
+      'Win back': [away.length, `away 5+ weeks · ${money(away.reduce((s, c) => s + (c.spent || 0), 0))} spent before`, ''],
+      Reviews: [moods ? Math.round(happy / moods * 100) + '%' : '—', 'of clients sound happy', ''],
+      Schedule: [n.upcoming_count || 0, 'bookings coming up', bars(daily(raw.filter(b => new Date(b.start) > Date.now() - 864e5)))],
+      Requests: [n.approvals || 0, 'requests to approve', ''],
+      'Needs you': [n.waiting || 0, 'chats waiting for you', ''],
+    };
+  }
+  async function overview(id, after) {
+    const page = (window.P10?.pages || []).find(p => p[0] === id), tabs = page?.[3] || [];
+    const sec = after.parentElement; sec.querySelectorAll('.pv-ov').forEach(x => x.remove());
+    if (tabs.length < 2) return;
+    const cur = window.P10?.sub?.() ?? 0, first = !cur;
+    const box = document.createElement('nav'); box.className = 'pv-ov' + (first ? '' : ' mini'); box.setAttribute('aria-label', `${page[1]} overview`); after.after(box);
+    const pv = previews(await data());
+    box.innerHTML = (first ? `<header><h2>Overview</h2><small>Everything in ${esc(page[1])} at a glance. Open any card for the details.</small></header>` : '')
+      + `<div class="pv-ovg">${tabs.map(([name], i) => { const [big, sub, viz] = pv[name] || ['', esc(page[2] || ''), '']; return `<button type="button" class="pv-ovc${i === cur ? ' on' : ''}" data-i="${i}" style="--i:${i}"><span class="t">${esc(name)}</span>${big !== '' ? `<b>${big}</b>` : ''}<small>${sub}</small>${first ? viz : ''}<em>${i === cur ? 'You are here' : 'Open →'}</em></button>`; }).join('')}</div>`;
+    box.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b && +b.dataset.i !== cur) { window.P10.go(id, +b.dataset.i); document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }); } });
+    return box;
+  }
+
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24 };
   const PAGES = { today: [16, 8, 7, 15], inbox: [12, 4], calendar: [3, 10, 17] };
   // sub-tabs get their own board, keyed by tab name, so each one opens on something new
@@ -227,12 +270,13 @@
     ambient();
     const sub = ($('.p10-bar [aria-selected="true"]')?.textContent || '').replace(/\s*\d+$/, '').trim();
     const list = SUB[id] ? SUB[id][sub] || Object.values(SUB[id])[0] : PAGES[id];
+    const ov = after && id !== 'today' ? await overview(id, after) : null;
     if (!list || !after) return;
     document.body.dataset.pv = id;
     // Today: the hero leaves the left column and spans the whole screen (layer 2); the board rises over its lower edge (layer 3)
     if (id === 'today' && after.classList.contains('td-hero')) { const sec = after.closest('section'); sec.prepend(after); after.classList.add('pv-stage'); }
     const sec = after.parentElement; sec.querySelectorAll('.pv-board').forEach(x => x.remove());
-    const box = document.createElement('div'); box.className = 'pv-board'; after.after(box);
+    const box = document.createElement('div'); box.className = 'pv-board'; (ov || after).after(box);
     const d = await data();
     box.innerHTML = list.map(n => { try { return F[n](d); } catch (e) { console.warn('chart', n, e); return ''; } }).join('');
     box.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i));

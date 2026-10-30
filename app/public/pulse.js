@@ -356,7 +356,7 @@
   window.openPulse = k => go('pulse', ['approvals', 'ask', 'brief'].indexOf(k) < 0 ? 0 : ['approvals', 'ask', 'brief'].indexOf(k));
   window.openP10 = go;
   // for the search box (palette.js)
-  window.P10 = { pages: PAGES, icon: ICON, named, ask: x => window.PulseCommand ? window.PulseCommand.open(x) : ask(x), go: (id, t) => go(id, t), current: () => current?.[0], shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts() };
+  window.P10 = { pages: PAGES, icon: ICON, named, ask: x => window.PulseCommand ? window.PulseCommand.open(x) : ask(x), go: (id, t) => go(id, t), current: () => current?.[0], sub: () => current?.[1], shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts() };
   // any other way of opening a section (Today's buttons, notifications) drops our tab row so the page isn't mislabelled
   document.addEventListener('click', ev => {
     const n = ev.target.closest('nav button[data-view]'); if (!n || n.classList.contains('p10')) return;
