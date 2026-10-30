@@ -326,6 +326,15 @@ body{background:radial-gradient(1200px 700px at 85% -10%,#2a2e32,transparent 60%
 @media (max-width:900px){.boards{grid-template-columns:1fr}.board{min-height:0}.curve{min-height:auto;padding-bottom:30px}.sline{display:none}.pt{position:relative;left:auto!important;top:auto!important;width:auto;margin:0 0 22px}.gcol.off{padding-top:0}}
 @media (max-width:560px){.gcols{grid-template-columns:1fr}}
 .why{margin-top:18px}
+
+/* insight cards floating around the MXAi device */
+.feature-art{min-height:560px!important}
+.ins{position:absolute!important;z-index:2!important;padding:12px 14px;border-radius:16px;background:rgba(24,27,30,.62);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 20px 40px -20px rgba(0,0,0,.8);max-width:190px;font-size:12.5px}
+.ins p{margin:0;color:var(--ink2);line-height:1.45}.ins b{display:block;font-size:24px;letter-spacing:-.03em;line-height:1.1}.ins small{color:var(--muted);font-size:11.5px}
+.ins.i1{left:44%;top:9%}.ins.i2{right:4%;top:18%}.ins.i3{left:40%;top:52%}.ins.i4{right:5%;top:56%;display:grid;grid-template-columns:52px 1fr;gap:4px 10px;align-items:center}.ins.i4 svg{grid-row:span 2;width:52px}.ins.i4 b{font-size:20px}
+.ins.i5{right:12%;bottom:8%}
+.ins::before{content:"";position:absolute;width:6px;height:6px;border-radius:50%;background:#c6f432;box-shadow:0 0 10px #c6f432;left:-3px;top:16px}
+@media (max-width:900px){.ins.i3,.ins.i5{display:none}.ins.i1{left:auto;right:4%;top:6%}.ins.i2{right:auto;left:4%;top:6%}.ins.i4{top:auto;bottom:24%}}
 </style>
 </head>
 <body>
@@ -394,7 +403,11 @@ body{background:radial-gradient(1200px 700px at 85% -10%,#2a2e32,transparent 60%
       <div class="glass rv"><i>02</i><h3>Your AI front desk goes live</h3><p>Customers message the WhatsApp they already know. The AI answers, books, supports and follows up, and logs everything.</p></div>
       <div class="glass rv"><i>03</i><h3>Run it from the command center</h3><p>Revenue, customers, busy hours, what clients ask and who to win back, live. Act on it in one click.</p></div>
     </div>
-    <div class="glass feature-art rv"><canvas id="chipGL" aria-hidden="true"></canvas><div class="chip3d" aria-hidden="true"><i></i></div><span class="tagc">MXAi · Command center</span><h3>Less noise. Clear decisions.</h3></div>
+    <div class="glass feature-art rv"><canvas id="chipGL" aria-hidden="true"></canvas><div class="ins i1"><span class="mono2">AI front desk</span><p>Answering 3 chats right now, in English and Arabic.</p></div>
+      <div class="ins i2"><span class="mono2">Booked today</span><b>$1,020</b><small>+18% vs last week</small></div>
+      <div class="ins i3"><span class="mono2">AI score</span><b>96%</b><small>chats solved alone</small></div>
+      <div class="ins i4 ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="6"/><circle cx="32" cy="32" r="26" fill="none" stroke="#c6f432" stroke-width="6" stroke-linecap="round" stroke-dasharray="129 164" transform="rotate(-90 32 32)"/></svg><b>79%</b><small>chairs booked tomorrow</small></div>
+      <div class="ins i5"><span class="mono2">Marketing agent</span><p>3 clients drifting away. Offers ready for your OK.</p></div><div class="chip3d" aria-hidden="true"><i></i></div><span class="tagc">MXAi · Command center</span><h3>Less noise. Clear decisions.</h3></div>
   </div>
 </div></section>
 
@@ -624,6 +637,6 @@ $("#lead").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new 
   catch(err){$("#err").textContent=err.message;$("#go").disabled=false}};
 </script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
-<script type="module" src="/chip3d.js"></script>
+<script type="module" src="/chip3d.js?v=4"></script>
 </body>
 </html>

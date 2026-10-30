@@ -1,5 +1,5 @@
-// MXAi chip: a live 3D AI processor for the How it works panel (glass lid, graphite substrate, silver pins,
-// glowing lime core with the MXAi mark, pulsing circuit traces, orbiting data particles, tilts toward the pointer)
+// MXAi core: a still 3D render of a rugged glass device with the board visible inside
+// (MXAi processor, memory chips, capacitors, connector, cooling fins). Rendered once, again only on resize.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -8,101 +8,74 @@ const host = document.querySelector('.feature-art');
 const canvas = document.getElementById('chipGL');
 if (host && canvas) try { start(); } catch (e) { console.warn('chip', e); }
 
+function tex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+
 function start() {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.6;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.9;
   const scene = new THREE.Scene();
   scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), .04).texture;
-  const camera = new THREE.PerspectiveCamera(32, 1, .1, 100); camera.position.set(0, 0, 11);
-
+  const camera = new THREE.PerspectiveCamera(30, 1, .1, 100); camera.position.set(0, 0, 20);
+  const dev = new THREE.Group(); scene.add(dev);
   const LIME = new THREE.Color('#c6f432');
-  const chip = new THREE.Group(); scene.add(chip);
 
-  // circuit traces drawn once into a texture; a moving glow mask makes data flow along them
-  const tc = document.createElement('canvas'); tc.width = tc.height = 1024; const g = tc.getContext('2d');
-  g.fillStyle = '#15181b'; g.fillRect(0, 0, 1024, 1024);
-  g.strokeStyle = 'rgba(198,244,50,.9)'; g.lineWidth = 3; g.lineCap = 'round';
-  const rnd = (a, b) => a + Math.random() * (b - a);
-  for (let i = 0; i < 46; i++) { // traces leave the core and run to the edges with right angles
-    const side = i % 4, t = rnd(330, 694); let x = 512 + (side === 0 ? -170 : side === 1 ? 170 : 0), y = 512 + (side === 2 ? -170 : side === 3 ? 170 : 0);
-    if (side < 2) y = t; else x = t;
-    g.beginPath(); g.moveTo(x, y);
-    const mid = rnd(60, 160), ex = side === 0 ? 40 : side === 1 ? 984 : x + rnd(-120, 120), ey = side === 2 ? 40 : side === 3 ? 984 : y + rnd(-120, 120);
-    if (side < 2) { g.lineTo(x + (side ? mid : -mid), y); g.lineTo(x + (side ? mid : -mid), ey); g.lineTo(ex, ey); } else { g.lineTo(x, y + (side === 3 ? mid : -mid)); g.lineTo(ex, y + (side === 3 ? mid : -mid)); g.lineTo(ex, ey); }
-    g.stroke(); g.fillStyle = 'rgba(198,244,50,1)'; g.beginPath(); g.arc(ex, ey, 6, 0, 7); g.fill();
-  }
-  const traces = new THREE.CanvasTexture(tc); traces.colorSpace = THREE.SRGBColorSpace;
+  // board: dark PCB with fine traces and pads
+  const pcbMap = tex(1024, 1280, (g, w, h) => {
+    g.fillStyle = '#1c2125'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(160,170,180,.18)'; g.lineWidth = 2;
+    for (let i = 0; i < 140; i++) { let x = Math.random() * w, y = Math.random() * h; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 3; k++) { Math.random() < .5 ? x += (Math.random() - .5) * 260 : y += (Math.random() - .5) * 260; g.lineTo(x, y); } g.stroke(); }
+    g.fillStyle = 'rgba(200,205,210,.35)'; for (let i = 0; i < 260; i++) g.fillRect(Math.random() * w, Math.random() * h, 5, 5);
+    g.strokeStyle = 'rgba(198,244,50,.35)'; g.lineWidth = 3; g.strokeRect(14, 14, w - 28, h - 28);
+  });
+  const pcb = new THREE.Mesh(new RoundedBoxGeometry(4.3, 5.4, .12, 4, .25), new THREE.MeshStandardMaterial({ map: pcbMap, roughness: .55, metalness: .35 }));
+  dev.add(pcb);
 
-  // substrate
-  const sub = new THREE.Mesh(new RoundedBoxGeometry(4.2, 4.2, .32, 6, .36), new THREE.MeshPhysicalMaterial({ color: '#1b1e21', metalness: .55, roughness: .38, clearcoat: 1, clearcoatRoughness: .2 }));
-  chip.add(sub);
-  const board = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 3.9), new THREE.MeshStandardMaterial({ map: traces, emissive: LIME, emissiveMap: traces, emissiveIntensity: .55, metalness: .3, roughness: .6, transparent: true }));
-  board.position.z = .162; chip.add(board);
+  // components
+  const darkChip = new THREE.MeshPhysicalMaterial({ color: '#16191c', roughness: .42, metalness: .55, clearcoat: .6 });
+  const metal = new THREE.MeshPhysicalMaterial({ color: '#c9ced3', roughness: .22, metalness: 1 });
+  const box = (w, h, d, x, y, mat = darkChip, r = .04) => { const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, r), mat); m.position.set(x, y, .06 + d / 2); dev.add(m); return m; };
+  // main processor: silver heat spreader engraved MXAi
+  const lid = tex(512, 512, (g, w) => {
+    const gr = g.createLinearGradient(0, 0, w, w); gr.addColorStop(0, '#8c939a'); gr.addColorStop(.5, '#5d646b'); gr.addColorStop(1, '#3b4045'); g.fillStyle = gr; g.fillRect(0, 0, w, w);
+    for (let i = 0; i < 4000; i++) { g.fillStyle = `rgba(255,255,255,${Math.random() * .06})`; g.fillRect(Math.random() * w, Math.random() * w, 2, 2); }
+    g.fillStyle = 'rgba(15,17,19,.85)'; g.font = '800 132px "Plus Jakarta Sans", system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('MXAi', w / 2, w / 2 - 10);
+    g.font = '600 30px ui-monospace, Menlo, monospace'; g.fillStyle = 'rgba(15,17,19,.6)'; g.fillText('AI CORE · CMD-01', w / 2, w / 2 + 92);
+    g.fillStyle = '#c6f432'; g.beginPath(); g.arc(40, 40, 10, 0, 7); g.fill();
+  });
+  box(2.15, 2.15, .18, -.05, .55, darkChip, .06);
+  const core = box(1.95, 1.95, .1, -.05, .55, new THREE.MeshPhysicalMaterial({ map: lid, roughness: .32, metalness: .85, clearcoat: .4 }), .05); core.position.z = .32;
+  // memory and controller chips
+  [[-1.45, -1.55, .85, .6], [-.35, -1.55, .85, .6], [1.25, -1.6, .9, .9], [1.45, .7, .7, 1.4], [-1.55, 2.0, .7, .5], [.3, 2.05, 1.2, .45]].forEach(([x, y, w, h]) => box(w, h, .14, x, y));
+  // small parts and capacitors
+  const capMat = new THREE.MeshPhysicalMaterial({ color: '#2a2e33', roughness: .3, metalness: .8 });
+  [[-1.55, 1.3], [-1.2, 1.3], [1.6, 2.15], [1.25, 2.15], [.95, -.6]].forEach(([x, y]) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .32, 24), capMat); c.rotation.x = Math.PI / 2; c.position.set(x, y, .22); dev.add(c); const t = new THREE.Mesh(new THREE.CircleGeometry(.12, 24), metal); t.position.set(x, y, .385); dev.add(t); });
+  for (let i = 0; i < 26; i++) box(.16, .08, .06, -1.9 + Math.random() * 3.8, -2.4 + Math.random() * 4.8, metal, .02);
+  // connector strip on the right edge
+  box(.28, 2.2, .2, 1.85, -.2, darkChip, .04);
+  for (let i = 0; i < 14; i++) box(.18, .06, .04, 1.85, -1.18 + i * .15, metal, .01).position.z = .29;
+  // bottom QR-ish tag
+  box(.55, .55, .02, -1.0, -.55, new THREE.MeshStandardMaterial({ map: tex(128, 128, (g) => { g.fillStyle = '#e7eaec'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#111'; for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (Math.random() < .5) g.fillRect(x * 8, y * 8, 8, 8); }), roughness: .6 }), .01);
 
-  // silver pins on every edge
-  const pinMat = new THREE.MeshPhysicalMaterial({ color: '#d7dbe0', metalness: 1, roughness: .18 });
-  const pinGeo = new RoundedBoxGeometry(.13, .34, .07, 2, .03);
-  for (let s = 0; s < 4; s++) for (let i = 0; i < 12; i++) {
-    const p = new THREE.Mesh(pinGeo, pinMat), o = -1.65 + i * .3;
-    if (s === 0) p.position.set(o, 2.25, 0); if (s === 1) p.position.set(o, -2.25, 0);
-    if (s === 2) { p.position.set(2.25, o, 0); p.rotation.z = Math.PI / 2; } if (s === 3) { p.position.set(-2.25, o, 0); p.rotation.z = Math.PI / 2; }
-    chip.add(p);
-  }
+  // rugged glass case with corner bumpers
+  const glass = new THREE.MeshPhysicalMaterial({ color: '#eef6dc', transmission: 1, thickness: 1.2, roughness: .08, ior: 1.42, clearcoat: 1, clearcoatRoughness: .05, attenuationColor: new THREE.Color('#d8f58a'), attenuationDistance: 9, specularIntensity: 1 });
+  const shell = new THREE.Mesh(new RoundedBoxGeometry(5.1, 6.2, 1.15, 8, .5), glass); shell.position.z = .25; dev.add(shell);
+  [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(([sx, sy]) => { const b = new THREE.Mesh(new RoundedBoxGeometry(1.25, 1.25, 1.35, 6, .42), glass); b.position.set(sx * 2.25, sy * 2.8, .25); dev.add(b); });
+  // dark back plate and cooling fins on the right side
+  const back = new THREE.Mesh(new RoundedBoxGeometry(4.9, 6.0, .35, 6, .4), new THREE.MeshPhysicalMaterial({ color: '#0f1113', roughness: .5, metalness: .7 })); back.position.z = -.38; dev.add(back);
+  for (let i = 0; i < 16; i++) { const f = new THREE.Mesh(new THREE.BoxGeometry(.32, .07, .9), new THREE.MeshPhysicalMaterial({ color: '#1b1e21', metalness: .9, roughness: .35 })); f.position.set(2.62, -1.7 + i * .22, -.05); dev.add(f); }
 
-  // die: dark metal block with the glowing MXAi core
-  const die = new THREE.Mesh(new RoundedBoxGeometry(1.9, 1.9, .34, 4, .12), new THREE.MeshPhysicalMaterial({ color: '#0e1012', metalness: .9, roughness: .25, clearcoat: 1 }));
-  die.position.z = .33; chip.add(die);
-  const lc = document.createElement('canvas'); lc.width = lc.height = 512; const l = lc.getContext('2d');
-  l.fillStyle = '#c6f432'; l.fillRect(0, 0, 512, 512);
-  l.strokeStyle = '#111'; l.lineWidth = 34; l.lineCap = l.lineJoin = 'round';
-  l.beginPath(); l.moveTo(140, 330); l.lineTo(140, 160); l.lineTo(256, 276); l.lineTo(372, 160); l.lineTo(372, 330); l.stroke();
-  l.fillStyle = '#111'; l.font = '700 54px "Plus Jakarta Sans", system-ui, sans-serif'; l.textAlign = 'center'; l.fillText('MXAi', 256, 430);
-  const logo = new THREE.CanvasTexture(lc); logo.colorSpace = THREE.SRGBColorSpace;
-  const coreMat = new THREE.MeshStandardMaterial({ map: logo, emissive: LIME, emissiveMap: logo, emissiveIntensity: .9, roughness: .35, metalness: .1 });
-  const core = new THREE.Mesh(new RoundedBoxGeometry(1.15, 1.15, .1, 4, .08), coreMat); core.position.z = .54; chip.add(core);
+  // light: soft key, lime rim from behind, cool fill
+  const key = new THREE.DirectionalLight('#ffffff', 4); key.position.set(-4, 6, 8); scene.add(key);
+  const rim = new THREE.PointLight(LIME, 320, 30); rim.position.set(3, 1, -4); scene.add(rim);
+  const rim2 = new THREE.PointLight(LIME, 60, 20); rim2.position.set(-4, -4, 2); scene.add(rim2);
+  scene.add(new THREE.AmbientLight('#ffffff', 1.1));
 
-  // glass lid over everything
-  const lid = new THREE.Mesh(new RoundedBoxGeometry(3.7, 3.7, .5, 8, .32), new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, thickness: .8, roughness: .06, ior: 1.45, metalness: 0, clearcoat: 1, attenuationColor: new THREE.Color('#e9ffb0'), attenuationDistance: 4, transparent: true, opacity: 1 }));
-  lid.position.z = .55; chip.add(lid);
-
-  // orbiting data particles
-  const N = 160, pos = new Float32Array(N * 3), seeds = [];
-  for (let i = 0; i < N; i++) seeds.push([rnd(2.6, 4.2), rnd(0, 6.28), rnd(-.9, .9), rnd(.15, .45)]);
-  const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const pts = new THREE.Points(pg, new THREE.PointsMaterial({ color: LIME, size: .06, transparent: true, opacity: .85, depthWrite: false, blending: THREE.AdditiveBlending }));
-  scene.add(pts);
-
-  // light: lime glow from behind and below, cool rim from the top
-  const glow = new THREE.PointLight(LIME, 60, 20); glow.position.set(-2, -2.5, 3); scene.add(glow);
-  const back = new THREE.PointLight(LIME, 120, 30); back.position.set(0, 0, -4); scene.add(back);
-  const rim = new THREE.DirectionalLight('#e8ecf0', 2.2); rim.position.set(4, 5, 6); scene.add(rim);
-  scene.add(new THREE.AmbientLight("#ffffff", .6));
-
-  chip.rotation.set(-.45, .5, -.18);
-  let tx = 0, ty = 0, cx = 0, cy = 0;
-  host.addEventListener('pointermove', e => { const r = host.getBoundingClientRect(); tx = (e.clientX - r.left) / r.width - .5; ty = (e.clientY - r.top) / r.height - .5; });
-  host.addEventListener('pointerleave', () => { tx = ty = 0; });
-
-  const size = () => { const r = host.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.position.x = r.width > 700 ? -2.2 : 0; camera.updateProjectionMatrix(); };
+  dev.rotation.set(-.32, .55, -.12);
+  const draw = () => renderer.render(scene, camera);
+  const size = () => { const r = host.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height;
+    camera.position.x = r.width > 700 ? -3.6 : 0; camera.position.y = r.width > 700 ? -.2 : -1.2; camera.updateProjectionMatrix(); draw(); };
   new ResizeObserver(size).observe(host); size();
+  document.fonts?.ready.then(() => { lid.needsUpdate = true; draw(); });
   host.classList.add('gl-on');
-
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let visible = true; new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(host);
-  const clock = new THREE.Clock();
-  (function loop() {
-    requestAnimationFrame(loop); if (!visible) return;
-    const t = still ? 0 : clock.getElapsedTime();
-    cx += (tx - cx) * .05; cy += (ty - cy) * .05;
-    chip.rotation.x = -.45 + Math.sin(t * .6) * .06 + cy * .5;
-    chip.rotation.y = .5 + Math.sin(t * .4) * .12 + cx * .7;
-    chip.position.y = Math.sin(t * .9) * .12;
-    coreMat.emissiveIntensity = .75 + Math.sin(t * 2.4) * .35;
-    board.material.emissiveIntensity = .35 + (Math.sin(t * 1.7) * .5 + .5) * .5;
-    back.intensity = 90 + Math.sin(t * 2.4) * 40;
-    for (let i = 0; i < N; i++) { const [r, a, z, sp] = seeds[i], an = a + t * sp; pos[i * 3] = Math.cos(an) * r; pos[i * 3 + 1] = Math.sin(an) * r * .55 + chip.position.y; pos[i * 3 + 2] = z + Math.sin(an * 2) * .3; }
-    pg.attributes.position.needsUpdate = true;
-    renderer.render(scene, camera);
-  })();
 }
