@@ -56,7 +56,7 @@ window.PulseMarketing = (() => {
     const a = st.audience;
     const status = d => d.ran ? ['Sent', ''] : d.reachable ? ['Ready', 'good'] : d.size ? ['Needs consent', 'mid'] : ['No audience', ''];
     const card = (d, i) => { const [stt, cls] = status(d), w = d.size ? Math.round(d.matched / d.size * 100) : 0;
-      return `<button type="button" class="mk-sc ${openD === i ? 'open' : ''}" data-open="${i}">
+      return `<button type="button" class="mk-sc ${openD === i ? 'open' : ''}" data-mko="${i}">
         <div class="mk-sc-h"><b>${esc(d.name)}</b><span class="mk-pill ${cls}">${stt}</span></div>
         <small>${esc(d.audience)}</small>
         <div class="mk-sc-n"><div><i>Audience</i><b>${d.size}</b></div><div><i>Reachable</i><b>${d.reachable}</b></div><div><i>${d.reachable ? 'Net' : 'Potential'}</i><b>${money(d.reachable ? d.estimate.net : d.potential)}</b></div></div>
@@ -109,7 +109,7 @@ window.PulseMarketing = (() => {
   document.addEventListener('click', e => {
     if (!root || !root.contains(e.target)) return;
     const p = e.target.closest('[data-days]'); if (p) { days = +p.dataset.days; return load(); }
-    const sr = e.target.closest('[data-open]'); if (sr) { openD = openD === +sr.dataset.open ? -1 : +sr.dataset.open; return draw(); }
+    const sr = e.target.closest('[data-mko]'); if (sr) { openD = openD === +sr.dataset.mko ? -1 : +sr.dataset.mko; return draw(); }
     const card = e.target.closest('.mk-d');
     if (card) {
       const d = studioData.drafts[+card.dataset.d], val = f => card.querySelector(`[data-f="${f}"]`)?.value?.trim(), msg = val('message'), out = card.querySelector('.mk-res');

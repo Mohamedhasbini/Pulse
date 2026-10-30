@@ -341,3 +341,6 @@ main th:not(#_){font-size:.6875rem;letter-spacing:.05em;text-transform:uppercase
 main :is(.mk-pill,.ag-n,.pill,.badge,.chip):not(#_){white-space:nowrap}
 main :is(td,li,.item span){overflow-wrap:break-word}
 @media (max-width:640px){main :is(input,select,textarea):not([type=checkbox]):not([type=radio]){font-size:16px}}
+
+/* overview: the side column of the flow pane is narrow, so its small cards stack */
+.sg-flow>.fit3:not(#_){grid-template-columns:1fr!important;align-content:start}
