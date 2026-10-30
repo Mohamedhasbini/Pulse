@@ -198,6 +198,18 @@ body{background:radial-gradient(1200px 700px at 85% -10%,#2a2e32,transparent 60%
 .lane{position:relative;height:26px;background:rgba(255,255,255,.03);border-radius:8px;margin:6px 0}.lane i{position:absolute;top:3px;bottom:3px;border-radius:6px;background:#c6f432;color:#111;font-size:11px;font-style:normal;padding:0 8px;line-height:20px;white-space:nowrap;overflow:hidden}.lane i.g{background:#c9ced3}
 .donut{display:flex;gap:16px;align-items:center}.donut svg{width:110px;flex:none}.donut ul{list-style:none;margin:0;padding:0;font-size:13px;color:var(--ink2);display:grid;gap:7px;flex:1}.donut li{display:flex;gap:8px;align-items:center}.donut li i{width:9px;height:9px;border-radius:3px}.donut li b{margin-left:auto;color:var(--ink)}
 .trust{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:28px}.trust span{font-size:13.5px;color:var(--ink2);border:1px solid var(--line2);border-radius:999px;padding:8px 14px;background:var(--s1)}
+
+/* preview reacts to the chat: views change, numbers move */
+.chart{display:flex;flex-direction:column}.chart .ct{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--ink2);margin-bottom:8px}.chart .ct b{color:var(--ink);font-size:14px}
+.chart .cv{flex:1;min-height:170px;position:relative}.chart .cv>*{position:absolute;inset:0;opacity:0;transform:translateY(10px) scale(.98);transition:opacity .6s,transform .6s cubic-bezier(.2,.8,.2,1)}.chart .cv>.on{opacity:1;transform:none}
+.cv .vb{display:flex;align-items:flex-end;gap:8px;padding:4px 2px 18px}.cv .vb div{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;font-size:10.5px;color:var(--muted)}
+.cv .vb i{width:100%;border-radius:7px 7px 3px 3px;background:#c9ced3;opacity:.45;transform-origin:bottom;transition:height .8s cubic-bezier(.2,.8,.2,1)}.cv .vb i.hi{background:#c6f432;opacity:1}
+.cv .vd{display:flex;align-items:center;gap:18px;padding:6px}.cv .vd svg{width:150px;height:150px;flex:none}.cv .vd ul{list-style:none;margin:0;padding:0;display:grid;gap:9px;font-size:12.5px;color:var(--ink2);flex:1}.cv .vd li{display:flex;gap:8px;align-items:center}.cv .vd li i{width:9px;height:9px;border-radius:3px}.cv .vd li b{margin-left:auto;color:var(--ink)}
+.cv .vh{display:grid;grid-template-columns:30px repeat(7,1fr);gap:4px;font-size:10px;color:var(--muted);align-content:center;padding:4px}.cv .vh i{height:24px;border-radius:5px;background:rgba(198,244,50,var(--a))}.cv .vh i.pk{outline:2px solid #fff;outline-offset:-2px}
+.cv .vg{display:grid;place-items:center}.cv .vg svg{width:220px}
+.kp b{transition:color .3s}.kp b.bump{animation:bump .7s}@keyframes bump{40%{transform:scale(1.12);color:#c6f432}}
+.rows div{transition:background .4s,border-color .4s}.rows div.new{border-color:#c6f432;background:rgba(198,244,50,.12);animation:pop .6s}@keyframes pop{from{transform:scale(.9);opacity:0}}
+.app aside span{transition:background .3s,color .3s}
 </style>
 </head>
 <body>
@@ -222,12 +234,17 @@ body{background:radial-gradient(1200px 700px at 85% -10%,#2a2e32,transparent 60%
       <aside><b><span class="logo"><i style="width:24px;height:24px;border-radius:7px"><svg viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></i></span>MXAi</b>
         <span class="on">Today</span><span>Inbox</span><span>Calendar</span><span>Customers</span><span>Insights</span><span>Marketing</span></aside>
       <div class="mid">
-        <div class="kp"><div><small>Booked by the AI</small><b>$985</b><em>+18%</em></div><div><small>Appointments</small><b>24</b><em>this month</em></div><div><small>Reply time</small><b>2.0s</b><em>average</em></div></div>
-        <div class="chart"><svg viewBox="0 0 600 180" preserveAspectRatio="none"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6f432" stop-opacity=".45"/><stop offset="1" stop-color="#c6f432" stop-opacity="0"/></linearGradient></defs>
+        <div class="kp"><div><small>Booked by the AI</small><b id="kV">$985</b><em>+18%</em></div><div><small>Appointments</small><b id="kA">24</b><em>this month</em></div><div><small>Reply time</small><b>2.0s</b><em>average</em></div></div>
+        <div class="chart"><div class="ct"><b id="ctT">Revenue, last 30 days</b><span id="ctS">vs the month before</span></div><div class="cv" id="cv"><svg class="on" viewBox="0 0 600 180" preserveAspectRatio="none"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6f432" stop-opacity=".45"/><stop offset="1" stop-color="#c6f432" stop-opacity="0"/></linearGradient></defs>
           <path d="M0 150 C50 140 80 120 120 125 S190 90 230 100 300 60 340 70 410 40 450 52 530 20 600 26 L600 180 0 180Z" fill="url(#ga)"/>
           <path class="ln" d="M0 150 C50 140 80 120 120 125 S190 90 230 100 300 60 340 70 410 40 450 52 530 20 600 26" fill="none" stroke="#c6f432" stroke-width="3"/>
-          <path d="M0 160 C80 155 160 140 240 138 S400 110 600 92" fill="none" stroke="rgba(255,255,255,.25)" stroke-dasharray="5 6" stroke-width="2"/></svg></div>
-        <div class="rows"><div><b>Rana · Haircut</b>Tomorrow 14:30</div><div><b>Maya · Colour</b>Fri 11:00</div><div><b>Lina · Nails</b>Sat 17:00</div></div>
+          <path d="M0 160 C80 155 160 140 240 138 S400 110 600 92" fill="none" stroke="rgba(255,255,255,.25)" stroke-dasharray="5 6" stroke-width="2"/></svg>
+          <div class="vb" id="vBars"><div><i style="height:38%"></i>Mon</div><div><i style="height:46%"></i>Tue</div><div><i style="height:52%"></i>Wed</div><div><i style="height:60%"></i>Thu</div><div><i style="height:78%"></i>Fri</div><div><i style="height:96%" class="hi"></i>Sat</div><div><i style="height:20%"></i>Sun</div></div>
+          <div class="vh"><span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span><span>10h</span><i style="--a:0.15"></i><i style="--a:0.2"></i><i style="--a:0.2"></i><i style="--a:0.3"></i><i style="--a:0.5"></i><i style="--a:0.7"></i><i style="--a:0.05"></i><span>12h</span><i style="--a:0.25"></i><i style="--a:0.3"></i><i style="--a:0.35"></i><i style="--a:0.45"></i><i style="--a:0.65"></i><i style="--a:0.9"></i><i style="--a:0.05"></i><span>14h</span><i style="--a:0.3"></i><i style="--a:0.35"></i><i style="--a:0.4"></i><i style="--a:0.55"></i><i style="--a:0.8"></i><i style="--a:1" class="pk"></i><i style="--a:0.1"></i><span>17h</span><i style="--a:0.4"></i><i style="--a:0.45"></i><i style="--a:0.5"></i><i style="--a:0.6"></i><i style="--a:0.85"></i><i style="--a:0.75"></i><i style="--a:0.05"></i></div>
+          <div class="vd"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)" fill="none" stroke-width="20"><circle cx="60" cy="60" r="45" stroke="#c6f432" stroke-dasharray="127 283"/><circle cx="60" cy="60" r="45" stroke="#c9ced3" stroke-dasharray="70 283" stroke-dashoffset="-129"/><circle cx="60" cy="60" r="45" stroke="#7d848b" stroke-dasharray="50 283" stroke-dashoffset="-201"/><circle cx="60" cy="60" r="45" stroke="#454b51" stroke-dasharray="30 283" stroke-dashoffset="-253"/></g><text x="60" y="66" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">$1,020</text></svg>
+            <ul><li><i style="background:#c6f432"></i>Haircut & blow-dry<b>45%</b></li><li><i style="background:#c9ced3"></i>Colour<b>25%</b></li><li><i style="background:#7d848b"></i>Nails<b>18%</b></li><li><i style="background:#454b51"></i>Spa<b>12%</b></li></ul></div>
+          <div class="vg"><svg viewBox="0 0 220 130"><path d="M20 115A90 90 0 0 1 200 115" stroke="rgba(255,255,255,.08)" stroke-width="18" fill="none" stroke-linecap="round"/><path id="gArc" d="M20 115A90 90 0 0 1 200 115" stroke="#c6f432" stroke-width="18" fill="none" stroke-linecap="round" stroke-dasharray="0 283" style="transition:stroke-dasharray 1s cubic-bezier(.2,.8,.2,1)"/><text x="110" y="100" text-anchor="middle" fill="#fff" font-size="34" font-weight="800" id="gTxt">74%</text><text x="110" y="124" text-anchor="middle" fill="#7d838a" font-size="11">chairs booked tomorrow</text></svg></div></div></div>
+        <div class="rows" id="rows"><div><b>Dana · Facial</b>Today 16:00</div><div><b>Maya · Colour</b>Fri 11:00</div><div><b>Lina · Nails</b>Sat 17:00</div></div>
       </div>
       <div class="phone"><div class="ph-top"><div class="av">N</div><div><b>Nora · Glow Beauty</b><small>online</small></div></div><div class="msgs" id="chat"></div></div>
     </div></div>
@@ -351,7 +368,16 @@ const P=new URLSearchParams(location.search),ref=P.get("ref"),src=P.get("s")||"d
 
 // Hero chat plays like a real conversation
 const SCRIPT=[["c","Hi! Do you have time for a haircut tomorrow?"],["a","Hi, I'm Nora. Tomorrow I have 11:00, 14:30 or 17:00. Which suits you?"],["c","14:30 please"],["a","Done. Haircut & blow-dry, tomorrow at 14:30, $35. Can I have your name?"],["c","Rana"],["a ok","Your booking is confirmed, Rana. Tomorrow at 14:30. I'll remind you the day before.<span class='p'>Powered by MXAi</span>"]];
-function play(){const box=$("#chat");box.innerHTML="";SCRIPT.forEach(([k,t],i)=>setTimeout(()=>{const d=document.createElement("div");d.className="m "+k;d.innerHTML=t;box.append(d)},600+i*1300));setTimeout(play,600+SCRIPT.length*1300+5000)}
+// each chat step shows another view of the dashboard, so the visitor sees the business react
+const VIEWS=[[0,"Revenue, last 30 days","vs the month before","Today"],[1,"Busiest days","bookings per weekday","Calendar"],[2,"Busy hours","when clients book · 14:00 Sat is the peak","Calendar"],[4,"Tomorrow","chair time filling up","Calendar"],[3,"Revenue by service","last 30 days","Insights"],[0,"Revenue, last 30 days","new booking added","Today"]];
+function view(i){const [v,t,sub,nav]=VIEWS[i]||VIEWS[0],cv=$("#cv");if(!cv)return;[...cv.children].forEach((c,k)=>c.classList.toggle("on",k===v));$("#ctT").textContent=t;$("#ctS").textContent=sub;
+  document.querySelectorAll(".app aside span").forEach(s=>s.classList.toggle("on",s.textContent===nav));
+  if(v===1)document.querySelectorAll("#vBars i").forEach(b=>{const h=b.style.height;b.style.height="0%";requestAnimationFrame(()=>requestAnimationFrame(()=>b.style.height=h))});
+  if(v===4){$("#gArc").setAttribute("stroke-dasharray","0 283");setTimeout(()=>{$("#gArc").setAttribute("stroke-dasharray",(283*.74)+" 283")},60);$("#gTxt").textContent=i===3?"74%":"79%"}
+  if(i===5){const kv=$("#kV"),ka=$("#kA");kv.textContent="$1,020";ka.textContent="25";[kv,ka].forEach(b=>{b.classList.remove("bump");void b.offsetWidth;b.classList.add("bump")});
+    const r=document.createElement("div");r.className="new";r.innerHTML="<b>Rana · Haircut</b>Tomorrow 14:30";const rows=$("#rows");rows.prepend(r);while(rows.children.length>3)rows.lastElementChild.remove()}}
+function resetPreview(){$("#kV").textContent="$985";$("#kA").textContent="24";$("#rows").innerHTML="<div><b>Dana · Facial</b>Today 16:00</div><div><b>Maya · Colour</b>Fri 11:00</div><div><b>Lina · Nails</b>Sat 17:00</div>"}
+function play(){const box=$("#chat");box.innerHTML="";resetPreview();view(0);SCRIPT.forEach(([k,t],i)=>setTimeout(()=>{const d=document.createElement("div");d.className="m "+k;d.innerHTML=t;box.append(d);view(i)},600+i*1300));setTimeout(play,600+SCRIPT.length*1300+5000)}
 play();
 
 // Sections rise in as they scroll into view
