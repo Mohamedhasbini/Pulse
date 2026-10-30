@@ -142,7 +142,8 @@
   function c16({ conv, all }) {
     const ev = [...conv.slice(0, 5).map(c => ({ t: c.updated_at || c.at, x: c.outcome === 'booked' ? `Booked ${c.name || 'a client'}` : c.needs_attention ? `${c.name || 'A client'} needs you` : `Replied to ${c.name || 'a client'}` })),
       ...all.filter(b => new Date(b.start) > Date.now()).slice(0, 2).map(b => ({ t: null, x: `Next: ${b.customer || 'client'} · ${b.service} at ${String(b.start).slice(11, 16)}` }))];
-    const ago = t => { if (!t) return 'soon'; const s = (Date.now() - new Date(t)) / 1000; return s < 60 ? 'now' : s < 3600 ? Math.round(s / 60) + 'm' : s < 86400 ? Math.round(s / 3600) + 'h' : Math.round(s / 86400) + 'd'; };
+    const why = r => /could not answer/i.test(r || '') ? 'AI had no answer' : /needs a person|real person|human/i.test(r || '') ? 'Asked for a person' : /complain|angry|unhappy/i.test(r || '') ? 'Unhappy client' : (r || 'Needs you').replace(/\.\s*Please.*$/, '');
+  const ago = t => { if (!t) return 'soon'; const s = (Date.now() - new Date(t)) / 1000; return s < 60 ? 'now' : s < 3600 ? Math.round(s / 60) + 'm' : s < 86400 ? Math.round(s / 3600) + 'h' : Math.round(s / 86400) + 'd'; };
     return card(16, 'The front desk, live', 'Your AI receptionist, working right now', `<svg viewBox="0 0 600 70" preserveAspectRatio="none" class="pv-beat"><polyline points="0,35 120,35 140,35 155,8 170,62 185,35 320,35 340,35 352,14 366,56 380,35 600,35" fill="none" stroke="${L}" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>
       <ul class="pv-feed">${ev.length ? ev.map(e => `<li><span>${ago(e.t)}</span>${esc(e.x)}</li>`).join('') : '<li><span>now</span>Waiting for the first message</li>'}</ul>`, 1);
   }
@@ -223,13 +224,13 @@
   // 27 attention queue
   function c27({ stats }) {
     const a = stats.attention || [];
-    return card(27, 'Waiting for you', 'Oldest first. Each one is a client who asked for a person', a.length ? `<table class="pv-t"><thead><tr><th>Client</th><th>Why</th><th>Last message</th><th>Waiting</th></tr></thead><tbody>${[...a].sort((x, y) => new Date(x.at) - new Date(y.at)).slice(0, 8).map(c => `<tr><td><b>${esc(c.name || c.phone)}</b><br><small class="m">${esc(chName(c.channel))}</small></td><td><span class="pv-chip warn">${esc(c.attention_reason || 'Needs you')}</span></td><td class="ell">${esc(c.last || '')}</td><td>${ago(c.at)}</td></tr>`).join('')}</tbody></table>` : empty('Nobody is waiting. Nora has it covered.'), 1);
+    return card(27, 'Waiting for you', 'Oldest first. Each one is a client who asked for a person', a.length ? `<table class="pv-t"><thead><tr><th>Client</th><th>Why</th><th>Last message</th><th>Waiting</th></tr></thead><tbody>${[...a].sort((x, y) => new Date(x.at) - new Date(y.at)).slice(0, 8).map(c => `<tr><td><b>${esc(c.name || c.phone)}</b><br><small class="m">${esc(chName(c.channel))}</small></td><td><span class="pv-chip warn">${esc(why(c.attention_reason))}</span></td><td class="ell">${esc(c.last || '')}</td><td>${ago(c.at)}</td></tr>`).join('')}</tbody></table>` : empty('Nobody is waiting. Nora has it covered.'), 1);
   }
   // 28 why chats need a person
   function c28({ stats, conv }) {
-    const by = {}; (stats.attention || []).forEach(c => { const k = c.attention_reason || 'Other'; by[k] = (by[k] || 0) + 1; });
+    const by = {}; (stats.attention || []).forEach(c => { const k = why(c.attention_reason); by[k] = (by[k] || 0) + 1; });
     const hand = stats.handoff || 0, all = stats.conv || conv.length || 1;
-    return card(28, 'Why chats come to you', 'Fewer handoffs = more time for clients', `<div class="pv-big">${Math.round(hand / all * 100)}% <em>handed to you</em></div>${hbars(Object.entries(by).sort((a, b) => b[1] - a[1]))}`);
+    return card(28, 'Why chats come to you', 'Fewer handoffs = more time for clients', `<div class="pv-big">${Math.round(hand / all * 100)}%<small class="pv-unit">of chats handed to you</small></div>${hbars(Object.entries(by).sort((a, b) => b[1] - a[1]))}`);
   }
   // 29 reply speed per hour
   function c29({ live }) {
@@ -372,7 +373,7 @@
       Integrations: [(stats.channels || []).filter(c => c.channel !== 'test').length, 'live channels', ''],
       Schedule: [n.upcoming_count || 0, 'bookings coming up', bars(daily(raw.filter(b => new Date(b.start) > Date.now() - 864e5)))],
       Requests: [n.approvals || 0, 'requests to approve', ''],
-      'Needs you': [n.waiting || 0, 'chats waiting for you', ''],
+      'Needs you': [(stats.attention || []).length || n.waiting || 0, 'clients waiting for a person', ''],
     };
   }
   async function overview(id, after) {

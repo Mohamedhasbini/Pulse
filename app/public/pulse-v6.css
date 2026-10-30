@@ -233,3 +233,20 @@ html body.x,html body main > section.p10-on:not(#_):not(#__) :is(#tchCoach,#tchR
 html body main #tchCoach .co-chat:not(#_):not(#__){min-height:560px!important}
 html body main > section.p10-multi:not(#_){align-items:start!important}
 html body main > section.p10-multi:not(#_)>.spane{height:auto!important;align-self:start}
+
+/* lime only: the app accent can never turn charts blue */
+:root:is([data-theme="light"],[data-theme="dark"]):root{--accent:var(--pv-lime)!important;--blue:var(--pv-silver)!important}
+:root:is([data-theme="light"],[data-theme="dark"]) main :is(.pv-bar,.pv-rib,.pv-sbars)>i:not(#_):not(#__){background:var(--pv-lime)!important}
+:root:is([data-theme="light"],[data-theme="dark"]) main .pv-hb .pv-bar>i[style*="background"]:not(#_):not(#__){background:var(--pv-silver)!important}
+/* everything stays inside its card */
+html body main .pv-c:not(#_){overflow:hidden;min-width:0}
+html body main .pv-c .pv-t:not(#_){table-layout:fixed;width:100%}
+html body main .pv-c .pv-t td:not(#_){overflow-wrap:anywhere;vertical-align:middle}
+html body main .pv-c .pv-t td.ell:not(#_){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body main .pv-c .pv-chip:not(#_){white-space:normal;line-height:1.3}
+.pv-scroll{overflow-x:auto;max-width:100%}
+.pv-scroll .pv-t{table-layout:auto!important;min-width:560px}
+.pv-hb{grid-template-columns:minmax(0,150px) 1fr 40px}.pv-hb>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-big .pv-unit{display:block;font-size:15px;font-weight:500;color:var(--pv-meta);letter-spacing:0;margin-top:4px}
+/* last blue bits (icons, avatars, swatches) follow the lime/silver palette */
+html body main :is(.td-ic.blue,.mk-sw,.av):not(#_):not(#__){background:color-mix(in srgb,var(--pv-lime) 22%,var(--pv-track))!important;color:var(--pv-ink)!important}
