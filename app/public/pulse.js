@@ -45,7 +45,7 @@
       ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] }],
       ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true }],
       ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' }]]],
-    ['studio', 'Studio', 'Build your own views from 37 chart designs', [['My board', { own: 'studio' }], ['Library', { own: 'studiolib' }]]],
+    ['studio', 'Studio', 'Build your own views from 64 chart and table designs', [['My board', { own: 'studio' }], ['Library', { own: 'studiolib' }]]],
     ['marketing', 'Marketing', 'Bring customers in', [
       ['Overview', { own: 'growth' }],
       ['Offers', { page: 'people', tab: 'offers' }],

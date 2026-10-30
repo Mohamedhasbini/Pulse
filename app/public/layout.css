@@ -19,7 +19,7 @@
   #hxAsk{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;margin-left:10px;padding:8px 10px 8px 14px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.06);color:#a9acaf;font-size:13px;min-width:230px;flex:none}
   #hxAsk i{width:7px;height:7px;border-radius:50%;background:var(--rev)}
   #hxAsk kbd{margin-left:auto;font:500 11px ui-monospace,monospace;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.1);color:#d6d8da}
-  html body main:not(#_){max-width:1480px;margin-inline:auto!important;padding-top:18px!important}
+  html body main:not(#_){max-width:1680px;margin-inline:auto!important;padding-top:18px!important}
 }
 @media (max-width:1000px){#hxAsk{display:none}}
 

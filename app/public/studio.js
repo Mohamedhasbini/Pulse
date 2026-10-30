@@ -29,8 +29,8 @@
     const top = [...cust].filter(c => c.spent).sort((a, b) => b.spent - a.spent).slice(0, 8).map(c => [c.name || c.phone, c.spent]);
     const fun = mk.funnel || {};
     return {
-      revenue: { n: 'Revenue', unit: '$', series: { s: rev, cmp: revPrev, unit: '$' }, value: { v: rev.reduce((a, b) => a + b, 0), prev: revPrev.reduce((a, b) => a + b, 0), unit: '$', target: Math.max(1, revPrev.reduce((a, b) => a + b, 0) * 1.1) } },
-      bookings: { n: 'Bookings', unit: '', series: { s: bk, cmp: bkPrev }, value: { v: bk.reduce((a, b) => a + b, 0), prev: bkPrev.reduce((a, b) => a + b, 0), target: Math.max(1, Math.round(bkPrev.reduce((a, b) => a + b, 0) * 1.1)) } },
+      revenue: { n: 'Revenue', unit: '$', series: { s: rev, cmp: revPrev, unit: '$' }, value: { v: rev.reduce((a, b) => a + b, 0), prev: revPrev.reduce((a, b) => a + b, 0), unit: '$', target: (p => p > 0 ? p * 1.1 : Math.max(1, rev.reduce((a, b) => a + b, 0) * 1.25))(revPrev.reduce((a, b) => a + b, 0)) } },
+      bookings: { n: 'Bookings', unit: '', series: { s: bk, cmp: bkPrev }, value: { v: bk.reduce((a, b) => a + b, 0), prev: bkPrev.reduce((a, b) => a + b, 0), target: (p => p > 0 ? Math.round(p * 1.1) : Math.max(1, Math.round(bk.reduce((a, b) => a + b, 0) * 1.25)))(bkPrev.reduce((a, b) => a + b, 0)) } },
       chats: { n: 'Conversations', unit: '', series: { s: (live.d14 || []).map(x => +x.n || 0) }, value: { v: stats.conv || conv.length, label: 'conversations' } },
       answered: { n: 'Answered by MXAi', unit: '%', value: { v: stats.conv ? (stats.answered || 0) / stats.conv * 100 : 0, unit: '%', target: 100, label: 'answered alone' } },
       utilisation: { n: 'Chair time today', unit: '%', value: { v: Math.min(100, mins / open * 100), unit: '%', target: 100, label: 'booked today' } },
@@ -75,8 +75,10 @@
   async function mountLib(sec) {
     const root = sec.querySelector('#stRoot'); root.innerHTML = '<p class="wl-note">Loading the library…</p>'; await load();
     const groups = {}; window.WL.list().forEach(w => (groups[w.group] = groups[w.group] || []).push(w));
-    const sample = w => Object.entries(S).find(([, s]) => fits(s).includes(w) && (w.shape !== 'cats' || s.cats.c.length > 2)) || Object.entries(S).find(([, s]) => fits(s).includes(w));
-    root.innerHTML = `<div class="st-head"><p>${window.WL.list().length} designs, all drawn from your live data. Click one to add it to the Studio board or any page.</p></div>` + Object.entries(groups).map(([g, ws]) => `<h3 class="st-g">${esc(g)} <small>${ws.length}</small></h3><div class="st-grid lib">${ws.map((w, i) => { const sm = sample(w); if (!sm) return ''; let body = ''; try { body = w.render({ ...sm[1][w.shape], id: 'l' + (++uid) }); } catch { }
+    const sample = (w, i = 0) => { const ok = Object.entries(S).filter(([, s]) => fits(s).includes(w) && (w.shape !== 'cats' || s.cats.c.length > 2)); return ok[i % (ok.length || 1)] || Object.entries(S).find(([, s]) => fits(s).includes(w)); };
+    const nSrc = Object.keys(S).length;
+    root.innerHTML = `<div class="st-head lib"><div><b>${window.WL.list().length}</b><span>designs</span></div><div><b>${nSrc}</b><span>live data sources</span></div><div><b>${Object.keys(groups).length}</b><span>families</span></div><p>Every design is drawn from your own numbers. Pick one, choose the data and the size, place it on any page.</p></div>`
+      + `<div class="st-jump" role="navigation" aria-label="Design families">${Object.entries(groups).map(([g, ws]) => `<a href="#stg-${esc(g)}">${esc(g)} <small>${ws.length}</small></a>`).join('')}</div>` + Object.entries(groups).map(([g, ws]) => `<h3 class="st-g" id="stg-${esc(g)}">${esc(g)} <small>${ws.length}</small></h3><div class="st-grid lib">${ws.map((w, i) => { const sm = sample(w, i); if (!sm) return ''; let body = ''; try { body = w.render({ ...sm[1][w.shape], id: 'l' + (++uid) }); } catch { }
       return `<div class="st-w s1 lib" style="--i:${i}"><header><div><b>${esc(w.name)}</b><small>${esc(sm[1].n)}</small></div></header><div class="st-body">${body}</div><button type="button" class="st-use" data-use="${w.key}" data-src="${sm[0]}">Use this design</button></div>`; }).join('')}</div>`).join('');
   }
   // ---------- widgets on any page ----------

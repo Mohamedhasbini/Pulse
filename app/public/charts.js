@@ -142,11 +142,12 @@
   // ---- 16 living front desk
   function c16({ conv, all }) {
     const ev = [...conv.slice(0, 5).map(c => ({ t: c.updated_at || c.at, x: c.outcome === 'booked' ? `Booked ${c.name || 'a client'}` : c.needs_attention ? `${c.name || 'A client'} needs you` : `Replied to ${c.name || 'a client'}` })),
-      ...all.filter(b => new Date(b.start) > Date.now()).slice(0, 2).map(b => ({ t: null, x: `Next: ${b.customer || 'client'} · ${b.service} at ${String(b.start).slice(11, 16)}` }))];
+      ...all.filter(b => new Date(b.start) > Date.now()).slice(0, 2).map(b => ({ t: null, x: `Next: ${b.customer || 'client'} · ${b.service} at ${String(b.start).slice(11, 16)}` }))]
+      .reduce((a, e) => { const p = a[a.length - 1]; if (p && p.x === e.x) p.n = (p.n || 1) + 1; else a.push(e); return a; }, []);
     const why = r => /could not answer/i.test(r || '') ? 'AI had no answer' : /needs a person|real person|human/i.test(r || '') ? 'Asked for a person' : /complain|angry|unhappy/i.test(r || '') ? 'Unhappy client' : (r || 'Needs you').replace(/\.\s*Please.*$/, '');
   const ago = t => { if (!t) return 'soon'; const s = (Date.now() - new Date(t)) / 1000; return s < 60 ? 'now' : s < 3600 ? Math.round(s / 60) + 'm' : s < 86400 ? Math.round(s / 3600) + 'h' : Math.round(s / 86400) + 'd'; };
     return card(16, 'The front desk, live', 'Your AI receptionist, working right now', `<svg viewBox="0 0 600 70" preserveAspectRatio="none" class="pv-beat"><polyline points="0,35 120,35 140,35 155,8 170,62 185,35 320,35 340,35 352,14 366,56 380,35 600,35" fill="none" stroke="${L}" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>
-      <ul class="pv-feed">${ev.length ? ev.map(e => `<li><span>${ago(e.t)}</span>${esc(e.x)}</li>`).join('') : '<li><span>now</span>Waiting for the first message</li>'}</ul>`, 1);
+      <ul class="pv-feed">${ev.length ? ev.map(e => `<li><span>${ago(e.t)}</span>${esc(e.x)}${e.n > 1 ? `<b class="x">×${e.n}</b>` : ''}</li>`).join('') : '<li><span>now</span>Waiting for the first message</li>'}</ul>`, 1);
   }
 
   // ---- 17 status ribbon: how bookings ended, 90 days
@@ -452,8 +453,9 @@
     if (id === 'today' && after.classList.contains('td-hero')) { const sec = after.closest('section'); sec.prepend(after); after.classList.add('pv-stage');
       // right rail: shortcuts and the to-do list stay in view next to the stage, never at the bottom
       let rail = sec.querySelector(':scope > .pv-rail'); if (!rail) { rail = document.createElement('aside'); rail.className = 'pv-rail'; rail.setAttribute('aria-label', 'Shortcuts and to-dos'); sec.prepend(rail); }
-      const dock = () => ['.td-sc', '#tdList'].forEach(q => { sec.querySelectorAll(q).forEach(el => { if (el.parentElement !== rail) { rail.querySelector(q)?.remove(); rail.append(el); } }); });
-      dock(); if (!rail._mo) { rail._mo = new MutationObserver(() => { if ([...sec.querySelectorAll('.td-sc, #tdList')].some(el => el.parentElement !== rail)) dock(); }); rail._mo.observe(sec, { childList: true, subtree: true }); }
+      const dock = () => { ['.td-sc', '#tdList', '#bfCard'].forEach(q => { sec.querySelectorAll(q).forEach(el => { if (el.parentElement !== rail) { rail.querySelector(q)?.remove(); rail.append(el); } }); });
+        const k = sec.querySelector('#tdKpis'); if (k && k.parentElement !== sec) sec.append(k); }; // grid order puts the week numbers under the stage
+      dock(); if (!rail._mo) { rail._mo = new MutationObserver(() => { if ([...sec.querySelectorAll('.td-sc, #tdList, #bfCard')].some(el => el.parentElement !== rail) || sec.querySelector('#tdKpis')?.parentElement !== sec) dock(); }); rail._mo.observe(sec, { childList: true, subtree: true }); }
       sec.classList.add('pv-today'); }
     const sec = after.parentElement; sec.querySelectorAll('.pv-board').forEach(x => x.remove());
     const box = document.createElement('div'); box.className = 'pv-board'; (after.parentElement.querySelector(':scope > .st-mine') || ov || after).after(box);
