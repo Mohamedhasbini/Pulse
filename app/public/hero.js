@@ -57,6 +57,53 @@
     if (c.line) hero.querySelector('em').textContent = c.line;
     hero.querySelector('.hx-stats').innerHTML = c.stats || '';
     hero.querySelector('.hx-folders').innerHTML = c.folders || '';
+    await extras(id, hero);
+  }
+
+  // ---------- round 5: one idea per tab ----------
+  const ring = (p, sz = 84) => { const r = sz / 2 - 8, C = 2 * Math.PI * r; return `<svg class="hx-ring" viewBox="0 0 ${sz} ${sz}" width="${sz}" height="${sz}"><circle cx="${sz / 2}" cy="${sz / 2}" r="${r}" fill="none" stroke="var(--h-rim)" stroke-width="6"/><circle cx="${sz / 2}" cy="${sz / 2}" r="${r}" fill="none" stroke="var(--rev)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C * p / 100} ${C}" transform="rotate(-90 ${sz / 2} ${sz / 2})"/><text x="50%" y="50%" dy=".35em" text-anchor="middle">${p}%</text></svg>`; };
+  async function extras(id, hero) {
+    const greet = $('.hx-greet', hero), sec = hero.parentElement;
+    $$('.hx-x', sec).forEach(x => x.remove());
+    if (id === 'inbox') {
+      // Rectio: natural-language search in the hero, wired to the inbox search box
+      greet.insertAdjacentHTML('beforeend', `<form class="hx-smart"><input placeholder="Find a chat: a name, a number or words like “bridal” or “refund”" aria-label="Search chats"><button aria-label="Search">↵</button></form>
+        <div class="hx-sugg">${['refund', 'price', 'cancel', 'gift'].map(w => `<button type="button" data-w="${w}">${w}</button>`).join('')}</div>`);
+      const run = w => { const q = $('#ibQ'); if (!q) return; q.value = w; q.dispatchEvent(new Event('input', { bubbles: true })); q.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); };
+      $('.hx-smart', greet).addEventListener('submit', ev => { ev.preventDefault(); run(ev.target.querySelector('input').value.trim()); });
+      $('.hx-sugg', greet).addEventListener('click', ev => { const b = ev.target.closest('[data-w]'); if (b) { $('.hx-smart input', greet).value = b.dataset.w; run(b.dataset.w); } });
+    }
+    if (id === 'insights') {
+      // Ledgerix: the one big number, with the Ask bar under it
+      const l = await get('/api/live?days=90'), n = l?.now || {};
+      greet.insertAdjacentHTML('beforeend', `<div class="hx-ask"><i>✦</i><input placeholder="Ask anything about your numbers…" aria-label="Ask Pulse AI">${['Why did revenue change?', 'Best service to promote', 'Forecast next month'].map(q => `<button type="button" data-q="${q}">${q}</button>`).join('')}</div>`);
+      hero.querySelector('.hx-folders').innerHTML = `<div class="hx-bignum"><span>Earned, last 90 days</span><b>${money(n.earned)}</b><small>${n.earned_prev ? `${n.earned >= n.earned_prev ? '+' : ''}${Math.round((n.earned - n.earned_prev) / n.earned_prev * 100)}% vs the 90 days before` : 'first period'}</small></div>`;
+      const ask = q => window.PulseCommand?.open ? window.PulseCommand.open(q) : window.P10?.ask?.(q);
+      $('.hx-ask', greet).addEventListener('click', ev => { const b = ev.target.closest('[data-q]'); if (b) ask(b.dataset.q); });
+      $('.hx-ask input', greet).addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.value.trim()) ask(ev.target.value.trim()); });
+    }
+    if (id === 'calendar') {
+      // Orion chips: Day / Week / Month drive the calendar; Holo: chair time today
+      const bar = $('.p10-bar', hero);
+      bar?.insertAdjacentHTML('beforeend', `<div class="hx-chips">${['day', 'week', 'month'].map(v => `<button type="button" data-v="${v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div>`);
+      bar?.querySelector('.hx-chips')?.addEventListener('click', ev => { const b = ev.target.closest('[data-v]'); if (b) $(`.gc-views [data-v="${b.dataset.v}"]`)?.click(); });
+      const d = new Date(), cal = await get(`/api/calendar?from=${day(d)}T00:00&to=${day(new Date(d.getTime() + 864e5))}T00:00`, 30000);
+      const list = (Array.isArray(cal) ? cal : cal?.bookings || []).filter(b => b.status !== 'cancelled'), mins = list.reduce((a, b) => a + (b.minutes || 60), 0);
+      const by = Array.from({ length: 6 }, (_, i) => list.filter(b => { const h = +String(b.start || b.starts_at).slice(11, 13); return h >= 9 + i * 2 && h < 11 + i * 2; }).reduce((a, b) => a + (b.minutes || 60), 0)), mx = Math.max(60, ...by);
+      hero.insertAdjacentHTML('afterend', `<div class="hx-x hx-strip"><div class="card hx-chair"><div><span>Chair time today</span><b>${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}<small> h booked</small></b><small>${list.length} appointment${list.length === 1 ? '' : 's'} · ${money(list.reduce((a, b) => a + (+b.price || 0), 0))}</small></div>
+        <div class="hx-tbars">${by.map((v, i) => `<div><i class="${v === mx && v ? 'on' : ''}" style="height:${Math.max(6, v / mx * 100)}%"></i><span>${9 + i * 2}h</span></div>`).join('')}</div></div></div>`);
+    }
+    if (id === 'customers') {
+      // Orion match cards: the top three clients with a loyalty ring
+      const all = await get('/api/customers'), list = (Array.isArray(all) ? all : all?.rows || []).filter(c => !/^(test|sim-|e2e)/.test(c.phone || '') || c.visits);
+      const top = [...list].sort((a, b) => (b.spent || 0) - (a.spent || 0)).slice(0, 3);
+      if (!top.length) return;
+      const loyal = c => { const days = c.last_booking ? (Date.now() - new Date(c.last_booking)) / 864e5 : 999; return Math.max(5, Math.min(99, Math.round((c.visits || 0) * 11 + (days < 30 ? 30 : days < 60 ? 15 : 0)))); };
+      hero.insertAdjacentHTML('afterend', `<div class="hx-x hx-cards">${top.map(c => `<button type="button" class="card hx-cc" data-cust="${c.id}"><div><h4>${esc(c.name || c.phone)}</h4><small>${c.visits || 0} visit${c.visits === 1 ? '' : 's'} · last ${c.last_booking ? esc(String(c.last_booking).slice(0, 10)) : 'never'}</small>
+        <div class="hx-pills">${c.marketing_ok ? '<span>Offers on</span>' : ''}${c.upcoming ? `<span>${c.upcoming} upcoming</span>` : ''}${c.no_shows ? `<span>${c.no_shows} no-show</span>` : ''}</div></div>
+        <div class="hx-cr">${ring(loyal(c))}<small>loyalty</small></div><div class="hx-cf"><span>Lifetime</span><b>${money(c.spent)}</b></div></button>`).join('')}</div>`);
+      $$('.hx-cc', sec).forEach(b => b.addEventListener('click', () => document.querySelector(`#pplRows [data-cust="${b.dataset.cust}"]`)?.click()));
+    }
   }
 
   // ---------- Today: folders + hour-by-hour timeline inside the existing hero ----------
