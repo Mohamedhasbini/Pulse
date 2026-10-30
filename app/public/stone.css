@@ -326,3 +326,18 @@
 .mk-sg+.mk-brief{margin-top:12px;border:1px solid var(--gp-edge,var(--edge))!important;border-radius:12px}
 .mk-ed{display:flex;gap:10px;align-items:flex-start}.mk-ed input{width:90px}
 .mk-est{grid-template-columns:repeat(5,1fr)}
+
+/* Type and hierarchy pass (better-typography, interface-design): one scale, unitless line-heights, tabular numbers,
+   tracked uppercase labels, balanced headings, capped prose. */
+:root{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+:root[data-theme="light"] main :is(h1,h2,h3,h4):not(#_){text-wrap:balance;line-height:1.25}
+:root[data-theme="light"] main h1:not(#_){letter-spacing:-.015em;line-height:1.1}
+:root[data-theme="light"] main h2:not(#_){letter-spacing:-.01em}
+:root[data-theme="light"] main p:not(#_){text-wrap:pretty;line-height:1.5}
+:root[data-theme="light"] main :is(.sub,.mk-h small,.ch small):not(#_){max-width:70ch;color:var(--st-meta)}
+main :is(table td.n,table th.n,.n,dd,.kpi b,.kpi strong,.mk-sc-n b,.mk-est dd,[class*="kpi"] b,[class*="val"],.bf-money b,td:has(>b:only-child)){font-variant-numeric:tabular-nums}
+main :is(th,dt,.mk-bg h4,.mk-sc-n i,.eyebrow,.label-up){font-weight:600}
+main th:not(#_){font-size:.6875rem;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+main :is(.mk-pill,.ag-n,.pill,.badge,.chip):not(#_){white-space:nowrap}
+main :is(td,li,.item span){overflow-wrap:break-word}
+@media (max-width:640px){main :is(input,select,textarea):not([type=checkbox]):not([type=radio]){font-size:16px}}
