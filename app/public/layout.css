@@ -1,0 +1,70 @@
+/* Round 4 layout: top bar instead of the sidebar (desktop), graphite heroes on every page, Today timeline. */
+@media (min-width:1001px){
+  html body .shell:not(#_){display:block!important;grid-template-columns:none!important}
+  html body nav[aria-label="Main"]:not(#_):not(#__):not(#___){position:sticky!important;top:0;z-index:40;display:flex!important;flex-direction:row!important;align-items:center!important;gap:6px!important;width:auto!important;height:64px!important;min-height:0!important;padding:0 22px!important;
+    background:#0f1011!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.06)!important;overflow:visible!important}
+  html body nav[aria-label="Main"] .brand:not(#_){margin:0 18px 0 0!important;padding:0!important;flex:none}
+  html body nav[aria-label="Main"] .brand *:not(#_){color:#f3f4f4!important}
+  html body nav[aria-label="Main"] .navpills:not(#_){display:flex!important;flex-direction:row!important;align-items:center;gap:2px!important;flex:1;min-width:0;overflow:auto hidden;scrollbar-width:none}
+  html body nav[aria-label="Main"] .navpills>button:not(.p10):not(#adminNav):not(#_),html body nav[aria-label="Main"] .p10-sub:not(#_),html body nav[aria-label="Main"] .plancard:not(#_),html body nav[aria-label="Main"] .sp:not(#_){display:none!important}
+  html body nav[aria-label="Main"] button.p10:not(#_),html body nav[aria-label="Main"] #adminNav:not([hidden]):not(#_){all:unset;cursor:pointer;display:inline-flex!important;align-items:center;gap:6px;width:auto!important;height:auto!important;padding:8px 14px!important;border-radius:12px!important;
+    color:#b9bcbf!important;font-size:13.5px!important;white-space:nowrap;background:transparent!important;box-shadow:none!important;transition:background .2s,color .2s}
+  html body nav[aria-label="Main"] button.p10 svg:not(#_){display:none!important}
+  html body nav[aria-label="Main"] button.p10 span:not(#_){display:inline!important;color:inherit!important}
+  html body nav[aria-label="Main"] button.p10:hover:not(#_){color:#fff!important;background:rgba(255,255,255,.06)!important}
+  html body nav[aria-label="Main"] button.p10[aria-current="true"]:not(#_):not(#__):not(#___){color:#fff!important;background:rgba(255,255,255,.12)!important}
+  html body nav[aria-label="Main"] .navfoot:not(#_){display:flex!important;flex-direction:row!important;gap:6px!important;margin-left:8px;border:0!important;padding:0!important}
+  html body nav[aria-label="Main"] .navfoot button:not(#_){width:36px!important;height:36px!important;border-radius:12px!important;background:rgba(255,255,255,.08)!important;color:#d6d8da!important}
+  html body nav[aria-label="Main"] #labBtn:not(#_){margin:0 8px 0 0!important;padding:7px 12px!important;flex:none}
+  #hxAsk{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;margin-left:10px;padding:8px 10px 8px 14px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.06);color:#a9acaf;font-size:13px;min-width:230px;flex:none}
+  #hxAsk i{width:7px;height:7px;border-radius:50%;background:var(--rev)}
+  #hxAsk kbd{margin-left:auto;font:500 11px ui-monospace,monospace;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.1);color:#d6d8da}
+  html body main:not(#_){max-width:1480px;margin-inline:auto!important;padding-top:18px!important}
+}
+@media (max-width:1000px){#hxAsk{display:none}}
+
+/* hero band (every page except Today, which keeps its own hero) */
+.hx{position:relative;margin:0 0 16px;border-radius:22px;overflow:hidden;color:#f2f3f3;padding:26px 28px 0;
+  background:radial-gradient(420px 260px at 70% 10%,rgba(255,255,255,.09),transparent 70%),linear-gradient(118deg,#0f1011 0%,#1d1f21 30%,#3a3d41 46%,#16171a 58%,#2c2f33 70%,#0f1011 100%);box-shadow:0 30px 60px -36px rgba(0,0,0,.6)}
+.hx-in{display:grid;grid-template-columns:1fr 420px;gap:24px;min-height:190px}
+.hx .hx-greet h1:not(#_):not(#__){margin:0;font-size:clamp(30px,3.2vw,46px);font-weight:500;letter-spacing:-.045em;line-height:1;color:#f2f3f3!important;font-family:inherit!important}
+.hx-greet h1 em{display:block;font-family:var(--h-serif);font-style:italic;font-weight:400;letter-spacing:-.01em;color:#e3e5e6}
+.hx-stats{display:flex;gap:28px;margin-top:22px}.hx-stats span{display:block;font-size:11.5px;color:#8d9094}.hx-stats b{font-size:26px;font-weight:300;letter-spacing:-.04em;color:#f2f3f3}.hx-stats b.rev{color:var(--rev)}
+.hx-folders{position:relative;height:190px}
+.hx-fd{position:absolute;right:-28px;border-radius:18px 0 0 18px;padding:16px 22px;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.hx-fd:hover{transform:translateY(-5px)}
+.hx-fd::before{content:attr(data-tab);position:absolute;top:-23px;left:24px;font-size:11.5px;padding:5px 15px 8px;border-radius:12px 12px 0 0;background:inherit}
+.hx-fd.a{top:22px;width:380px;height:128px;background:#45484c;color:#fff}.hx-fd.a::before{color:#d6d8da}
+.hx-fd.b{top:96px;width:420px;height:140px;background:#d9dcdf;color:#141516}.hx-fd.b::before{color:#55595e}
+.hx-fd b{display:block;font-size:18px;font-weight:500;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hx-fd small{opacity:.75;font-size:12.5px}
+.hx-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.hx-row span{font-size:11.5px;padding:3px 10px;border-radius:99px;background:rgba(20,21,22,.08)}.hx-row span.k{background:#141516;color:#fff}
+.hx-fd.a .hx-row span{background:rgba(255,255,255,.12)}
+/* the page's tab row sits inside the hero */
+.hx .p10-bar:not(#_){margin:0 -28px!important;padding:12px 28px!important;background:rgba(255,255,255,.04)!important;border:0!important;border-top:1px solid rgba(255,255,255,.06)!important;border-radius:0!important;box-shadow:none!important}
+.hx .p10-bar .p10-purpose:not(#_){display:none!important}
+.hx .p10-bar .pa-switch:not(#_){background:transparent!important;border:0!important}
+.hx .p10-bar .pa-switch button:not(#_){color:#b9bcbf!important;background:transparent!important;border:0!important;border-radius:10px!important}
+.hx .p10-bar .pa-switch button[aria-selected="true"]:not(#_){background:#f2f3f3!important;color:#141516!important}
+.hx .p10-need:not(#_),.hx .p10-need *:not(#_){color:#cfd1d3!important}
+.p10-bar.hx-skip:not(#_){display:none!important}
+/* Today: folders + timeline inside its hero */
+html body .td-hero.td-hero:not(#_):not(#__){padding-bottom:0!important}
+.td-hero .hx-today{position:absolute;right:0;top:18px;width:440px;height:200px}
+.td-hero .hx-today .hx-fd{right:0}
+@media (min-width:1101px){html body .td-hero.td-hero:not(#_):not(#__):not(#___){padding-right:480px!important}html body .td-hero .sg-band:not(#_){display:none!important}.td-hero .hx-tl{margin-right:-480px}}
+.hx-tl{position:relative;display:grid;grid-template-columns:90px 1fr;gap:16px;align-items:center;margin:22px -20px 0;padding:12px 20px 14px;background:rgba(255,255,255,.04);border-top:1px solid rgba(255,255,255,.06);clear:both}
+.hx-tl-l{font-size:12px;color:#9a9da1}.hx-tl-l b{display:block;color:#f2f3f3!important;font-size:20px;font-weight:300;letter-spacing:-.03em}
+.hx-track{position:relative;height:44px}
+.hx-slot{position:absolute;top:0;height:26px;border-radius:8px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.12);font-size:10.5px;color:#e3e5e6!important;padding:4px 8px;white-space:nowrap;overflow:hidden}
+.hx-now{position:absolute;top:-6px;bottom:12px;width:2px;background:var(--rev);border-radius:2px}
+.hx-now::after{content:"now";position:absolute;top:-14px;left:-10px;font-size:10px;font-weight:600;color:var(--rev)}
+.hx-hours{position:absolute;inset:auto 0 0 0;display:flex;justify-content:space-between;font-size:10px}.hx-hours span{color:#6f7276!important}
+.hx-empty{font-size:12px;color:#8d9094!important}
+/* KPI cards open in place */
+#tdKpis>*,.mk-kgrid .mk-k{cursor:pointer;transition:transform .2s}
+#tdKpis>*:hover{transform:translateY(-2px)}
+#tdKpis>.hx-open,.mk-kgrid .mk-k.hx-open{outline:1.6px solid var(--h-br);outline-offset:2px}
+#tdKpis>.hx-open small,.mk-kgrid .hx-open small{white-space:normal!important;display:block}
+@media (max-width:1100px){.hx-in{grid-template-columns:1fr}.hx-folders,.td-hero .hx-today{display:none}}
+
+.hx .hx-greet h1 em:not(#_):not(#__){color:#e3e5e6!important}
