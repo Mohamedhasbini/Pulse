@@ -1,6 +1,8 @@
 // Handles one incoming customer message: stores it, asks the n8n receptionist
 // workflow what to say, carries out any booking/handoff, and returns the reply.
+import fs from 'node:fs';
 import { q, one, withBusinessLock } from './db.js';
+import { complete, hasBackup } from './ai-router.js';
 import { VERTICALS } from './verticals.js';
 import { quickAnswer, smallTalk } from './quick.js';
 import { emailEnabled, sendEmail } from './email.js';
@@ -169,11 +171,12 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   try {
     const chit = !queued && smallTalk(text);
     if (chit) decision = { reply: chit, action: 'none', quick: true };
-    else if (!(await takeAiSlot())) throw Object.assign(new Error('AI limit reached for this minute'), { busy: true });
+    else if (!(await takeAiSlot())) decision = await viaBackup(context, biz.id, Object.assign(new Error('AI limit reached for this minute'), { busy: true }));
     else try { decision = await askN8n(context, +process.env.AI_TIMEOUT_MS || 15000); }
     catch (first) {
-      if (!/timeout|abort/i.test(first.message) || !(await takeAiSlot())) throw first;
-      console.warn('AI slow or failed, retrying once:', first.message); decision = await askN8n(context, 15000);
+      // the main AI failed or hit its quota: the next free provider answers with the same instructions
+      console.warn('Main AI failed, trying backups:', first.message);
+      decision = await viaBackup(context, biz.id, first);
     }
     if (!chit) {
       Object.assign(aiHealth, { ok: true, at: new Date(), ms: Date.now() - t0, error: null });
@@ -325,6 +328,14 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   }
   emit(biz.id, bookedNow ? 'booking' : 'message');
   return { reply, options: choices, outcome, bookedNow, conversationId: conv.id, failed };
+}
+
+// Same instructions as the n8n workflow (exported to prompts/receptionist.txt), sent through the AI router.
+const PROMPT = fs.readFileSync(new URL('./prompts/receptionist.txt', import.meta.url), 'utf8');
+async function viaBackup(context, B, err) {
+  if (!(await hasBackup(B))) throw err;
+  const r = await complete(PROMPT.replace('{{CONTEXT}}', JSON.stringify(context, null, 1)), { business: B });
+  return { ...parseJson(r.text), provider: r.provider };
 }
 
 async function askN8n(context, timeout) {
@@ -491,6 +502,7 @@ const SPECIALIST = `YOUR ROLE: you are the front desk of this business: a senior
 - HONEST: only state facts from the business information and CONTEXT. If you don't know, say you'll check with the team (handoff with unknown_question) instead of guessing.
 - RUDE OR TESTING MESSAGES: insults, "stupid bot", jokes or off-topic requests are not a reason to hand off. Stay polite, steer back to booking, and only hand off when they ask for a person or describe a real problem with a visit.
 - NO DATE LOOPS: if the customer says any / whenever / soonest, or gives only a part of the day (morning, afternoon, evening), never ask for the date again: offer 3 free times on the nearest open day that fits (their part of day if given). If they already said today or tomorrow, use that day. Never send the same question twice in a row.
+- NEVER CHOOSE FOR THEM: only use a time the customer tapped, typed or clearly accepted. If they answer with something else (their name, "any"), offer the times again or ask which one; never assume the first option.
 - UNKNOWN EXTRAS: only say the business does not offer something when it is clearly a service not in the services list. For anything else not in CONTEXT (gift cards, vouchers, packages, products, group deals) you do not know: say you'll check with the team and set confidence low. Never invent a yes or a no.
 - OFFERS LIST: never say a customer joined or left the offers list. Only the system does that, when they send the single word OFFERS (or العروض) or STOP. If they seem to want offers, tell them to reply OFFERS.
 - CLOSE WELL: after a booking or a solved issue, end with one short helpful line (what to bring, arrive early, how to change it), not a question that reopens the chat.`;

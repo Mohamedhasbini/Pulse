@@ -13,6 +13,7 @@ import { overview as marketingOverview } from './marketing.js';
 import * as metrics from './metrics.js';
 import { addShortcut } from './shortcuts.js';
 import { addRule } from './rules.js';
+import { complete, hasBackup } from './ai-router.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 // The daily limit counts questions the owner asked (one row per question, however many AI steps it took),
@@ -367,13 +368,15 @@ async function ask(text, B) {
   }
   // the per-minute allowance is shared with the receptionist: wait a little for a free slot before giving up
   let slot = false;
-  for (let i = 0; i < 6 && !(slot = await takeAiSlot()); i++) await new Promise(r => setTimeout(r, 2500));
-  if (!slot) throw Object.assign(new Error('The AI is busy right now. Try again in a minute.'), { status: 429 });
+  for (let i = 0; i < 3 && !(slot = await takeAiSlot()); i++) await new Promise(r => setTimeout(r, 2500));
   let r;
-  for (const model of [TEAM_MODEL(), process.env.AI_MODEL].filter(Boolean)) {
+  if (slot) for (const model of [TEAM_MODEL(), process.env.AI_MODEL].filter(Boolean)) {
     r = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: text, model }), signal: AbortSignal.timeout(20000) }).catch(() => null);
     if (r && r.ok) break;
   }
+  // busy or out of quota: the AI router tries the other free providers
+  if ((!r || !r.ok) && await hasBackup(B?.id)) return readReply((await complete(text, { business: B?.id })).text);
+  if (!slot) throw Object.assign(new Error('The AI is busy right now. Try again in a minute.'), { status: 429 });
   if (!r || !r.ok) throw new Error(`The AI didn't respond (${r ? r.status : 'no connection'}).`);
   const body = await r.json();
   return readReply(typeof body === 'string' ? body : body.output ?? body.text ?? '');
