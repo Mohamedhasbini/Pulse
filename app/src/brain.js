@@ -321,8 +321,12 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     if (names.length >= 3) choices = cleanOptions(biz.services.map(x => x.name));
     else if (times.length) choices = cleanOptions([...times.slice(0, 3), 'Another day']);
   }
-  await q('INSERT INTO messages (conversation_id, role, text, latency_ms, failed, source, confidence, options) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
-    [conv.id, 'assistant', reply, ms, failed, source, source === 'ai' ? (String(decision.confidence).toLowerCase() === 'low' || decision.unknown_question || decision.action === 'handoff' ? 'low' : 'high') : null, choices.length ? JSON.stringify(choices) : null]);
+  const confidence = source === 'ai' ? (String(decision.confidence).toLowerCase() === 'low' || decision.unknown_question || decision.action === 'handoff' ? 'low' : 'high') : null;
+  // the decision trail: what answered, what it decided and why, so the owner can audit any reply and teach a better one
+  const trail = { provider: source === 'ai' ? decision.provider || 'ai' : source, action: decision.action || 'none', why: decision.why ? String(decision.why).slice(0, 300) : null,
+    booked: bookedNow, handed_over: !!attention, unknown: !!decision.unknown_question, rules: (biz.ai_rules || []).length, ms };
+  await q('INSERT INTO messages (conversation_id, role, text, latency_ms, failed, source, confidence, options, trail) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+    [conv.id, 'assistant', reply, ms, failed, source, confidence, choices.length ? JSON.stringify(choices) : null, JSON.stringify(trail)]);
   await q(`UPDATE conversations SET outcome=$1, updated_at=now(),
       needs_attention = CASE WHEN $2 THEN true WHEN $5 THEN false ELSE needs_attention END, attention_reason = COALESCE($3, attention_reason)${asked ? ', rating_asked_at=now()' : ''} WHERE id=$4`,
     // a booking made or moved this turn settles the chat: an earlier "needs you" flag is cleared, not left as a false alarm
@@ -347,9 +351,24 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
 
 // Same instructions as the n8n workflow (exported to prompts/receptionist.txt), sent through the AI router.
 const PROMPT = fs.readFileSync(new URL('./prompts/receptionist.txt', import.meta.url), 'utf8');
+const RULES = PROMPT.split('CONTEXT:\n{{CONTEXT}}')[0].trim();
+// the answer's shape, for providers that can be held to it (the same fields the rules ask for)
+const S = t => ({ type: [t, 'null'] });
+const ANSWER = { type: 'object', required: ['reply', 'action'], properties: {
+  reply: { type: 'string' }, why: { type: 'string' }, unknown_question: { type: 'boolean' }, confidence: { type: 'string', enum: ['high', 'low'] },
+  action: { type: 'string', enum: ['none', 'book', 'cancel', 'reschedule', 'handoff', 'waitlist'] },
+  options: { type: 'array', items: { type: 'string' } },
+  booking: { type: ['object', 'null'], properties: { service: S('string'), slot: S('string'), name: S('string'), notes: S('string'), coupon: S('string'), ref: S('string'), guests: S('integer') } },
+  customer: { type: ['object', 'null'], properties: { name: S('string'), phone: S('string'), email: S('string'), reminder_channel: S('string') } },
+} };
+// CONTEXT in two parts: the business (same every turn, cacheable) and this turn
+function split(context) {
+  const { business, services, ...live } = context;
+  return { system: RULES, stable: { business, services }, live, schema: ANSWER };
+}
 async function viaBackup(context, B, err) {
   if (!(await hasBackup(B))) throw err;
-  const r = await complete(PROMPT.replace('{{CONTEXT}}', JSON.stringify(context, null, 1)), { business: B });
+  const r = await complete(split(context), { business: B });
   return { ...parseJson(r.text), provider: r.provider };
 }
 
@@ -363,7 +382,7 @@ async function askN8n(context, timeout) {
   if (!res.ok) throw new Error(`n8n responded ${res.status}`);
   const body = await res.json();
   const raw = typeof body === 'string' ? body : body.output ?? body.text ?? body;
-  return typeof raw === 'string' ? parseJson(raw) : raw;
+  return { ...(typeof raw === 'string' ? parseJson(raw) : raw), provider: 'n8n' };
 }
 
 // The model is asked for JSON; accept it with or without ```json fences.

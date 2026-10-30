@@ -744,7 +744,7 @@ app.get('/api/conversations', wrap(async (req, res) => {
 }));
 
 app.get('/api/conversations/:id/messages', wrap(async (req, res) => {
-  res.json(await q(`SELECT m.role, m.text, ${LOCAL('m.created_at')} AS at, m.latency_ms, m.failed FROM messages m JOIN conversations c ON c.id=m.conversation_id
+  res.json(await q(`SELECT m.id, m.role, m.text, ${LOCAL('m.created_at')} AS at, m.latency_ms, m.failed, m.source, m.confidence, m.trail, m.review FROM messages m JOIN conversations c ON c.id=m.conversation_id
       WHERE c.id=$1 AND c.business_id=$2 ORDER BY m.id`, [req.params.id, BIZ()]));
 }));
 

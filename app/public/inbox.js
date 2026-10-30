@@ -51,6 +51,19 @@ window.PulseInbox = (() => {
     if (!st.open && d.rows.length && innerWidth > 1100) open(d.rows[0].id);
   }
 
+  // the decision trail of one AI reply, in the owner's words
+  const PROV = { anthropic: 'Claude', 'gemini-flash-lite': 'Gemini', 'gemini-flash': 'Gemini', 'gemini-3.1-lite': 'Gemini', n8n: 'Gemini (main)', groq: 'Groq', cerebras: 'Cerebras', openrouter: 'OpenRouter', quick: 'Instant answer from your setup (no AI)', fallback: 'Safety message (AI unavailable)' };
+  const ACT = { none: 'Answered', book: 'Booked', cancel: 'Cancelled a booking', reschedule: 'Moved a booking', handoff: 'Handed to you', waitlist: 'Added to the waitlist' };
+  function why(m) {
+    const t = m.trail; if (!t && m.source !== 'ai') return '';
+    const rows = t ? [['Answered by', PROV[t.provider] || t.provider], ['Decision', (t.booked ? 'Booked' : ACT[t.action] || t.action) + (t.unknown ? ' · did not know the answer' : '')],
+      ['Confidence', m.confidence === 'low' ? 'Unsure: worth a look' : m.confidence === 'high' ? 'Sure' : '—'], t.why && ['Reason', t.why], ['Time', (t.ms / 1000).toFixed(1) + ' s']].filter(Boolean)
+      : [['Answered by', 'AI (sent before decision trails were recorded)']];
+    const taught = m.review === 'corrected';
+    return `<details class="ib-why"><summary>Why this answer${m.confidence === 'low' ? ' <i>unsure</i>' : ''}</summary><dl>${rows.map(([k, v]) => `<dt>${e(k)}</dt><dd>${e(v)}</dd>`).join('')}</dl>
+      ${taught ? '<p class="ib-taught">You already taught a better answer.</p>' : `<button type="button" class="btn ghost" data-teach="1">Teach a better answer</button>
+      <div class="ib-teach" hidden><textarea rows="3" placeholder="What should ${e(ai())} have said?"></textarea><button type="button" class="btn" data-teach-save="${m.id}">Save and teach</button></div>`}</details>`;
+  }
   async function open(id) {
     st.open = id; root.querySelectorAll('.ib-row').forEach(r => r.classList.toggle('on', +r.dataset.c === id));
     const row = st.rows.find(r => r.id === id) || {}, read = root.querySelector('#ibRead');
@@ -62,9 +75,18 @@ window.PulseInbox = (() => {
         <div class="ib-acts">${row.needs_attention ? '<button type="button" class="btn" data-a="done">Mark done</button>' : ''}
         <button type="button" class="btn ghost" data-a="ai">${row.ai_paused ? 'Let ' + ai() + ' answer' : 'Take over'}</button></div></header>
       <div class="ib-cust">${cu.id ? `<span><b>${cu.visits || 0}</b> visits</span><span><b>$${Math.round(cu.spent || 0)}</b> spent</span><span>${cu.next ? 'Next: <b>' + e(cu.next.replace('T', ' ')) + '</b>' : 'No upcoming visit'}</span>` : ''}</div>
-      <div class="ib-msgs" id="ibMsgs">${msgs.map(m => `<div class="ib-m ${m.role}"><p>${e(m.text)}</p><small>${m.role === 'customer' ? '' : m.role === 'staff' ? 'You · ' : ai() + ' · '}${e(when(m.at))}</small></div>`).join('')}</div>
+      <div class="ib-msgs" id="ibMsgs">${msgs.map(m => `<div class="ib-m ${m.role}"><p>${e(m.text)}</p><small>${m.role === 'customer' ? '' : m.role === 'staff' ? 'You · ' : ai() + ' · '}${e(when(m.at))}</small>${m.role === 'assistant' ? why(m) : ''}</div>`).join('')}</div>
       <form class="ib-reply" id="ibReply"><input name="t" placeholder="${row.ai_paused ? 'Reply to ' + e(who(row)) : 'Reply (' + ai() + ' pauses while you handle it)'}" autocomplete="off" aria-label="Reply"><button class="btn" type="submit">Send</button></form>`;
     const m = read.querySelector('#ibMsgs'); m.scrollTop = m.scrollHeight;
+    // Teach: the owner writes the better answer; it is saved as a correction and as an FAQ, so the AI uses it from now on
+    m.addEventListener('click', async ev => {
+      const t = ev.target.closest('[data-teach]'); if (t) { const f = t.closest('.ib-why').querySelector('.ib-teach'); f.hidden = !f.hidden; f.querySelector('textarea').focus(); return; }
+      const sv = ev.target.closest('[data-teach-save]'); if (!sv) return;
+      const f = sv.closest('.ib-teach'), better = f.querySelector('textarea').value.trim(); if (!better) return f.querySelector('textarea').focus();
+      sv.disabled = true;
+      try { await req(`/api/review/${sv.dataset.teachSave}`, 'POST', { verdict: 'corrected', better, save_faq: true }); f.closest('.ib-why').querySelector('[data-teach]')?.remove(); f.outerHTML = '<p class="ib-taught">Taught. ' + e(ai()) + ' will use this answer from now on.</p>'; }
+      catch (err) { sv.disabled = false; window.toast?.(err.message || 'Not saved.'); }
+    });
     read.querySelector('#ibReply').addEventListener('submit', async ev => {
       ev.preventDefault(); const t = ev.target.t.value.trim(); if (!t) return;
       try { await req(`/api/conversations/${id}/reply`, 'POST', { text: t }); ev.target.t.value = ''; await load(); open(id); } catch (err) { window.toast?.(err.message || 'Not sent.'); }

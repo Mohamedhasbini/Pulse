@@ -456,3 +456,6 @@ CREATE INDEX IF NOT EXISTS conversations_customer ON conversations (customer_id,
 CREATE INDEX IF NOT EXISTS conversations_biz_updated ON conversations (business_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS services_biz ON services (business_id);
 CREATE INDEX IF NOT EXISTS users_biz ON users (business_id);
+
+-- Decision trail: for each AI reply, which provider answered, the action it took and its stated reason
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS trail JSONB;

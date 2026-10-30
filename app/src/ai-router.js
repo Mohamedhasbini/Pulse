@@ -29,13 +29,32 @@ const gemini = model => async (key, prompt, json) => {
   return (j.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
 };
 
-// Anthropic Messages API (no SDK needed): system + user, JSON asked for in the prompt and extracted by the caller
+// A prompt is either plain text or structured: { system, stable, live, schema }.
+//   system  the rules (identical for every chat of every business)
+//   stable  what rarely changes for one business (profile, services, taught answers)
+//   live    this turn (free times, the client, the conversation)
+//   schema  JSON schema of the answer
+// Providers that understand structure (Anthropic) get the rules and the business as cached system blocks, so they are paid
+// for once per few minutes instead of every message, and the answer is forced through a tool, so it is always valid JSON.
+// Every other provider receives the same parts joined into one text, exactly as before.
+export const flatten = p => typeof p === 'string' ? p
+  : `${p.system}\n\nCONTEXT:\n${JSON.stringify({ ...p.stable, ...p.live }, null, 1)}`;
+
+// Anthropic Messages API over fetch (no SDK needed)
 const anthropic = model => async (key, prompt, json) => {
+  const structured = typeof prompt !== 'string';
+  const body = structured ? {
+    system: [{ type: 'text', text: prompt.system }, { type: 'text', text: 'BUSINESS (part of CONTEXT):\n' + JSON.stringify(prompt.stable, null, 1), cache_control: { type: 'ephemeral' } }],
+    messages: [{ role: 'user', content: 'The rest of CONTEXT for this turn:\n' + JSON.stringify(prompt.live, null, 1) }],
+    ...(prompt.schema ? { tools: [{ name: 'respond', description: 'Send the answer for this turn.', input_schema: prompt.schema }], tool_choice: { type: 'tool', name: 'respond' } } : {}),
+  } : { messages: [{ role: 'user', content: prompt + (json ? '\n\nAnswer with the JSON object only.' : '') }] };
   const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', signal: AbortSignal.timeout(T),
     headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model, max_tokens: 2048, temperature: 0.3, messages: [{ role: 'user', content: prompt + (json ? '\n\nAnswer with the JSON object only.' : '') }] }) });
+    body: JSON.stringify({ model, max_tokens: 2048, temperature: 0.3, ...body }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw Object.assign(new Error(j.error?.message || `HTTP ${r.status}`), { status: r.status });
+  const tool = (j.content || []).find(b => b.type === 'tool_use');
+  if (tool) return JSON.stringify(tool.input);
   return (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
 };
 
@@ -71,7 +90,7 @@ export async function complete(prompt, { json = true, business } = {}) {
     if ((cool.get(r.id) || 0) > Date.now()) continue;
     const key = (business && (await credentials(business, r.biz).catch(() => null))?.api_key) || process.env[r.key];
     if (!key) continue;
-    try { const text = await r.call(key, prompt, json); if (!text) throw new Error('empty answer'); note(r.id, true); return { text, provider: r.id }; }
+    try { const text = await r.call(key, r.id === 'anthropic' ? prompt : flatten(prompt), json); if (!text) throw new Error('empty answer'); note(r.id, true); return { text, provider: r.id }; }
     catch (e) {
       note(r.id, false, e.message); errors.push(`${r.id}: ${e.message}`);
       // limit reached: rest 10 minutes (daily quotas recover slowly); other errors: 1 minute

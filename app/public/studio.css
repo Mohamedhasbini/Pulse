@@ -141,3 +141,15 @@ section.pv-today:has(> .st-mine)>.pv-board{grid-row:3}section.pv-today:has(> .st
 section.pv-today:has(> .st-mine) body[data-pv="today"] .pv-board{margin-top:16px}
 body[data-pv="today"] section.pv-today:has(> .st-mine)>.pv-board{margin-top:16px}
 body[data-pv="today"] section.pv-today:has(> .st-mine)>.pv-board:not(#_):not(#__){margin-top:16px!important}
+
+/* Inbox: the decision trail under an AI reply. Quiet until opened; graphite, no lime text */
+.ib-why{margin-top:6px;font-size:12.5px}
+.ib-why summary{cursor:pointer;color:var(--pv-meta,#8a8f93);list-style:none;display:inline-flex;gap:6px;align-items:center}
+.ib-why summary::-webkit-details-marker{display:none}
+.ib-why summary::before{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
+.ib-why[open] summary::before{transform:rotate(45deg)}
+.ib-why summary i{font-style:normal;border:1px solid currentColor;border-radius:999px;padding:0 7px;font-size:11px}
+.ib-why dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0;padding:10px 12px;border:1px solid var(--pv-line,rgba(128,128,128,.25));border-radius:12px}
+.ib-why dt{color:var(--pv-meta,#8a8f93)}.ib-why dd{margin:0}
+.ib-teach{display:grid;gap:8px;margin-top:8px}.ib-teach textarea{width:100%;font:inherit;border-radius:10px;padding:8px 10px;border:1px solid var(--pv-line,rgba(128,128,128,.3));background:transparent;color:inherit;resize:vertical}
+.ib-teach .btn{justify-self:start}.ib-taught{margin:6px 0 0;color:var(--pv-meta,#8a8f93)}
