@@ -77,3 +77,14 @@ html body .hx-fd.b:not(#_) *:not(#_){color:#141516!important}
 html body .hx-fd.b:not(#_) .hx-row span.k:not(#_){color:#fff!important}
 html body .hx-fd.a:not(#_) *:not(#_){color:#f2f3f3!important}
 html body .hx-fd small:not(#_){opacity:.7}
+
+/* sub-tabs: glass dropdown from the top bar */
+#hxDD{position:fixed;z-index:60;min-width:200px;padding:8px;border-radius:16px;background:rgba(24,25,27,.82);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
+  border:1px solid rgba(255,255,255,.1);box-shadow:0 24px 50px -20px rgba(0,0,0,.7);display:flex;flex-direction:column;gap:2px;opacity:0;transform:translateY(-4px);transition:opacity .16s,transform .16s;pointer-events:none}
+#hxDD.on{opacity:1;transform:none;pointer-events:auto}
+#hxDD b{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8d9094;padding:6px 10px 4px}
+#hxDD button{all:unset;cursor:pointer;padding:8px 10px;border-radius:10px;font-size:13.5px;color:#e3e5e6}
+#hxDD button:hover{background:rgba(255,255,255,.09);color:#fff}
+/* the tab row inside the hero stays visible */
+.hx .p10-bar .pa-switch:not(#_){display:flex!important;gap:4px}
+.hx .p10-bar .pa-switch button:not(#_){display:inline-flex!important;padding:6px 14px!important;font-size:13px!important}
