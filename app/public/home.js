@@ -146,7 +146,7 @@ function draw(unread){if(!biz||!live)return;const now=live.now,d=new Date(),h=d.
   // hero
   $("#tdLogo").style.backgroundImage=biz.logo_url?`url("${biz.logo_url}")`:"";$("#tdLogo").textContent=biz.logo_url?"":([...biz.name][0]||"").toUpperCase();
   $("#tdDate").textContent=`${DOW[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]} · ${openNow()}`;
-  $("#tdHello").textContent=`${h<12?"Good morning":h<18?"Good afternoon":"Good evening"}, ${biz.name}`;
+  $("#tdHello").innerHTML=`${h<12?"Good morning":h<18?"Good afternoon":"Good evening"},<em>${esc(biz.name)}</em>`;
   const tasks=(now.waiting||0)+(now.approvals||0)+(now.unsure||0);
   $("#tdSub").textContent=`${now.visits_today||0} appointment${now.visits_today===1?"":"s"} today${tasks?` · ${tasks} thing${tasks===1?"":"s"} need${tasks===1?"s":""} you`:" · nothing waiting for you"}.`;
   // the value line: what the AI booked on its own. Older servers have no ai_value; then count bookings that came through a chat channel this week

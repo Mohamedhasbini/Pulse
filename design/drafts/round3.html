@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Identity Round 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#dfe1e3;color:#141516;font:14px/1.5 Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1300px;margin:0 auto;padding:40px 16px 90px}
+.intro h1{font-size:clamp(28px,4vw,44px);font-weight:500;letter-spacing:-.035em;margin:0 0 6px}.intro h1 em{font-family:"Instrument Serif",serif;font-weight:400}
+.intro p{color:#666a70;max-width:74ch;margin:0}
+h2.sec{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#80848a;margin:48px 0 14px;font-weight:600}
+.stage{position:relative;border-radius:30px;padding:56px 0 0 56px;overflow:hidden;margin-bottom:30px;background:linear-gradient(160deg,#eef0f1,#d5d8db)}
+.stage.dk{background:linear-gradient(160deg,#2a2c2e,#121314)}
+.stage .wm{position:absolute;left:30px;top:-24px;display:flex;align-items:center;gap:20px;font-size:210px;font-weight:600;letter-spacing:-.06em;color:rgba(255,255,255,.55);pointer-events:none;line-height:1}
+.stage.dk .wm{color:rgba(255,255,255,.04)}
+.stage .wm svg{width:170px;height:170px}
+.screen{position:relative;border-radius:22px 0 0 0;overflow:hidden;background:#0d0e0f;padding:10px 0 0 10px;box-shadow:0 50px 90px -40px rgba(0,0,0,.55)}
+.app{border-radius:16px 0 0 0;overflow:hidden;background:var(--body);color:var(--ink)}
+
+/* hero: graphite silk */
+.hero{position:relative;color:#f3f4f4;padding:22px 28px 30px;min-height:320px;background:#0f1011;overflow:hidden}
+.hero .silk{position:absolute;inset:0;width:100%;height:100%}
+.nav{position:relative;display:flex;align-items:center;gap:26px}
+.logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:500;letter-spacing:-.03em}.logo svg{width:28px;height:28px}
+.links{display:flex;gap:4px;margin-left:26px}.links b{font-weight:400;font-size:13.5px;padding:8px 14px;border-radius:12px;color:#c9cbcd}.links b.on{background:rgba(255,255,255,.1);color:#fff;font-weight:500}
+.tools{margin-left:auto;display:flex;gap:8px;align-items:center}.tools i{width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-style:normal;font-size:13px;color:#d6d8da}
+.tools .me{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#d9d2c6,#857c70);border:2px solid rgba(255,255,255,.25)}
+.greet{position:relative;margin-top:54px;max-width:560px}
+.greet h1{margin:0;font-size:52px;font-weight:500;letter-spacing:-.045em;line-height:1}
+.greet h1 em{display:block;font-family:"Instrument Serif",serif;font-style:italic;font-weight:400;font-size:46px;letter-spacing:-.01em;color:#e7e9ea}
+.greet p{margin:26px 0 0;color:#a9acaf;font-size:14px}
+.folders{position:absolute;right:0;top:92px;width:400px;height:230px}
+.fd{position:absolute;right:-20px;border-radius:18px 0 0 18px;padding:18px 22px;color:#fff}
+.fd::before{content:attr(data-tab);position:absolute;top:-22px;left:26px;font-size:11px;padding:5px 16px 8px;border-radius:12px 12px 0 0;background:inherit;color:rgba(255,255,255,.8)}
+.fd.a{top:6px;width:330px;height:150px;background:linear-gradient(160deg,#5b5f63,#3c3f42)}
+.fd.b{top:112px;width:380px;height:150px;background:linear-gradient(160deg,rgba(235,237,238,.95),rgba(205,208,211,.92));color:#141516}
+.fd.b::before{color:#55595e}
+.fd b{display:block;font-size:19px;font-weight:500;letter-spacing:-.02em}.fd small{opacity:.75;font-size:12.5px}
+.fd .row{display:flex;gap:8px;margin-top:14px}.fd .row span{font-size:11.5px;padding:4px 10px;border-radius:99px;background:rgba(20,21,22,.08)}
+.fd .row span.k{background:#141516;color:#fff}
+
+/* body */
+.body{padding:22px 24px 26px;display:grid;grid-template-columns:330px 1fr 340px;gap:16px}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{position:relative;background:var(--card);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow);min-width:0}
+/* Taski corner brackets */
+.card.br::before,.card.br::after{content:"";position:absolute;width:16px;height:16px;border:1.6px solid var(--bracket);pointer-events:none}
+.card.br::before{left:-1px;top:-1px;border-right:0;border-bottom:0;border-radius:12px 0 0 0}
+.card.br::after{right:-1px;bottom:-1px;border-left:0;border-top:0;border-radius:0 0 12px 0}
+.ct{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:500;letter-spacing:-.01em;margin-bottom:12px}
+.ct small{font-size:12px;font-weight:400;color:var(--meta);padding:6px 12px;border-radius:12px;border:1px solid var(--rule)}
+.kpi{display:flex;align-items:center;gap:10px}
+.num{font-size:44px;font-weight:300;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
+.num.sm{font-size:34px}
+.tag{font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--tag);color:var(--tag-ink)}
+.tag.up::before{content:"+"}
+.sub{font-size:13px;color:var(--meta);margin-top:4px}
+.kspark{margin-left:auto;width:140px;height:44px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--ink2);margin-bottom:6px}.legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;vertical-align:-1px}
+.chart{width:100%;height:270px;display:block}
+.chart text{fill:var(--meta);font-size:11px}
+.tip{position:absolute;padding:12px 16px;border-radius:14px;background:var(--card);box-shadow:0 18px 40px -16px rgba(0,0,0,.35);border:1px solid var(--rule);font-size:12.5px}
+.tip b{font-size:26px;font-weight:300;letter-spacing:-.03em}.tip .g{font-size:11px;color:#3f8a3f;background:#e5f4e2;padding:2px 7px;border-radius:99px;margin-left:6px;font-weight:600}
+.dk .tip .g{background:rgba(110,190,100,.15);color:#9bd38f}
+.tip div{color:var(--ink2);margin-top:3px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:400;color:var(--meta);font-size:12px;padding:6px 4px}
+.tbl td{padding:10px 4px;border-top:1px solid var(--rule)}.tbl .n{text-align:right;font-variant-numeric:tabular-nums}
+.av{display:inline-block;width:26px;height:26px;border-radius:50%;vertical-align:middle;margin-right:10px;background:linear-gradient(135deg,#d6cfc4,#857c70)}
+.st{font-size:11.5px;padding:3px 10px;border-radius:99px;border:1px solid var(--rule);color:var(--ink2)}
+.st.k{background:var(--tag);color:var(--tag-ink);border-color:transparent}
+.ai{background:var(--ai);color:#f3f4f4}
+.ai .ct{color:#f3f4f4}.ai .ct small{color:#b9bcbf;border-color:rgba(255,255,255,.14)}
+.ai p{margin:0 0 14px;font-size:18px;line-height:1.35;letter-spacing:-.015em}.ai p em{font-family:"Instrument Serif",serif;font-size:20px}
+.ask{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 16px;border-radius:14px;background:rgba(255,255,255,.08);font-size:13px;color:#b9bcbf}.ask b{margin-left:auto;width:32px;height:32px;border-radius:10px;background:#f3f4f4;color:#141516;display:grid;place-items:center}
+.sugg{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.sugg span{font-size:11.5px;padding:5px 10px;border-radius:10px;background:rgba(255,255,255,.07);color:#cfd1d3}
+.ring{width:118px;height:118px}.ring text{fill:var(--ink);font:300 26px Geist;letter-spacing:-1px}
+.mini{display:flex;flex-direction:column;gap:8px;flex:1}.mini div{display:flex;justify-content:space-between;font-size:13px;padding-bottom:8px;border-bottom:1px solid var(--rule)}.mini b{font-weight:500}
+.dots{display:flex;align-items:flex-end;gap:5px;height:42px}.dots i{width:4px;border-radius:2px;background:var(--dot)}.dots i.on{background:var(--ink)}
+
+/* themes */
+.light{--body:#e9ebec;--card:#f7f8f8;--ink:#141516;--ink2:#45494e;--meta:#898d92;--rule:rgba(20,21,22,.08);--bracket:#141516;--tag:#141516;--tag-ink:#fff;--shadow:0 1px 0 #fff inset,0 10px 26px -20px rgba(20,22,26,.3);--ai:linear-gradient(160deg,#26282a,#141516);--dot:#cdd0d3;
+  --acc:#3c3f42;--acc2:#b9bdc1}
+.dark{--body:#121314;--card:#1c1d1f;--ink:#f1f2f2;--ink2:#c3c6c9;--meta:#86898d;--rule:rgba(255,255,255,.07);--bracket:#a7aaad;--tag:#f1f2f2;--tag-ink:#141516;--shadow:0 1px 0 rgba(255,255,255,.04) inset,0 20px 40px -26px #000;--ai:linear-gradient(160deg,#2c2e31,#1a1b1d);--dot:#3a3c3f;
+  --acc:#e8eaeb;--acc2:#6b6f73}
+@media (max-width:1100px){.body{grid-template-columns:1fr}.folders{display:none}.links{display:none}}
+
+/* brand board */
+.brands{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:14px}
+.bc{border-radius:22px;overflow:hidden;background:#f4f5f5;box-shadow:0 1px 0 #fff inset,0 16px 30px -24px rgba(0,0,0,.35)}
+.bc .m{height:150px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:34px;font-weight:500;letter-spacing:-.04em;background:#0f1011;color:#f3f4f4;position:relative;overflow:hidden}
+.bc .m.l{background:#e4e6e8;color:#141516;height:96px;font-size:26px}
+.bc .m svg{width:42px;height:42px}.bc .m.l svg{width:30px;height:30px}
+.bc .tx{padding:16px 18px}
+.bc h4{margin:0;font-size:18px;font-weight:500;letter-spacing:-.02em}.bc h4 em{font-family:"Instrument Serif",serif;font-weight:400;font-size:20px;color:#6b6f73;margin-left:6px}
+.bc p{margin:6px 0 0;color:#5f6368;font-size:13px}
+.pick{outline:2px solid #141516;outline-offset:4px}
+.note{color:#5f6368;font-size:13px;margin-top:12px;max-width:80ch}
+</style></head><body><div class="wrap">
+
+<header class="intro"><h1>Round 3 · <em>One house style</em></h1>
+<p>Taski's structure with your palette: a graphite silk hero (Graphite), a silver working area (Silver), and Luma's split between a dark top and a light body. No glow anywhere: flat colour, fine textures, corner brackets, thin large numbers, black tags, and a serif for the human touch. Both modes below, then a completely new name and logo.</p></header>
+
+<h2 class="sec">Light mode</h2>
+<div class="stage" id="s1"></div>
+<h2 class="sec">Dark mode</h2>
+<div class="stage dk" id="s2"></div>
+
+<h2 class="sec">New name and logo</h2>
+<div class="brands" id="brands"></div>
+<p class="note"><b>My pick: Atrium.</b> An atrium is the open hall where every guest is welcomed, which is exactly what the product is: the front of the business, always open. It reads premium in English, Spanish (<i>atrio</i>) and French, is easy to say in Arabic, and its arch mark gives you an icon, an app badge and a pattern. The AI keeps a human name inside it (“Nora at Atrium”). Check that the name and domain are free before we commit.</p>
+</div>
+
+<script>
+const MARKS={
+ atrium:c=>`<svg viewBox="0 0 48 48"><path d="M8 44V22a16 16 0 0 1 32 0v22" fill="none" stroke="${c}" stroke-width="4"/><path d="M17 44V24a7 7 0 0 1 14 0v20" fill="none" stroke="${c}" stroke-width="4"/></svg>`,
+ maitre:c=>`<svg viewBox="0 0 48 48"><path d="M6 42V18a9 9 0 0 1 18 0v24M24 18a9 9 0 0 1 18 0v24" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="42" r="3.4" fill="${c}"/></svg>`,
+ ora:c=>`<svg viewBox="0 0 48 48"><path d="M24 4a20 20 0 1 0 20 20" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round"/><path d="M24 14v10l7 5" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`,
+ foyer:c=>`<svg viewBox="0 0 48 48"><rect x="9" y="5" width="30" height="39" rx="3" fill="none" stroke="${c}" stroke-width="4"/><path d="M18 16h12M18 24h8" stroke="${c}" stroke-width="4" stroke-linecap="round"/><circle cx="33" cy="27" r="2.6" fill="${c}"/></svg>`};
+const NAME='Atrium', mark=MARKS.atrium;
+
+// silk: soft folded light, greyscale (Taski hero)
+const silk=`<svg class="silk" viewBox="0 0 1200 340" preserveAspectRatio="xMidYMid slice"><defs>
+ <linearGradient id="sk1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f1011"/><stop offset=".55" stop-color="#2b2d30"/><stop offset="1" stop-color="#0f1011"/></linearGradient>
+ <filter id="bl"><feGaussianBlur stdDeviation="14"/></filter><filter id="bl2"><feGaussianBlur stdDeviation="5"/></filter></defs>
+ <rect width="1200" height="340" fill="#0f1011"/>
+ <g filter="url(#bl)" opacity=".9"><path d="M420 -40 C520 120 600 160 760 380" stroke="#4a4d51" stroke-width="90" fill="none"/><path d="M560 -60 C640 90 700 200 880 380" stroke="#2f3134" stroke-width="70" fill="none"/>
+ <path d="M700 -40 C760 80 820 220 1000 380" stroke="#55585c" stroke-width="40" fill="none"/></g>
+ <g filter="url(#bl2)" opacity=".7"><path d="M480 -40 C560 110 640 180 800 380" stroke="#8a8d91" stroke-width="3" fill="none"/><path d="M640 -40 C700 90 770 210 950 380" stroke="#9a9da1" stroke-width="2" fill="none"/><path d="M760 -40 C800 70 880 220 1060 380" stroke="#6e7175" stroke-width="2" fill="none"/></g>
+ <rect width="1200" height="340" fill="url(#sk1)" opacity=".45"/></svg>`;
+
+// wave texture for the bars (Taski)
+const pattern=id=>`<pattern id="${id}" width="14" height="8" patternUnits="userSpaceOnUse"><path d="M0 4 Q3.5 0 7 4 T14 4" fill="none" stroke="var(--acc2)" stroke-width=".9"/></pattern>`;
+function chart(id){
+  const W=760,H=270,base=150,cols=12,cw=40,gap=(W-60-cols*cw)/(cols-1);let g=`<defs>${pattern('wv'+id)}</defs>`;
+  [20,15,0,15].forEach((v,i)=>{const y=[30,80,base,230][i];g+=`<text x="0" y="${y+4}">${v}</text><line x1="26" x2="${W}" y1="${y}" y2="${y}" stroke="var(--rule)" stroke-dasharray="3 5"/>`});
+  const up=[48,44,78,40,66,54,96,62,72,48,66,58],dn=[60,42,30,58,50,44,72,64,38,62,58,40];
+  g+=`<rect x="${26+6*(cw+gap)-8}" y="10" width="${cw+16}" height="${H-30}" fill="var(--rule)" rx="4"/>`;
+  for(let i=0;i<cols;i++){const x=26+i*(cw+gap),hot=i===6;
+    if(hot){g+=`<rect x="${x}" y="${base-up[i]}" width="${cw}" height="${up[i]-2}" rx="3" fill="var(--ink)"/><rect x="${x}" y="${base+2}" width="${cw}" height="${dn[i]}" rx="3" fill="var(--acc2)"/>`;continue}
+    g+=`<rect x="${x}" y="${base-up[i]}" width="${cw}" height="${up[i]-2}" rx="3" fill="url(#wv${id})" stroke="var(--rule)"/><rect x="${x}" y="${base-up[i]}" width="${cw}" height="2.4" rx="1" fill="var(--ink)"/>
+      <rect x="${x}" y="${base+2}" width="${cw}" height="${dn[i]}" rx="3" fill="url(#wv${id})" stroke="var(--rule)"/><rect x="${x}" y="${base+dn[i]}" width="${cw}" height="2.4" rx="1" fill="var(--acc2)"/>`}
+  ['May','Jun','Jul','Aug','Sep','Oct'].forEach((m,i)=>g+=`<text x="${40+i*130}" y="${H-2}">${m}</text>`);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${g}</svg>`}
+const spark=`<svg class="kspark" viewBox="0 0 140 44"><defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--ink)" stop-opacity=".18"/><stop offset="1" stop-color="var(--ink)" stop-opacity="0"/></linearGradient></defs><path d="M0 34 L10 30 18 36 28 24 36 28 46 18 56 22 64 14 74 20 84 10 92 16 102 8 112 14 122 6 132 12 140 4 V44 H0Z" fill="url(#spg)"/><path d="M0 34 L10 30 18 36 28 24 36 28 46 18 56 22 64 14 74 20 84 10 92 16 102 8 112 14 122 6 132 12 140 4" fill="none" stroke="var(--ink)" stroke-width="1.6"/></svg>`;
+const dots=`<div class="dots" style="margin-left:auto">${[18,30,22,40,26,36,14,42,24,34,20,38,28].map((h,i)=>`<i class="${i===7?'on':''}" style="height:${h}px"></i>`).join('')}</div>`;
+const ring=p=>{const r=50,c=2*Math.PI*r;return `<svg class="ring" viewBox="0 0 118 118"><circle cx="59" cy="59" r="${r}" fill="none" stroke="var(--rule)" stroke-width="7"/><circle cx="59" cy="59" r="${r}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c*p/100} ${c}" transform="rotate(-90 59 59)"/><text x="59" y="68" text-anchor="middle">${p}%</text></svg>`};
+
+function page(theme){return `<div class="wm">${mark(theme==='dark'?'rgba(255,255,255,.05)':'rgba(255,255,255,.6)')}${NAME}</div>
+<div class="screen"><div class="app ${theme}">
+ <div class="hero">${silk}
+  <div class="nav"><div class="logo">${mark('#f3f4f4')}${NAME}</div><div class="links">${['Today','Inbox','Calendar','Clients','Marketing','Insights'].map((t,i)=>`<b class="${i?'':'on'}">${t}</b>`).join('')}</div>
+   <div class="tools"><i>⌕</i><i>✉</i><i>◔</i><span class="me"></span></div></div>
+  <div class="greet"><h1>Good evening,<em>Layla Haddad</em></h1><p>8 appointments today · next at 14:00 · Nora answered 23 chats since morning.</p></div>
+  <div class="folders"><div class="fd a" data-tab="Next up"><b>Rana · Hair colour</b><small>14:00 – 16:00 · with Maya</small></div>
+   <div class="fd b" data-tab="Today"><b>Today's schedule</b><small>8 booked · 2 free slots · 78% full</small><div class="row"><span class="k">+2 waitlist</span><span>3 confirmations sent</span></div></div></div>
+ </div>
+ <div class="body">
+  <div class="col">
+   <div class="card br"><div class="ct">Revenue this month</div><div class="kpi"><span class="num">$12,480</span><span class="tag up">18%</span></div><div class="kpi"><span class="sub">$10,560 last month</span>${spark}</div></div>
+   <div class="card br"><div class="ct">Booked by Nora</div><div class="kpi"><span class="num">142</span><span class="tag up">9%</span>${dots}</div><div class="sub">130 last month</div></div>
+   <div class="card br"><div class="ct">Agreed to offers <small>201 clients</small></div><div class="kpi" style="gap:18px">${ring(64)}<div class="mini"><div><span>Opted in</span><b>128</b></div><div><span>This week</span><b>+23</b></div><div style="border:0;padding:0"><span>Said stop</span><b>4</b></div></div></div></div>
+  </div>
+  <div class="col">
+   <div class="card" style="position:relative"><div class="ct">Bookings trend <small>This month ⌄</small></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div class="legend"><span><i style="background:var(--ink)"></i>Booked</span><span><i style="background:var(--acc2)"></i>Cancelled</span></div>
+     <div class="kpi" style="gap:8px"><span class="num sm">1,245</span><span class="tag up">2.7%</span><span class="sub" style="margin:0">more bookings than September</span></div></div>
+    ${chart(theme)}
+    <div class="tip" style="left:43%;top:118px"><b>92.7%</b><span class="g">+7.2%</span><div>Chair occupancy</div><div>● 12 booked &nbsp; ● 2 cancelled</div></div></div>
+   <div class="card"><div class="ct">Today's appointments <small>View calendar</small></div><table class="tbl"><thead><tr><th>Client</th><th>Service</th><th>Time</th><th class="n">Value</th><th>Status</th></tr></thead><tbody>
+    <tr><td><span class="av"></span>Rana Haddad</td><td>Hair colour</td><td>14:00</td><td class="n">$90</td><td><span class="st k">Confirmed</span></td></tr>
+    <tr><td><span class="av"></span>Karim Saad</td><td>Haircut</td><td>16:30</td><td class="n">$35</td><td><span class="st k">Confirmed</span></td></tr>
+    <tr><td><span class="av"></span>Lucía Pérez</td><td>Manicure</td><td>18:00</td><td class="n">$20</td><td><span class="st">Waitlist</span></td></tr></tbody></table></div>
+  </div>
+  <div class="col">
+   <div class="card ai"><div class="ct">Ask Nora <small>AI partner</small></div><p>Thursday is only <em>30% booked</em>. Send your regulars a Thursday treat? About +$240.</p><div class="ask">Ask anything about your business…<b>↑</b></div>
+    <div class="sugg"><span>What needs me today?</span><span>Best campaign next</span><span>Forecast October</span></div></div>
+   <div class="card br"><div class="ct">Autopilot <small>Manage</small></div><table class="tbl"><tbody>
+    <tr><td>Win back regulars</td><td class="n">4 sent</td><td class="n"><span class="st k">On</span></td></tr>
+    <tr><td>Birthday wishes</td><td class="n">2 sent</td><td class="n"><span class="st k">On</span></td></tr>
+    <tr><td>Waitlist</td><td class="n">2 waiting</td><td class="n"><span class="st k">On</span></td></tr>
+    <tr><td>Review requests</td><td class="n">needs link</td><td class="n"><span class="st">Off</span></td></tr></tbody></table></div>
+  </div>
+ </div>
+</div></div>`}
+s1.innerHTML=page('light'); s2.innerHTML=page('dark');
+
+const B=[['atrium','Atrium','the welcoming hall','The open hall where every guest is received. Your front desk, always open. Mark: two arches, a doorway inside a doorway.'],
+ ['maitre','Maître','the host who seats you','From maître d’, the person who greets and seats guests. Luxe, French, perfect for beauty and dining. Mark: an M of two arches with a dot.'],
+ ['ora','Ora','the hour, now','Italian and Latin for “now / the hour”. Tiny, bold, about time and appointments. Mark: an open ring with clock hands.'],
+ ['foyer','Foyer','where visits begin','The entrance room of a home or theatre. Calm and clear. Mark: a door with a handle.']];
+brands.innerHTML=B.map(([k,n,em,t],i)=>`<div class="bc ${i?'':'pick'}"><div class="m">${MARKS[k]('#f3f4f4')}${n}</div><div class="m l">${MARKS[k]('#141516')}${n}</div><div class="tx"><h4>${n}<em>${em}</em></h4><p>${t}</p></div></div>`).join('');
+</script>
+</body></html>
