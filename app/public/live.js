@@ -25,7 +25,7 @@ let es=null;
 function connect(){
   if(window.LAB||es)return;
   es=new EventSource("/api/events");
-  es.addEventListener("change",e=>{let d={kinds:[]};try{d=JSON.parse(e.data)}catch{}if(!document.hidden)refreshVisible(d.kinds||[])});
+  es.addEventListener("change",e=>{let d={kinds:[]};try{d=JSON.parse(e.data)}catch{}if(document.hidden)return;refreshVisible(d.kinds||[]);window.dispatchEvent(new CustomEvent("mxai:change",{detail:d}))}); // every page (charts, Studio, Today) can listen
   es.onopen=()=>document.documentElement.classList.add("live-on");
   es.onerror=()=>document.documentElement.classList.remove("live-on"); // EventSource reconnects by itself
 }

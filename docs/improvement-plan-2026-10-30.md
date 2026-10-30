@@ -112,6 +112,21 @@ sequential scans today, so the indexes are for tomorrow, not for speed now.
 5. **AI off → human on, with assist**: when AI is off, the Inbox suggests a reply (drafted, not sent) so the owner answers in one tap.
    Same brain, new product surface, no new infrastructure.
 
+## 3b · Weeks 1–3: done on 30 Oct 2026 (evening)
+
+| Item | What changed | Proof |
+|---|---|---|
+| A1 booking lock | `withBusinessLock` now takes a Postgres advisory lock on its own connection ([db.js](../app/src/db.js)); covers every process | 5 simultaneous bookings of one slot → exactly 1 row |
+| A3 parallel queries | `/api/stats` (14 queries) and `/api/live` (11 queries) run their independent queries with `Promise.all` | identical answers; metrics tests pass |
+| A7 request log | one JSON line per `/api` request: method, path, status, ms, business, user; `slow:true` over 1 s or on 5xx ([web.js](../app/src/web.js) `requestLog`); `LOG_REQUESTS=0` turns it off | visible in `docker compose logs app` |
+| A8 dead files | `chip3d.js`, `listfit.js` removed; Three.js kept for `scene.js` (670 KB, decision left open) | — |
+| A5 push, not timers | the 5-second poller in `js/extras.js` and the 30 s / 60 s pollers only run when the live stream is down; a server change fires `mxai:change`, which empties the chart cache and redraws the open page; AI on/off is now pushed too | a PUT on AI mode produced one `mxai:change` on the open dashboard |
+| C motion | all animations pause while the tab is hidden (`html.tab-hidden`); `prefers-reduced-motion` makes every animation and transition near-instant | — |
+| A10 phone pass | at 375 px: tables scroll inside their card, Inbox panes stack, hero and overview strips never exceed the screen; swept all 51 sub-tabs | no element wider than the screen except one decorative hairline in Library |
+| A4 one stylesheet | the 9 dashboard stylesheets are joined at boot into `/app.css?v=<hash>` served from memory with a year's cache; cascade order unchanged | 9 CSS requests → 1 |
+| A4 scripts | **not bundled**: the 49 classic scripts share one global scope by design (`$`, `req`, `biz` in `js/core.js`), so a naïve join would let one file's error stop every file. They stay separate, Brotli'd and cached a year. The proper step is ES modules, planned with the Week 4 AI work. | — |
+| A9 fonts | Geist, Geist Mono, Instrument Serif and Newsreader self-hosted under `/fonts` (47 subset files, browsers fetch only the subsets they use); Google Fonts link removed from Dashboard and sign-in; CSP no longer allows Google hosts | zero third-party requests except the QR library |
+
 ## 4 · Execution plan
 
 | When | Items | Cost |

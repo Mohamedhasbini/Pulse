@@ -121,7 +121,7 @@ main>section.today:not([hidden]){overflow:auto}
 homeBtn.addEventListener("click",e=>{e.stopImmediatePropagation();show()},true);
 $$("nav button[data-view]").forEach(b=>{if(b!==homeBtn)b.addEventListener("click",()=>{sec.hidden=true;clearInterval(timer)})});
 function show(){if(window.LAB)return;$$("nav button[data-view]").forEach(x=>x.setAttribute("aria-current",x===homeBtn));$$("main > section.wrap").forEach(s=>s.hidden=s!==sec);
-  document.body.dataset.page="today";scrollTo(0,0);load();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden&&!sec.hidden)load()},30000)}
+  document.body.dataset.page="today";scrollTo(0,0);load();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden&&!sec.hidden&&!document.documentElement.classList.contains("live-on"))load()},30000)}
 window.homeLoad=()=>{if(!sec.hidden)load()}; // live.js calls this the moment data changes
 
 const money=v=>{try{return fmt(v)}catch{return "$"+Math.round(v||0)}};

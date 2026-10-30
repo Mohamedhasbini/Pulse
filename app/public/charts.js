@@ -12,6 +12,7 @@
   const empty = t => `<p class="pv-empty">${esc(t)}</p>`;
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  window.PVInvalidate = () => { for (const k in cache) delete cache[k]; };
   async function data() {
     const now = new Date(), from = new Date(now - 180 * 864e5), to = new Date(+now + 14 * 864e5);
     const [cal, live, cust, conv, stats, mk, biz] = await Promise.all([get(`/api/calendar?from=${day(from)}T00:00&to=${day(to)}T00:00`), get('/api/live?days=30'), get('/api/customers'), get('/api/conversations'), get('/api/stats?days=30'), get('/api/marketing/overview?days=90'), get('/api/business')]);

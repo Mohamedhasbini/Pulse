@@ -20,6 +20,9 @@
     live.set(k, e);
     return e.p.then(r => r.clone());
   };
+  // animations pause while the tab is hidden (no battery or CPU spent on a page nobody sees)
+  const vis = () => document.documentElement.classList.toggle('tab-hidden', document.hidden);
+  document.addEventListener('visibilitychange', vis); vis();
   window.fetch.raw = raw;
   window.fetch.forget = () => live.clear();
 })();

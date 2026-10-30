@@ -345,3 +345,26 @@ html body nav .ai-chip span:not(#_):not(#__):not(#___),html body .ai-chip span:n
 :root[data-theme="light"] .pv-feed span{color:#15181a!important}
 :root[data-theme="light"] .pv-beat polyline{stroke:#15181a}
 html body main .pv-t td.hc:not(#_):not(#__):not(#___),html body main .pv-t tr:hover td.hc:not(#_):not(#__):not(#___){background:var(--c)!important}
+
+/* motion: paused while the tab is hidden; near-instant when the system asks for reduced motion */
+html.tab-hidden *,html.tab-hidden *::before,html.tab-hidden *::after{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* phone: nothing wider than the screen. Tables scroll inside their card; the Inbox panes stack; the hero wraps. */
+@media (max-width:767px){
+  html body .pv-c:not(#_),html body .card:not(#_),html body .td-card:not(#_){max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  html body .pv-t:not(#_),html body .pv-c table:not(#_){min-width:0;width:100%}
+  html body .pv-c th:not(#_),html body .pv-c td:not(#_){white-space:normal;word-break:break-word}
+  html body .ib:not(#_){display:block}
+  html body .ib-folders:not(#_),html body .ib-list:not(#_),html body .ib-pane:not(#_){width:auto;max-width:100%;min-width:0}
+  html body .hx:not(#_),html body .hx-in:not(#_),html body .hx-greet:not(#_){max-width:100%;min-width:0;overflow-wrap:anywhere}
+  html body main > section:not([hidden]):not(#_){overflow-x:hidden}
+}
+@media (max-width:767px){
+  html body .ib:not(#_){width:100%;max-width:100%}
+  html body .ib>*:not(#_){min-width:0;max-width:100%}
+  html body .ib-bar:not(#_){flex-wrap:wrap}html body .ib-bar input:not(#_){min-width:0;flex:1 1 140px;width:auto}
+  html body .pv-ov:not(#_),html body .pv-ovg:not(#_){max-width:100%;min-width:0}
+  html body .mk-t:not(#_){display:block;max-width:100%;overflow-x:auto}
+  html body .st-lib:not(#_),html body .wl-grid:not(#_){max-width:100%;overflow-x:hidden}
+}

@@ -3,6 +3,7 @@ import express from 'express';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 import { AsyncLocalStorage } from 'node:async_hooks';
+const ctx = new AsyncLocalStorage();
 import { hashPassword, checkPassword, newPassword, signSession, readSession, signTicket, readTicket, newTotpSecret, checkTotp, totpUrl, newEmailCode, hashCode, weakPassword, ensureAdmin, createBusiness } from './accounts.js';
 import { MODULES, FEATURES, MODULE_FEATURE, featuresOf, hasFeature, canOpen, moduleOf, seedPlans } from './features.js';
 import { q, one, migrate, withBusinessLock } from './db.js';
@@ -15,7 +16,7 @@ import { mountIntegrations, mountPublicApi } from './integrations.js';
 import { mountShortcuts } from './shortcuts.js';
 import { mountInbox } from './inbox.js';
 import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
-import { mountLive } from './live.js';
+import { mountLive, emit } from './live.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
 import { sendWhatsApp, validSignature, parseIncoming, validKapsoSignature, parseKapso, whatsappReady } from './whatsapp.js';
 import { mountPublic } from './public.js';
@@ -33,10 +34,11 @@ import { insights } from './insights.js';
 import { VERTICALS, listVerticals, termsOf } from './verticals.js';
 import { startReminders, runReminders, fill } from './reminders.js';
 import { setSenders, startAutopilot, offerWaitlist } from './autopilot.js';
-import { compress, fingerprint, rememberUser, recallUser, forgetUser, CSP } from './web.js';
+import { compress, fingerprint, rememberUser, recallUser, forgetUser, requestLog, CSP } from './web.js';
 
 const app = express();
 app.use(compress());
+app.use(requestLog(() => ctx.getStore()?.biz));
 app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 // ---------- WhatsApp webhook (public, no password; protected by Meta's signature) ----------
@@ -205,7 +207,6 @@ mountPublicApi(app);
 
 // Who is signed in, and which business this request is about. Owners and staff only ever get their own business;
 // the admin works on whichever business they switched to (rb_biz cookie).
-const ctx = new AsyncLocalStorage();
 const BIZ = () => ctx.getStore().biz;
 app.use(wrap(async (req, res, next) => {
   const s = readSession(req.get('cookie'));
@@ -243,6 +244,7 @@ app.use(wrap(async (req, res, next) => {
 }));
 const assets = fingerprint(PUBLIC);
 app.get(['/', '/index.html'], assets.page);
+app.get('/app.css', assets.css);
 app.use(express.static(PUBLIC, { setHeaders: assets.headers }));
 const adminOnly = (req, res, next) => req.user.role === 'admin' ? next() : res.status(403).json({ error: 'Only the platform admin can do this.' });
 mountSiteAdmin(app, adminOnly);
@@ -680,52 +682,54 @@ app.get('/api/stats', wrap(async (req, res) => {
   const bookF = noTest ? `AND COALESCE(c.channel, '') <> 'test'` : ''; // manual bookings have no conversation
   const P = [BIZ(), days];
   const since = days === 1 ? `date_trunc('day', now()) + make_interval(days => $2::int - 1)` : `now() - make_interval(days => $2::int)`;
-  const [t] = await q(`SELECT count(*)::int AS conv,
+  // every question is independent: ask them all at once instead of one after another
+  const [[t], [bk], [ai], [outcomes], daily, heat, channels, services, today, upcoming, attention, [pend], [learn], biz] = await Promise.all([
+    q(`SELECT count(*)::int AS conv,
       count(*) FILTER (WHERE c.outcome='handoff')::int AS handoff,
       count(*) FILTER (WHERE EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id=c.id AND m.role='assistant' AND NOT m.failed))::int AS answered,
       count(*) FILTER (WHERE EXISTS (SELECT 1 FROM bookings b WHERE b.conversation_id=c.id AND b.status <> 'cancelled'))::int AS booked_conv,
       count(DISTINCT c.customer_id)::int AS customers
-      FROM conversations c WHERE c.business_id=$1 AND c.created_at > ${since} ${convF}`, P);
-  const [bk] = await q(`SELECT count(*) FILTER (WHERE b.source IN ('ai','web'))::int AS ai_bookings,
+      FROM conversations c WHERE c.business_id=$1 AND c.created_at > ${since} ${convF}`, P),
+    q(`SELECT count(*) FILTER (WHERE b.source IN ('ai','web'))::int AS ai_bookings,
       COALESCE(sum(b.price) FILTER (WHERE b.source IN ('ai','web')),0)::float AS ai_value,
       count(*) FILTER (WHERE b.source='ai')::int AS chat_bookings, count(*) FILTER (WHERE b.source='web')::int AS web_bookings,
       count(*)::int AS all_bookings, COALESCE(sum(b.price),0)::float AS all_value
       FROM bookings b LEFT JOIN conversations c ON c.id=b.conversation_id
-      WHERE b.business_id=$1 AND b.created_at > ${since} AND b.status <> 'cancelled' ${bookF}`, P);
-  const [ai] = await q(`SELECT round(avg(m.latency_ms) FILTER (WHERE NOT m.failed))::int AS avg_ms,
+      WHERE b.business_id=$1 AND b.created_at > ${since} AND b.status <> 'cancelled' ${bookF}`, P),
+    q(`SELECT round(avg(m.latency_ms) FILTER (WHERE NOT m.failed))::int AS avg_ms,
       count(*) FILTER (WHERE m.failed)::int AS failures, count(*)::int AS replies
       FROM messages m JOIN conversations c ON c.id=m.conversation_id
-      WHERE c.business_id=$1 AND m.role='assistant' AND m.created_at > ${since} ${convF}`, P);
-  const [outcomes] = await q(`SELECT count(*) FILTER (WHERE b.status='completed')::int AS completed, count(*) FILTER (WHERE b.status='no_show')::int AS no_show,
+      WHERE c.business_id=$1 AND m.role='assistant' AND m.created_at > ${since} ${convF}`, P),
+    q(`SELECT count(*) FILTER (WHERE b.status='completed')::int AS completed, count(*) FILTER (WHERE b.status='no_show')::int AS no_show,
       count(*) FILTER (WHERE b.status='cancelled')::int AS cancelled, count(*) FILTER (WHERE b.status='confirmed')::int AS unmarked
       FROM bookings b LEFT JOIN conversations c ON c.id=b.conversation_id
-      WHERE b.business_id=$1 AND b.starts_at > ${since} AND b.starts_at < now() ${bookF}`, P);
-  const daily = await q(`SELECT to_char(d,'YYYY-MM-DD') AS day,
+      WHERE b.business_id=$1 AND b.starts_at > ${since} AND b.starts_at < now() ${bookF}`, P),
+    q(`SELECT to_char(d,'YYYY-MM-DD') AS day,
       (SELECT count(*) FROM conversations c WHERE c.business_id=$1 AND c.created_at::date=d ${convF})::int AS conv,
       (SELECT count(*) FROM bookings b LEFT JOIN conversations c ON c.id=b.conversation_id WHERE b.business_id=$1 AND b.source IN ('ai','web')
          AND b.status <> 'cancelled' AND b.created_at::date=d ${bookF})::int AS booked
-      FROM generate_series((now() - make_interval(days => $2::int - 1))::date, now()::date, '1 day') d`, P);
-  const heat = await q(`SELECT extract(dow FROM m.created_at)::int AS dow, extract(hour FROM m.created_at)::int AS hour, count(*)::int AS n
+      FROM generate_series((now() - make_interval(days => $2::int - 1))::date, now()::date, '1 day') d`, P),
+    q(`SELECT extract(dow FROM m.created_at)::int AS dow, extract(hour FROM m.created_at)::int AS hour, count(*)::int AS n
       FROM messages m JOIN conversations c ON c.id=m.conversation_id
-      WHERE c.business_id=$1 AND m.role='customer' AND m.created_at > ${since} ${convF} GROUP BY 1,2`, P);
-  const channels = await q(`SELECT c.channel, count(*)::int AS n FROM conversations c WHERE c.business_id=$1 AND c.created_at > ${since} ${convF} GROUP BY 1`, P);
-  const services = await q(`SELECT s.name, count(b.id)::int AS n, COALESCE(sum(b.price),0)::float AS value FROM services s
+      WHERE c.business_id=$1 AND m.role='customer' AND m.created_at > ${since} ${convF} GROUP BY 1,2`, P),
+    q(`SELECT c.channel, count(*)::int AS n FROM conversations c WHERE c.business_id=$1 AND c.created_at > ${since} ${convF} GROUP BY 1`, P),
+    q(`SELECT s.name, count(b.id)::int AS n, COALESCE(sum(b.price),0)::float AS value FROM services s
       LEFT JOIN (SELECT b.* FROM bookings b LEFT JOIN conversations c ON c.id=b.conversation_id
                  WHERE b.created_at > ${since} AND b.status <> 'cancelled' ${bookF}) b ON b.service_id=s.id
-      WHERE s.business_id=$1 AND (s.active OR b.id IS NOT NULL) GROUP BY s.id ORDER BY n DESC, s.id`, P);
-  const today = await q(`SELECT b.id, ${LOCAL('b.starts_at')} AS start, b.status, b.price::float, b.source, s.name service, cu.name customer
+      WHERE s.business_id=$1 AND (s.active OR b.id IS NOT NULL) GROUP BY s.id ORDER BY n DESC, s.id`, P),
+    q(`SELECT b.id, ${LOCAL('b.starts_at')} AS start, b.status, b.price::float, b.source, s.name service, cu.name customer
       FROM bookings b JOIN services s ON s.id=b.service_id JOIN customers cu ON cu.id=b.customer_id
-      WHERE b.business_id=$1 AND b.starts_at::date = now()::date AND b.status <> 'cancelled' ORDER BY b.starts_at`, [BIZ()]);
-  const upcoming = await q(`SELECT b.id, ${LOCAL('b.starts_at')} AS start, b.price::float, b.source, s.name service, cu.name customer FROM bookings b
+      WHERE b.business_id=$1 AND b.starts_at::date = now()::date AND b.status <> 'cancelled' ORDER BY b.starts_at`, [BIZ()]),
+    q(`SELECT b.id, ${LOCAL('b.starts_at')} AS start, b.price::float, b.source, s.name service, cu.name customer FROM bookings b
       JOIN services s ON s.id=b.service_id JOIN customers cu ON cu.id=b.customer_id
-      WHERE b.business_id=$1 AND b.starts_at > now() AND b.status='confirmed' ORDER BY b.starts_at LIMIT 5`, [BIZ()]);
-  const attention = await q(`SELECT c.id, c.attention_reason, ${LOCAL('c.updated_at')} AS at, cu.name, cu.phone, c.channel,
+      WHERE b.business_id=$1 AND b.starts_at > now() AND b.status='confirmed' ORDER BY b.starts_at LIMIT 5`, [BIZ()]),
+    q(`SELECT c.id, c.attention_reason, ${LOCAL('c.updated_at')} AS at, cu.name, cu.phone, c.channel,
       (SELECT text FROM messages m WHERE m.conversation_id=c.id AND m.role='customer' ORDER BY id DESC LIMIT 1) AS last
       FROM conversations c JOIN customers cu ON cu.id=c.customer_id
-      WHERE c.business_id=$1 AND c.needs_attention ${convF} ORDER BY c.updated_at DESC LIMIT 10`, [BIZ()]);
-  const [pend] = await q(`SELECT count(*)::int AS n FROM requests WHERE business_id=$1 AND status='pending'`, [BIZ()]);
-  const [learn] = await q(`SELECT count(*)::int AS n FROM learning WHERE business_id=$1 AND status='open'`, [BIZ()]);
-  const biz = await one('SELECT name, plan_price::float FROM businesses WHERE id=$1', [BIZ()]);
+      WHERE c.business_id=$1 AND c.needs_attention ${convF} ORDER BY c.updated_at DESC LIMIT 10`, [BIZ()]),
+    q(`SELECT count(*)::int AS n FROM requests WHERE business_id=$1 AND status='pending'`, [BIZ()]),
+    q(`SELECT count(*)::int AS n FROM learning WHERE business_id=$1 AND status='open'`, [BIZ()]),
+    one('SELECT name, plan_price::float FROM businesses WHERE id=$1', [BIZ()])]);
   res.json({ ...t, ...bk, approvals: pend.n, to_learn: learn.n, ai: { ...ai, last: aiHealth }, outcomes, daily, heat, channels, services, today, upcoming, attention,
     business: biz, now: localStamp(new Date()), tz: process.env.TZ,
     booking_url: (process.env.PUBLIC_URL || 'https://app.nexfoyz.dev').replace(/\/$/, '') + '/book?b=' + BIZ() });
@@ -869,6 +873,7 @@ app.put('/api/ai-mode', wrap(async (req, res) => {
   // turning the AI back on hands every chat that was only waiting because the AI was off back to it
   if (mode === 'on' && req.body.resume !== false) await q(`UPDATE conversations SET needs_attention=false, attention_reason=NULL WHERE business_id=$1 AND attention_reason='AI is off: answer from your Inbox' AND NOT ai_paused`, [BIZ()]);
   await audit(req, 'ai_mode', mode, BIZ());
+  emit(BIZ(), 'ai'); // the AI chip and banner change on every open dashboard
   res.json({ ok: true, mode });
 }));
 app.post('/api/conversations/:id/ai', wrap(async (req, res) => {
@@ -1045,47 +1050,54 @@ app.get('/api/live', wrap(async (req, res) => {
       (SELECT count(*) FROM requests WHERE business_id=$1 AND status='pending')::int AS approvals,
       (SELECT count(*) FROM learning WHERE business_id=$1 AND status='open')::int AS to_learn,
       (SELECT count(*) FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.business_id=$1 AND m.role='assistant' AND m.source='ai' AND m.review IS NULL AND m.confidence='low' AND c.channel<>'test')::int AS unsure`, [B, P]);
-  Object.assign(now, await metrics.today(B), await metrics.aiBookings(B, P));
-  // Messages and bookings per hour, today.
-  const hourly = await q(`SELECT h, COALESCE(m.n,0)::int AS msgs, COALESCE(b.n,0)::int AS booked FROM generate_series(0,23) h
+  Object.assign(now, ...await Promise.all([metrics.today(B), metrics.aiBookings(B, P)]));
+  const [hourly, channels, feed, active, upcoming, biz, h24, d14, flow, heat, ch] = await Promise.all([
+    q(`SELECT h, COALESCE(m.n,0)::int AS msgs, COALESCE(b.n,0)::int AS booked FROM generate_series(0,23) h
       LEFT JOIN (SELECT extract(hour FROM m.created_at)::int hr, count(*) n FROM messages m JOIN conversations c ON c.id=m.conversation_id
         WHERE c.business_id=$1 AND m.role='customer' AND m.created_at >= date_trunc('day', now()) GROUP BY 1) m ON m.hr=h
       LEFT JOIN (SELECT extract(hour FROM created_at)::int hr, count(*) n FROM bookings WHERE business_id=$1 AND created_at >= date_trunc('day', now()) AND status <> 'cancelled' GROUP BY 1) b ON b.hr=h
-      ORDER BY h`, [B]);
-  // Where bookings come from, last 30 days.
-  const channels = await q(`SELECT COALESCE(CASE WHEN b.source='ai' THEN c.channel ELSE b.source END, 'other') AS channel, count(*)::int AS n, COALESCE(sum(b.price),0)::float AS value
+      ORDER BY h`, [B]),
+    q(`SELECT COALESCE(CASE WHEN b.source='ai' THEN c.channel ELSE b.source END, 'other') AS channel, count(*)::int AS n, COALESCE(sum(b.price),0)::float AS value
       FROM bookings b LEFT JOIN conversations c ON c.id=b.conversation_id WHERE b.business_id=$1 AND b.created_at > now() - make_interval(days => $2) AND b.status <> 'cancelled'
-      GROUP BY 1 ORDER BY 2 DESC`, [B, P]);
-  // The live stream: latest messages and bookings, newest first.
-  const feed = await q(`(SELECT 'msg' AS kind, m.id, m.role, left(m.text, 220) AS text, ${LOCAL('m.created_at')} AS at, m.created_at AS ts, c.channel, c.id AS conv, cu.name, m.confidence
+      GROUP BY 1 ORDER BY 2 DESC`, [B, P]),
+    q(`(SELECT 'msg' AS kind, m.id, m.role, left(m.text, 220) AS text, ${LOCAL('m.created_at')} AS at, m.created_at AS ts, c.channel, c.id AS conv, cu.name, m.confidence
         FROM messages m JOIN conversations c ON c.id=m.conversation_id LEFT JOIN customers cu ON cu.id=c.customer_id
         WHERE c.business_id=$1 ORDER BY m.id DESC LIMIT 30)
       UNION ALL
       (SELECT 'booking', b.id, b.source, s.name || ' · ' || to_char(b.starts_at,'Dy DD Mon HH24:MI') || ' · ' || b.price::float, ${LOCAL('b.created_at')}, b.created_at, b.source, b.conversation_id, cu.name, b.status
         FROM bookings b JOIN services s ON s.id=b.service_id JOIN customers cu ON cu.id=b.customer_id WHERE b.business_id=$1 ORDER BY b.id DESC LIMIT 10)
-      ORDER BY ts DESC LIMIT 30`, [B]);
-  // Open conversations: who is talking to us and how it is going.
-  const active = await q(`SELECT c.id, c.channel, c.outcome, c.needs_attention, c.ai_paused, ${LOCAL('c.updated_at')} AS at, cu.name,
+      ORDER BY ts DESC LIMIT 30`, [B]),
+    q(`SELECT c.id, c.channel, c.outcome, c.needs_attention, c.ai_paused, ${LOCAL('c.updated_at')} AS at, cu.name,
       CASE WHEN cu.phone ~ '^(test|e2e|walk-in|tg-)' THEN cu.contact_phone ELSE cu.phone END AS phone,
       (SELECT count(*) FROM messages m WHERE m.conversation_id=c.id)::int AS msgs,
       (SELECT left(text, 90) FROM messages m WHERE m.conversation_id=c.id ORDER BY id DESC LIMIT 1) AS last, c.value::float
       FROM conversations c LEFT JOIN customers cu ON cu.id=c.customer_id WHERE c.business_id=$1 AND c.updated_at > now() - make_interval(days => $2)
-      ORDER BY c.needs_attention DESC, c.updated_at DESC LIMIT 12`, [B, P]);
-  const upcoming = await q(`SELECT b.id, ${LOCAL('b.starts_at')} AS start, s.name AS service, s.minutes, cu.name, b.price::float, b.source, b.status
+      ORDER BY c.needs_attention DESC, c.updated_at DESC LIMIT 12`, [B, P]),
+    q(`SELECT b.id, ${LOCAL('b.starts_at')} AS start, s.name AS service, s.minutes, cu.name, b.price::float, b.source, b.status
       FROM bookings b JOIN services s ON s.id=b.service_id JOIN customers cu ON cu.id=b.customer_id
-      WHERE b.business_id=$1 AND b.starts_at > now() AND b.status='confirmed' ORDER BY b.starts_at LIMIT 8`, [B]);
-  // ---- richer desk data ----
-  const biz = await loadBusiness(B);
-  // Micro charts: last 24 hours of messages (and failed replies), last 14 days of bookings and booked value.
-  const h24 = await q(`SELECT g AS slot, COALESCE(x.msgs,0)::int AS msgs, COALESCE(x.failed,0)::int AS failed, x.ms::int AS ms
+      WHERE b.business_id=$1 AND b.starts_at > now() AND b.status='confirmed' ORDER BY b.starts_at LIMIT 8`, [B]),
+    loadBusiness(B),
+    q(`SELECT g AS slot, COALESCE(x.msgs,0)::int AS msgs, COALESCE(x.failed,0)::int AS failed, x.ms::int AS ms
       FROM generate_series(date_trunc('hour', now()) - interval '23 hours', date_trunc('hour', now()), interval '1 hour') g
       LEFT JOIN (SELECT date_trunc('hour', m.created_at) h, count(*) FILTER (WHERE m.role='customer') msgs, count(*) FILTER (WHERE m.failed) failed,
         avg(m.latency_ms) FILTER (WHERE m.role='assistant') ms FROM messages m JOIN conversations c ON c.id=m.conversation_id
-        WHERE c.business_id=$1 AND m.created_at > now() - interval '24 hours' GROUP BY 1) x ON x.h=g ORDER BY g`, [B]);
-  const d14 = await q(`SELECT to_char(g,'YYYY-MM-DD') AS d, COALESCE(x.n,0)::int AS n, COALESCE(x.v,0)::float AS v
+        WHERE c.business_id=$1 AND m.created_at > now() - interval '24 hours' GROUP BY 1) x ON x.h=g ORDER BY g`, [B]),
+    q(`SELECT to_char(g,'YYYY-MM-DD') AS d, COALESCE(x.n,0)::int AS n, COALESCE(x.v,0)::float AS v
       FROM generate_series(current_date - ($2::int - 1), current_date, interval '1 day') g
       LEFT JOIN (SELECT created_at::date dd, count(*) n, sum(price) v FROM bookings WHERE business_id=$1 AND status <> 'cancelled' AND created_at > current_date - $2::int GROUP BY 1) x ON x.dd=g::date
-      ORDER BY g`, [B, Math.max(P, 2) * 2]);
+      ORDER BY g`, [B, Math.max(P, 2) * 2]),
+    q(`SELECT c.channel, COALESCE(c.outcome,'answered') AS outcome, count(*)::int AS n FROM conversations c
+      WHERE c.business_id=$1 AND c.updated_at > now() - make_interval(days => $2) GROUP BY 1,2`, [B, P]),
+    q(`SELECT extract(isodow FROM m.created_at)::int AS dow, extract(hour FROM m.created_at)::int AS h, count(*)::int AS n
+      FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.business_id=$1 AND m.role='customer' AND m.created_at > now() - make_interval(days => $2) GROUP BY 1,2`, [B, Math.max(P, 7)]),
+    one(`SELECT (telegram_token IS NOT NULL) tg, (wa_phone_number_id IS NOT NULL) wa, (owner_telegram_chat IS NOT NULL) alerts,
+      jsonb_array_length(COALESCE(ai_rules,'[]')) rules, jsonb_array_length(COALESCE(faqs,'[]')) faqs, description, address FROM businesses WHERE id=$1`, [B])]);
+  // Messages and bookings per hour, today.
+  // Where bookings come from, last 30 days.
+  // The live stream: latest messages and bookings, newest first.
+  // Open conversations: who is talking to us and how it is going.
+  // ---- richer desk data ----
+  // Micro charts: last 24 hours of messages (and failed replies), last 14 days of bookings and booked value.
   // This week, Monday to Sunday: booked minutes against open minutes per day (capsule bars) and today's capacity (gauge).
   const mon = new Date(); mon.setHours(0, 0, 0, 0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
   const wk = await q(`SELECT starts_at, ends_at FROM bookings WHERE business_id=$1 AND status <> 'cancelled' AND starts_at >= $2 AND starts_at < $2::timestamptz + interval '7 days'`, [B, mon]);
@@ -1097,14 +1109,8 @@ app.get('/api/live', wrap(async (req, res) => {
     return { d: localDate(day), open, booked: Math.round(booked), pct: open ? Math.min(100, Math.round(booked / open * 100)) : null, today: day.toDateString() === new Date().toDateString() };
   });
   // From channel to result, last 30 days (flow chart).
-  const flow = await q(`SELECT c.channel, COALESCE(c.outcome,'answered') AS outcome, count(*)::int AS n FROM conversations c
-      WHERE c.business_id=$1 AND c.updated_at > now() - make_interval(days => $2) GROUP BY 1,2`, [B, P]);
   // Busiest moments: messages by weekday and hour, last 30 days (heat grid).
-  const heat = await q(`SELECT extract(isodow FROM m.created_at)::int AS dow, extract(hour FROM m.created_at)::int AS h, count(*)::int AS n
-      FROM messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.business_id=$1 AND m.role='customer' AND m.created_at > now() - make_interval(days => $2) GROUP BY 1,2`, [B, Math.max(P, 7)]);
   // Getting started: what is still missing for this business to run on its own.
-  const ch = await one(`SELECT (telegram_token IS NOT NULL) tg, (wa_phone_number_id IS NOT NULL) wa, (owner_telegram_chat IS NOT NULL) alerts,
-      jsonb_array_length(COALESCE(ai_rules,'[]')) rules, jsonb_array_length(COALESCE(faqs,'[]')) faqs, description, address FROM businesses WHERE id=$1`, [B]);
   const setup = [
     { key: 'profile', label: 'Describe the business and its address', done: !!(ch.description && ch.address), view: 'setup' },
     { key: 'services', label: 'Add services with prices and durations', done: biz.services.length > 0, view: 'setup' },

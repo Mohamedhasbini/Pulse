@@ -99,4 +99,5 @@ function drawLeads(){const f=$("#ldF").value,L=leadData.leads.filter(l=>!f||l.st
 $("#ldF").onchange=drawLeads;
 $("#ldList").addEventListener("change",async e=>{const el=e.target.closest(".ldSt,.ldNote");if(!el)return;const id=+el.dataset.id,l=leadData.leads.find(x=>x.id===id);
   if(el.classList.contains("ldSt"))l.status=el.value;else l.notes=el.value;await req("/api/admin/leads/"+id,"PUT",{status:l.status,notes:l.notes});toast("Lead updated.");if(el.classList.contains("ldSt"))loadLeads()});
-setInterval(()=>{if(!document.hidden){refresh();loadApprovals();pollTestChat();if(!$("#calendar").hidden)loadCal()}},5000);
+// safety net only: while the live stream is connected (html.live-on) changes arrive by push, so this polls every 5 minutes; without it, every 5 seconds
+let pollN=0;setInterval(()=>{pollN++;if(document.hidden)return;if(document.documentElement.classList.contains("live-on")&&pollN%60)return;refresh();loadApprovals();pollTestChat();if(!$("#calendar").hidden)loadCal()},5000);

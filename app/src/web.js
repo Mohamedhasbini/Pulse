@@ -39,18 +39,29 @@ export function fingerprint(PUBLIC) {
     else if (/\.(js|css|svg|webmanifest|woff2?)$/.test(f.name)) hashes.set('/' + path.relative(PUBLIC, p).split(path.sep).join('/'), crypto.createHash('sha1').update(fs.readFileSync(p)).digest('hex').slice(0, 10));
   } };
   walk(PUBLIC);
+  // one stylesheet: the dashboard's local stylesheets, in page order, joined into /app.css (the cascade is unchanged)
+  let css = null, cssHash = null;
+  const bundleCss = html => {
+    const files = [...html.matchAll(/<link rel="stylesheet" href="(\/[^"?]+)(?:\?[^"]*)?">/g)].map(m => m[1]);
+    css = files.map(f => `/* ${f} */\n` + fs.readFileSync(path.join(PUBLIC, f), 'utf8')).join('\n');
+    cssHash = crypto.createHash('sha1').update(css).digest('hex').slice(0, 10); hashes.set('/app.css', cssHash);
+    return html.replace(/<link rel="stylesheet" href="(\/[^"?]+)(?:\?[^"]*)?">\n?/g, (m, f) => f === files[0] ? `<link rel="stylesheet" href="/app.css?v=${cssHash}">\n` : '');
+  };
   let html = null, seen = 0;
   const index = () => {
     const st = fs.statSync(path.join(PUBLIC, 'index.html'));
     if (!html || st.mtimeMs !== seen) {
       seen = st.mtimeMs;
-      html = fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8').replace(/(src|href)="(\/[^"?]+)(\?v=[^"]*)?"/g, (m, attr, file) => hashes.has(file) ? `${attr}="${file}?v=${hashes.get(file)}"` : m);
+      html = bundleCss(fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8')).replace(/(src|href)="(\/[^"?]+)(\?v=[^"]*)?"/g, (m, attr, file) => hashes.has(file) && file !== '/app.css' ? `${attr}="${file}?v=${hashes.get(file)}"` : m);
     }
     return html;
   };
+  index();
   return {
     // the dashboard page itself: never cached, assets inside it fingerprinted
     page: (_req, res) => res.set({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' }).send(index()),
+    // the joined stylesheet, from memory
+    css: (req, res) => { index(); res.set({ 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': req.query.v === cssHash ? 'public, max-age=31536000, immutable' : 'no-cache' }).send(css); },
     // express.static setHeaders: a request that names the current content hash may be kept for a year
     headers: (res, file) => {
       const rel = '/' + path.relative(PUBLIC, file).split(path.sep).join('/'), v = res.req?.query?.v;
@@ -71,8 +82,8 @@ export const forgetUser = uid => users.delete(uid);
 export const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' data: https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob:",
   "connect-src 'self'",
@@ -83,3 +94,20 @@ export const CSP = [
   "form-action 'self'",
   "frame-ancestors 'self'",
 ].join('; ');
+
+// ---------- request log: one JSON line per request, so `docker compose logs app` shows what is slow and for whom ----------
+// Static assets and the live stream are skipped; set LOG_REQUESTS=0 to switch it off.
+export function requestLog(bizOf) {
+  if (process.env.LOG_REQUESTS === '0') return (_req, _res, next) => next();
+  return (req, res, next) => {
+    if (!req.path.startsWith('/api/') || req.path === '/api/events') return next();
+    const t0 = process.hrtime.bigint();
+    res.on('finish', () => {
+      const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+      const line = { t: new Date().toISOString(), m: req.method, p: req.path, s: res.statusCode, ms: Math.round(ms), biz: bizOf?.(req) ?? null, u: req.user?.id ?? null };
+      if (res.statusCode >= 500 || ms > 1000) line.slow = true;
+      console.log(JSON.stringify(line));
+    });
+    next();
+  };
+}

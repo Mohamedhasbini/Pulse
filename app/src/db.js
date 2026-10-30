@@ -25,10 +25,18 @@ export async function migrate() {
 }
 
 // Runs fn while holding a lock for this business, so booking checks and inserts never interleave.
-const locks = new Map();
+// The lock is a Postgres advisory lock held on its own connection: it covers every app process (a second container,
+// the AI queue, a script), not just this one. Waiting callers queue in order; the lock is released whatever fn does.
+const locks = new Map(); // in-process queue: one connection per business at a time, so the pool is never flooded
 export function withBusinessLock(bizId, fn) {
+  const key = `biz-lock:${bizId}`;
+  const job = async () => {
+    const c = await pool.connect();
+    try { await c.query('SELECT pg_advisory_lock(hashtext($1))', [key]); return await fn(); }
+    finally { await c.query('SELECT pg_advisory_unlock(hashtext($1))', [key]).catch(() => {}); c.release(); }
+  };
   const prev = locks.get(bizId) || Promise.resolve();
-  const run = prev.then(fn, fn);
+  const run = prev.then(job, job);
   locks.set(bizId, run.catch(() => {}));
   return run;
 }
