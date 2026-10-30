@@ -335,6 +335,25 @@ body{background:radial-gradient(1200px 700px at 85% -10%,#2a2e32,transparent 60%
 .ins.i5{right:12%;bottom:8%}
 .ins::before{content:"";position:absolute;width:6px;height:6px;border-radius:50%;background:#c6f432;box-shadow:0 0 10px #c6f432;left:-3px;top:16px}
 @media (max-width:900px){.ins.i3,.ins.i5{display:none}.ins.i1{left:auto;right:4%;top:6%}.ins.i2{right:auto;left:4%;top:6%}.ins.i4{top:auto;bottom:24%}}
+
+/* executive comparison: without vs with MXAi, plus a 6-month outlook */
+.money{grid-template-columns:.85fr 1.4fr!important}
+.exec .et{font-size:26px;margin:10px 0 14px;letter-spacing:-.03em}
+.leg2{display:flex;gap:18px;font-size:13px;color:var(--ink2);margin-bottom:14px}.leg2 i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:7px;vertical-align:-1px}
+i.wo{background:#4a4f54}i.wi{background:linear-gradient(90deg,#a6d11c,#c6f432)}
+.cmp{display:grid;gap:14px}
+.cr{display:grid;grid-template-columns:200px 1fr 92px;gap:16px;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.cl b{display:block;font-size:15px}.cl small{color:var(--muted);font-size:12.5px;line-height:1.35;display:block}
+.cb{display:grid;gap:6px}.cb>div{display:flex;align-items:center;gap:10px}.cb i{display:block;height:10px;border-radius:6px;transform-origin:left;transform:scaleX(0);transition:transform 1.1s cubic-bezier(.2,.8,.2,1)}
+.rv.on .cb i{transform:scaleX(1)}.rv.on .cb>div:last-child i{transition-delay:.25s}
+.cb em{font-style:normal;font-size:13px;color:var(--ink2);white-space:nowrap}.cb>div:last-child em{color:var(--ink);font-weight:600}
+.dl{justify-self:end;font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:999px;background:#c6f432;color:#111;white-space:nowrap}
+.fc{margin-top:22px;padding:18px;border-radius:18px;background:#121417;border:1px solid var(--line)}
+.fh{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:8px}.fh b{font-size:16px}.fh small{display:block;color:var(--muted);font-size:12.5px}
+.fg2{text-align:right}.fg2 span{display:block;color:var(--ink2);font-size:12.5px}.fg2 b{font-size:30px;letter-spacing:-.04em}
+.fsvg{width:100%;height:auto;display:block}.fsvg .ft{fill:#7d838a;font-size:11px}.fsvg .fv{fill:#fff;font-size:13px;font-weight:700}
+@media (max-width:1000px){.money{grid-template-columns:1fr!important}}
+@media (max-width:640px){.cr{grid-template-columns:1fr}.dl{justify-self:start}.fh{flex-direction:column}.fg2{text-align:left}}
 </style>
 </head>
 <body>
@@ -455,16 +474,17 @@ body{background:radial-gradient(1200px 700px at 85% -10%,#2a2e32,transparent 60%
   <div class="money">
     <div class="glass rv"><span class="mono">Command center</span><h3 style="font-size:24px;margin:10px 0 6px">You stay in control</h3><p style="color:var(--ink2);margin:0">The agents work, you steer. Every action is visible, sensitive ones wait for your approval, and you can step into any chat.</p>
       <div class="roles"><div><b>Approvals</b><span>offers, refunds and changes you mark as sensitive wait for your OK</span></div><div><b>Inbox</b><span>read every chat and take over with one tap</span></div><div><b>Brief</b><span>a daily summary of what happened and what to do next</span></div><div><b>Ask MXAi</b><span>"why did revenue drop?" answered from your own data</span></div></div></div>
-    <div class="glass rv"><span class="mono">Example month · salon with 3 chairs</span><h3 style="font-size:24px;margin:10px 0 0">Where the extra money comes from</h3>
-      <div class="stack">
-        <div class="r"><span>After-hours bookings</span><div class="bar"><i style="width:100%"></i></div><b>$620</b></div>
-        <div class="r"><span>Gaps filled</span><div class="bar"><i style="width:62%"></i></div><b>$380</b></div>
-        <div class="r"><span>No-shows prevented</span><div class="bar"><i style="width:48%"></i></div><b>$300</b></div>
-        <div class="r"><span>Clients won back</span><div class="bar"><i style="width:70%"></i></div><b>$430</b></div>
-        <div class="r"><span>New from WeBook</span><div class="bar"><i style="width:34%"></i></div><b>$210</b></div>
-      </div>
-      <div class="total"><span>Extra revenue in the month</span><b>$1,940</b></div>
-      <p class="note">Illustration only. Your numbers appear live in your own dashboard.</p></div>
+    <div class="glass rv exec"><span class="mono">Example month · 3-chair salon</span><h3 class="et">Your business with MXAi vs without</h3><div class="leg2"><span><i class="wo"></i>Without MXAi</span><span><i class="wi"></i>With MXAi</span></div><div class="cmp"><div class="cr"><div class="cl"><b>Revenue captured</b><small>after-hours, weekend and missed-call demand</small></div><div class="cb"><div><i class="wo" style="width:60%"></i><em>$8,200</em></div><div><i class="wi" style="width:74%"></i><em>$10,140</em></div></div><span class="dl">+$1,940 / month</span></div><div class="cr"><div class="cl"><b>Capacity utilisation</b><small>chair time you already pay for, now sold</small></div><div class="cb"><div><i class="wo" style="width:58%"></i><em>58%</em></div><div><i class="wi" style="width:74%"></i><em>74%</em></div></div><span class="dl">+16 pts</span></div><div class="cr"><div class="cl"><b>Revenue leakage</b><small>no-shows and late cancellations</small></div><div class="cb"><div><i class="wo" style="width:74%"></i><em>$520</em></div><div><i class="wi" style="width:31%"></i><em>$220</em></div></div><span class="dl">−58%</span></div><div class="cr"><div class="cl"><b>90-day client retention</b><small>share of clients who come back</small></div><div class="cb"><div><i class="wo" style="width:56%"></i><em>41%</em></div><div><i class="wi" style="width:74%"></i><em>55%</em></div></div><span class="dl">+14 pts</span></div><div class="cr"><div class="cl"><b>Cost to win a new client</b><small>acquisition through WeBook and your page</small></div><div class="cb"><div><i class="wo" style="width:74%"></i><em>$18</em></div><div><i class="wi" style="width:37%"></i><em>$9</em></div></div><span class="dl">−50%</span></div><div class="cr"><div class="cl"><b>Team hours on chats</b><small>time back for service and sales</small></div><div class="cb"><div><i class="wo" style="width:74%"></i><em>64 h</em></div><div><i class="wi" style="width:14%"></i><em>12 h</em></div></div><span class="dl">−52 h</span></div></div><div class="fc"><div class="fh"><div><b>6-month outlook</b><small>Monthly revenue. Months 4–6 are a forecast from your first 90 days.</small></div><div class="fg2"><span>Extra revenue in 6 months</span><b>+$13,040</b></div></div>
+  <svg viewBox="0 0 560 206" class="fsvg"><defs><linearGradient id="fgap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6f432" stop-opacity=".28"/><stop offset="1" stop-color="#c6f432" stop-opacity=".04"/></linearGradient></defs>
+  <line x1="285" y1="14" x2="285" y2="164" stroke="rgba(255,255,255,.15)" stroke-dasharray="3 4"/><text x="291" y="24" class="ft">forecast →</text>
+  <polygon points="30,108 132,86 234,78 336,62 438,46 540,34 540,144 438,142 336,146 234,144 132,148 30,146" fill="url(#fgap)"/>
+  <polyline points="30,146 132,148 234,144 336,146 438,142 540,144" fill="none" stroke="#7d848b" stroke-width="2.4" stroke-dasharray="6 6"/>
+  <polyline points="30,108 132,86 234,78" fill="none" stroke="#c6f432" stroke-width="3"/>
+  <polyline points="234,78 336,62 438,46 540,34" fill="none" stroke="#c6f432" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+  <circle cx="30" cy="108" r="4" fill="#c6f432" stroke="#c6f432" stroke-width="2"/><circle cx="132" cy="86" r="4" fill="#c6f432" stroke="#c6f432" stroke-width="2"/><circle cx="234" cy="78" r="4" fill="#c6f432" stroke="#c6f432" stroke-width="2"/><circle cx="336" cy="62" r="3.5" fill="#0f1113" stroke="#c6f432" stroke-width="2"/><circle cx="438" cy="46" r="3.5" fill="#0f1113" stroke="#c6f432" stroke-width="2"/><circle cx="540" cy="34" r="3.5" fill="#0f1113" stroke="#c6f432" stroke-width="2"/>
+  <text x="30" y="202" text-anchor="middle" class="ft">M1</text><text x="132" y="202" text-anchor="middle" class="ft">M2</text><text x="234" y="202" text-anchor="middle" class="ft">M3</text><text x="336" y="202" text-anchor="middle" class="ft">M4</text><text x="438" y="202" text-anchor="middle" class="ft">M5</text><text x="540" y="202" text-anchor="middle" class="ft">M6</text>
+  <text x="540" y="22" text-anchor="end" class="fv">$11,400</text><text x="540" y="164" text-anchor="end" class="ft">$8,250</text></svg></div>
+  <p class="note">Illustration only, based on a typical 3-chair salon. Your own before-and-after appears live in your dashboard from day one.</p></div>
   </div>
 </div></section>
 
