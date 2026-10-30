@@ -1,5 +1,5 @@
-// Home page shortcuts: buttons the owner pins to Today, either to open a page and tab or to ask Pulse AI a question
-// in one click. The owner adds them on Today, or asks Pulse AI to ("add a shortcut to this week's revenue").
+// Home page shortcuts: buttons the owner pins to Today, either to open a page and tab or to ask MXAi Assistant a question
+// in one click. The owner adds them on Today, or asks MXAi Assistant to ("add a shortcut to this week's revenue").
 import { q, one } from './db.js';
 import { PAGE_TABS } from './team.js';
 

@@ -1,4 +1,4 @@
-// Pulse AI command center: a full-screen chat over the whole dashboard.
+// MXAi Assistant command center: a full-screen chat over the whole dashboard.
 // Every number comes from the real data (the tools in team.js). You see its reasoning and each lookup live, the rows
 // behind the answer as tables and charts you can download (CSV) or print (PDF), and anything that changes something
 // waits for your Approve. Opens with Ctrl/⌘+J, from the sidebar, or window.PulseCommand.open("question").
@@ -120,10 +120,10 @@
   function report(m) {
     const w = window.open('', '_blank'); if (!w) return window.toast?.('Allow pop-ups to open the report.');
     const q = cur.msgs[cur.msgs.indexOf(m) - 1]?.text || '';
-    w.document.write(`<!doctype html><meta charset="utf-8"><title>Pulse report</title><style>body{font:15px/1.6 Georgia,serif;max-width:760px;margin:48px auto;padding:0 24px;color:#1a1a1a}
+    w.document.write(`<!doctype html><meta charset="utf-8"><title>MXAi report</title><style>body{font:15px/1.6 Georgia,serif;max-width:760px;margin:48px auto;padding:0 24px;color:#1a1a1a}
       h1{font:600 24px/1.3 system-ui,sans-serif;margin:0 0 4px}.meta{font:12px system-ui,sans-serif;color:#777;margin-bottom:28px}h3,h4,h5{font-family:system-ui,sans-serif}
       table{border-collapse:collapse;width:100%;margin:12px 0 28px;font:12px system-ui,sans-serif}th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left}th{color:#666;font-weight:600}h2{font:600 15px system-ui,sans-serif;margin-top:32px;text-transform:capitalize}</style>
-      <h1>${esc(q)}</h1><div class="meta">Pulse AI · ${new Date().toLocaleString()} · from your live data</div>${md(m.text)}
+      <h1>${esc(q)}</h1><div class="meta">MXAi Assistant · ${new Date().toLocaleString()} · from your live data</div>${md(m.text)}
       ${(m.tables || []).map(t => { const cols = Object.keys(t.rows[0]).filter(c => !hidden(c)); return `<h2>${esc(head(t.title))}</h2><table><tr>${cols.map(c => `<th>${esc(head(c))}</th>`).join('')}</tr>${t.rows.map(r => `<tr>${cols.map(c => `<td>${esc(cell(r[c]))}</td>`).join('')}</tr>`).join('')}</table>` }).join('')}
       <script>onload=()=>print()<\/script>`);
     w.document.close();
@@ -201,12 +201,12 @@
             if (ev.done) done = ev.done;
           }
         }
-      } else { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Pulse AI is not reachable right now.'); done = j; }
+      } else { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'MXAi Assistant is not reachable right now.'); done = j; }
       if (!done) throw new Error('The answer was cut off. Try again.');
       if (done.learned?.length) loadMemory();
       Object.assign(m, { pending: false, learned: done.learned || [], text: done.answer, actions: done.actions || [], tables: done.tables || [], sources: done.sources || [] });
       reveal(m);
-    } catch (err) { Object.assign(m, { pending: false, error: true, text: err.message || 'Pulse AI is not reachable right now. Try again in a minute.' }); draw(); }
+    } catch (err) { Object.assign(m, { pending: false, error: true, text: err.message || 'MXAi Assistant is not reachable right now. Try again in a minute.' }); draw(); }
     busy = false; $('.pc-send', root).disabled = false; save();
   }
 
@@ -230,18 +230,18 @@
   }
 
   function build() {
-    root = document.createElement('div'); root.className = 'pc'; root.hidden = true; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Pulse AI');
-    root.innerHTML = `<aside class="pc-side"><div class="pc-brand"><span class="pc-logo sm" aria-hidden="true"></span>Pulse AI</div>
+    root = document.createElement('div'); root.className = 'pc'; root.hidden = true; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'MXAi Assistant');
+    root.innerHTML = `<aside class="pc-side"><div class="pc-brand"><span class="pc-logo sm" aria-hidden="true"></span>MXAi Assistant</div>
         <button type="button" class="pc-new"><span>＋</span>New chat</button>
         <input class="pc-search" type="search" placeholder="Search chats" aria-label="Search chats">
         <div class="pc-list"></div>
         <details class="pc-mem"><summary>Memory</summary><div></div></details></aside>
       <main class="pc-main"><header><button type="button" class="pc-menu" aria-label="Chats">☰</button><span class="pc-title"></span><kbd>Esc</kbd><button type="button" class="pc-x" aria-label="Close">✕</button></header>
         <div class="pc-log" aria-live="polite"></div>
-        <div class="pc-dock"><form class="pc-in"><textarea rows="1" placeholder="Ask anything, or tell me what to do…" aria-label="Message Pulse AI"></textarea>
+        <div class="pc-dock"><form class="pc-in"><textarea rows="1" placeholder="Ask anything, or tell me what to do…" aria-label="Message MXAi Assistant"></textarea>
           <div class="pc-inbar"><span class="pc-chip"><i></i>Live data</span><span class="pc-chip">Approves before acting</span><button type="submit" class="pc-send" aria-label="Send">↑</button></div></form>
           <div class="pc-sugg">${SUGG.map(([q, k]) => `<button type="button" data-q="${esc(q)}"><b>${esc(k)}</b>${esc(q)}</button>`).join('')}</div>
-          <small class="pc-note">Pulse AI works from your live data. Check important figures before acting on them.</small></div></main>`;
+          <small class="pc-note">MXAi Assistant works from your live data. Check important figures before acting on them.</small></div></main>`;
     document.body.appendChild(root);
     const ta = $('textarea', root);
     $('form', root).addEventListener('submit', ev => { ev.preventDefault(); const v = ta.value; ta.value = ''; ta.style.height = ''; ask(v); });
@@ -268,7 +268,7 @@
       if (t.hasAttribute('data-report')) return report(m);
     });
   }
-  // what Pulse AI remembers about this owner: visible and deletable, nothing hidden
+  // what MXAi Assistant remembers about this owner: visible and deletable, nothing hidden
   async function loadMemory() {
     const box = root && $('.pc-mem div', root); if (!box) return;
     let list = []; try { list = await req('/api/team/memory') } catch {}
@@ -286,7 +286,7 @@
     const nav = document.querySelector('nav .navpills'); if (!nav || window.LAB) return;
     clearInterval(launch);
     const b = document.createElement('button'); b.type = 'button'; b.className = 'pc-launch';
-    b.innerHTML = '<span class="pc-logo sm" aria-hidden="true"></span><span>Ask Pulse AI</span><kbd>Ctrl J</kbd>'; b.addEventListener('click', () => open());
+    b.innerHTML = '<span class="pc-logo sm" aria-hidden="true"></span><span>Ask MXAi Assistant</span><kbd>Ctrl J</kbd>'; b.addEventListener('click', () => open());
     nav.prepend(b);
   }, 400);
   setTimeout(() => clearInterval(launch), 20000);

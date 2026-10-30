@@ -65,7 +65,7 @@ export function checkTotp(secret, code) {
   const now = Math.floor(Date.now() / 30000);
   return [-2, -1, 0, 1, 2].some(d => safeEq(totp(secret, now + d), c));
 }
-export const totpUrl = (secret, email) => `otpauth://totp/${encodeURIComponent('Pulse:' + email)}?secret=${secret}&issuer=Pulse&digits=6&period=30`;
+export const totpUrl = (secret, email) => `otpauth://totp/${encodeURIComponent('MXAi:' + email)}?secret=${secret}&issuer=MXAi&digits=6&period=30`;
 
 // Strong enough for a confidential dashboard: 10+ characters with letters and numbers.
 export function weakPassword(pw) {

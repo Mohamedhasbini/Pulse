@@ -1,6 +1,6 @@
-// The Pulse heartbeat: a wave of energy crosses the open page, every 8 seconds on Home and every 15 seconds
+// The MXAi heartbeat: a wave of energy crosses the open page, every 8 seconds on Home and every 15 seconds
 // elsewhere. It starts at a random point, so each beat hits the cards, tables and charts in a different order.
-// Off with Settings → Pulse heartbeat, with Animations off, or when the system asks for reduced motion.
+// Off with Settings → MXAi heartbeat, with Animations off, or when the system asks for reduced motion.
 (function(){
 const SPEED=900; // pixels per second the wave travels
 const off=()=>{let p={};try{p=JSON.parse(localStorage.getItem("rb-prefs")||"{}")}catch{}

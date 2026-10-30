@@ -167,7 +167,7 @@ async function alertAdmin(text) {
   console.warn('[alert]', text);
   await q(`INSERT INTO audit_log (action, detail) VALUES ('system_alert', $1)`, [text.slice(0, 500)]).catch(() => {});
   if (token && chat) await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chat, text: '⚠️ Pulse: ' + text }) }).catch(e => console.error('alert send failed:', e.message));
+    body: JSON.stringify({ chat_id: chat, text: '⚠️ MXAi: ' + text }) }).catch(e => console.error('alert send failed:', e.message));
 }
 export async function health(aiHealth) {
   const checks = [];

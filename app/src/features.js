@@ -13,7 +13,7 @@ export const FEATURES = {
   booking_page: 'Online booking page', webook_listing: 'Listed in the WeBook app', reminders: 'Appointment reminders',
   teach: 'Teach AI (review, corrections, strict rules)', insights: 'Insights and reports', coupons: 'Discount codes',
   telegram: 'Own Telegram bot', staff_logins: 'Staff logins', marketing: 'Marketing campaigns to opted-in clients',
-  remove_branding: 'Remove "Powered by Pulse" from confirmations and the booking page',
+  remove_branding: 'Remove "Powered by MXAi" from confirmations and the booking page',
   website: 'Own website (one page, own domain or subdomain)',
 };
 
@@ -30,7 +30,7 @@ export const DEFAULT_ADDONS = [
   { key: 'teach_addon', name: 'Teach AI', price: 15, features: ['teach'] },
   { key: 'staff_addon', name: 'Staff logins', price: 10, features: ['staff_logins'] },
   { key: 'marketing_addon', name: 'Marketing', price: 19, features: ['marketing'] },
-  { key: 'whitelabel_addon', name: 'Remove Pulse branding', price: 9, features: ['remove_branding'] },
+  { key: 'whitelabel_addon', name: 'Remove MXAi branding', price: 9, features: ['remove_branding'] },
   { key: 'website_addon', name: 'Own website', price: 15, features: ['website'] },
 ];
 

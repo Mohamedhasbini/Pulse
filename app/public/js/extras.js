@@ -79,13 +79,13 @@ $("#plUse").addEventListener("click",async e=>{const b=e.target.closest("[data-c
   const typed=prompt(`Close "${b.dataset.name}" and permanently delete ALL its data (customers, chats, bookings, logins, photos)?\n\nExport it first if you may need it. Type the business name exactly to confirm:`);
   if(typed===null)return;try{await req("/api/admin/businesses/"+b.dataset.close,"DELETE",{confirm:typed});toast("Business closed and its data deleted.");loadPlatform()}catch(err){toast(err.message)}});
 
-// ---------- Command center: leads from the Pulse website ----------
+// ---------- Command center: leads from the MXAi website ----------
 const LST={new:["New","t-attn"],contacted:["Contacted","t-live"],demo_booked:["Demo booked","t-hand"],won:["Won","t-book"],lost:["Lost",""]},SRC={confirm:"booking confirmation",book:"booking page",webook:"WeBook app",chat:"chat",direct:"direct visit"};
 let leadData=null;
 async function loadLeads(){leadData=await req("/api/admin/leads");const L=leadData.leads,clicks=leadData.sources.reduce((a,s)=>a+s.clicks,0),won=L.filter(l=>l.status==="won").length;
   $("#ldKpis").innerHTML=[["New leads",L.filter(l=>l.status==="new").length,1],["All leads",L.length],["Demo requests",L.filter(l=>l.kind==="demo").length],["Badge clicks",clicks],["Won",won+(L.length?` · ${Math.round(won/L.length*100)}%`:"")]].map(([l,v,h])=>`<div class="kpi glass${h?" hero":""}"><span class="k-l">${l}</span><span class="v num">${v}</span></div>`).join("");
   drawLeads();
-  $("#ldRefs").innerHTML=(leadData.referrers.length?leadData.referrers.map(r=>`<div class="item"><div class="grow"><b>${esc(r.name)}</b><small>${r.clicks_30d} in the last 30 days · ${r.leads} lead${r.leads===1?"":"s"}</small></div><span class="tag t-book">${r.clicks} clicks</span></div>`).join(""):`<div class="empty">No clicks yet. Every booking confirmation and booking page now carries a "Powered by Pulse" link.</div>`)
+  $("#ldRefs").innerHTML=(leadData.referrers.length?leadData.referrers.map(r=>`<div class="item"><div class="grow"><b>${esc(r.name)}</b><small>${r.clicks_30d} in the last 30 days · ${r.leads} lead${r.leads===1?"":"s"}</small></div><span class="tag t-book">${r.clicks} clicks</span></div>`).join(""):`<div class="empty">No clicks yet. Every booking confirmation and booking page now carries a "Powered by MXAi" link.</div>`)
     +(leadData.sources.length?`<p class="sub" style="margin:12px 0 0;font-size:13px">By source: ${leadData.sources.map(s=>`${esc(SRC[s.source]||s.source)} ${s.clicks}`).join(" · ")}</p>`:"")}
 function drawLeads(){const f=$("#ldF").value,L=leadData.leads.filter(l=>!f||l.status===f);
   $("#ldList").innerHTML=L.length?L.map(l=>`<div class="item" style="align-items:flex-start;flex-wrap:wrap"><div class="grow" style="min-width:220px"><b>${esc(l.name)} · ${esc(l.business)}</b>

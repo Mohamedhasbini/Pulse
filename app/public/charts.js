@@ -1,4 +1,4 @@
-// Pulse v6 board: the 16 chart and table drafts (design/drafts/pulse-charts-tables-16.html), built from live data
+// MXAi v6 board: the 16 chart and table drafts (design/drafts/pulse-charts-tables-16.html), built from live data
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -202,7 +202,7 @@
     return card(24, soon ? 'Closest to drifting away' : 'Worth winning back', soon ? 'Nobody has lapsed yet. These paying clients have been away longest' : 'Paid before, not seen in 5+ weeks. Highest value first', l.length ? `<table class="pv-t"><thead><tr><th>Client</th><th>Away</th><th>Spent</th><th>Visits</th><th>Offers</th></tr></thead><tbody>${l.map(c => `<tr><td><b>${esc(c.name || c.phone)}</b></td><td><span class="pv-chip ${d(c) > 90 ? 'warn' : ''}">${d(c)} days</span></td><td>${money(c.spent)}</td><td>${c.visits || 0}</td><td>${c.marketing_ok ? '<span class="pv-chip on">Can message</span>' : '<span class="pv-chip">Not opted in</span>'}</td></tr>`).join('')}</tbody></table>` : empty('Nobody has drifted away. Nice.'), 1);
   }
 
-  // ===== 25+: boards for Inbox, Calendar, Marketing, Pulse, Train and Settings =====
+  // ===== 25+: boards for Inbox, Calendar, Marketing, MXAi, Train and Settings =====
   const chName = c => ({ test: 'Test chat', whatsapp: 'WhatsApp', telegram: 'Telegram', webook: 'WeBook', instagram: 'Instagram', web: 'Website' })[c] || (c ? c[0].toUpperCase() + c.slice(1) : 'Other');
   const hbars = (rows, fmt = v => v) => { const mx = Math.max(1, ...rows.map(r => r[1])); return rows.length ? rows.map(([k, v], i) => `<div class="pv-hb"><span>${esc(k)}</span><div class="pv-bar lg"><i style="width:${v / mx * 100}%;${i ? `background:${S}` : ''}"></i></div><b>${fmt(v)}</b></div>`).join('') : empty('Nothing yet'); };
   const kv = items => `<div class="pv-kv">${items.map(([l, v, s]) => `<div><span>${esc(l)}</span><b>${v}</b>${s ? `<small>${s}</small>` : ''}</div>`).join('')}</div>`;
@@ -352,7 +352,7 @@
       'Website design': [biz.booking_color ? `<i class="pv-sw" style="background:${esc(biz.booking_color)}"></i>` : '—', 'your page colour', ''],
       'Website address': [esc(biz.custom_domain || biz.subdomain || '—'), 'where clients find you', ''],
       Approvals: [n.approvals || 0, 'waiting for your OK', ''],
-      'Ask Pulse': ['Ask', 'anything about your business', ''],
+      'Ask MXAi': ['Ask', 'anything about your business', ''],
       Brief: [n.visits_today || 0, `visits today · ${money(n.revenue_today)}`, ''],
       Coach: [(stats.conv ? Math.round((stats.answered || 0) / stats.conv * 100) : 0) + '%', 'chats Nora answers alone', ''],
       Rules: [nr, 'rules Nora follows', ''],

@@ -233,7 +233,7 @@ ${preview ? `<div class="pv">Preview${site.published ? '' : ' · not published y
 <main id="main">
 ${site.sections.map(s => S[s] ? S[s]() : '').join('\n')}
 </main>
-<footer><div class="wrap"><span>© ${new Date().getFullYear()} ${esc(biz.name)}</span><a href="/privacy">${t.privacy}</a><span class="sp"></span>${biz.show_branding !== false ? `<a href="/go?b=${biz.id}&amp;s=site">${t.powered} <b>Pulse</b></a>` : ''}</div></footer>
+<footer><div class="wrap"><span>© ${new Date().getFullYear()} ${esc(biz.name)}</span><a href="/privacy">${t.privacy}</a><span class="sp"></span>${biz.show_branding !== false ? `<a href="/go?b=${biz.id}&amp;s=site">${t.powered} <b>MXAi</b></a>` : ''}</div></footer>
 <div class="dock">${btn(bookUrl, t.book)}${btn(wa || chatUrl, wa ? 'WhatsApp' : t.chat, 'ghost', true)}</div>
 </body>
 </html>`;

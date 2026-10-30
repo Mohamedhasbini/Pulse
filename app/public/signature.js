@@ -47,7 +47,7 @@ async function loadFlow(){let s;try{s=await get(`/api/stats?days=${per()}`)}catc
   outs.forEach(([l,n,hot],i)=>{const y=45+i*80;
     g+=`<path d="M${cx+60} ${cy} C ${cx+180} ${cy}, ${cx+200} ${y}, 760 ${y}" fill="none" stroke="${hot?"var(--pg)":"rgba(255,255,255,.28)"}" stroke-width="${W(n)}" stroke-linecap="round" data-tip="${l}: ${n} of ${conv}"/>`;
     g+=`<g data-tip="${l}: ${n} (${pct(n,conv)}%)"><rect x="760" y="${y-24}" width="220" height="48" rx="24" fill="${hot?"var(--pg)":"var(--gp-nest)"}"/><text x="784" y="${y+5}" class="sg-t" ${hot?'fill="#111"':""}>${l}</text><text x="958" y="${y+5}" class="sg-n" text-anchor="end" ${hot?'fill="#111"':""}>${n}</text></g>`});
-  g+=`<g data-tip="${conv} conversations in the period"><rect x="${cx-70}" y="${cy-44}" width="140" height="88" rx="26" fill="var(--pg)"/><text x="${cx}" y="${cy-6}" text-anchor="middle" class="sg-n" fill="#111" style="font-size:30px;font-weight:300">${conv}</text><text x="${cx}" y="${cy+22}" text-anchor="middle" class="sg-t" fill="#111">Pulse AI</text></g>`;
+  g+=`<g data-tip="${conv} conversations in the period"><rect x="${cx-70}" y="${cy-44}" width="140" height="88" rx="26" fill="var(--pg)"/><text x="${cx}" y="${cy-6}" text-anchor="middle" class="sg-n" fill="#111" style="font-size:30px;font-weight:300">${conv}</text><text x="${cx}" y="${cy+22}" text-anchor="middle" class="sg-t" fill="#111">MXAi Assistant</text></g>`;
   $("#sgFlow").innerHTML=g;
   $("#sgFlowSub").textContent=conv?`${pct(booked,conv)}% of ${conv} conversations became bookings`:"Conversations will flow here as customers write in";
   $("#sgBooked").textContent=s.ai_bookings||0;$("#sgBookedV").textContent=money(s.ai_value)+" booked";

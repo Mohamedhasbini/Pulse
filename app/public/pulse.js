@@ -1,7 +1,7 @@
-// Pulse navigation: 10 pages, each with at most 3 tabs and never a tab inside a tab (design/pulse-ia-prompt.md v3).
+// MXAi navigation: 10 pages, each with at most 3 tabs and never a tab inside a tab (design/pulse-ia-prompt.md v3).
 // The sections, panes and loaders built before stay as they are; a tab opens one through the old entries
 // (window.pulsePages from sidebar.js, or the 'openpage' event), then shows only the panes that tab owns and
-// hides the old tab rows. Pulse AI's own pages (Approvals, Ask Pulse, Brief) are drawn here.
+// hides the old tab rows. MXAi Assistant's own pages (Approvals, Ask MXAi, Brief) are drawn here.
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const e = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -53,7 +53,7 @@
       ['Website photos', { entry: 'website', ws: 1 }],
       ['Website design', { entry: 'website', ws: 2 }],
       ['Website address', { entry: 'website', ws: 3 }]]],
-    ['pulse', 'Pulse AI', 'Your AI assistant', [['Approvals', { own: 'approvals' }], ['Ask Pulse', { own: 'ask' }], ['Brief', { own: 'brief' }]]],
+    ['pulse', 'Ask MXAi', 'Your AI assistant', [['Approvals', { own: 'approvals' }], ['Ask MXAi', { own: 'ask' }], ['Brief', { own: 'brief' }]]],
     ['train', 'Train Nora', 'Make Nora smarter', [
       ['Coach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach'] }],
       ['Rules', { entry: 'training', mode: 'coach', only: ['top', 'tchRules'] }],
@@ -215,7 +215,7 @@
     box.onclick = ev => { const t = ev.target.closest('[data-to]'); if (t) { const [p, k] = t.dataset.to.split(','); go(p, +k) } };
   }
 
-  // ---------- Pulse AI's own pages ----------
+  // ---------- MXAi Assistant's own pages ----------
   const own = {};
   function page(key, title, sub, body) {
     if (own[key]) return own[key];
@@ -228,11 +228,11 @@
     $$('main > section.wrap').forEach(s => s.hidden = true);
     if (key === 'calendar') { const s = page('calendar', 'Calendar', '', '<div id="gcRoot"></div>'); s.hidden = false; window.PulseCal?.mount(s); }
     if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }
-    if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything Pulse AI prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
+    if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything MXAi Assistant prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
     if (key === 'integrations') { const s = page('integrations', 'Integrations', '', '<div id="igRoot"></div>'); s.hidden = false; window.PulseIntegrations?.mount(s); }
     if (key === 'growth') { const s = page('growth', 'Marketing', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }
     if (key === 'brief') { const s = page('brief', 'Weekly brief', 'This week against last week, and the agents\' results. Worked out from your own numbers.', '<div id="paBrief"></div>'); s.hidden = false; loadBrief(); }
-    if (key === 'ask') { const s = page('ask', 'Ask Pulse', 'Ask anything about your business. Pulse looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); window.PulseCommand?.open(); }
+    if (key === 'ask') { const s = page('ask', 'Ask MXAi', 'Ask anything about your business. MXAi looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); window.PulseCommand?.open(); }
   }
 
   // Approvals
@@ -249,7 +249,7 @@
     count = d.count; s._items = d.items; badges();
     box.innerHTML = d.items.length ? d.items.map((x, i) => `<div class="pa-item" data-i="${i}"><span class="pa-k pa-${x.kind}">${KIND[x.kind]}</span>
       <div class="pa-t"><b>${e(x.title)}</b><small>${e(x.why || '')}</small></div><div class="pa-a">${ACT[x.kind](x)}</div></div>`).join('')
-      : `<p class="empty">Nothing waiting. Pulse AI is handling everything.</p>`;
+      : `<p class="empty">Nothing waiting. MXAi Assistant is handling everything.</p>`;
     const n = $('.p10-bar [data-t="0"]'); if (current?.[0] === 'pulse' && n) n.innerHTML = 'Approvals' + (count ? ` <b class="pa-n">${count}</b>` : '');
   }
   async function act(ev) {
@@ -272,19 +272,19 @@
     try { d = await req('/api/pulse/brief'); } catch { box.innerHTML = '<p class="empty">Couldn\'t load the brief.</p>'; return; }
     const col = (t, cls, list, none) => `<div class="card glass pa-col ${cls}"><h3>${t}</h3>${list.length ? `<ul>${list.map(x => `<li>${e(x)}</li>`).join('')}</ul>` : `<p class="empty">${none}</p>`}</div>`;
     const money = n => '$' + Math.round(n || 0).toLocaleString();
-    box.innerHTML = `<div class="pa-cols">${col('Wins', 'win', d.wins, 'No clear wins yet this week.')}${col('Risks', 'risk', d.risks, 'Nothing worrying this week.')}${col('Next steps', 'next', d.next, 'Nothing to do. Pulse AI has it.')}</div>`
+    box.innerHTML = `<div class="pa-cols">${col('Wins', 'win', d.wins, 'No clear wins yet this week.')}${col('Risks', 'risk', d.risks, 'Nothing worrying this week.')}${col('Next steps', 'next', d.next, 'Nothing to do. MXAi Assistant has it.')}</div>`
       + `<h2 class="pa-h">Agents, last 30 days</h2><div class="card glass pa-score">${d.agents.length ? `<table><thead><tr><th>Agent</th><th>Sent</th><th>Booked after</th><th>Value</th></tr></thead><tbody>${d.agents.map(a => `<tr><td>${e(a.name)}</td><td>${a.sent}</td><td>${a.booked}${a.sent ? ` <small>(${Math.round(a.booked / a.sent * 100)}%)</small>` : ''}</td><td>${money(a.value)}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">No agent messages sent yet. When you send one, its results show here.</p>'}</div>`;
   }
 
-  // Ask Pulse: one chat. The server picks the skill (Front desk, Support, Growth, Analyst) for each question.
+  // Ask MXAi: one chat. The server picks the skill (Front desk, Support, Growth, Analyst) for each question.
   const ASK = `<div class="card glass ask"><div class="ask-skills" id="askSkills"></div><div class="ask-log" id="askLog" aria-live="polite"></div>
-    <div class="ask-sugg" id="askSugg"></div><form class="ask-form" id="askForm"><input id="askIn" autocomplete="off" placeholder="Ask anything: who hasn't been back in 2 months? how was last week?" aria-label="Ask Pulse"><button class="btn" type="submit">Ask</button></form></div>`;
+    <div class="ask-sugg" id="askSugg"></div><form class="ask-form" id="askForm"><input id="askIn" autocomplete="off" placeholder="Ask anything: who hasn't been back in 2 months? how was last week?" aria-label="Ask MXAi"><button class="btn" type="submit">Ask</button></form></div>`;
   const SUGG = ['How did this week go?', 'Who could fill tomorrow\'s free slots?', 'Add a shortcut to this week\'s revenue', 'Which regulars haven\'t been back?'];
   let convo = [], team = {}, asking = false;
   async function askInit(s) {
     if (s.dataset.on) return; s.dataset.on = 1;
     try { (await req('/api/team')).team.forEach(t => team[t.id] = t); } catch {}
-    s.querySelector('#askSkills').innerHTML = 'Pulse AI can: ' + ['Answer anything with your real numbers', 'Book, message and follow up', 'Teach Nora rules and answers', 'Run growth agents', 'Add shortcuts to Home', 'Find any page for you'].map(t => `<span>${e(t)}</span>`).join('');
+    s.querySelector('#askSkills').innerHTML = 'MXAi Assistant can: ' + ['Answer anything with your real numbers', 'Book, message and follow up', 'Teach Nora rules and answers', 'Run growth agents', 'Add shortcuts to Home', 'Find any page for you'].map(t => `<span>${e(t)}</span>`).join('');
     s.querySelector('#askSugg').innerHTML = SUGG.map(q => `<button type="button" class="chip">${e(q)}</button>`).join('');
     s.querySelector('#askSugg').addEventListener('click', ev => { const c = ev.target.closest('.chip'); if (c) ask(c.textContent) });
     s.querySelector('#askForm').addEventListener('submit', ev => { ev.preventDefault(); const i = s.querySelector('#askIn'); if (i.value.trim()) { ask(i.value.trim()); i.value = '' } });
@@ -298,13 +298,13 @@
     try {
       const r = await req('/api/team/ask', 'POST', { messages: convo, page: 'ask' });
       convo.push({ role: 'employee', text: r.answer });
-      const skill = 'Pulse AI';
+      const skill = 'MXAi Assistant';
       wait.classList.remove('busy');
       wait.innerHTML = `${skill ? `<small class="ask-skill">${e(skill)}</small>` : ''}<p>${e(r.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</p>`
         + (r.actions?.length ? `<div class="ask-acts">${r.actions.map((a, k) => `<button type="button" class="btn ghost" data-k="${k}">${e(a.type === 'add_shortcut' ? `Add to Home: ${a.label}` : a.label || a.type.replace(/_/g, ' '))}${a.client ? ` · ${e(a.client)}` : ''}</button>`).join('')}</div>` : '')
         + (r.sources?.length ? `<small class="ask-src">From: ${r.sources.map(x => e(x.label)).join(', ')}</small>` : '');
       wait._acts = r.actions || [];
-    } catch (err) { wait.classList.remove('busy'); wait.innerHTML = `<p>${e(err.message || 'Pulse is not reachable right now. Try again in a minute.')}</p>`; convo.pop(); }
+    } catch (err) { wait.classList.remove('busy'); wait.innerHTML = `<p>${e(err.message || 'MXAi is not reachable right now. Try again in a minute.')}</p>`; convo.pop(); }
     asking = false;
   }
   async function doAct(ev) {
@@ -315,7 +315,7 @@
     catch (err) { b.disabled = false; window.toast?.(err.message || 'That did not work.'); }
   }
 
-  // ---------- Home shortcuts: the owner's own buttons on Today (Pulse AI can add them too) ----------
+  // ---------- Home shortcuts: the owner's own buttons on Today (MXAi Assistant can add them too) ----------
   let sc = { shortcuts: [], pages: {}, max: 8 };
   const pageLabel = id => named(PAGES.find(p => p[0] === id)?.[1] || id);
   async function loadShortcuts() { try { sc = await req('/api/shortcuts'); } catch {} drawShortcuts(); }
@@ -328,7 +328,7 @@
     }
     const list = sc.shortcuts || [];
     const sv = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`, SPARK = '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>';
-    box.innerHTML = `<div class="sc-row">${list.map((x, k) => `<span class="sc${x.ask ? ' ask' : ''}"><button type="button" class="sc-go" data-i="${k}" title="${e(x.ask ? 'Asks Pulse AI: ' + x.ask : 'Opens ' + pageLabel(x.page) + ' › ' + (sc.pages[x.page]?.[x.tab] || ''))}"><span class="sc-ic">${sv(x.ask ? SPARK : ICON[x.page] || SPARK)}</span>${e(x.label)}</button><button type="button" class="sc-x" data-x="${k}" aria-label="Remove ${e(x.label)}">${sv('<path d="M6 6l12 12M18 6 6 18"/>')}</button></span>`).join('')}
+    box.innerHTML = `<div class="sc-row">${list.map((x, k) => `<span class="sc${x.ask ? ' ask' : ''}"><button type="button" class="sc-go" data-i="${k}" title="${e(x.ask ? 'Asks MXAi Assistant: ' + x.ask : 'Opens ' + pageLabel(x.page) + ' › ' + (sc.pages[x.page]?.[x.tab] || ''))}"><span class="sc-ic">${sv(x.ask ? SPARK : ICON[x.page] || SPARK)}</span>${e(x.label)}</button><button type="button" class="sc-x" data-x="${k}" aria-label="Remove ${e(x.label)}">${sv('<path d="M6 6l12 12M18 6 6 18"/>')}</button></span>`).join('')}
       ${list.length < sc.max ? `<button type="button" class="sc-add" data-add="1">${sv('<path d="M12 5v14M5 12h14"/>')}Add shortcut<kbd>Ctrl K</kbd></button>` : ''}
       ${list.length ? '' : '<small class="sc-tip">Pin the pages and questions you use most.</small>'}</div>`;
   }
@@ -340,7 +340,7 @@
   }
 
 
-  // ---------- badges: Inbox = chats waiting, Pulse AI = approvals, Train AI = open questions ----------
+  // ---------- badges: Inbox = chats waiting, MXAi Assistant = approvals, Train AI = open questions ----------
   function badges() {
     const set = (id, n) => { const b = $(`.p10-n[data-for="${id}"]`); if (b) { b.hidden = !n; b.textContent = n || '' } };
     set('pulse', count);

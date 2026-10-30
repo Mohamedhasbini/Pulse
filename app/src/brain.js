@@ -20,7 +20,7 @@ const SLOW = "Sorry, I'm a bit slow right now. Could you send that again in a mo
 // Last result of talking to the AI, shown on the dashboard.
 export const aiHealth = { ok: null, at: null, ms: null, error: null };
 
-// AI pacing: the AI plan allows only so many replies a minute (Gemini free tier: 15). Pulse stays under it
+// AI pacing: the AI plan allows only so many replies a minute (Gemini free tier: 15). MXAi stays under it
 // instead of being refused; what doesn't fit waits in ai_queue and is answered as soon as there is room.
 // Counted in the database (ai_calls), so every process together stays under the one plan limit.
 const AI_RPM = Math.max(1, +process.env.AI_RPM || 10); // below 15: Jarvis and the coach share the same key

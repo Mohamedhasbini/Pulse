@@ -1,5 +1,5 @@
 // The one search box (Ctrl K / Cmd K), in the spirit of Linear, Raycast and Magic UI's command menu.
-// Search: jump to any page or tab, ask Pulse AI, find a client or a conversation, run an action.
+// Search: jump to any page or tab, ask MXAi Assistant, find a client or a conversation, run an action.
 // Pin mode (openPalette({ pin: true }) from "Add shortcut" on Today): pick what the button opens, name it, save.
 // Any page result can also be pinned straight from search with Tab.
 (() => {
@@ -74,7 +74,7 @@
   }
   async function search() {
     const raw = q.value.trim(), w = raw.toLowerCase(), my = ++seq;
-    const ask = raw.length > 2 ? [{ g: 'Ask Pulse AI', t: /[?.!]$/.test(raw) ? raw : raw + '?', s: mode === 'pin' ? 'A button that asks this' : 'Answered with your real numbers', ic: I.spark, ask: raw, words: raw }] : [];
+    const ask = raw.length > 2 ? [{ g: 'Ask MXAi Assistant', t: /[?.!]$/.test(raw) ? raw : raw + '?', s: mode === 'pin' ? 'A button that asks this' : 'Answered with your real numbers', ic: I.spark, ask: raw, words: raw }] : [];
     let found = [...pages(), ...(mode === 'pin' ? [] : actions())].map(it => ({ it, sc: score(it, w) })).filter(x => x.sc).sort((a, b) => b.sc - a.sc).map(x => x.it);
     found = w ? found.slice(0, 8) : found.filter(x => x.tab === 0 || mode === 'pin' || x.page == null).slice(0, mode === 'pin' ? 60 : 14);
     // pages first when the words name a page; otherwise the question first
@@ -94,7 +94,7 @@
   function setMode(m) {
     mode = m; box.classList.toggle('pin', m !== 'search');
     box.querySelector('#cpChip').hidden = m === 'search';
-    q.placeholder = m === 'search' ? 'Search pages, clients, chats, or ask Pulse AI…' : 'Type a page, or a question for Pulse AI…';
+    q.placeholder = m === 'search' ? 'Search pages, clients, chats, or ask MXAi Assistant…' : 'Type a page, or a question for MXAi Assistant…';
     nameF.hidden = m !== 'name'; res.hidden = m === 'name'; q.closest('.cp-in').hidden = m === 'name';
     foot();
   }
@@ -108,7 +108,7 @@
     if (pinned().length >= 8) { window.toast?.('Today holds up to 8 shortcuts. Remove one first.'); return; }
     picked = it; setMode('name');
     box.querySelector('#cpPrevIc').innerHTML = svg(it.ic);
-    box.querySelector('#cpPrevTo').textContent = it.ask ? 'Asks Pulse AI: ' + it.ask : 'Opens ' + (it.s && it.s !== 'Page' ? it.s + ' › ' : '') + it.t;
+    box.querySelector('#cpPrevTo').textContent = it.ask ? 'Asks MXAi Assistant: ' + it.ask : 'Opens ' + (it.s && it.s !== 'Page' ? it.s + ' › ' : '') + it.t;
     // the words the owner searched with make the best name ("revenue" found Business: call it Revenue)
     const typed = q.value.trim(), own = typed && !it.ask && !it.t.toLowerCase().includes(typed.toLowerCase()) ? typed[0].toUpperCase() + typed.slice(1) : '';
     label.value = (own || (it.ask ? it.ask.replace(/\?$/, '') : it.t)).slice(0, 32); requestAnimationFrame(() => { label.focus(); label.select(); });

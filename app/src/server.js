@@ -120,11 +120,11 @@ async function mailCode(u, why = 'sign in') {
   if (u.email_code_sent && Date.now() - new Date(u.email_code_sent) < 30000) return { ok: false, reason: 'A code was just sent. Wait 30 seconds before asking for another.' };
   const code = newEmailCode();
   await q(`UPDATE users SET email_code_hash=$1, email_code_exp=now() + interval '10 minutes', email_code_tries=0, email_code_sent=now() WHERE id=$2`, [hashCode(u.id, code), u.id]);
-  return sendEmail(u.email, `${code} is your Pulse code`, `Your Pulse code to ${why} is:
+  return sendEmail(u.email, `${code} is your MXAi code`, `Your MXAi code to ${why} is:
 
 *${code}*
 
-It works for 10 minutes. If you didn't try to ${why}, change your password and tell your administrator.`, 'Pulse');
+It works for 10 minutes. If you didn't try to ${why}, change your password and tell your administrator.`, 'MXAi');
 }
 async function emailCodeOk(u, code) {
   const r = await one('SELECT email_code_hash, email_code_exp > now() AS live, email_code_tries FROM users WHERE id=$1', [u.id]);
@@ -328,14 +328,14 @@ app.post('/api/me/2fa/setup', wrap(async (req, res) => {
 }));
 app.post('/api/me/2fa/enable', wrap(async (req, res) => {
   const u = await one('SELECT totp_secret FROM users WHERE id=$1', [req.user.id]);
-  if (!checkTotp(u.totp_secret, req.body.code)) { await audit(req, '2fa_code_wrong'); return res.status(400).json({ error: 'That code is not right. Use the newest code for "Pulse" in your app. If you scanned an older QR code, delete that entry and scan this one.' }); }
+  if (!checkTotp(u.totp_secret, req.body.code)) { await audit(req, '2fa_code_wrong'); return res.status(400).json({ error: 'That code is not right. Use the newest code for "MXAi" in your app. If you scanned an older QR code, delete that entry and scan this one.' }); }
   await q('UPDATE users SET totp_enabled=true WHERE id=$1', [req.user.id]);
   await audit(req, '2fa_on');
   res.json({ ok: true });
 }));
 // Email codes: send a test code to the login's email, then switch on with that code.
 app.post('/api/me/2fa/email/start', wrap(async (req, res) => {
-  if (!emailEnabled()) return res.status(400).json({ error: 'Email sending is not connected yet. Ask your Pulse administrator to connect it.' });
+  if (!emailEnabled()) return res.status(400).json({ error: 'Email sending is not connected yet. Ask your MXAi administrator to connect it.' });
   const u = await one('SELECT * FROM users WHERE id=$1', [req.user.id]);
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(u.email)) return res.status(400).json({ error: 'This login has no email address to send codes to.' });
   const r = await mailCode(u, 'switch on email codes');

@@ -20,7 +20,7 @@ const PAGES=[
   ["settings","Settings","setup",[["details","Business",["start","details"]],["channels","Channels & reminders",["channels","reminders"]],["booking","Booking & payments",["tools","booking"]],["codes","Discount codes",["codes"]]]],
   ["account","Account","setup",[["s2fa","Security",["s2fa","spw"]],["sdev","Devices",["sdev"]],["look","Look & feel",["look"]],["dash","Dashboard layout",["dash"]]]],
 ];
-// five tabs; Support, Performance, Insights, the AI team and Test lab open from the Pulse AI switcher (pulse.js)
+// five tabs; Support, Performance, Insights, the AI team and Test lab open from the MXAi Assistant switcher (pulse.js)
 const ORDER=[["Main",["home","inbox","calendar","people","training"]],["Setup",["settings","account","website","admin"]]];
 const homeBtn=$('nav button[data-view="overview"]:not([data-sub])');
 // the button that opens a section; the Dashboard section opens through its own entry, since the plain one is Home
@@ -55,7 +55,7 @@ function drawTabs(id,host){const p=page(id),sec=$("#"+p[2]),bar=sec?.querySelect
 let opening=0;
 // each page carries its own name in the section's heading; the small line above it says which section it belongs to
 const LEDE={inbox:"Every conversation, sorted by what needs you",support:"How well your AI solves what customers need",performance:"How chats turn into bookings, live",
-  analytics:"The bigger picture over time",people:"Who your customers are and who to bring back",settings:"Your business and how the AI works for it",account:"Your login, devices and how Pulse looks"};
+  analytics:"The bigger picture over time",people:"Who your customers are and who to bring back",settings:"Your business and how the AI works for it",account:"Your login, devices and how MXAi looks"};
 function title(id){const p=page(id),top=$("#"+p[2]+" .top");if(!top)return;const h=top.querySelector("h1"),sub=top.querySelector("p.sub,p");
   if(h){h.dataset.orig??=h.innerHTML;h.textContent=p[1]}if(sub){sub.dataset.orig??=sub.innerHTML;sub.textContent=LEDE[id]||""}
   top.querySelector(".eyebrow,small:first-child")?.setAttribute("hidden","")}

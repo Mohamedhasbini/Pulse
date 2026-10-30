@@ -114,7 +114,7 @@ window.PulseMarketing = (() => {
   function draw() {
     const d = data, short = t => esc(t.split(/(?<=\.)\s/)[0]);
     root.innerHTML = `<div class="mk-bar-top"><div class="mk-per">${[30, 90, 365].map(n => `<button type="button" data-days="${n}" aria-pressed="${n === days}">${n === 365 ? '12 months' : n + ' days'}</button>`).join('')}</div>
-      <button type="button" class="mk-ask" data-ask="Review my marketing for the last ${days} days: what worked, what failed, and the next campaign I should run.">✦ Ask Pulse AI for a review</button></div>
+      <button type="button" class="mk-ask" data-ask="Review my marketing for the last ${days} days: what worked, what failed, and the next campaign I should run.">✦ Ask MXAi Assistant for a review</button></div>
       ${kpis(d.kpis, d.weekly)}
       ${d.lessons.length ? `<div class="mk-insights">${d.lessons.slice(0, 3).map((t, i) => `<div class="mk-ins"><i>${['◆', '▲', '●'][i]}</i><span>${short(t)}</span></div>`).join('')}</div>` : ''}
       <div class="mk-row2">${weekly(d.weekly)}${funnel(d.funnel)}</div>

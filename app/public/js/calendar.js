@@ -29,7 +29,7 @@ function drawCal(){if(!biz||!weekStart)return;const[h0,h1]=gridHours();HOUR_PX=f
     vis.forEach(b=>{const s=L(b.start),e=L(b.end);const lane=vis.filter(o=>o!==b&&o.status!=="cancelled"&&L(o.start)<e&&L(o.end)>s),idx=lane.filter(o=>o.id<b.id).length,n=lane.length+1;
       // name first, then time and service; a booking shorter than 40 minutes keeps to one line. The dot marks who booked it
       const w=100/n,short=(e-s)<40*60000,src=b.source==="ai"?"ai":b.source==="web"?"web":"";
-      c+=`<button type="button" class="cal-b st-${b.status}${short?" short":""}" data-b="${b.id}" title="${esc(b.customer||"")} · ${esc(b.service)} · ${hm(s)}–${hm(e)}${src==="ai"?" · booked by the AI":src==="web"?" · booked online":""}" style="${place(s,e)};left:calc(${idx*w}% + 2px);right:auto;width:calc(${w}% - 4px)"><b>${src?`<i class="src ${src}"></i>`:""}${esc(b.customer||"Customer")}</b><span><em>${hm(s)}</em><u> · ${esc(b.service)}</u></span></button>`});
+      c+=`<button type="button" class="cal-b st-${b.status}${short?" short":""}" data-b="${b.id}" title="${esc(b.customer||"")} · ${esc(b.service)} · ${hm(s)}–${hm(e)}${src==="ai"?" · via chat":src==="web"?" · booked online":""}" style="${place(s,e)};left:calc(${idx*w}% + 2px);right:auto;width:calc(${w}% - 4px)"><b>${src?`<i class="src ${src}"></i>`:""}${esc(b.customer||"Customer")}</b><span><em>${hm(s)}</em><u> · ${esc(b.service)}</u></span></button>`});
     cols+=c+"</div>"}
   $("#calHead").innerHTML=head;$("#calGrid").innerHTML=cols;
   const live=cal.bookings.filter(b=>b.status!=="cancelled"),cap=biz.capacity||1;
@@ -50,7 +50,7 @@ function openBooking(b,date,time){editing=b;$("#bErr").hidden=true;$("#bForce").
   $("#bService").innerHTML=biz.services.map(s=>`<option value="${s.id}">${esc(s.name)} · ${fmt(s.price)} · ${s.minutes} min</option>`).join("");
   $("#bName").value=b?.customer||"";$("#bPhone").value=b&&!/^(test|walk-in)/.test(b.phone)?b.phone:"";$("#bName").disabled=$("#bPhone").disabled=!!b;
   if(b){const s=L(b.start);$("#bDate").value=dayKey(s);$("#bTime").value=hm(s);$("#bService").value=b.service_id;$("#bStatus").value=b.status;
-    $("#bInfo").textContent=`${b.source==="ai"?"Booked by the AI in chat":b.source==="web"?"Booked online by the customer":"Added by staff"} · ${hm(s)}–${hm(L(b.end))} · ${fmt(b.price)}${b.coupon_code?` · Code ${b.coupon_code} applied`:""}${b.notes?` · Extra request: ${b.notes}`:""}${b.reminder_status?` · Reminder: ${b.reminder_status==="sent"?"sent":b.reminder_status==="skipped"?"not needed (booked last minute)":b.reminder_status.replace("not_sent: ","not sent, ")}`:""}`}
+    $("#bInfo").textContent=`${b.source==="ai"?"Booked in chat":b.source==="web"?"Booked online by the customer":"Added by staff"} · ${hm(s)}–${hm(L(b.end))} · ${fmt(b.price)}${b.coupon_code?` · Code ${b.coupon_code} applied`:""}${b.notes?` · Extra request: ${b.notes}`:""}${b.reminder_status?` · Reminder: ${b.reminder_status==="sent"?"sent":b.reminder_status==="skipped"?"not needed (booked last minute)":b.reminder_status.replace("not_sent: ","not sent, ")}`:""}`}
   else{$("#bDate").value=date;$("#bTime").value=time;$("#bStatus").value="confirmed";$("#bInfo").textContent=""}
   $("#bChat").hidden=!(b&&b.conversation_id);$("#bStatusWrap").hidden=!b;$("#bCancel").hidden=!b||b.status==="cancelled";$("#bModal").hidden=false;if(!b)$("#bName").focus()}
 async function saveBooking(force){const start=`${$("#bDate").value}T${$("#bTime").value}`;

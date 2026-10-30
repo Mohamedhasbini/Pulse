@@ -15,7 +15,7 @@ const ok = async (r, pick) => { const j = await r.json().catch(() => ({})); if (
 
 // The catalogue. Each field: k (key), label, secret (encrypted, masked), hint. test() returns a short "connected as" line.
 export const PROVIDERS = {
-  anthropic: { group: 'AI', name: 'Claude (Anthropic)', does: 'Runs Pulse AI on your own Claude account.',
+  anthropic: { group: 'AI', name: 'Claude (Anthropic)', does: 'Runs MXAi Assistant on your own Claude account.',
     fields: [{ k: 'api_key', label: 'API key', secret: true, hint: 'console.anthropic.com → API keys' }, { k: 'model', label: 'Model', hint: 'claude-opus-5-5' }],
     test: async c => { const A = (await import('@anthropic-ai/sdk')).default; const page = await new A({ apiKey: c.api_key }).models.list({ limit: 5 }); return `Key works · ${page.data.length ? page.data.map(m => m.id).slice(0, 2).join(', ') : 'models available'}`; } },
   gemini: { group: 'AI', name: 'Gemini (Google)', does: 'Use your own Google AI key.',
@@ -56,7 +56,7 @@ async function load(B, provider) {
   const c = {}; for (const [k, v] of Object.entries(r.config || {})) c[k] = unseal(v);
   return { ...r, config: c };
 }
-// the decrypted config of a connected provider, for the rest of the app (Pulse AI, messaging, payments)
+// the decrypted config of a connected provider, for the rest of the app (MXAi Assistant, messaging, payments)
 export async function credentials(B, provider) { const r = await load(B, provider); return r && r.status !== 'off' ? r.config : null; }
 
 function post(c, payload) {

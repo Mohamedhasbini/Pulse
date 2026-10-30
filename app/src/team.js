@@ -1,8 +1,8 @@
 // The AI team: four employees the owner can ask anything about the business. Each has a role, skills and a set of
-// tools. A question runs a short loop: the employee picks tools, Pulse runs them on the real data, and the employee
+// tools. A question runs a short loop: the employee picks tools, MXAi runs them on the real data, and the employee
 // answers using only what the tools returned, so numbers are exact. Anything that changes something or contacts a
 // customer is only proposed; the owner approves it with a button and /api/team/act carries it out.
-// AI: the n8n "Pulse assistant" workflow (prompt in, text out). Calls share the receptionist's per-minute pacing and
+// AI: the n8n "MXAi assistant" workflow (prompt in, text out). Calls share the receptionist's per-minute pacing and
 // have their own daily cap, so the team can never use up the receptionist's quota.
 import { q, one, pool } from './db.js';
 import { loadBusiness, takeAiSlot } from './brain.js';
@@ -38,8 +38,8 @@ export const TEAM = {
     tools: ['opportunities', 'top_customers', 'quiet_days', 'find_customer', 'customer', 'services'], actions: ['send_message', 'run_agent'] },
   sam: { name: 'Sam', role: 'Business analyst', avatar: 'S', skills: 'revenue, trends, services, channels, no-shows, busiest times, what to improve',
     tools: ['overview', 'revenue', 'by_service', 'by_channel', 'busy_times', 'top_customers', 'support', 'today'], actions: [] },
-  // Pulse AI: one assistant for the whole dashboard, with every tool and every action of the four above
-  pulse: { name: 'Pulse AI', title: 'Business partner', role: 'business partner: senior consultant and chief of staff with deep expertise in strategy, marketing, sales, operations, finance, pricing, customer experience, HR and data analysis', avatar: 'P',
+  // MXAi Assistant: one assistant for the whole dashboard, with every tool and every action of the four above
+  pulse: { name: 'MXAi Assistant', title: 'Business partner', role: 'business partner: senior consultant and chief of staff with deep expertise in strategy, marketing, sales, operations, finance, pricing, customer experience, HR and data analysis', avatar: 'P',
     skills: 'everything in the dashboard: bookings and the calendar, customers, conversations and support, Nora the receptionist and her rules, growth and offers, revenue and trends, and the dashboard itself (shortcuts, where to find things, how to use each page)',
     tools: ['today', 'bookings', 'free_slots', 'find_customer', 'customer', 'services', 'support', 'conversations', 'conversation', 'unanswered', 'reviews', 'rules', 'opportunities', 'top_customers', 'quiet_days', 'overview', 'revenue', 'by_service', 'by_channel', 'busy_times'],
     actions: ['send_message', 'teach_answer', 'add_rule', 'run_agent', 'add_shortcut', 'book', 'move_booking', 'set_booking_status', 'block_time', 'open_page'] },
@@ -277,7 +277,7 @@ function mentions(results) {
 export const PAGE_TABS = {
   today: ['Today'], inbox: ['Conversations', 'Needs you', 'Delivery queue'], calendar: ['Schedule', 'Requests', 'Booking page'],
   customers: ['Clients', 'Board', 'Win back', 'Reviews'], marketing: ['Offers', 'Discount codes', 'Agents', 'Website texts', 'Website photos', 'Website design', 'Website address'],
-  pulse: ['Approvals', 'Ask Pulse', 'Brief'], train: ['Coach', 'Rules', 'Answers', 'Review replies'], lab: ['Scenarios', 'Test chat', 'Versions'],
+  pulse: ['Approvals', 'Ask MXAi', 'Brief'], train: ['Coach', 'Rules', 'Answers', 'Review replies'], lab: ['Scenarios', 'Test chat', 'Versions'],
   insights: ['AI performance', 'Live flow', 'Topics', 'Business', 'Services', 'Timing', 'Channels'],
   settings: ['Profile', 'Assistant', 'Hours & team', 'Services', 'FAQs', 'Policies & payments', 'Tools', 'Channels', 'Reminders', 'Security & devices', 'Look & layout'],
 };
@@ -292,12 +292,12 @@ const ACTIONS = {
   set_booking_status: 'cancel a booking or mark it: {"type":"set_booking_status","booking_id":12,"status":"cancelled|completed|no_show|confirmed","label":"Cancel Rana, Mon 10:30"}',
   block_time: 'block time in the calendar so nobody can book it: {"type":"block_time","start":"YYYY-MM-DDTHH:MM","end":"YYYY-MM-DDTHH:MM","reason":"...","label":"Block Fri 13:00-15:00"}',
   open_page: `take the owner to a dashboard page (no approval needed): {"type":"open_page","page":"page id","tab":0,"label":"Open Calendar"}. Pages: ${SHORTCUT_PAGES}`,
-  add_shortcut: `add a shortcut button to the owner's Home page: {"type":"add_shortcut","label":"short name","page":"page id","tab":0} to open a page, or {"type":"add_shortcut","label":"short name","ask":"a question for Pulse AI"} to ask you something in one click. Pages and their tabs (tab is the 0-based index): ${SHORTCUT_PAGES}`,
+  add_shortcut: `add a shortcut button to the owner's Home page: {"type":"add_shortcut","label":"short name","page":"page id","tab":0} to open a page, or {"type":"add_shortcut","label":"short name","ask":"a question for MXAi Assistant"} to ask you something in one click. Pages and their tabs (tab is the 0-based index): ${SHORTCUT_PAGES}`,
 };
 
 function prompt(B, e, convo, results, page, memory = []) {
   const emp = TEAM[e];
-  return `You are ${emp.name}, the ${emp.role} at ${B.name}, a ${B.vertical || 'service'} business. You work for the owner inside their Pulse dashboard.
+  return `You are ${emp.name}, the ${emp.role} at ${B.name}, a ${B.vertical || 'service'} business. You work for the owner inside their MXAi dashboard.
 Your skills: ${emp.skills}. You are accurate, brief and practical, like a senior employee who owns this area.
 Today is ${B.now} (${B.tz}). Currency: ${B.currency || 'USD'}.${page ? `\nThe owner is looking at the ${page} page of the dashboard right now; questions like "this" or "here" mean that page.` : ''}
 
@@ -307,7 +307,7 @@ ${memory.length ? memory.map(m => `- ${m}`).join('\n') : '- nothing yet'}
 MEMORY: when the owner tells you a lasting preference, goal, fact or decision (e.g. "I want 20% more revenue by December", "never discount haircuts", "my busiest stylist is Rana"), add "remember":["one short fact"] to your JSON. Only lasting things, never one-off questions or numbers you can fetch.
 
 ` : ''}HOW YOU WORK
-- You can answer ANY question the owner asks. Facts about this business (numbers, names, dates, bookings, chats, settings) come only from tools; use the query tool for anything the other tools don't cover. General know-how (marketing ideas, writing a post or message, pricing, customer service, how to handle a situation, how Pulse works) comes from your own expertise: give a real, specific answer, tailored with the business's data when it helps.
+- You can answer ANY question the owner asks. Facts about this business (numbers, names, dates, bookings, chats, settings) come only from tools; use the query tool for anything the other tools don't cover. General know-how (marketing ideas, writing a post or message, pricing, customer service, how to handle a situation, how MXAi works) comes from your own expertise: give a real, specific answer, tailored with the business's data when it helps.
 - Never guess or invent business facts. If the data truly doesn't have it, say so and say what would.
 - Never ask the owner whether you should look something up: if the answer needs more data, fetch it now and answer completely.
 - Never count or add up yourself when a tool gives a count or total: copy it exactly (count, total_value, revenue, bookings).
@@ -344,7 +344,7 @@ Your JSON:`;
 // The team thinks with a stronger model than the receptionist (TEAM_MODEL); Gemini counts its free quota separately.
 // If that model fails or is out of quota, the receptionist's model answers instead.
 const TEAM_MODEL = () => process.env.TEAM_MODEL || 'models/gemini-3.5-flash';
-// Claude for Pulse AI: used when ANTHROPIC_API_KEY is set (PULSE_MODEL picks the model). The receptionist keeps its
+// Claude for MXAi Assistant: used when ANTHROPIC_API_KEY is set (PULSE_MODEL picks the model). The receptionist keeps its
 // own model; only the owner's assistant moves. Without a key, the n8n workflow below answers as before.
 const claudes = new Map(); // one client per API key
 async function askClaude(text, own) {
@@ -515,7 +515,7 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
 `); return res.end(); }
     res.json(payload);
   }));
-  // what Pulse AI remembers: the owner can see and delete every fact
+  // what MXAi Assistant remembers: the owner can see and delete every fact
   app.get('/api/team/memory', wrap(async (_req, res) => res.json(await q('SELECT id, fact, created_at FROM pulse_memory WHERE business_id=$1 ORDER BY id DESC', [(await biz()).id]))));
   app.delete('/api/team/memory/:id', wrap(async (req, res) => { await q('DELETE FROM pulse_memory WHERE id=$1 AND business_id=$2', [+req.params.id, (await biz()).id]); res.json({ ok: true }); }));
   // the owner approved one proposed action

@@ -77,9 +77,9 @@
     if (id === 'insights') {
       // Ledgerix: the one big number, with the Ask bar under it
       const l = await get('/api/live?days=90'), n = l?.now || {};
-      greet.insertAdjacentHTML('beforeend', `<div class="hx-ask"><i>✦</i><input placeholder="Ask anything about your numbers…" aria-label="Ask Pulse AI">${['Why did revenue change?', 'Best service to promote', 'Forecast next month'].map(q => `<button type="button" data-q="${q}">${q}</button>`).join('')}</div>`);
+      greet.insertAdjacentHTML('beforeend', `<div class="hx-ask"><i>✦</i><input placeholder="Ask anything about your numbers…" aria-label="Ask MXAi Assistant">${['Why did revenue change?', 'Best service to promote', 'Forecast next month'].map(q => `<button type="button" data-q="${q}">${q}</button>`).join('')}</div>`);
       hero.querySelector('.hx-folders').innerHTML = `<div class="hx-bignum"><span>Earned, last 90 days</span><b>${money(n.earned)}</b><small>${n.earned_prev ? `${n.earned >= n.earned_prev ? '+' : ''}${Math.round((n.earned - n.earned_prev) / n.earned_prev * 100)}% vs the 90 days before` : 'first period'}</small></div>`;
-      // the answer lands right here, short; "Full answer" opens Pulse AI on the same question
+      // the answer lands right here, short; "Full answer" opens MXAi Assistant on the same question
       const full = q => window.PulseCommand?.open ? window.PulseCommand.open(q) : window.P10?.ask?.(q);
       greet.insertAdjacentHTML('beforeend', '<div class="hx-ans" hidden aria-live="polite"></div>');
       const box = $('.hx-ans', greet);

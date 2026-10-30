@@ -1,4 +1,4 @@
-// Website screen in Pulse: the client edits texts and gallery photos; the platform admin also controls
+// Website screen in MXAi: the client edits texts and gallery photos; the platform admin also controls
 // style, colour, sections, languages, address and publishing. Live preview on phone or computer.
 (function(){
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -66,14 +66,14 @@ async function load(){
   try{W=await req("/api/site")}catch(e){$("#wsSub").textContent=e.message;return}
   const s=W.site;$$(".wsAdm").forEach(x=>x.hidden=!W.is_admin);
   $("#wsLocked").hidden=W.allowed;$("#wsMain").hidden=!W.allowed;$("#wsSave").hidden=!W.allowed;$("#wsOpen").hidden=!W.allowed;
-  $("#wsLockedMsg").textContent=W.is_admin?"Tick \"Own website\" in this business's plan or add-ons (Command center → Businesses) to switch it on.":"Ask your Pulse team about adding a website to your plan.";
+  $("#wsLockedMsg").textContent=W.is_admin?"Tick \"Own website\" in this business's plan or add-ons (Command center → Businesses) to switch it on.":"Ask your MXAi team about adding a website to your plan.";
   if(!W.allowed){$("#wsSub").textContent="";$("#wsState").textContent="";return}
   const live=W.custom_domain?`https://${W.custom_domain}`:W.subdomain&&W.sites_domain?`https://${W.subdomain}.${W.sites_domain}`:null;
   $("#wsOpen").href=s.published&&live?live:`${typeof PUB==="function"?PUB():""}/s/${W.id}`;$("#wsOpen").textContent=s.published&&live?"Open website":"Open preview";
   $("#wsState").className="tag "+(s.published?"t-book":"t-faq");$("#wsState").textContent=s.published?"Published":"Not published";
   $("#wsSub").innerHTML=s.published&&live?`Live at <a href="${esc(live)}" target="_blank" rel="noopener">${esc(live.replace("https://",""))}</a>`
     :s.published?(W.is_admin?"Published. Add a subdomain or domain in Address and publishing to give it a web address.":"Published. Your web address is being connected.")
-    :W.is_admin?"Set it up, then publish it from Address and publishing.":"Your Pulse team publishes the website when it's ready.";
+    :W.is_admin?"Set it up, then publish it from Address and publishing.":"Your MXAi team publishes the website when it's ready.";
   drawText();drawGallery();if(W.is_admin){drawDesign();drawAddress()}dirty=false;refresh()}
 
 function drawText(){const s=W.site;

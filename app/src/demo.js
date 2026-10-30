@@ -11,7 +11,7 @@ const DEMOS = [
     description: 'Gentle family dentistry, whitening and check-ups.', capacity: 2 },
   { name: 'Zen Spa & Massage', vertical: 'spa', city: 'Jounieh', address: 'Kaslik main road', hours: WEEK('11:00', '22:00', '22:00', '20:00'), cover: 'linear-gradient(135deg,#0f766e,#5eead4)',
     description: 'A calm escape: massages, hammam and couples treatments.', capacity: 4 },
-  { name: 'Pulse Fitness', vertical: 'gym', city: 'Beirut', address: 'Verdun, Rashid Karami Street', hours: WEEK('06:00', '23:00', '20:00', '14:00'), cover: 'linear-gradient(135deg,#f97316,#facc15)',
+  { name: 'MXAi Fitness', vertical: 'gym', city: 'Beirut', address: 'Verdun, Rashid Karami Street', hours: WEEK('06:00', '23:00', '20:00', '14:00'), cover: 'linear-gradient(135deg,#f97316,#facc15)',
     description: 'Personal training and small group classes with certified coaches.', capacity: 6 },
   { name: 'Olive Table', vertical: 'restaurant', city: 'Byblos', address: 'Old Souk, Byblos', hours: WEEK('12:00', '23:30', '23:59', '23:00'), cover: 'linear-gradient(135deg,#65a30d,#a3e635)',
     description: 'Lebanese mezze and grills on a terrace by the old port.', capacity: 12 },

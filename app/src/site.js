@@ -1,5 +1,5 @@
-// Pulse public website: the page for business owners (sign-up and demo requests),
-// "Powered by Pulse" link tracking, and the leads list for the platform admin.
+// MXAi public website: the page for business owners (sign-up and demo requests),
+// "Powered by MXAi" link tracking, and the leads list for the platform admin.
 import { fileURLToPath } from 'node:url';
 import { q, one } from './db.js';
 import { readSession } from './accounts.js';
@@ -19,7 +19,7 @@ export function mountSite(app) {
   app.get('/', (req, res, next) => readSession(req.get('cookie')) ? next() : res.sendFile(PUBLIC + '/site.html'));
   app.get(['/dashboard', '/app'], (_req, res) => res.redirect('/'));
 
-  // Every "Powered by Pulse" link goes through here, so we know which business sent the visitor.
+  // Every "Powered by MXAi" link goes through here, so we know which business sent the visitor.
   app.get('/go', wrap(async (req, res) => {
     const biz = +req.query.b || null, src = SOURCES.includes(req.query.s) ? req.query.s : 'direct';
     const known = biz && await one('SELECT id FROM businesses WHERE id=$1', [biz]);

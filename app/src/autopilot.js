@@ -53,7 +53,7 @@ function accuracy() {
     await q(`INSERT INTO audit_log (action, detail) VALUES ('system_alert', $1)`, ['Accuracy check: ' + fails.slice(0, 450)]).catch(() => {});
     const token = process.env.ALERT_BOT_TOKEN, chat = process.env.ALERT_CHAT_ID;
     if (token && chat) fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: '⚠️ Pulse accuracy check found a mismatch:\n' + fails.slice(0, 3500) }) }).catch(() => {});
+      body: JSON.stringify({ chat_id: chat, text: '⚠️ MXAi accuracy check found a mismatch:\n' + fails.slice(0, 3500) }) }).catch(() => {});
   });
 }
 

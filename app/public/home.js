@@ -154,7 +154,7 @@ function draw(unread){if(!biz||!live)return;const now=live.now,d=new Date(),h=d.
   const aiV=now.ai_value!=null?now.ai_value:chat.reduce((a,c)=>a+c.value,0),aiN=now.ai_count!=null?now.ai_count:chat.reduce((a,c)=>a+c.n,0);
   const aiP=now.ai_value_prev,aiC=aiP?Math.round((aiV-aiP)/aiP*100):null;
   $("#tdVal").textContent=aiN?money(aiV):"";
-  $("#tdValL").textContent=`booked by the AI · ${aiN} appointment${aiN===1?"":"s"} ${now.ai_value!=null?"in 30 days":"this week"}`;
+  $("#tdValL").textContent=`revenue booked · ${aiN} appointment${aiN===1?"":"s"} ${now.ai_value!=null?"in 30 days":"this week"}`;
   $("#tdValChg").textContent=aiC===null?"":`${aiC>=0?"+":"−"}${Math.abs(aiC)}%`;
   // week strip
   const mon=new Date(live.week[0].d+"T12:00");$("#tdMonth").textContent=`${MON[mon.getMonth()]}, ${mon.getFullYear()}`;

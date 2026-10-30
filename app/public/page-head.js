@@ -15,7 +15,7 @@ const HEAD={
   demo:["Test lab","Test the receptionist like a real customer before it talks to real ones."],
   website:["Website","Your booking website: texts, photos and publishing."],
   settings:["Settings","Your business details, channels, booking page and payments."],
-  account:["Account","Your login, devices and how Pulse looks."],
+  account:["Account","Your login, devices and how MXAi looks."],
   admin:["Businesses","Every client business, login and plan. Only you see this."],
 };
 function where(){const p=$('nav .navpills > button[data-page][aria-current="true"]')?.dataset.page;if(p)return p;

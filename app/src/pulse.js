@@ -1,4 +1,4 @@
-// Pulse AI: everything the AI has prepared and that waits for the owner, in one list. Each item says what it is,
+// MXAi Assistant: everything the AI has prepared and that waits for the owner, in one list. Each item says what it is,
 // why, and the action that carries it out; the actions are the existing ones, so this list never acts on its own.
 //   request  a customer asked to cancel or move a booking       → approve / reject  (/api/requests/:id/…)
 //   lesson   a rule the AI suggests from its own chats          → approve / dismiss (/api/lessons)

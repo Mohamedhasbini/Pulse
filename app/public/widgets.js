@@ -224,7 +224,7 @@ function drawCustom(){const look=$("#cuLook .cu-body"),dash=$("#cuDash .cu-body"
    <div class="cu-row"><b>Text size</b><small>Makes everything bigger or smaller.</small>${seg("size",[["s","Small"],["m","Normal"],["l","Large"]])}</div>
    <div class="cu-row"><b>Spacing</b><small>Compact fits more on the screen.</small>${seg("density",[["comfy","Roomy"],["compact","Compact"]])}</div>
    <div class="cu-row"><b>Animations</b><small>Turn off if motion is distracting.</small>${seg("motion",[["true","On"],["false","Off"]])}</div>
-   <div class="cu-row"><b>Pulse heartbeat</b><small>A wave of energy across the page: every 8 seconds on Home, every 15 seconds elsewhere.</small>${seg("pulse",[["true","On"],["false","Off"]])}</div></div>`;
+   <div class="cu-row"><b>MXAi heartbeat</b><small>A wave of energy across the page: every 8 seconds on Home, every 15 seconds elsewhere.</small>${seg("pulse",[["true","On"],["false","Off"]])}</div></div>`;
   const pages=[["overview","Home"],["calendar","Calendar"],["people","Customers"],["analytics","Insights"],["training","Teach AI"]];
   const saved=[];EDITABLE.forEach(v=>document.querySelectorAll(`#${v} .spane`).forEach(p=>{if(store.get(LKEY(v,p.dataset.pane)))saved.push([v,p.dataset.pane,(document.querySelector(`#${v} .ptabs button[data-tab="${p.dataset.pane}"]`)?.firstChild?.textContent||p.dataset.pane)])}));
   dash.innerHTML=`<div class="cu-grid">

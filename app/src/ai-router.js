@@ -11,7 +11,7 @@ import { credentials } from './integrations.js';
 const T = 20000;
 const openai = (url, model) => async (key, prompt, json) => {
   const r = await fetch(url, { method: 'POST', signal: AbortSignal.timeout(T),
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}`, 'HTTP-Referer': process.env.PUBLIC_URL || 'http://localhost', 'X-Title': 'Pulse' },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}`, 'HTTP-Referer': process.env.PUBLIC_URL || 'http://localhost', 'X-Title': 'MXAi' },
     body: JSON.stringify({ model, temperature: 0.3, messages: [{ role: 'user', content: prompt }], ...(json ? { response_format: { type: 'json_object' } } : {}) }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw Object.assign(new Error(j.error?.message || `HTTP ${r.status}`), { status: r.status });

@@ -44,7 +44,7 @@ document.addEventListener("click",async e=>{
 
 // ---------- the team: live analysts, not chatbots ----------
 // Each specialist shows what they found in the data right now (/api/team/status): a one-line read of their area,
-// progress on it this week, and the flags that need you, each a link to where you fix it. "Ask" opens Pulse AI with
+// progress on it this week, and the flags that need you, each a link to where you fix it. "Ask" opens MXAi Assistant with
 // their question, so every conversation happens in one place.
 const TONE={need:"Needs you",bad:"Problem",good:"Good"};
 let team=[];
