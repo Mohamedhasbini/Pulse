@@ -136,3 +136,31 @@
 .pl-t .pl-pct th,.pl-t .pl-pct td{color:var(--pv-meta);font-size:12.5px;padding-top:2px}
 .pl-t .pl-net th,.pl-t .pl-net td{color:var(--pv-ink);font-weight:700;font-size:16px;border-top:2px solid var(--pv-ink);padding-top:10px}
 .pl-t .pl-net td:nth-child(3)::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pv-lime);box-shadow:0 0 0 1.5px var(--pv-ink);margin-left:8px;vertical-align:2px}
+
+/* ===== calculator, report layout ===== */
+.cs-wrap{gap:16px}
+.cs-wrap section{background:transparent}
+.cs-sc{border:1px solid var(--pv-line);border-radius:16px;padding:16px}
+.cs-sc>header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}.cs-sc h4{margin:0;font-size:15px}.cs-sc>header small{color:var(--pv-meta);font-size:12.5px}
+.cs-sc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.cs-sc-c{border:1px solid var(--pv-line);border-radius:14px;padding:14px 16px;display:grid;gap:8px;align-content:start}
+.cs-sc-c.base{border-color:var(--pv-ink);box-shadow:inset 0 0 0 1px var(--pv-ink)}
+.cs-sc-c h5{margin:0;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--pv-meta)}
+.cs-sc-c.base h5::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pv-lime);box-shadow:0 0 0 1.5px var(--pv-ink);margin-left:8px;vertical-align:1px}
+.cs-sc-c>b{font-size:26px;font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.cs-sc-c>b small{display:block;font-size:12.5px;font-weight:500;color:var(--pv-meta);letter-spacing:0}
+.cs-sc-c dl{display:grid;grid-template-columns:1fr auto;gap:5px 10px;margin:0;font-size:13px;border-top:1px solid var(--pv-line);padding-top:8px}
+.cs-sc-c dt{color:var(--pv-meta)}.cs-sc-c dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.cs-sc-c p{margin:0;font-size:12.5px;line-height:1.45;color:var(--pv-meta)}
+.cs-assume{border:1px solid var(--pv-line);border-radius:16px;padding:0}
+.cs-assume>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 16px}
+.cs-assume>summary::-webkit-details-marker{display:none}.cs-assume>summary small{color:var(--pv-meta);font-size:12.5px}
+.cs-assume>summary b::before{content:"";display:inline-block;width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);margin-right:10px;transition:transform .15s;vertical-align:2px}
+.cs-assume[open]>summary b::before{transform:rotate(45deg)}
+.cs-assume .cs-groups{padding:0 16px 16px}
+/* the P&L reads like a statement: no row tints, hairlines only */
+html body .pl-t:not(#_) :is(th,td){background:none!important;box-shadow:none!important;border-radius:0!important}
+html body .pl-t:not(#_) tbody tr{background:none!important}
+html body .pl-t:not(#_) tbody tr:hover{background:color-mix(in srgb,var(--pv-ink) 3%,transparent)!important}
+.pl-t td{color:var(--pv-ink)}
+.cs-pl{margin-bottom:0}
+@media (max-width:1000px){.cs-sc-grid{grid-template-columns:1fr}}

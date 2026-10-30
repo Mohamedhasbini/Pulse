@@ -22,6 +22,16 @@
   };
   const TOK_IN = 4000, TOK_OUT = 250, STABLE = 2000; // tokens per reply; STABLE = rules + business (cacheable)
   Object.values(PRESETS).forEach(p => { p.tax ??= 0; });
+  // what changes in each case, applied to your own assumptions (shown under the comparison)
+  const CASES = {
+    worst: { label: 'Worst case', note: 'half the new clients, churn ×1.6, 30% more usage, WhatsApp ×1.5, fewer upgrades and add-ons, marketing ×1.3',
+      f: x => ({ newPerMonth: x.newPerMonth * 0.5, churn: Math.min(20, x.churn * 1.6), convs: x.convs * 1.3, waPrice: x.waPrice * 1.5, biz: x.biz * 0.5, pro: x.pro * 0.8, addons: x.addons * 0.5, marketing: x.marketing * 1.3 }) },
+    base: { label: 'Base case', note: 'your assumptions as set below', f: () => ({}) },
+    best: { label: 'Best case', note: '1.5× new clients, churn ×0.6, 10% less usage, WhatsApp ×0.8, more upgrades and add-ons',
+      f: x => ({ newPerMonth: x.newPerMonth * 1.5, churn: x.churn * 0.6, convs: x.convs * 0.9, waPrice: x.waPrice * 0.8, biz: Math.min(100, x.biz * 1.4), pro: Math.min(100 - Math.min(100, x.biz * 1.4), x.pro * 1.1), addons: x.addons * 1.5 }) },
+  };
+  const runCase = k => { const keep = S; S = { ...keep, ...CASES[k].f(keep) }; const r = calc(); S = keep; return r; };
+  const netOf = (v, tax) => v > 0 ? v * (1 - tax) : v;
   let S = { ...PRESETS.launch }, D = null, root = null;
 
   const field = (k, label, min, max, step, unit, hint) => `<label class="cs-f"><span>${label}${hint ? `<i title="${esc(hint)}">?</i>` : ''}</span>
@@ -94,8 +104,7 @@
       ${row('Operating profit', 'op', 'pl-strong')}${row(`Tax (${S.tax || 0}%)`, 'tx', '', -1)}
       ${row('Net profit', 'net', 'pl-net')}${pctRow('Net margin', 'net', 'rev')}
       </tbody></table></div><p class="cs-how">Per customer: the variable costs are what one client really costs you; fixed costs are shared among today's ${Math.round(n0)} clients, so they shrink per client as you grow. Tax is applied only when there is a profit.</p></section>`;
-    root.querySelector('#csOut').innerHTML = pl + `
-      <div class="cs-tiles">${[
+    const tiles = `<div class="cs-tiles">${[
         tile('MRR now', money(r.now.mrr), `${S.clients} clients × ${money(r.arpa)}`, true),
         tile(`MRR in ${S.months} months`, money(end.mrr), `${Math.round(end.c)} clients`),
         tile('Profit per month now', money(r.now.profit), r.now.profit < 0 ? 'fixed costs not covered yet' : 'after every cost'),
@@ -104,28 +113,58 @@
         tile('Break-even', r.breakEven == null ? 'never' : r.breakEven + ' clients', r.breakEven == null ? 'each client costs more than it pays' : `to cover ${money(r.fixed)} fixed a month`),
         tile('Client lifetime value', r.ltv == null ? '—' : money(r.ltv), S.churn ? `${(100 / S.churn).toFixed(0)} months on average` : 'set churn above 0'),
         tile('Cost to win a client', money(r.cac), r.ltv && r.cac ? `LTV is ${(r.ltv / r.cac).toFixed(1)}× this` : 'marketing ÷ new clients'),
-      ].join('')}</div>
-      <div class="cs-two">
+      ].join('')}</div>`;
+    const two = `<div class="cs-two">
         <section><h4>Month by month</h4>${chart(r.rows)}</section>
         <section><h4>Where one client's ${money(r.arpa)} goes</h4>
           <div class="cs-stack">${bar.map(([l, v], i) => `<i style="flex:${Math.max(v, 0.0001)};${i === 3 ? 'background:var(--pv-lime);box-shadow:inset 0 0 0 1px var(--pv-ink)' : `background:color-mix(in srgb,var(--pv-ink) ${70 - i * 20}%,transparent)`}" title="${l}: ${money(v, 2)}"></i>`).join('')}</div>
           <dl class="cs-dl">${bar.map(([l, v]) => `<dt>${l}</dt><dd>${money(v, 2)}</dd>`).join('')}<dt>Fixed costs, shared</dt><dd>${S.clients ? money(r.fixed / S.clients, 2) : '—'}</dd></dl>
           <p class="cs-how">One AI reply ≈ ${TOK_IN.toLocaleString()} tokens in and ${TOK_OUT} out = <b>${money(r.perReply, 5)}</b> on ${esc(MODELS[S.model].name)}${S.cacheShare ? `, with ${S.cacheShare}% of the stable part cached` : ''}. ${r.replies.toLocaleString()} replies a client a month = ${money(r.aiPer, 2)}.</p></section>
-      </div>
-      <p class="cs-how">Plan mix: ${pct(sum.biz * 100)} Business, ${pct(sum.pro * 100)} Pro, ${pct(sum.starter * 100)} Starter (the rest). Steady state: with ${S.newPerMonth} new and ${S.churn}% leaving a month, you level off near <b>${r.steady == null ? '—' : Math.round(r.steady).toLocaleString()} clients</b> (${r.steady == null ? '' : money(r.steady * r.arpa)} MRR). ${r.to10k ? `$10k MRR needs ${r.to10k} clients at today's mix.` : ''}${r.payback ? ` Fixed costs are paid back by month ${r.payback}.` : ''}</p>`;
+      </div>`;
+    const notes = `<p class="cs-how">Plan mix: ${pct(sum.biz * 100)} Business, ${pct(sum.pro * 100)} Pro, ${pct(sum.starter * 100)} Starter (the rest). Steady state: with ${S.newPerMonth} new and ${S.churn}% leaving a month, you level off near <b>${r.steady == null ? '—' : Math.round(r.steady).toLocaleString()} clients</b> (${r.steady == null ? '' : money(r.steady * r.arpa)} MRR). ${r.to10k ? `$10k MRR needs ${r.to10k} clients at today's mix.` : ''}${r.payback ? ` Fixed costs are paid back by month ${r.payback}.` : ''}</p>`;
+    // scenarios
+    const R = { worst: runCase('worst'), base: r, best: runCase('best') };
+    const firstProfit = rr => { const i = rr.rows.findIndex(x => x.profit > 0); return i < 0 ? null : i + 1; };
+    const sc = Object.entries(R).map(([k, x]) => { const e = x.rows[x.rows.length - 1], net = netOf(e.profit, tax), tot = x.rows.reduce((a, y) => a + netOf(y.profit, tax), 0), fp = firstProfit(x);
+      return { k, label: CASES[k].label, note: CASES[k].note, mrr: e.mrr, clients: e.c, net, tot, margin: e.mrr ? net / e.mrr * 100 : 0, fp, arpa: x.arpa, rows: x.rows }; });
+    const scen = `<section class="cs-sc"><header><h4>Scenarios</h4><small>${S.months}-month outlook, net of tax</small></header>
+      <div class="cs-sc-grid">${sc.map(c => `<article class="cs-sc-c ${c.k}"><h5>${c.label}</h5><b>${money(c.net)}<small> net profit in month ${S.months}</small></b>
+        <dl><dt>Revenue in month ${S.months}</dt><dd>${money(c.mrr)}</dd><dt>Clients</dt><dd>${Math.round(c.clients)}</dd><dt>Net margin</dt><dd>${pct(c.margin)}</dd>
+        <dt>Net profit, all ${S.months} months</dt><dd>${money(c.tot)}</dd><dt>First profitable month</dt><dd>${c.fp ? 'month ' + c.fp : 'not within ' + S.months + ' months'}</dd><dt>Average per client</dt><dd>${money(c.arpa)}</dd></dl>
+        <p>${esc(c.note)}</p></article>`).join('')}</div>
+      ${scChart(sc)}</section>`;
+    root.querySelector('#csOut').innerHTML = tiles + scen + two + pl + notes;
+  }
+
+  // revenue path of the three cases: base solid, worst and best as the edges of a band
+  function scChart(sc) {
+    const W = 720, H = 190, P = 40, rows = sc[1].rows, n = rows.length, mx = Math.max(1, ...sc.flatMap(c => c.rows.map(x => x.mrr)));
+    const x = i => P + i / Math.max(1, n - 1) * (W - P - 10), y = v => 10 + (1 - v / mx) * (H - 32);
+    const path = rr => rr.map((q, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(q.mrr).toFixed(1)).join(' ');
+    const band = path(sc[2].rows) + ' ' + sc[0].rows.slice().reverse().map((q, i) => 'L' + x(n - 1 - i).toFixed(1) + ' ' + y(q.mrr).toFixed(1)).join(' ') + 'Z';
+    return `<svg class="cs-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Revenue in the three cases">
+      ${[0, .5, 1].map(t => `<line x1="${P}" x2="${W - 10}" y1="${y(mx * t)}" y2="${y(mx * t)}" stroke="var(--pv-line)"/><text x="${P - 6}" y="${y(mx * t) + 4}" text-anchor="end" class="wl-ax">${mx * t >= 1000 ? (mx * t / 1000).toFixed(0) + 'k' : Math.round(mx * t)}</text>`).join('')}
+      <path d="${band}" fill="color-mix(in srgb,var(--pv-ink) 8%,transparent)"/>
+      <path d="${path(sc[0].rows)}" fill="none" stroke="var(--pv-meta)" stroke-width="1.4" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
+      <path d="${path(sc[2].rows)}" fill="none" stroke="var(--pv-meta)" stroke-width="1.4" stroke-dasharray="1 3" vector-effect="non-scaling-stroke"/>
+      <path d="${path(rows)}" fill="none" stroke="var(--pv-ink)" stroke-width="2.4" vector-effect="non-scaling-stroke"/>
+      <circle cx="${x(n - 1)}" cy="${y(rows[n - 1].mrr)}" r="4.5" fill="var(--pv-lime)" stroke="var(--pv-ink)"/>
+      ${[0, Math.floor((n - 1) / 2), n - 1].map(i => `<text x="${x(i)}" y="${H - 4}" text-anchor="middle" class="wl-ax">month ${i + 1}</text>`).join('')}</svg>
+      <div class="wl-leg"><span><i style="background:var(--pv-ink)"></i>Base revenue</span><span><i style="background:var(--pv-meta)"></i>Worst (dashes) and best (dots)</span><span><i style="background:color-mix(in srgb,var(--pv-ink) 20%,transparent)"></i>Range</span></div>`;
   }
 
   function render(el, data) {
     root = el; D = data;
     el.innerHTML = `<div class="cs-presets" role="group" aria-label="Start from">${Object.entries(PRESETS).map(([k, p]) => `<button type="button" data-preset="${k}">${p.label}</button>`).join('')}</div>
-      <div class="cs-groups">
+      <div id="csOut"></div>
+      <details class="cs-assume" open><summary><b>Assumptions</b><small>change any number; every result above updates</small></summary><div class="cs-groups">
         <fieldset><legend>Clients</legend>${field('clients', 'Clients today', 0, 1000, 1, '')}${field('newPerMonth', 'New clients a month', 0, 200, 1, '')}${field('churn', 'Clients who leave a month', 0, 20, 0.5, '%', 'Monthly churn. 2 to 5% is common for small-business software.')}${field('months', 'Months to project', 6, 60, 6, 'mo')}</fieldset>
         <fieldset><legend>What they buy</legend>${field('biz', 'On Business', 0, 100, 5, '%')}${field('pro', 'On Pro', 0, 100, 5, '%', 'The rest are on Starter.')}${field('addons', 'Add-ons per client', 0, 4, 0.5, '', 'Average number of paid add-ons each client takes.')}</fieldset>
         <fieldset><legend>Usage per client a month</legend>${field('convs', 'Conversations', 0, 2000, 10, '')}${field('rpc', 'AI replies per conversation', 1, 12, 1, '')}${field('wa', 'WhatsApp templates sent', 0, 2000, 10, '', 'Reminders and offers sent outside a 24-hour chat window. Replies inside the window are not charged this way.')}${field('waPrice', 'Price per template', 0, 0.2, 0.005, '$', 'Set by Meta and your provider; it differs by country. Check your Kapso dashboard.')}</fieldset>
         <fieldset><legend>AI</legend><label class="cs-f"><span>Model</span><select data-k="model">${Object.entries(MODELS).map(([k, m]) => `<option value="${k}" ${k === S.model ? 'selected' : ''}>${m.name}</option>`).join('')}</select></label>${field('cacheShare', 'Rules and business cached', 0, 100, 10, '%', 'Prompt caching bills the part that never changes (rules and salon details) at a much lower price.')}</fieldset>
         <fieldset><legend>Fixed costs a month</legend>${field('hosting', 'Hosting', 0, 2000, 5, '$')}${field('tools', 'Tools and domains', 0, 1000, 5, '$')}${field('team', 'Team and salaries', 0, 30000, 100, '$')}${field('marketing', 'Marketing', 0, 20000, 50, '$')}</fieldset>
         <fieldset><legend>Getting paid</legend>${field('cardPct', 'Card fee', 0, 6, 0.1, '%', 'Typical card processing is around 3% plus a fixed fee; check your provider.')}${field('cardFixed', 'Fixed fee per payment', 0, 1, 0.05, '$')}${field('tax', 'Tax on profit', 0, 40, 1, '%', 'Corporate or income tax on profit. Set your country rate; 0 shows profit before tax.')}</fieldset>
-      </div><div id="csOut"></div>`;
+      </div></details>`;
     draw();
   }
 
