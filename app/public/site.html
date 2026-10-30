@@ -501,6 +501,15 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 .rows div.new{border-color:rgba(255,255,255,.35)!important;background:rgba(255,255,255,.07)!important}
 .stack .bar i{background:linear-gradient(90deg,#9aa1a8,#e7eaec)!important}
 .cb>div:first-child i{background:#4a4f54}
+
+/* command center inside the hero screen; the live chat preview lives in the dashboard section */
+.screen .ccw.top{transform:none;border-radius:18px 18px 0 0;border-bottom:0;box-shadow:none;text-align:left}
+.screen{padding:12px 12px 0}
+.screen.live2{transform:perspective(2200px) rotateX(6deg);border-radius:26px;padding:12px;border:1px solid var(--line2);margin-top:6px;animation:none}
+.screen.live2 .app{border-radius:16px;border-bottom:1px solid var(--line)}
+.cc-logo i{display:grid;place-items:center}
+.cc-logo i::before{content:"";width:12px;height:10px;background:linear-gradient(#111,#111) 0 0/2.4px 100% no-repeat,linear-gradient(#111,#111) 100% 0/2.4px 100% no-repeat,linear-gradient(45deg,transparent 42%,#111 42% 58%,transparent 58%) 0 0/50% 60% no-repeat,linear-gradient(-45deg,transparent 42%,#111 42% 58%,transparent 58%) 100% 0/50% 60% no-repeat}
+.stage{max-width:1240px!important}.screen .ccw.top{font-size:13.5px}
 </style>
 </head>
 <body>
@@ -521,36 +530,59 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
     <small>Live data from day one · Your AI team set up in a day · Cancel any time</small>
   </div>
   <div class="wrap stage">
-    <div class="screen"><div class="app" aria-label="The MXAi dashboard">
-      <aside><b><span class="logo"><i style="width:24px;height:24px;border-radius:7px"><svg viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></i></span>MXAi</b>
-        <span class="on">Today</span><span>Inbox</span><span>Calendar</span><span>Customers</span><span>Insights</span><span>Marketing</span></aside>
-      <div class="mid">
-        <div class="kp"><div><small>Revenue this month</small><b id="kV">$12,480</b><em>+18%</em></div><div><small>Bookings this week</small><b id="kA">126</b><em>+12%</em></div><div><small>Reply time</small><b>2.1s</b><em>average</em></div></div>
-        <div class="chart"><div class="ct"><b id="ctT">Revenue, last 30 days</b><span id="ctS">vs the month before</span></div><div class="cv" id="cv"><svg class="on" viewBox="0 0 600 180" preserveAspectRatio="none"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6f432" stop-opacity=".45"/><stop offset="1" stop-color="#c6f432" stop-opacity="0"/></linearGradient></defs>
-          <path d="M0 150 C50 140 80 120 120 125 S190 90 230 100 300 60 340 70 410 40 450 52 530 20 600 26 L600 180 0 180Z" fill="url(#ga)"/>
-          <path class="ln" d="M0 150 C50 140 80 120 120 125 S190 90 230 100 300 60 340 70 410 40 450 52 530 20 600 26" fill="none" stroke="#c6f432" stroke-width="3"/>
-          <path d="M0 160 C80 155 160 140 240 138 S400 110 600 92" fill="none" stroke="rgba(255,255,255,.25)" stroke-dasharray="5 6" stroke-width="2"/></svg>
-          <div class="vb" id="vBars"><div><i style="height:38%"></i>Mon</div><div><i style="height:46%"></i>Tue</div><div><i style="height:52%"></i>Wed</div><div><i style="height:60%"></i>Thu</div><div><i style="height:78%"></i>Fri</div><div><i style="height:96%" class="hi"></i>Sat</div><div><i style="height:20%"></i>Sun</div></div>
-          <div class="vh"><span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span><span>10h</span><i style="--a:0.15"></i><i style="--a:0.2"></i><i style="--a:0.2"></i><i style="--a:0.3"></i><i style="--a:0.5"></i><i style="--a:0.7"></i><i style="--a:0.05"></i><span>12h</span><i style="--a:0.25"></i><i style="--a:0.3"></i><i style="--a:0.35"></i><i style="--a:0.45"></i><i style="--a:0.65"></i><i style="--a:0.9"></i><i style="--a:0.05"></i><span>14h</span><i style="--a:0.3"></i><i style="--a:0.35"></i><i style="--a:0.4"></i><i style="--a:0.55"></i><i style="--a:0.8"></i><i style="--a:1" class="pk"></i><i style="--a:0.1"></i><span>17h</span><i style="--a:0.4"></i><i style="--a:0.45"></i><i style="--a:0.5"></i><i style="--a:0.6"></i><i style="--a:0.85"></i><i style="--a:0.75"></i><i style="--a:0.05"></i></div>
-          <div class="vd"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)" fill="none" stroke-width="20"><circle cx="60" cy="60" r="45" stroke="#c6f432" stroke-dasharray="127 283"/><circle cx="60" cy="60" r="45" stroke="#c9ced3" stroke-dasharray="70 283" stroke-dashoffset="-129"/><circle cx="60" cy="60" r="45" stroke="#7d848b" stroke-dasharray="50 283" stroke-dashoffset="-201"/><circle cx="60" cy="60" r="45" stroke="#454b51" stroke-dasharray="30 283" stroke-dashoffset="-253"/></g><text x="60" y="66" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">$12,480</text></svg>
-            <ul><li><i style="background:#c6f432"></i>Haircut & blow-dry<b>45%</b></li><li><i style="background:#c9ced3"></i>Colour<b>25%</b></li><li><i style="background:#7d848b"></i>Nails<b>18%</b></li><li><i style="background:#454b51"></i>Spa<b>12%</b></li></ul></div>
-          <div class="vg"><svg viewBox="0 0 220 130"><path d="M20 115A90 90 0 0 1 200 115" stroke="rgba(255,255,255,.08)" stroke-width="18" fill="none" stroke-linecap="round"/><path id="gArc" d="M20 115A90 90 0 0 1 200 115" stroke="#c6f432" stroke-width="18" fill="none" stroke-linecap="round" stroke-dasharray="0 283" style="transition:stroke-dasharray 1s cubic-bezier(.2,.8,.2,1)"/><text x="110" y="100" text-anchor="middle" fill="#fff" font-size="34" font-weight="800" id="gTxt">74%</text><text x="110" y="124" text-anchor="middle" fill="#7d838a" font-size="11">chairs booked tomorrow</text></svg></div>
-          <div class="vt"><table><thead><tr><th>Service</th><th>Where</th><th>When</th><th>Value</th><th>Status</th></tr></thead><tbody id="vtb">
-            <tr class="new"><td><b>Haircut & blow-dry</b></td><td>Chair 1</td><td>Tomorrow 14:30</td><td>$35</td><td><span class="chip on">Confirmed</span></td></tr>
-            <tr><td><b>Facial</b></td><td>Room 2</td><td>Today 16:00</td><td>$60</td><td><span class="chip on">Confirmed</span></td></tr>
-            <tr><td><b>Colour</b></td><td>Chair 2</td><td>Fri 11:00</td><td>$90</td><td><span class="chip">Pending</span></td></tr>
-            <tr><td><b>Nails</b></td><td>Desk 1</td><td>Sat 17:00</td><td>$25</td><td><span class="chip on">Confirmed</span></td></tr></tbody></table></div></div></div>
-        <div class="rows" id="rows"><div><b>Facial</b>Today 16:00</div><div><b>Colour</b>Fri 11:00</div><div><b>Nails</b>Sat 17:00</div></div>
+    <div class="screen"><div class="ccw top" aria-label="The MXAi command center">
+    <div class="cc-bar"><span class="cc-logo"><i></i>MXAi</span>
+      <nav><b>Today</b><span>Inbox</span><span>Calendar</span><span>Customers</span><span>Insights</span><span>Marketing</span><span>Ask MXAi</span></nav>
+      <span class="cc-ai"><i></i>AI on</span><span class="cc-ask">Ask anything about your business…<kbd>Ctrl K</kbd></span></div>
+    <div class="cc-body">
+      <div class="cc-main">
+        <div class="cc-hero">
+          <div><small>Friday · open until 20:00</small><h3>Good afternoon, <em>you</em>.</h3><p>18 appointments today · 3 things need you</p>
+            <div class="cc-big"><b>$12,480</b><span>revenue this month · <strong>+18%</strong> vs last month</span></div></div>
+          <div class="cc-folders"><div class="f1"><small>Next up</small><b>Colour & blow-dry · 14:30</b><span>Chair 2 · 90 min · $120</span></div>
+            <div class="f2"><small>Today</small><b>Schedule 74% full</b><span>18 visits · $1,640 booked</span><div><em>3 waiting</em><em>42 replies</em></div></div></div>
+          <div class="cc-tl"><span>09</span><div><i style="left:2%;width:9%"></i><i class="g" style="left:13%;width:7%"></i><i style="left:22%;width:12%"></i><i style="left:38%;width:8%"></i><i class="g" style="left:48%;width:10%"></i><i style="left:61%;width:14%"></i><i style="left:78%;width:9%"></i><b style="left:52%"></b></div><span>20</span></div>
+        </div>
+        <div class="cc-kpis">
+          <div><small>Bookings this week</small><b>126</b><em>+12%</em><svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,22 15,20 30,21 45,14 60,16 75,8 100,5" fill="none" stroke="#c6f432" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
+          <div><small>Chats answered alone</small><b>96%</b><em>+4 pts</em><svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,14 15,12 30,13 45,9 60,10 75,7 100,6" fill="none" stroke="#c6f432" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
+          <div><small>Average reply</small><b>2.1s</b><em>steady</em><svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,12 15,14 30,11 45,13 60,12 75,11 100,12" fill="none" stroke="#c6f432" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
+          <div><small>No-show rate</small><b>3.8%</b><em>−2.1 pts</em><svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,6 15,8 30,10 45,12 60,15 75,18 100,21" fill="none" stroke="#c6f432" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
+        </div>
+        <div class="cc-row">
+          <div class="cc-card cc-fc"><header><b>Revenue forecast</b><small>next 4 weeks · from 12 weeks of trend and what is booked</small></header>
+            <svg viewBox="0 0 520 150" preserveAspectRatio="none"><defs><linearGradient id="ccg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6f432" stop-opacity=".35"/><stop offset="1" stop-color="#c6f432" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0 120 C40 112 70 116 110 100 S180 92 220 84 290 70 330 66 L330 150 0 150Z" fill="url(#ccg)"/>
+              <path d="M0 120 C40 112 70 116 110 100 S180 92 220 84 290 70 330 66" fill="none" stroke="#c9ced3" stroke-width="2.4"/>
+              <path d="M330 66 C380 58 420 54 470 44 S510 36 520 34" fill="none" stroke="#c6f432" stroke-width="3" stroke-dasharray="7 6"/>
+              <path d="M330 66 C380 46 420 40 470 26 L520 18 L520 52 470 62 C420 70 380 74 330 66Z" fill="rgba(198,244,50,.12)"/>
+              <line x1="330" y1="6" x2="330" y2="146" stroke="rgba(255,255,255,.15)" stroke-dasharray="3 4"/></svg>
+            <div class="cc-why"><span><b>$14,900</b> forecast</span><span>Trend rising <b>+$310/week</b></span><span><b>$6,200</b> already booked</span></div></div>
+          <div class="cc-card"><header><b>Busy hours</b><small>Saturday 14:00 is the peak</small></header><div class="cc-heat"><i style="--a:0.12"></i><i style="--a:0.2"></i><i style="--a:0.18"></i><i style="--a:0.3"></i><i style="--a:0.5"></i><i style="--a:0.75"></i><i style="--a:0.05"></i><i style="--a:0.2"></i><i style="--a:0.3"></i><i style="--a:0.28"></i><i style="--a:0.45"></i><i style="--a:0.7"></i><i style="--a:1"></i><i style="--a:0.08"></i><i style="--a:0.25"></i><i style="--a:0.35"></i><i style="--a:0.4"></i><i style="--a:0.55"></i><i style="--a:0.85"></i><i style="--a:0.9"></i><i style="--a:0.1"></i><i style="--a:0.3"></i><i style="--a:0.35"></i><i style="--a:0.45"></i><i style="--a:0.6"></i><i style="--a:0.8"></i><i style="--a:0.7"></i><i style="--a:0.05"></i></div></div>
+        </div>
+        <div class="cc-row r2">
+          <div class="cc-card"><header><b>Pivot · service × weekday</b><small>bookings, last 90 days</small></header>
+            <table><tr><th>Service</th><th>Mon</th><th>Wed</th><th>Fri</th><th>Sat</th><th>Σ</th></tr>
+            <tr><td>Haircut</td><td>18</td><td class="h1">26</td><td class="h2">39</td><td class="h3">52</td><td><b>135</b></td></tr>
+            <tr><td>Colour</td><td>9</td><td>14</td><td class="h1">22</td><td class="h2">31</td><td><b>76</b></td></tr>
+            <tr><td>Nails</td><td class="h1">16</td><td>12</td><td class="h1">21</td><td class="h2">27</td><td><b>76</b></td></tr></table></div>
+          <div class="cc-card"><header><b>Revenue by service</b><small>this month</small></header>
+            <div class="cc-donut"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)" fill="none" stroke-width="18"><circle cx="60" cy="60" r="44" stroke="#c6f432" stroke-dasharray="124 277"/><circle cx="60" cy="60" r="44" stroke="#c9ced3" stroke-dasharray="69 277" stroke-dashoffset="-126"/><circle cx="60" cy="60" r="44" stroke="#7d848b" stroke-dasharray="50 277" stroke-dashoffset="-197"/><circle cx="60" cy="60" r="44" stroke="#454b51" stroke-dasharray="28 277" stroke-dashoffset="-249"/></g></svg>
+              <ul><li><i style="background:#c6f432"></i>Haircut<b>45%</b></li><li><i style="background:#c9ced3"></i>Colour<b>25%</b></li><li><i style="background:#7d848b"></i>Nails<b>18%</b></li><li><i style="background:#454b51"></i>Spa<b>12%</b></li></ul></div></div>
+          <div class="cc-card"><header><b>Front desk, live</b><small>what your AI team is doing</small></header>
+            <ul class="cc-feed"><li><span>now</span>Booked a colour appointment for Saturday</li><li><span>2m</span>Answered a price question in Arabic</li><li><span>9m</span>Moved a visit to Friday at 11:00</li><li><span>14m</span>Sent 12 reminders for tomorrow</li><li><span>31m</span>Flagged a complaint for you</li></ul></div>
+        </div>
       </div>
-      <div class="agents"><div class="ag-h"><b>AI team</b><small>working now</small></div>
-        <div class="ag" data-a="desk"><i>FD</i><div><b>Front desk</b><span>Waiting for messages</span></div><em></em></div>
-        <div class="ag" data-a="cal"><i>CA</i><div><b>Scheduler</b><span>Keeping tomorrow in order</span></div><em></em></div>
-        <div class="ag" data-a="sup"><i>SU</i><div><b>Support</b><span>2 questions answered today</span></div><em></em></div>
-        <div class="ag" data-a="mkt"><i>MK</i><div><b>Marketing</b><span>3 win-back offers ready</span></div><em></em></div>
-        <div class="ag" data-a="rem"><i>RE</i><div><b>Reminders</b><span>12 reminders sent today</span></div><em></em></div>
-      </div>
-      <div class="toast" id="chat" aria-live="polite"></div>
-    </div></div>
+      <aside class="cc-rail">
+        <div class="cc-card"><header><b>Needs you</b><small>3 open</small></header>
+          <div class="cc-todo"><div><i class="o"></i>Approve a refund request<em>Approve</em></div><div><i class="o"></i>Answer a new question<em>Teach</em></div><div><i></i>Win-back offer to 14 clients<em>Review</em></div></div></div>
+        <div class="cc-card"><header><b>Growth</b><small>marketing agents</small></header>
+          <div class="cc-g"><div><span>Won back this month</span><b>$2,140</b></div><div><span>Clients drifting away</span><b>23</b></div><div><span>Offer return on spend</span><b>6.2×</b></div></div></div>
+        <div class="cc-card"><header><b>Health</b><small>last 30 days</small></header>
+          <div class="cc-g"><div><span>Chats that became bookings</span><b>63%</b></div><div><span>90-day retention</span><b>55%</b></div><div><span>Chair utilisation</span><b>74%</b></div></div></div>
+      </aside>
+    </div>
+  </div></div>
   </div>
 </div>
 
@@ -682,59 +714,36 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 
 <section id="dashboard"><div class="wrap">
   <div class="sh rv"><span class="k">Your dashboard</span><h2>This is your command center.</h2><p>Nothing hidden. Every chat your AI team has, every booking and every dollar lands here live, turned into numbers you can act on.</p></div>
-  <div class="ccw rv" aria-label="The MXAi command center">
-    <div class="cc-bar"><span class="cc-logo"><i></i>MXAi</span>
-      <nav><b>Today</b><span>Inbox</span><span>Calendar</span><span>Customers</span><span>Insights</span><span>Marketing</span><span>Ask MXAi</span></nav>
-      <span class="cc-ai"><i></i>AI on</span><span class="cc-ask">Ask anything about your business…<kbd>Ctrl K</kbd></span></div>
-    <div class="cc-body">
-      <div class="cc-main">
-        <div class="cc-hero">
-          <div><small>Friday · open until 20:00</small><h3>Good afternoon, <em>you</em>.</h3><p>18 appointments today · 3 things need you</p>
-            <div class="cc-big"><b>$12,480</b><span>revenue this month · <strong>+18%</strong> vs last month</span></div></div>
-          <div class="cc-folders"><div class="f1"><small>Next up</small><b>Colour & blow-dry · 14:30</b><span>Chair 2 · 90 min · $120</span></div>
-            <div class="f2"><small>Today</small><b>Schedule 74% full</b><span>18 visits · $1,640 booked</span><div><em>3 waiting</em><em>42 replies</em></div></div></div>
-          <div class="cc-tl"><span>09</span><div><i style="left:2%;width:9%"></i><i class="g" style="left:13%;width:7%"></i><i style="left:22%;width:12%"></i><i style="left:38%;width:8%"></i><i class="g" style="left:48%;width:10%"></i><i style="left:61%;width:14%"></i><i style="left:78%;width:9%"></i><b style="left:52%"></b></div><span>20</span></div>
-        </div>
-        <div class="cc-kpis">
-          <div><small>Bookings this week</small><b>126</b><em>+12%</em><svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,22 15,20 30,21 45,14 60,16 75,8 100,5" fill="none" stroke="#c6f432" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
-          <div><small>Chats answered alone</small><b>96%</b><em>+4 pts</em><svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,14 15,12 30,13 45,9 60,10 75,7 100,6" fill="none" stroke="#c6f432" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
-          <div><small>Average reply</small><b>2.1s</b><em>steady</em><svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,12 15,14 30,11 45,13 60,12 75,11 100,12" fill="none" stroke="#c6f432" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
-          <div><small>No-show rate</small><b>3.8%</b><em>−2.1 pts</em><svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline points="0,6 15,8 30,10 45,12 60,15 75,18 100,21" fill="none" stroke="#c6f432" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
-        </div>
-        <div class="cc-row">
-          <div class="cc-card cc-fc"><header><b>Revenue forecast</b><small>next 4 weeks · from 12 weeks of trend and what is booked</small></header>
-            <svg viewBox="0 0 520 150" preserveAspectRatio="none"><defs><linearGradient id="ccg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6f432" stop-opacity=".35"/><stop offset="1" stop-color="#c6f432" stop-opacity="0"/></linearGradient></defs>
-              <path d="M0 120 C40 112 70 116 110 100 S180 92 220 84 290 70 330 66 L330 150 0 150Z" fill="url(#ccg)"/>
-              <path d="M0 120 C40 112 70 116 110 100 S180 92 220 84 290 70 330 66" fill="none" stroke="#c9ced3" stroke-width="2.4"/>
-              <path d="M330 66 C380 58 420 54 470 44 S510 36 520 34" fill="none" stroke="#c6f432" stroke-width="3" stroke-dasharray="7 6"/>
-              <path d="M330 66 C380 46 420 40 470 26 L520 18 L520 52 470 62 C420 70 380 74 330 66Z" fill="rgba(198,244,50,.12)"/>
-              <line x1="330" y1="6" x2="330" y2="146" stroke="rgba(255,255,255,.15)" stroke-dasharray="3 4"/></svg>
-            <div class="cc-why"><span><b>$14,900</b> forecast</span><span>Trend rising <b>+$310/week</b></span><span><b>$6,200</b> already booked</span></div></div>
-          <div class="cc-card"><header><b>Busy hours</b><small>Saturday 14:00 is the peak</small></header><div class="cc-heat"><i style="--a:0.12"></i><i style="--a:0.2"></i><i style="--a:0.18"></i><i style="--a:0.3"></i><i style="--a:0.5"></i><i style="--a:0.75"></i><i style="--a:0.05"></i><i style="--a:0.2"></i><i style="--a:0.3"></i><i style="--a:0.28"></i><i style="--a:0.45"></i><i style="--a:0.7"></i><i style="--a:1"></i><i style="--a:0.08"></i><i style="--a:0.25"></i><i style="--a:0.35"></i><i style="--a:0.4"></i><i style="--a:0.55"></i><i style="--a:0.85"></i><i style="--a:0.9"></i><i style="--a:0.1"></i><i style="--a:0.3"></i><i style="--a:0.35"></i><i style="--a:0.45"></i><i style="--a:0.6"></i><i style="--a:0.8"></i><i style="--a:0.7"></i><i style="--a:0.05"></i></div></div>
-        </div>
-        <div class="cc-row r2">
-          <div class="cc-card"><header><b>Pivot · service × weekday</b><small>bookings, last 90 days</small></header>
-            <table><tr><th>Service</th><th>Mon</th><th>Wed</th><th>Fri</th><th>Sat</th><th>Σ</th></tr>
-            <tr><td>Haircut</td><td>18</td><td class="h1">26</td><td class="h2">39</td><td class="h3">52</td><td><b>135</b></td></tr>
-            <tr><td>Colour</td><td>9</td><td>14</td><td class="h1">22</td><td class="h2">31</td><td><b>76</b></td></tr>
-            <tr><td>Nails</td><td class="h1">16</td><td>12</td><td class="h1">21</td><td class="h2">27</td><td><b>76</b></td></tr></table></div>
-          <div class="cc-card"><header><b>Revenue by service</b><small>this month</small></header>
-            <div class="cc-donut"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)" fill="none" stroke-width="18"><circle cx="60" cy="60" r="44" stroke="#c6f432" stroke-dasharray="124 277"/><circle cx="60" cy="60" r="44" stroke="#c9ced3" stroke-dasharray="69 277" stroke-dashoffset="-126"/><circle cx="60" cy="60" r="44" stroke="#7d848b" stroke-dasharray="50 277" stroke-dashoffset="-197"/><circle cx="60" cy="60" r="44" stroke="#454b51" stroke-dasharray="28 277" stroke-dashoffset="-249"/></g></svg>
-              <ul><li><i style="background:#c6f432"></i>Haircut<b>45%</b></li><li><i style="background:#c9ced3"></i>Colour<b>25%</b></li><li><i style="background:#7d848b"></i>Nails<b>18%</b></li><li><i style="background:#454b51"></i>Spa<b>12%</b></li></ul></div></div>
-          <div class="cc-card"><header><b>Front desk, live</b><small>what your AI team is doing</small></header>
-            <ul class="cc-feed"><li><span>now</span>Booked a colour appointment for Saturday</li><li><span>2m</span>Answered a price question in Arabic</li><li><span>9m</span>Moved a visit to Friday at 11:00</li><li><span>14m</span>Sent 12 reminders for tomorrow</li><li><span>31m</span>Flagged a complaint for you</li></ul></div>
-        </div>
+  <div class="screen live2 rv"><div class="app" aria-label="The MXAi dashboard">
+      <aside><b><span class="logo"><i style="width:24px;height:24px;border-radius:7px"><svg viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></i></span>MXAi</b>
+        <span class="on">Today</span><span>Inbox</span><span>Calendar</span><span>Customers</span><span>Insights</span><span>Marketing</span></aside>
+      <div class="mid">
+        <div class="kp"><div><small>Revenue this month</small><b id="kV">$12,480</b><em>+18%</em></div><div><small>Bookings this week</small><b id="kA">126</b><em>+12%</em></div><div><small>Reply time</small><b>2.1s</b><em>average</em></div></div>
+        <div class="chart"><div class="ct"><b id="ctT">Revenue, last 30 days</b><span id="ctS">vs the month before</span></div><div class="cv" id="cv"><svg class="on" viewBox="0 0 600 180" preserveAspectRatio="none"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6f432" stop-opacity=".45"/><stop offset="1" stop-color="#c6f432" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0 150 C50 140 80 120 120 125 S190 90 230 100 300 60 340 70 410 40 450 52 530 20 600 26 L600 180 0 180Z" fill="url(#ga)"/>
+          <path class="ln" d="M0 150 C50 140 80 120 120 125 S190 90 230 100 300 60 340 70 410 40 450 52 530 20 600 26" fill="none" stroke="#c6f432" stroke-width="3"/>
+          <path d="M0 160 C80 155 160 140 240 138 S400 110 600 92" fill="none" stroke="rgba(255,255,255,.25)" stroke-dasharray="5 6" stroke-width="2"/></svg>
+          <div class="vb" id="vBars"><div><i style="height:38%"></i>Mon</div><div><i style="height:46%"></i>Tue</div><div><i style="height:52%"></i>Wed</div><div><i style="height:60%"></i>Thu</div><div><i style="height:78%"></i>Fri</div><div><i style="height:96%" class="hi"></i>Sat</div><div><i style="height:20%"></i>Sun</div></div>
+          <div class="vh"><span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span><span>10h</span><i style="--a:0.15"></i><i style="--a:0.2"></i><i style="--a:0.2"></i><i style="--a:0.3"></i><i style="--a:0.5"></i><i style="--a:0.7"></i><i style="--a:0.05"></i><span>12h</span><i style="--a:0.25"></i><i style="--a:0.3"></i><i style="--a:0.35"></i><i style="--a:0.45"></i><i style="--a:0.65"></i><i style="--a:0.9"></i><i style="--a:0.05"></i><span>14h</span><i style="--a:0.3"></i><i style="--a:0.35"></i><i style="--a:0.4"></i><i style="--a:0.55"></i><i style="--a:0.8"></i><i style="--a:1" class="pk"></i><i style="--a:0.1"></i><span>17h</span><i style="--a:0.4"></i><i style="--a:0.45"></i><i style="--a:0.5"></i><i style="--a:0.6"></i><i style="--a:0.85"></i><i style="--a:0.75"></i><i style="--a:0.05"></i></div>
+          <div class="vd"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)" fill="none" stroke-width="20"><circle cx="60" cy="60" r="45" stroke="#c6f432" stroke-dasharray="127 283"/><circle cx="60" cy="60" r="45" stroke="#c9ced3" stroke-dasharray="70 283" stroke-dashoffset="-129"/><circle cx="60" cy="60" r="45" stroke="#7d848b" stroke-dasharray="50 283" stroke-dashoffset="-201"/><circle cx="60" cy="60" r="45" stroke="#454b51" stroke-dasharray="30 283" stroke-dashoffset="-253"/></g><text x="60" y="66" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">$12,480</text></svg>
+            <ul><li><i style="background:#c6f432"></i>Haircut & blow-dry<b>45%</b></li><li><i style="background:#c9ced3"></i>Colour<b>25%</b></li><li><i style="background:#7d848b"></i>Nails<b>18%</b></li><li><i style="background:#454b51"></i>Spa<b>12%</b></li></ul></div>
+          <div class="vg"><svg viewBox="0 0 220 130"><path d="M20 115A90 90 0 0 1 200 115" stroke="rgba(255,255,255,.08)" stroke-width="18" fill="none" stroke-linecap="round"/><path id="gArc" d="M20 115A90 90 0 0 1 200 115" stroke="#c6f432" stroke-width="18" fill="none" stroke-linecap="round" stroke-dasharray="0 283" style="transition:stroke-dasharray 1s cubic-bezier(.2,.8,.2,1)"/><text x="110" y="100" text-anchor="middle" fill="#fff" font-size="34" font-weight="800" id="gTxt">74%</text><text x="110" y="124" text-anchor="middle" fill="#7d838a" font-size="11">chairs booked tomorrow</text></svg></div>
+          <div class="vt"><table><thead><tr><th>Service</th><th>Where</th><th>When</th><th>Value</th><th>Status</th></tr></thead><tbody id="vtb">
+            <tr class="new"><td><b>Haircut & blow-dry</b></td><td>Chair 1</td><td>Tomorrow 14:30</td><td>$35</td><td><span class="chip on">Confirmed</span></td></tr>
+            <tr><td><b>Facial</b></td><td>Room 2</td><td>Today 16:00</td><td>$60</td><td><span class="chip on">Confirmed</span></td></tr>
+            <tr><td><b>Colour</b></td><td>Chair 2</td><td>Fri 11:00</td><td>$90</td><td><span class="chip">Pending</span></td></tr>
+            <tr><td><b>Nails</b></td><td>Desk 1</td><td>Sat 17:00</td><td>$25</td><td><span class="chip on">Confirmed</span></td></tr></tbody></table></div></div></div>
+        <div class="rows" id="rows"><div><b>Facial</b>Today 16:00</div><div><b>Colour</b>Fri 11:00</div><div><b>Nails</b>Sat 17:00</div></div>
       </div>
-      <aside class="cc-rail">
-        <div class="cc-card"><header><b>Needs you</b><small>3 open</small></header>
-          <div class="cc-todo"><div><i class="o"></i>Approve a refund request<em>Approve</em></div><div><i class="o"></i>Answer a new question<em>Teach</em></div><div><i></i>Win-back offer to 14 clients<em>Review</em></div></div></div>
-        <div class="cc-card"><header><b>Growth</b><small>marketing agents</small></header>
-          <div class="cc-g"><div><span>Won back this month</span><b>$2,140</b></div><div><span>Clients drifting away</span><b>23</b></div><div><span>Offer return on spend</span><b>6.2×</b></div></div></div>
-        <div class="cc-card"><header><b>Health</b><small>last 30 days</small></header>
-          <div class="cc-g"><div><span>Chats that became bookings</span><b>63%</b></div><div><span>90-day retention</span><b>55%</b></div><div><span>Chair utilisation</span><b>74%</b></div></div></div>
-      </aside>
-    </div>
-  </div>
+      <div class="agents"><div class="ag-h"><b>AI team</b><small>working now</small></div>
+        <div class="ag" data-a="desk"><i>FD</i><div><b>Front desk</b><span>Waiting for messages</span></div><em></em></div>
+        <div class="ag" data-a="cal"><i>CA</i><div><b>Scheduler</b><span>Keeping tomorrow in order</span></div><em></em></div>
+        <div class="ag" data-a="sup"><i>SU</i><div><b>Support</b><span>2 questions answered today</span></div><em></em></div>
+        <div class="ag" data-a="mkt"><i>MK</i><div><b>Marketing</b><span>3 win-back offers ready</span></div><em></em></div>
+        <div class="ag" data-a="rem"><i>RE</i><div><b>Reminders</b><span>12 reminders sent today</span></div><em></em></div>
+      </div>
+      <div class="toast" id="chat" aria-live="polite"></div>
+    </div></div>
   <div class="trust rv"><span>You see every message the AI sends</span><span>You can take over any chat</span><span>Your data stays yours</span><span>Example business shown</span></div>
 </div></section>
 
