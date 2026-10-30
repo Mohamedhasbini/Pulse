@@ -407,6 +407,7 @@
     return box;
   }
 
+  window.PVData = data; // Studio builds its widgets from the same live data
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44, 45: c45 };
   const PAGES = { today: [16, 8, 7, 15] };
   // sub-tabs get their own board, keyed by tab name, so each one opens on something new
@@ -442,6 +443,7 @@
     const list = SUB[id] ? SUB[id][sub] : PAGES[id];
     after?.parentElement?.querySelectorAll('.pv-board').forEach(x => x.remove()); // a sub-tab without its own board never keeps the last one
     const ov = after && id !== 'today' ? await overview(id, after) : null;
+    if (after && id !== 'studio') window.MXStudio?.page(id, ov || after); // the owner's own widgets on this page
     if (!list || !after) return;
     document.body.dataset.pv = id;
     // Today: the hero leaves the left column and spans the whole screen (layer 2); the board rises over its lower edge (layer 3)

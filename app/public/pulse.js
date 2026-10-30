@@ -45,6 +45,7 @@
       ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] }],
       ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true }],
       ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' }]]],
+    ['studio', 'Studio', 'Build your own views from 37 chart designs', [['My board', { own: 'studio' }], ['Library', { own: 'studiolib' }]]],
     ['marketing', 'Marketing', 'Bring customers in', [
       ['Overview', { own: 'growth' }],
       ['Offers', { page: 'people', tab: 'offers' }],
@@ -230,6 +231,7 @@
     if (key === 'calendar') { const s = page('calendar', 'Calendar', '', '<div id="gcRoot"></div>'); s.hidden = false; window.PulseCal?.mount(s); }
     if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }
     if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything MXAi Assistant prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
+    if (key === 'studio' || key === 'studiolib') { const s = page(key, key === 'studio' ? 'Studio' : 'Widget library', key === 'studio' ? 'Your own board: any data, any design, placed anywhere.' : 'Every chart and table design, drawn from your live data.', '<div id="stRoot"></div>'); s.hidden = false; key === 'studio' ? window.MXStudio?.mountBoard(s) : window.MXStudio?.mountLib(s); }
     if (key === 'aictl') { const s = page('aictl', 'AI control', 'Decide who answers your clients: MXAi or your team.', '<div id="aiRoot"></div>'); s.hidden = false; window.MXAiMode?.mount(s); }
     if (key === 'integrations') { const s = page('integrations', 'Integrations', '', '<div id="igRoot"></div>'); s.hidden = false; window.PulseIntegrations?.mount(s); }
     if (key === 'growth') { const s = page('growth', 'Marketing', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }

@@ -837,6 +837,17 @@ app.post('/api/conversations/:id/reply', wrap(async (req, res) => {
   if (r.error) return res.status(404).json(r);
   res.json(r);
 }));
+// Studio: a user's own widget boards, kept per business
+app.get('/api/studio', wrap(async (req, res) => {
+  const u = await one('SELECT studio FROM users WHERE id=$1', [req.user.id]);
+  res.json((u?.studio || {})[BIZ()] || null);
+}));
+app.put('/api/studio', wrap(async (req, res) => {
+  const boards = req.body?.boards;
+  if (!boards || typeof boards !== 'object' || JSON.stringify(boards).length > 60000) return res.status(400).json({ error: 'That layout is too large.' });
+  await q(`UPDATE users SET studio = jsonb_set(COALESCE(studio,'{}'::jsonb), ARRAY[$2::text], $3::jsonb) WHERE id=$1`, [req.user.id, String(BIZ()), JSON.stringify({ boards, at: new Date().toISOString() })]);
+  res.json({ ok: true });
+}));
 // AI control for the whole business: who answers clients, the AI or the team
 app.get('/api/ai-mode', wrap(async (_req, res) => {
   const b = await one(`SELECT ai_mode, ${LOCAL('ai_mode_at')} AS since FROM businesses WHERE id=$1`, [BIZ()]);

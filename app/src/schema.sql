@@ -441,3 +441,6 @@ CREATE TABLE IF NOT EXISTS waitlist (id SERIAL PRIMARY KEY, business_id INT REFE
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS ai_mode TEXT DEFAULT 'on';
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS ai_mode_at TIMESTAMPTZ;
 UPDATE businesses SET ai_mode='on' WHERE ai_mode IS NULL;
+
+-- Studio: each user's own widget boards, per business
+ALTER TABLE users ADD COLUMN IF NOT EXISTS studio JSONB DEFAULT '{}'::jsonb;
