@@ -363,12 +363,57 @@ i.wo{background:#4a4f54}i.wi{background:linear-gradient(90deg,#a6d11c,#c6f432)}
 .node{transition:border-color .5s,box-shadow .5s,background .5s}
 .node.pulse{border-color:rgba(198,244,50,.6);box-shadow:0 0 0 1px rgba(198,244,50,.2),0 0 30px -8px rgba(198,244,50,.6)}
 .node.pulse i{background:#c6f432;color:#111}
+
+/* ===== MXAi Core banner: a glowing processor on a circuit board ===== */
+.core{position:relative;overflow:hidden;padding:120px 0;min-height:760px;display:flex;align-items:center;isolation:isolate}
+.core-bg{position:absolute;inset:0;z-index:-2;background:radial-gradient(900px 600px at 78% 55%,rgba(198,244,50,.20),transparent 60%),radial-gradient(800px 500px at 10% 20%,rgba(201,206,211,.08),transparent 60%),linear-gradient(120deg,#0b0d0f 0%,#14181b 45%,#0b0d0f 100%)}
+.core-in{position:relative;z-index:2}
+.core-txt{max-width:600px}
+.core-badge{display:inline-block;font-size:clamp(22px,2.2vw,30px);font-weight:300;letter-spacing:-.02em;padding:6px 14px;border:1.5px solid rgba(198,244,50,.7);border-radius:8px;color:#e7eaec;background:rgba(198,244,50,.06)}
+.core h2{font-size:clamp(40px,5vw,72px);font-weight:600;letter-spacing:-.04em;line-height:1.02;margin:22px 0 24px}
+.core p{font-size:18px;line-height:1.75;color:#b9bec3;font-weight:300;margin:0 0 44px}
+.core-feats{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(10,12,14,.55);backdrop-filter:blur(10px);padding:40px 6px 22px;position:relative}
+.core-feats>div{text-align:center;padding:0 16px;position:relative}.core-feats>div+div::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:1px;background:rgba(255,255,255,.14)}
+.cf-ic{position:absolute;left:50%;top:-66px;transform:translateX(-50%);width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#eaffb0,#c6f432 55%,#8fb316);box-shadow:0 0 0 4px rgba(198,244,50,.15),0 0 30px rgba(198,244,50,.55)}
+.cf-ic svg{width:24px;height:24px;fill:none;stroke:#111;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.core-feats b{display:block;font-size:17px;line-height:1.3;margin-bottom:8px}.core-feats b em{display:block;font-style:normal;color:#e7eaec;font-weight:600}
+.core-feats small{display:block;font-size:13.5px;color:#9aa1a8;line-height:1.5}
+/* scene */
+.core-scene{position:absolute;right:-8%;top:50%;width:min(1100px,72vw);aspect-ratio:1;transform:translateY(-50%);perspective:1400px;z-index:1;pointer-events:none}
+.board{position:absolute;inset:0;transform:rotateX(56deg) rotateZ(-36deg);transform-style:preserve-3d}
+.traces{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.traces .comp rect{fill:#191c1f;stroke:rgba(255,255,255,.06)}
+.traces .tr path{fill:none;stroke:rgba(198,244,50,.55);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(198,244,50,.9));stroke-dasharray:14 26;animation:tflow 3.2s linear infinite;animation-delay:calc(var(--d)*-1)}
+.traces .tr circle{fill:#eaffb0;filter:drop-shadow(0 0 8px #c6f432)}
+@keyframes tflow{to{stroke-dashoffset:-80}}
+.bloom{position:absolute;left:22%;top:22%;width:56%;height:56%;border-radius:40px;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(198,244,50,.85) 40%,rgba(198,244,50,.25) 70%,transparent);filter:blur(36px);transform:translateZ(1px);animation:breathe2 4s ease-in-out infinite}
+@keyframes breathe2{50%{opacity:.75;transform:translateZ(1px) scale(1.06)}}
+.chipx{position:absolute;left:33%;top:33%;width:34%;height:34%;transform:translateZ(46px);transform-style:preserve-3d}
+.chipx::before{content:"";position:absolute;inset:0;border-radius:18px;transform:translateZ(-46px);background:#c6f432;filter:blur(18px);opacity:.9}
+.chipx .top{position:absolute;inset:0;border-radius:16px;overflow:hidden;padding:9% 10%;display:flex;flex-direction:column;justify-content:center;
+  background:linear-gradient(135deg,#3a4046 0%,#1c2024 38%,#101215 100%);border:2px solid rgba(255,255,255,.55);
+  box-shadow:0 0 0 2px rgba(198,244,50,.6),0 0 40px rgba(198,244,50,.9),0 0 120px rgba(198,244,50,.6),inset 0 0 40px rgba(198,244,50,.12),
+    2px 2px 0 #c9ced3,4px 4px 0 #b4b9be,6px 6px 0 #9aa0a6,8px 8px 0 #7d848b,10px 10px 0 #5d646b,12px 12px 0 #3f454b}
+.chipx .top::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.18) 45%,transparent 60%);background-size:250% 100%;animation:sheen2 6s ease-in-out infinite}
+@keyframes sheen2{0%,100%{background-position:120% 0}50%{background-position:-30% 0}}
+.chipx .brand{font-size:clamp(40px,5.6vw,88px);font-weight:800;letter-spacing:-.05em;line-height:.9;color:#fff;text-shadow:0 0 24px rgba(198,244,50,.7)}
+.chipx .sub{font-size:clamp(26px,3.6vw,58px);font-weight:300;letter-spacing:.06em;line-height:1;color:#e7eaec;margin-top:2%}
+.chipx .line{position:absolute;right:9%;bottom:9%;font-size:clamp(11px,1.2vw,18px);letter-spacing:.32em;color:#c6f432;font-weight:700}
+.dm{position:absolute;right:8%;top:10%;display:grid;grid-template-columns:repeat(8,1fr);gap:8px;width:34%}
+.dm i{aspect-ratio:1.6;border-radius:2px;background:#c6f432;opacity:var(--o);box-shadow:0 0 6px rgba(198,244,50,.8)}
+@media (max-width:1000px){.core{flex-direction:column;padding:90px 0 0}.core-scene{position:relative;right:auto;top:auto;transform:none;width:120%;margin:-40px -10% -120px}.core-feats{grid-template-columns:1fr;gap:48px;padding:44px 16px 22px}.core-feats>div+div::before{display:none}}
+@media (prefers-reduced-motion:reduce){.traces .tr path,.bloom,.chipx .top::after{animation:none}}
+/* How it works without the art panel */
+.how{grid-template-columns:1fr!important}.how .feature-art{display:none!important}
+.how .nums{display:grid!important;grid-template-columns:repeat(3,1fr)}.how .nums>div{grid-template-columns:1fr;gap:10px}.how .nums i{grid-row:auto}.how .nums p{grid-column:auto}
+@media (max-width:900px){.how .nums{grid-template-columns:1fr}}
+html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 </style>
 </head>
 <body>
 <header><div class="wrap">
   <a class="logo" href="/pulse" aria-label="MXAi home"><i><svg viewBox="0 0 24 24"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i>MXAi</a>
-  <nav><a href="#how">How it works</a><a href="#agents">AI agents</a><a href="#value">Value</a><a href="#dashboard">Dashboard</a><a href="#features">Features</a><a href="#demo">Live demo</a><a href="#pricing">Pricing</a><a href="/webook">WeBook app</a></nav>
+  <nav><a href="#core">MXAi Core</a><a href="#agents">AI agents</a><a href="#value">Value</a><a href="#dashboard">Dashboard</a><a href="#demo">Live demo</a><a href="#pricing">Pricing</a></nav>
   <a class="btn gho signin" href="/login">Sign in</a><a class="btn pri" href="#start" data-kind="signup">Get started</a>
 </div></header>
 
@@ -422,6 +467,28 @@ i.wo{background:#4a4f54}i.wi{background:linear-gradient(90deg,#a6d11c,#c6f432)}
   <div class="glass rv"><b>&lt;5s</b><span>to answer any customer, in 3 languages</span></div>
   <div class="glass rv"><b>Live</b><span>every number updates as it happens</span></div>
 </div></section>
+
+<section id="core" class="core"><div class="core-bg" aria-hidden="true"></div>
+  <div class="wrap core-in">
+    <div class="core-txt rv">
+      <span class="core-badge">MXAi Core</span>
+      <h2>The intelligence that runs your business.</h2>
+      <p>At the heart of MXAi is an AI engine built for real businesses. It reads every conversation, booking and payment as it happens, lets a team of AI agents act on it, and turns the results into decisions you can see. Faster replies, fuller calendars and more revenue, all from one core.</p>
+      <div class="core-feats">
+        <div><span class="cf-ic"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/><path d="M9.5 14.5 12 9l2.5 5.5M10.3 12.8h3.4"/></svg></span><b>Agentic <em>AI engine</em></b><small>Five AI agents that answer, book, support and sell on their own</small></div>
+        <div><span class="cf-ic"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></span><b>Real-time <em>data core</em></b><small>Every chat, booking and dollar in one live business memory</small></div>
+        <div><span class="cf-ic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><b>Command <em>center</em></b><small>See it all, ask anything, approve in one click</small></div>
+      </div>
+    </div>
+  </div>
+  <div class="core-scene" aria-hidden="true">
+    <div class="board">
+      <svg class="traces" viewBox="0 0 1000 1000"><g class="comp"><rect x="569" y="470" width="34" height="40" rx="4"/><rect x="195" y="576" width="26" height="26" rx="4"/><rect x="835" y="227" width="26" height="18" rx="4"/><rect x="216" y="184" width="60" height="40" rx="4"/><rect x="782" y="163" width="26" height="26" rx="4"/><rect x="738" y="570" width="60" height="18" rx="4"/><rect x="613" y="98" width="34" height="18" rx="4"/><rect x="323" y="83" width="26" height="40" rx="4"/><rect x="503" y="615" width="26" height="18" rx="4"/><rect x="493" y="373" width="34" height="40" rx="4"/><rect x="323" y="503" width="60" height="40" rx="4"/><rect x="293" y="755" width="48" height="40" rx="4"/><rect x="247" y="900" width="60" height="18" rx="4"/><rect x="466" y="164" width="60" height="26" rx="4"/><rect x="363" y="114" width="34" height="26" rx="4"/><rect x="114" y="257" width="48" height="18" rx="4"/><rect x="835" y="198" width="48" height="18" rx="4"/><rect x="299" y="180" width="60" height="18" rx="4"/><rect x="804" y="136" width="60" height="26" rx="4"/><rect x="206" y="723" width="34" height="18" rx="4"/><rect x="763" y="481" width="60" height="26" rx="4"/><rect x="471" y="240" width="48" height="26" rx="4"/><rect x="134" y="779" width="48" height="18" rx="4"/><rect x="386" y="607" width="60" height="26" rx="4"/><rect x="760" y="58" width="60" height="26" rx="4"/><rect x="569" y="678" width="48" height="40" rx="4"/><rect x="105" y="155" width="34" height="18" rx="4"/><rect x="126" y="311" width="48" height="18" rx="4"/><rect x="837" y="225" width="48" height="18" rx="4"/><rect x="879" y="472" width="48" height="26" rx="4"/><rect x="192" y="589" width="60" height="40" rx="4"/><rect x="374" y="131" width="48" height="18" rx="4"/><rect x="858" y="744" width="34" height="26" rx="4"/><rect x="114" y="315" width="26" height="40" rx="4"/></g><g class="tr"><path d="M340 361 L281 361 L281 372 L83 372" style="--d:0.14s"/><circle cx="83" cy="372" r="5"/><path d="M660 364 L712 364 L712 367 L954 367" style="--d:0.17s"/><circle cx="954" cy="367" r="5"/><path d="M364 340 L364 273 L283 273 L283 11" style="--d:1.30s"/><circle cx="283" cy="11" r="5"/><path d="M357 660 L357 730 L290 730 L290 950" style="--d:1.27s"/><circle cx="290" cy="950" r="5"/><path d="M340 375 L272 375 L272 446 L80 446" style="--d:1.75s"/><circle cx="80" cy="446" r="5"/><path d="M660 374 L773 374 L773 433 L930 433" style="--d:0.15s"/><circle cx="930" cy="433" r="5"/><path d="M377 340 L377 295 L429 295 L429 109" style="--d:0.40s"/><circle cx="429" cy="109" r="5"/><path d="M380 660 L380 718 L428 718 L428 895" style="--d:1.71s"/><circle cx="428" cy="895" r="5"/><path d="M340 400 L277 400 L277 336 L74 336" style="--d:1.71s"/><circle cx="74" cy="336" r="5"/><path d="M660 395 L747 395 L747 329 L950 329" style="--d:2.14s"/><circle cx="950" cy="329" r="5"/><path d="M392 340 L392 221 L354 221 L354 63" style="--d:2.04s"/><circle cx="354" cy="63" r="5"/><path d="M398 660 L398 740 L427 740 L427 954" style="--d:2.77s"/><circle cx="427" cy="954" r="5"/><path d="M340 415 L262 415 L262 388 L101 388" style="--d:0.54s"/><circle cx="101" cy="388" r="5"/><path d="M660 413 L710 413 L710 470 L918 470" style="--d:1.58s"/><circle cx="918" cy="470" r="5"/><path d="M415 340 L415 243 L398 243 L398 77" style="--d:2.94s"/><circle cx="398" cy="77" r="5"/><path d="M411 660 L411 765 L428 765 L428 901" style="--d:2.27s"/><circle cx="428" cy="901" r="5"/><path d="M340 430 L238 430 L238 447 L5 447" style="--d:2.89s"/><circle cx="5" cy="447" r="5"/><path d="M660 429 L771 429 L771 485 L981 485" style="--d:2.63s"/><circle cx="981" cy="485" r="5"/><path d="M433 340 L433 257 L520 257 L520 44" style="--d:1.78s"/><circle cx="520" cy="44" r="5"/><path d="M435 660 L435 708 L368 708 L368 1000" style="--d:0.81s"/><circle cx="368" cy="1000" r="5"/><path d="M340 447 L293 447 L293 536 L39 536" style="--d:1.94s"/><circle cx="39" cy="536" r="5"/><path d="M660 453 L736 453 L736 461 L993 461" style="--d:2.01s"/><circle cx="993" cy="461" r="5"/><path d="M446 340 L446 241 L446 241 L446 21" style="--d:1.83s"/><circle cx="446" cy="21" r="5"/><path d="M453 660 L453 707 L418 707 L418 978" style="--d:0.86s"/><circle cx="418" cy="978" r="5"/><path d="M340 467 L250 467 L250 477 L117 477" style="--d:2.61s"/><circle cx="117" cy="477" r="5"/><path d="M660 465 L721 465 L721 489 L931 489" style="--d:1.65s"/><circle cx="931" cy="489" r="5"/><path d="M466 340 L466 245 L516 245 L516 35" style="--d:2.12s"/><circle cx="516" cy="35" r="5"/><path d="M469 660 L469 748 L438 748 L438 899" style="--d:0.25s"/><circle cx="438" cy="899" r="5"/><path d="M340 484 L271 484 L271 562 L29 562" style="--d:0.04s"/><circle cx="29" cy="562" r="5"/><path d="M660 484 L733 484 L733 466 L880 466" style="--d:0.44s"/><circle cx="880" cy="466" r="5"/><path d="M490 340 L490 253 L556 253 L556 72" style="--d:0.96s"/><circle cx="556" cy="72" r="5"/><path d="M484 660 L484 765 L552 765 L552 963" style="--d:2.03s"/><circle cx="552" cy="963" r="5"/><path d="M340 500 L242 500 L242 584 L102 584" style="--d:1.68s"/><circle cx="102" cy="584" r="5"/><path d="M660 506 L751 506 L751 516 L893 516" style="--d:1.44s"/><circle cx="893" cy="516" r="5"/><path d="M506 340 L506 293 L464 293 L464 8" style="--d:2.95s"/><circle cx="464" cy="8" r="5"/><path d="M507 660 L507 720 L445 720 L445 923" style="--d:1.80s"/><circle cx="445" cy="923" r="5"/><path d="M340 519 L300 519 L300 574 L19 574" style="--d:1.61s"/><circle cx="19" cy="574" r="5"/><path d="M660 523 L778 523 L778 439 L889 439" style="--d:2.62s"/><circle cx="889" cy="439" r="5"/><path d="M524 340 L524 281 L596 281 L596 32" style="--d:2.87s"/><circle cx="596" cy="32" r="5"/><path d="M523 660 L523 760 L464 760 L464 894" style="--d:2.55s"/><circle cx="464" cy="894" r="5"/><path d="M340 543 L239 543 L239 576 L39 576" style="--d:0.26s"/><circle cx="39" cy="576" r="5"/><path d="M660 537 L743 537 L743 514 L941 514" style="--d:2.49s"/><circle cx="941" cy="514" r="5"/><path d="M538 340 L538 234 L453 234 L453 26" style="--d:2.85s"/><circle cx="453" cy="26" r="5"/><path d="M544 660 L544 746 L491 746 L491 968" style="--d:1.63s"/><circle cx="491" cy="968" r="5"/><path d="M340 554 L233 554 L233 540 L82 540" style="--d:2.59s"/><circle cx="82" cy="540" r="5"/><path d="M660 558 L766 558 L766 561 L996 561" style="--d:0.50s"/><circle cx="996" cy="561" r="5"/><path d="M557 340 L557 232 L605 232 L605 99" style="--d:1.51s"/><circle cx="605" cy="99" r="5"/><path d="M557 660 L557 778 L516 778 L516 983" style="--d:0.72s"/><circle cx="516" cy="983" r="5"/><path d="M340 578 L271 578 L271 539 L66 539" style="--d:1.48s"/><circle cx="66" cy="539" r="5"/><path d="M660 572 L703 572 L703 553 L940 553" style="--d:0.78s"/><circle cx="940" cy="553" r="5"/><path d="M577 340 L577 243 L576 243 L576 46" style="--d:0.24s"/><circle cx="576" cy="46" r="5"/><path d="M573 660 L573 729 L603 729 L603 905" style="--d:1.01s"/><circle cx="603" cy="905" r="5"/><path d="M340 597 L221 597 L221 663 L107 663" style="--d:0.01s"/><circle cx="107" cy="663" r="5"/><path d="M660 595 L710 595 L710 674 L895 674" style="--d:2.73s"/><circle cx="895" cy="674" r="5"/><path d="M593 340 L593 239 L548 239 L548 55" style="--d:2.37s"/><circle cx="548" cy="55" r="5"/><path d="M595 660 L595 711 L606 711 L606 939" style="--d:1.20s"/><circle cx="606" cy="939" r="5"/><path d="M340 609 L280 609 L280 562 L16 562" style="--d:0.08s"/><circle cx="16" cy="562" r="5"/><path d="M660 615 L718 615 L718 681 L985 681" style="--d:1.79s"/><circle cx="985" cy="681" r="5"/><path d="M615 340 L615 256 L564 256 L564 70" style="--d:1.64s"/><circle cx="564" cy="70" r="5"/><path d="M608 660 L608 701 L684 701 L684 893" style="--d:1.58s"/><circle cx="684" cy="893" r="5"/><path d="M340 628 L245 628 L245 587 L105 587" style="--d:2.62s"/><circle cx="105" cy="587" r="5"/><path d="M660 626 L732 626 L732 590 L917 590" style="--d:1.50s"/><circle cx="917" cy="590" r="5"/><path d="M631 340 L631 267 L680 267 L680 53" style="--d:2.50s"/><circle cx="680" cy="53" r="5"/><path d="M626 660 L626 745 L653 745 L653 964" style="--d:1.75s"/><circle cx="653" cy="964" r="5"/></g></svg>
+      <div class="bloom"></div>
+      <div class="chipx"><div class="top"><span class="brand">MXAi</span><span class="sub">CORE</span><span class="line">AI COMMAND</span><div class="dm"><i style="--o:0.25"></i><i style="--o:0.7"></i><i style="--o:0.25"></i><i style="--o:0.45"></i><i style="--o:0.25"></i><i style="--o:0.7"></i><i style="--o:0.25"></i><i style="--o:1"></i><i style="--o:0.25"></i><i style="--o:0.7"></i><i style="--o:1"></i><i style="--o:0.7"></i><i style="--o:0.45"></i><i style="--o:0.25"></i><i style="--o:0.45"></i><i style="--o:0.25"></i><i style="--o:0.45"></i><i style="--o:0.7"></i><i style="--o:0.25"></i><i style="--o:0.45"></i><i style="--o:0.45"></i><i style="--o:0.7"></i><i style="--o:0.7"></i><i style="--o:0.45"></i><i style="--o:0.7"></i><i style="--o:1"></i><i style="--o:0.45"></i><i style="--o:0.7"></i><i style="--o:0.7"></i><i style="--o:0.25"></i><i style="--o:0.7"></i><i style="--o:0.25"></i><i style="--o:0.25"></i><i style="--o:0.25"></i><i style="--o:0.45"></i><i style="--o:1"></i><i style="--o:0.45"></i><i style="--o:1"></i><i style="--o:0.25"></i><i style="--o:1"></i><i style="--o:1"></i><i style="--o:1"></i><i style="--o:0.7"></i><i style="--o:0.45"></i><i style="--o:0.45"></i><i style="--o:0.7"></i><i style="--o:0.45"></i><i style="--o:0.45"></i></div></div></div>
+    </div>
+  </div>
+</section>
 
 <section id="how"><div class="wrap">
   <div class="sh rv"><span class="k">How it works</span><h2>From scattered chats to one command center.</h2><p>Connect your channels once. MXAi turns every conversation into bookings, data and decisions you can see.</p></div>
@@ -685,6 +752,6 @@ $("#lead").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new 
   catch(err){$("#err").textContent=err.message;$("#go").disabled=false}};
 </script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
-<script type="module" src="/chip3d.js?v=4"></script>
+
 </body>
 </html>
