@@ -47,6 +47,8 @@ window.PulseInbox = (() => {
         <span class="ib-what">${r.needs_attention ? '<i class="chip need">Needs you</i>' : KIND[r.kind] ? `<i class="chip k-${r.kind}">${KIND[r.kind]}</i>` : ''}<span class="ib-snip">${r.last ? (r.last.role === 'customer' ? '' : r.last.role === 'staff' ? 'You: ' : ai() + ': ') + e(r.last.text) : ''}</span></span>
         <span class="ib-ch">${e(CH[r.channel] || r.channel)}</span><span class="ib-at">${e(when(r.at))}</span></button>`).join('')
       : `<p class="ib-none">${st.q ? 'No chats match your search.' : st.folder === 'needs' ? `Nothing needs you. ${ai()} is handling every chat.` : 'No chats here yet.'}</p>`;
+    // wide screens: open the first chat so the reading pane is never an empty half of the page
+    if (!st.open && d.rows.length && innerWidth > 1100) open(d.rows[0].id);
   }
 
   async function open(id) {

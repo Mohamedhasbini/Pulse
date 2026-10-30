@@ -352,3 +352,17 @@ main :is(td,li,.item span){overflow-wrap:break-word}
 .ap-sw{appearance:none;width:34px;height:20px;border-radius:99px;background:color-mix(in srgb,var(--gp-text,var(--ink)) 18%,transparent);position:relative;flex:none;cursor:pointer;transition:background .15s}
 .ap-sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
 .ap-sw:checked{background:var(--accent)}.ap-sw:checked::after{transform:translateX(14px)}
+
+main .btn:not(#_){flex-shrink:0;white-space:nowrap}
+
+/* Insights: the five AI numbers as one row of tiles across the page */
+#spKpis:not(#_){display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-column:1/-1;gap:12px;align-items:start}
+#spKpis>div:not(#_){padding:0!important;margin:0!important}
+#spKpis small{display:block;font-size:.6875rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--st-meta)}
+#spKpis b,#spKpis strong{font-size:1.75rem;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+@media (max-width:900px){#spKpis:not(#_){grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+/* admin "Back to Lab" button: readable on green */
+#labBtn:not(#_),#labBtn *:not(#_){color:#fff!important}
+
+#inAiStats:not(#_){grid-template-columns:repeat(4,minmax(0,1fr))!important}
+@media (max-width:900px){#inAiStats:not(#_){grid-template-columns:repeat(2,minmax(0,1fr))!important}}

@@ -5,14 +5,16 @@ import { q, one } from './db.js';
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 // folder → the conversations it holds (test chats only in their own folder). Counts are unread chats, like Gmail;
 // Needs you counts every chat waiting for the owner.
+// Test lab customers (test-lab-…) chat on real channels but are rehearsals: they live in Test chats only
+const REAL = `c.channel<>'test' AND (SELECT phone FROM customers WHERE id=c.customer_id) NOT LIKE 'test-lab-%'`;
 const FOLDERS = {
-  needs: `c.needs_attention AND c.channel<>'test'`,
-  all: `c.channel<>'test'`,
-  bookings: `c.channel<>'test' AND c.outcome='booked'`,
-  questions: `c.channel<>'test' AND c.kind='question'`,
-  changes: `c.channel<>'test' AND c.kind IN ('change','cancel')`,
-  complaints: `c.channel<>'test' AND (c.kind='complaint' OR c.mood='negative')`,
-  test: `c.channel='test'`,
+  needs: `c.needs_attention AND ${REAL}`,
+  all: REAL,
+  bookings: `${REAL} AND c.outcome='booked'`,
+  questions: `${REAL} AND c.kind='question'`,
+  changes: `${REAL} AND c.kind IN ('change','cancel')`,
+  complaints: `${REAL} AND (c.kind='complaint' OR c.mood='negative')`,
+  test: `NOT (${REAL})`,
 };
 const UNREAD = `EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id=c.id AND m.role='customer' AND m.created_at > COALESCE(c.owner_seen_at, 'epoch'))`;
 
