@@ -88,3 +88,35 @@
 /* the Lab's column is a flex box that shrinks its children: HQ's blocks keep their natural height */
 #ccHQ,#ccHQ>*{flex-shrink:0;min-height:min-content}
 #ccHQ .hq-kpis{min-height:max-content}
+
+/* ===== Business calculator ===== */
+.cs-wrap{display:grid;gap:18px}
+.cs-presets{display:flex;gap:8px;flex-wrap:wrap}
+.cs-presets button{border:1px solid var(--pv-line);background:transparent;color:var(--pv-ink);font:600 13px/1 inherit;padding:9px 14px;border-radius:999px;cursor:pointer}
+.cs-presets button:hover,.cs-presets button[aria-pressed="true"]{border-color:var(--pv-ink)}
+.cs-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.cs-groups fieldset{border:1px solid var(--pv-line);border-radius:16px;padding:12px 14px 6px;margin:0;min-width:0}
+.cs-groups legend{padding:0 6px;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--pv-meta)}
+.cs-f{display:grid;gap:4px;margin-bottom:10px;font-size:13.5px}
+.cs-f>span{color:var(--pv-meta);display:flex;align-items:center;gap:6px}
+.cs-f i{font-style:normal;display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--pv-line);font-size:11px;cursor:help}
+.cs-f>div{display:grid;grid-template-columns:1fr 78px auto;gap:8px;align-items:center}
+.cs-f input[type=range]{width:100%;accent-color:var(--pv-ink)}
+.cs-f input[type=number],.cs-f select{width:100%;box-sizing:border-box;border:1px solid var(--pv-line);background:transparent;color:var(--pv-ink);border-radius:9px;padding:6px 8px;font:inherit;font-size:13.5px;font-variant-numeric:tabular-nums}
+.cs-f em{font-style:normal;color:var(--pv-meta);font-size:12.5px;min-width:14px}
+.cs-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--pv-line);border-radius:18px;overflow:hidden}
+.cs-tiles>div{padding:14px 18px;border-left:1px solid var(--pv-line);border-top:1px solid var(--pv-line);min-width:0}
+.cs-tiles>div:nth-child(4n+1){border-left:0}.cs-tiles>div:nth-child(-n+4){border-top:0}
+.cs-tiles small{display:block;color:var(--pv-meta);font-size:12.5px}.cs-tiles b{display:block;font-size:24px;font-weight:500;letter-spacing:-.02em;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.cs-tiles span{display:block;color:var(--pv-meta);font-size:12.5px}
+.cs-tiles .on b::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pv-lime);box-shadow:0 0 0 1.5px var(--pv-ink);margin-left:8px;vertical-align:5px}
+.cs-two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px}
+.cs-two section{border:1px solid var(--pv-line);border-radius:16px;padding:14px 16px;min-width:0}
+.cs-two h4{margin:0 0 10px;font-size:15px}
+.cs-chart{width:100%;height:200px;display:block}
+.cs-stack{display:flex;height:14px;border-radius:999px;overflow:hidden;gap:2px;margin:6px 0 12px}
+.cs-dl{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin:0;font-size:13.5px}.cs-dl dt{color:var(--pv-meta)}.cs-dl dd{margin:0;font-variant-numeric:tabular-nums}
+.cs-how{margin:0;color:var(--pv-meta);font-size:13px;line-height:1.55}.cs-how b{color:var(--pv-ink)}
+@media (max-width:1100px){.cs-groups{grid-template-columns:1fr 1fr}.cs-two{grid-template-columns:1fr}.cs-tiles{grid-template-columns:1fr 1fr}
+  .cs-tiles>div:nth-child(4n+1){border-left:1px solid var(--pv-line)}.cs-tiles>div:nth-child(2n+1){border-left:0}.cs-tiles>div:nth-child(-n+4){border-top:1px solid var(--pv-line)}.cs-tiles>div:nth-child(-n+2){border-top:0}}
+@media (max-width:700px){.cs-groups{grid-template-columns:1fr}}

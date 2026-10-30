@@ -84,20 +84,13 @@
     const healthC = card('Platform health', `up ${P.uptime_h} h · database ${P.db_mb} MB · ${P.node}`, `<ul class="hq-checks">${P.checks.map(c => `<li class="${c.ok ? 'ok' : 'bad'}"><i></i><b>${esc(c.name)}</b><span>${esc(c.detail || (c.ok ? 'OK' : 'Needs attention'))}</span></li>`).join('')}</ul>`, 'w6');
 
     // unit economics: a projection from your own prices, clearly labelled
-    const sim = card('Unit economics simulator', 'a projection, not real revenue: your plan prices, and AI cost per reply measured from a real turn (about 4,000 tokens in, 250 out)', `<div class="hq-sim" id="hqSim">
-      <label>Clients <input type="range" min="1" max="500" value="50" data-s="n"><output>50</output></label>
-      <label>On Business plan <input type="range" min="0" max="100" value="20" data-s="biz"><output>20%</output></label>
-      <label>On Pro plan <input type="range" min="0" max="100" value="50" data-s="pro"><output>50%</output></label>
-      <label>Take one add-on <input type="range" min="0" max="100" value="30" data-s="add"><output>30%</output></label>
-      <label>AI replies per client a month <input type="range" min="50" max="5000" step="50" value="600" data-s="rep"><output>600</output></label>
-      <label>Cost per AI reply <select data-s="cpr"><option value="0">$0 · free tiers (what you use today)</option><option value="0.0005">$0.0005 · Claude Haiku 5.5</option><option value="0.001">about $0.001 · Gemini paid tier (estimate)</option><option value="0.008">$0.008 · Claude Sonnet 5.5 with caching</option><option value="0.0105">$0.0105 · Claude Sonnet 5.5 without caching</option></select></label>
-      <div class="hq-sim-out" id="hqSimOut"></div></div>`, 'w12');
+    const sim = card('Business calculator', 'a projection, not real revenue: your plan prices, measured AI cost per reply, and costs you set', '<div class="cs-wrap" id="hqCalc"></div>', 'w12');
 
     box.innerHTML = `<div class="hq-head"><div><h2>HQ</h2><p>Your company at a glance: revenue, the value MXAi creates for clients, costs, growth, AI and health.</p></div>
       <div class="hq-seg" role="group" aria-label="Period">${[7, 30, 90, 365].map(d => `<button type="button" data-days="${d}" aria-pressed="${d === days}">${d === 365 ? '12 months' : d + ' days'}</button>`).join('')}<button type="button" data-refresh title="Refresh">↻</button></div></div>
       ${kpis}<div class="hq-grid">${trend}${mix}${table}${funnel}${sources}${months}${aiOps}${control}${healthC}${sim}</div>
-      <p class="hq-foot">Updated ${new Date(D.generated).toLocaleTimeString()} · costs use $${(0.001).toFixed(3)} per AI reply and $0.02 per WhatsApp template unless set in .env (COST_PER_AI_REPLY, COST_PER_WA_TEMPLATE, INFRA_MONTHLY).</p>`;
-    simulate();
+      <p class="hq-foot">Updated ${new Date(D.generated).toLocaleTimeString()} · the paid-price cost estimate in the numbers above uses COST_PER_AI_REPLY and COST_PER_WA_TEMPLATE from .env; the calculator uses its own inputs.</p>`;
+    window.HQSim?.render($('#hqCalc'), D);
   }
 
   function simulate() {
