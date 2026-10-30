@@ -21,6 +21,7 @@
     premium: { label: 'Premium on Sonnet', clients: 40, newPerMonth: 8, churn: 3, biz: 40, pro: 50, addons: 1.5, convs: 300, rpc: 4, wa: 250, waPrice: 0.03, model: 'sonnet', cacheShare: 50, hosting: 120, tools: 80, team: 2000, marketing: 800, cardPct: 2.9, cardFixed: 0.30, months: 24 },
   };
   const TOK_IN = 4000, TOK_OUT = 250, STABLE = 2000; // tokens per reply; STABLE = rules + business (cacheable)
+  Object.values(PRESETS).forEach(p => { p.tax ??= 0; });
   let S = { ...PRESETS.launch }, D = null, root = null;
 
   const field = (k, label, min, max, step, unit, hint) => `<label class="cs-f"><span>${label}${hint ? `<i title="${esc(hint)}">?</i>` : ''}</span>
@@ -70,7 +71,30 @@
     const r = calc(), end = r.rows[r.rows.length - 1], sum = r.mix;
     const tile = (l, v, s, on) => `<div class="${on ? 'on' : ''}"><small>${l}</small><b>${v}</b>${s ? `<span>${s}</span>` : ''}</div>`;
     const bar = [['AI replies', r.aiPer], ['WhatsApp messages', r.waPer], ['Card fees', r.cardPer], ['Your margin', Math.max(0, r.contribution)]];
-    root.querySelector('#csOut').innerHTML = `
+    const n0 = S.clients, nE = end.c, M = S.months, totC = r.rows.reduce((a, x) => a + x.c, 0), tax = (S.tax || 0) / 100;
+    const col = (n, months) => { const rev = n * r.arpa * (months || 1), ai = n * r.aiPer * (months || 1), wa = n * r.waPer * (months || 1), card = n * r.cardPer * (months || 1);
+      const varc = ai + wa + card, gross = rev - varc, fx = r.fixed * (months || 1), op = gross - fx, tx = op > 0 ? op * tax : 0;
+      return { rev, ai, wa, card, varc, gross, fx, hosting: S.hosting * (months || 1), tools: S.tools * (months || 1), team: S.team * (months || 1), marketing: S.marketing * (months || 1), op, tx, net: op - tx }; };
+    // per customer: variable costs are exact; fixed costs are shared among today's clients
+    const per = col(1), shareFx = n0 ? r.fixed / n0 : 0;
+    Object.assign(per, { fx: shareFx, hosting: n0 ? S.hosting / n0 : 0, tools: n0 ? S.tools / n0 : 0, team: n0 ? S.team / n0 : 0, marketing: n0 ? S.marketing / n0 : 0 });
+    per.op = per.gross - shareFx; per.tx = per.op > 0 ? per.op * tax : 0; per.net = per.op - per.tx;
+    const now = col(n0), last = col(nE), total = (() => { const t = col(totC); t.fx = r.fixed * M; t.hosting = S.hosting * M; t.tools = S.tools * M; t.team = S.team * M; t.marketing = S.marketing * M;
+      t.op = t.gross - t.fx; t.tx = t.op > 0 ? t.op * tax : 0; t.net = t.op - t.tx; return t; })();
+    const C = [per, now, last, total];
+    const row = (label, k, cls = '', sign = 1) => `<tr class="${cls}"><th>${label}</th>${C.map(c => `<td>${money(sign * c[k], Math.abs(c[k]) < 10 && c[k] !== 0 ? 2 : 0)}</td>`).join('')}</tr>`;
+    const pctRow = (label, a, b) => `<tr class="pl-pct"><th>${label}</th>${C.map(c => `<td>${c.rev ? pct(c[a] / c[b] * 100) : '—'}</td>`).join('')}</tr>`;
+    const pl = `<section class="cs-pl"><h4>Profit and loss</h4><div class="pl-tw"><table class="pl-t"><thead><tr><th></th><th>Per customer<small>a month</small></th><th>This month<small>${Math.round(n0)} clients</small></th><th>Month ${M}<small>${Math.round(nE)} clients</small></th><th>All ${M} months<small>total</small></th></tr></thead><tbody>
+      ${row('Revenue', 'rev', 'pl-strong')}
+      <tr class="pl-sec"><th colspan="5">Cost of serving clients (grows with every client)</th></tr>
+      ${row('AI replies', 'ai', '', -1)}${row('WhatsApp messages', 'wa', '', -1)}${row('Card fees', 'card', '', -1)}${row('Total variable costs', 'varc', 'pl-sub', -1)}
+      ${row('Gross profit', 'gross', 'pl-strong')}${pctRow('Gross margin', 'gross', 'rev')}
+      <tr class="pl-sec"><th colspan="5">Fixed costs (the same whatever the number of clients)</th></tr>
+      ${row('Hosting', 'hosting', '', -1)}${row('Tools and domains', 'tools', '', -1)}${row('Team and salaries', 'team', '', -1)}${row('Marketing', 'marketing', '', -1)}${row('Total fixed costs', 'fx', 'pl-sub', -1)}
+      ${row('Operating profit', 'op', 'pl-strong')}${row(`Tax (${S.tax || 0}%)`, 'tx', '', -1)}
+      ${row('Net profit', 'net', 'pl-net')}${pctRow('Net margin', 'net', 'rev')}
+      </tbody></table></div><p class="cs-how">Per customer: the variable costs are what one client really costs you; fixed costs are shared among today's ${Math.round(n0)} clients, so they shrink per client as you grow. Tax is applied only when there is a profit.</p></section>`;
+    root.querySelector('#csOut').innerHTML = pl + `
       <div class="cs-tiles">${[
         tile('MRR now', money(r.now.mrr), `${S.clients} clients × ${money(r.arpa)}`, true),
         tile(`MRR in ${S.months} months`, money(end.mrr), `${Math.round(end.c)} clients`),
@@ -100,7 +124,7 @@
         <fieldset><legend>Usage per client a month</legend>${field('convs', 'Conversations', 0, 2000, 10, '')}${field('rpc', 'AI replies per conversation', 1, 12, 1, '')}${field('wa', 'WhatsApp templates sent', 0, 2000, 10, '', 'Reminders and offers sent outside a 24-hour chat window. Replies inside the window are not charged this way.')}${field('waPrice', 'Price per template', 0, 0.2, 0.005, '$', 'Set by Meta and your provider; it differs by country. Check your Kapso dashboard.')}</fieldset>
         <fieldset><legend>AI</legend><label class="cs-f"><span>Model</span><select data-k="model">${Object.entries(MODELS).map(([k, m]) => `<option value="${k}" ${k === S.model ? 'selected' : ''}>${m.name}</option>`).join('')}</select></label>${field('cacheShare', 'Rules and business cached', 0, 100, 10, '%', 'Prompt caching bills the part that never changes (rules and salon details) at a much lower price.')}</fieldset>
         <fieldset><legend>Fixed costs a month</legend>${field('hosting', 'Hosting', 0, 2000, 5, '$')}${field('tools', 'Tools and domains', 0, 1000, 5, '$')}${field('team', 'Team and salaries', 0, 30000, 100, '$')}${field('marketing', 'Marketing', 0, 20000, 50, '$')}</fieldset>
-        <fieldset><legend>Getting paid</legend>${field('cardPct', 'Card fee', 0, 6, 0.1, '%', 'Typical card processing is around 3% plus a fixed fee; check your provider.')}${field('cardFixed', 'Fixed fee per payment', 0, 1, 0.05, '$')}</fieldset>
+        <fieldset><legend>Getting paid</legend>${field('cardPct', 'Card fee', 0, 6, 0.1, '%', 'Typical card processing is around 3% plus a fixed fee; check your provider.')}${field('cardFixed', 'Fixed fee per payment', 0, 1, 0.05, '$')}${field('tax', 'Tax on profit', 0, 40, 1, '%', 'Corporate or income tax on profit. Set your country rate; 0 shows profit before tax.')}</fieldset>
       </div><div id="csOut"></div>`;
     draw();
   }

@@ -120,3 +120,19 @@
 @media (max-width:1100px){.cs-groups{grid-template-columns:1fr 1fr}.cs-two{grid-template-columns:1fr}.cs-tiles{grid-template-columns:1fr 1fr}
   .cs-tiles>div:nth-child(4n+1){border-left:1px solid var(--pv-line)}.cs-tiles>div:nth-child(2n+1){border-left:0}.cs-tiles>div:nth-child(-n+4){border-top:1px solid var(--pv-line)}.cs-tiles>div:nth-child(-n+2){border-top:0}}
 @media (max-width:700px){.cs-groups{grid-template-columns:1fr}}
+
+/* profit and loss statement */
+.cs-pl{border:1px solid var(--pv-line);border-radius:16px;padding:14px 16px;margin-bottom:14px}
+.cs-pl h4{margin:0 0 10px;font-size:15px}
+.pl-tw{overflow-x:auto}
+.pl-t{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.pl-t thead th{text-align:right;font-size:12.5px;font-weight:600;color:var(--pv-ink);padding:6px 10px;border-bottom:1px solid var(--pv-line);white-space:nowrap}
+.pl-t thead th small{display:block;color:var(--pv-meta);font-weight:500}
+.pl-t tbody th{text-align:left;font-weight:500;color:var(--pv-meta);padding:7px 10px}
+.pl-t td{text-align:right;padding:7px 10px;white-space:nowrap}
+.pl-t .pl-sec th{padding-top:14px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--pv-meta);font-weight:700}
+.pl-t .pl-sub th,.pl-t .pl-sub td{border-top:1px solid var(--pv-line);color:var(--pv-ink)}
+.pl-t .pl-strong th,.pl-t .pl-strong td{color:var(--pv-ink);font-weight:700;border-top:1px solid var(--pv-line)}
+.pl-t .pl-pct th,.pl-t .pl-pct td{color:var(--pv-meta);font-size:12.5px;padding-top:2px}
+.pl-t .pl-net th,.pl-t .pl-net td{color:var(--pv-ink);font-weight:700;font-size:16px;border-top:2px solid var(--pv-ink);padding-top:10px}
+.pl-t .pl-net td:nth-child(3)::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pv-lime);box-shadow:0 0 0 1.5px var(--pv-ink);margin-left:8px;vertical-align:2px}
