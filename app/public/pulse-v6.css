@@ -112,7 +112,7 @@ body[data-pv="today"] .pv-board{position:relative;z-index:3;margin-top:-64px;pad
 .pv-heat b{animation:pvPop .5s both;animation-delay:calc(var(--i,0)*80ms + .3s)}@keyframes pvPop{from{opacity:0;transform:scale(.6)}}
 @media(prefers-reduced-motion:reduce){.pv-amb i,.pv-amb .scan,.td-hero.pv-stage::after,.pv-c,.pv-bar i,.pv-stack i,.pv-code i,.pv-heat b,.pv-area polyline,.pv-sp polyline{animation:none!important;stroke-dashoffset:0!important}}
 /* unlock Today from the one-screen grid so the stage and board can breathe */
-html body main > section.today:not(#_):not(#__){display:block!important;height:auto!important;max-height:none!important;overflow:visible!important}
+html body main > section.today:not([hidden]):not(#_):not(#__){display:block!important;height:auto!important;max-height:none!important;overflow:visible!important}
 html body section.today .td-grid:not(#_):not(#__){height:auto!important;grid-template-rows:none!important;grid-auto-rows:auto!important;margin-top:28px}
 html body .td-hero.pv-stage:not(#_):not(#__){min-height:min(66vh,620px);height:auto!important;display:block!important;box-sizing:border-box}
 .td-hero.pv-stage .td-hero-in{display:flex!important;gap:28px;align-items:flex-start}
@@ -125,7 +125,7 @@ html body .td-hero.pv-stage:not(#_):not(#__){min-height:min(66vh,620px);height:a
 .td-hero.pv-stage .td-hero-in img,.td-hero.pv-stage .td-hero-in .td-logo{width:88px!important;height:88px!important;border-radius:22px}
 body[data-pv="today"] .pv-board{margin-top:-96px}
 html body main:not(#_):not(#__){overflow-y:auto!important;overflow-x:hidden!important;height:calc(100vh - 64px)}
-html body main > section.today:not(#_):not(#__):not(#___){display:flex!important;flex-direction:column;padding-bottom:40px}
+html body main > section.today:not([hidden]):not(#_):not(#__):not(#___){display:flex!important;flex-direction:column;padding-bottom:40px}
 section.today>.pv-stage{order:-3}section.today>.pv-board{order:-2}section.today>.bf{order:-1;margin:24px 24px 0}
 .td-hero.pv-stage .td-logo:not(#_){flex:0 0 88px!important;width:88px!important;height:88px!important;background-size:cover!important;background-position:center!important}
 html body .td-hero.pv-stage:not(#_):not(#__):not(#___){padding-bottom:170px!important}
@@ -144,3 +144,4 @@ html body .pc > div:first-child:not(#_),html body .pc .pc-body:not(#_){backgroun
 html body .pc :is(.pc-chip,.pc-act,.pc-abtn):not(#_){border-radius:99px!important;background:rgba(255,255,255,.07)!important;color:#eef0f2!important;border:1px solid #2a2e33!important}
 html body .pc :is(.pc-go,button[type="submit"]):not(#_){background:var(--pv-lime)!important;color:#111!important;border-radius:14px!important}
 html body .pc b:not(#_),html body .pc strong:not(#_){color:var(--pv-lime)}
+html body main > section[hidden]:not(#_):not(#__):not(#___){display:none!important}
