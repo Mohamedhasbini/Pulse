@@ -39,7 +39,7 @@
     const svc = [...new Set(l.map(b => b.service))].sort((x, y) => l.filter(b => b.service === y).length - l.filter(b => b.service === x).length).slice(0, 6);
     const ord = [1, 2, 3, 4, 5, 6, 0], m = {}; let mx = 1;
     l.forEach(b => { const k = b.service + '|' + new Date(b.start).getDay(); m[k] = (m[k] || 0) + 1; mx = Math.max(mx, m[k]); });
-    const cell = v => v ? `<td style="background:${a(L, .12 + v / mx * .88)}${v / mx > .6 ? ';color:#111' : ''}">${v}</td>` : '<td class="z">·</td>';
+    const cell = v => v ? `<td class="hc" style="--c:${a(L, .12 + v / mx * .88)}${v / mx > .6 ? ';color:#111' : ''}">${v}</td>` : '<td class="z">·</td>';
     const col = d => svc.reduce((s, x) => s + (m[x + '|' + d] || 0), 0);
     return card(2, 'Pivot: service × weekday', 'Bookings, last 90 days. Darker lime = busier', `<div class="pv-scroll"><table class="pv-t pv-piv"><thead><tr><th>Service</th>${ord.map(d => `<th>${DAYS[d]}</th>`).join('')}<th>Σ</th></tr></thead><tbody>
       ${svc.map(x => `<tr><td>${esc(x)}</td>${ord.map(d => cell(m[x + '|' + d] || 0)).join('')}<td><b>${ord.reduce((s, d) => s + (m[x + '|' + d] || 0), 0)}</b></td></tr>`).join('')}</tbody>
@@ -128,7 +128,7 @@
     const mAdd = (m, n) => { const d = new Date(m + '-01T00:00'); d.setMonth(d.getMonth() + n); return d.toISOString().slice(0, 7); }, cur = new Date().toISOString().slice(0, 7);
     const cohorts = [...new Set(Object.values(first))].sort().slice(-4);
     if (!cohorts.length) return card(14, 'Who came back', 'Retention by first-visit month', empty('Not enough history yet'));
-    const cell = (c, n) => { if (mAdd(c, n) > cur) return '<td class="z">—</td>'; const ks = Object.keys(first).filter(k => first[k] === c), p = Math.round(ks.filter(k => visits[k].has(mAdd(c, n))).length / ks.length * 100); return `<td style="background:${a(L, .08 + p / 100 * .92)}${p > 55 ? ';color:#111' : ''}">${p}%</td>`; };
+    const cell = (c, n) => { if (mAdd(c, n) > cur) return '<td class="z">—</td>'; const ks = Object.keys(first).filter(k => first[k] === c), p = Math.round(ks.filter(k => visits[k].has(mAdd(c, n))).length / ks.length * 100); return `<td class="hc" style="--c:${a(L, .08 + p / 100 * .92)}${p > 55 ? ';color:#111' : ''}">${p}%</td>`; };
     return card(14, 'Who came back', 'Share of each month’s new clients who returned', `<table class="pv-t pv-piv"><thead><tr><th>First visit</th><th>Size</th><th>+1 mo</th><th>+2 mo</th><th>+3 mo</th></tr></thead><tbody>${cohorts.map(c => `<tr><td>${new Date(c + '-01T00:00').toLocaleString(undefined, { month: 'short', year: '2-digit' })}</td><td>${Object.values(first).filter(x => x === c).length}</td>${[1, 2, 3].map(n => cell(c, n)).join('')}</tr>`).join('')}</tbody></table>`);
   }
   // ---- 15 activity rings

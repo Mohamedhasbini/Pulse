@@ -323,3 +323,25 @@ html body main :is(input[type="text"],input[type="search"],input:not([type]),tex
 .ai-chip{flex:none!important;white-space:nowrap;min-width:max-content;width:auto!important;height:34px!important}
 html body nav[aria-label="Main"] .navfoot button.ai-chip:not(#_):not(#__):not(#___),html body .ai-chip:not(#_):not(#__):not(#___){width:auto!important;min-width:max-content!important;padding:0 14px!important;border-radius:999px!important;gap:8px!important;display:inline-flex!important;align-items:center}
 html body nav .ai-chip span:not(#_):not(#__):not(#___),html body .ai-chip span:not(#_):not(#__){display:inline!important;font-size:13px;font-weight:600;color:inherit}html body nav .ai-chip:not(#_):not(#__):not(#___){color:#e7eaec!important}
+
+/* ===== light mode accent = Graphite capsules =====
+   On silver every line, bar, fill and selection is graphite (11:1). Lime only lives inside graphite pieces
+   (buttons, chips, the AI pill, the active tab, the peak), where it keeps its 14:1 dark-mode strength. */
+:root[data-theme="light"]:root:not(#_){--pv-lime:#15181a;--accent:#15181a;--accent-ink:#c6f432;--accent-soft:rgba(21,24,26,.1);--accent-line:rgba(21,24,26,.4);--accent-text:#15181a;--rev:#15181a;--rev-ink:#c6f432;--good:#15181a}
+/* dark surfaces inside light mode keep the real lime */
+:root[data-theme="light"] :is(.td-hero.pv-stage,nav[aria-label="Main"],.hx,.ai-banner,.pa-switch):not(#_){--pv-lime:#c6f432;--accent:#c6f432;--rev:#c6f432}
+/* capsules: graphite body, lime signal */
+:root[data-theme="light"] main .btn:not(.ghost):not(.gho):not(#_):not(#__){background:#15181a!important;color:#c6f432!important;border-color:#15181a!important}
+:root[data-theme="light"] .pv-chip.on:not(#_):not(#__),:root[data-theme="light"] main .pill-on,:root[data-theme="light"] .aic-sw button[aria-checked="true"]:not(#_){background:#15181a!important;color:#c6f432!important;border-color:#15181a!important}
+:root[data-theme="light"] .aic-sw button[aria-checked="true"] small{color:#c9ced3!important}
+:root[data-theme="light"] .ai-chip i{background:#c6f432!important;box-shadow:0 0 8px #c6f432}
+:root[data-theme="light"] .pv-ovc.on:not(#_):not(#__){border-color:#15181a!important;box-shadow:inset 0 3px 0 #c6f432,0 18px 36px -26px rgba(15,17,19,.6)!important}
+:root[data-theme="light"] .pv-ovc em{color:#15181a!important}
+/* text that sat on lime fills now sits on graphite: switch it to lime */
+:root[data-theme="light"] .pv-piv td[style*="color:#111"],:root[data-theme="light"] .pv-tree>div[style*="color:#111"],:root[data-theme="light"] .pv-gantt i,:root[data-theme="light"] .pv-fun div.on,:root[data-theme="light"] .pv-cols .dot{color:#c6f432!important}
+:root[data-theme="light"] .pv-piv tfoot .hl{color:#15181a}
+/* the peak gets a lime cap so the most important bar still carries the brand signal */
+:root[data-theme="light"] .pv-stack>div:last-child i:first-child,:root[data-theme="light"] .pv-week>div.on>div>i{box-shadow:inset 0 3px 0 #c6f432}
+:root[data-theme="light"] .pv-feed span{color:#15181a!important}
+:root[data-theme="light"] .pv-beat polyline{stroke:#15181a}
+html body main .pv-t td.hc:not(#_):not(#__):not(#___),html body main .pv-t tr:hover td.hc:not(#_):not(#__):not(#___){background:var(--c)!important}
