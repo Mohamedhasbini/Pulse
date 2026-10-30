@@ -189,3 +189,38 @@ html body main .pv-ov.mini .pv-ovc:not(#_){min-height:0;flex:0 0 auto;min-width:
 .pv-week span{font-size:13px;color:var(--pv-meta)}.pv-week>div>div{height:90px;display:flex;align-items:flex-end;justify-content:center;margin:8px 0;position:relative}.pv-week>div>div>i{width:60%;background:var(--pv-lime);border-radius:6px;animation:pvGrow .8s both;transform-origin:bottom}
 .pv-week .dual i{position:absolute;bottom:0;left:20%;width:60%}.pv-week .dual i.o{background:var(--pv-track)}.pv-week b{display:block;font-size:18px}.pv-week small{color:var(--pv-meta);font-size:12.5px}
 .pv-sw{display:inline-block;width:30px;height:30px;border-radius:9px;vertical-align:middle;border:1px solid var(--pv-line)}
+
+/* Today: main column + right rail (shortcuts, to-dos) visible without scrolling */
+html body main > section.today.pv-today:not([hidden]):not(#_):not(#__):not(#___){display:grid!important;grid-template-columns:minmax(0,1fr) 360px;column-gap:20px;align-items:start;grid-auto-flow:row dense}
+section.pv-today>*:not(.pv-rail){grid-column:1}
+section.pv-today>.pv-rail{grid-column:2;grid-row:1 / span 6;position:sticky;top:0;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 96px);overflow-y:auto;scrollbar-width:thin;z-index:4}
+section.pv-today>.pv-stage{grid-row:1}section.pv-today>.pv-board{grid-row:2}section.pv-today>.bf{grid-row:3}section.pv-today>.td-grid{grid-row:4}
+html body section.pv-today .pv-rail>.td-card:not(#_):not(#__){margin:0!important;width:auto!important;height:auto!important;max-height:none!important;border-radius:22px!important;padding:18px!important;background:linear-gradient(160deg,rgba(32,36,39,.9),rgba(20,23,25,.95))!important;border:1px solid var(--pv-line)!important;backdrop-filter:blur(14px)}
+:root[data-theme="light"] html body section.pv-today .pv-rail>.td-card:not(#_):not(#__){background:var(--pv-card)!important}
+section.pv-today .pv-rail .td-sc{order:-1}
+/* the rest of the old grid flows normally (it collapsed to 0 height and slid under the board) */
+html body section.pv-today .td-grid:not(#_):not(#__):not(#___){display:grid!important;grid-template-columns:1fr!important;gap:16px!important;height:auto!important;margin:20px 24px 0}
+html body section.pv-today .td-left:not(#_){display:flex!important;flex-direction:column;gap:16px;height:auto!important;position:static!important}
+html body section.pv-today .td-left>*:not(#_){position:relative!important;height:auto!important}
+html body section.pv-today .td-ai:empty{display:none}
+section.pv-today .pv-board{padding:0 24px!important}
+section.pv-today>.bf{margin:20px 24px 0!important}
+@media (max-width:1100px){html body main > section.today.pv-today:not([hidden]):not(#_):not(#__):not(#___){grid-template-columns:1fr}section.pv-today>.pv-rail{grid-column:1;grid-row:2;position:static;max-height:none;margin:0 24px}section.pv-today>.pv-board{grid-row:3}section.pv-today>.bf{grid-row:4}section.pv-today>.td-grid{grid-row:5}}
+/* hero folder cards: stacked with room, nothing hidden under the front card */
+html body .td-hero.pv-stage .hx-today:not(#_):not(#__){height:300px!important;width:min(400px,40%)!important}
+html body .td-hero.pv-stage .hx-today .hx-fd.a:not(#_):not(#__){top:0!important;height:auto!important;min-height:0;padding-bottom:18px;width:100%!important}
+html body .td-hero.pv-stage .hx-today .hx-fd.b:not(#_):not(#__){top:128px!important;height:auto!important;width:100%!important}
+.td-hero.pv-stage .hx-fd small{display:block;white-space:normal}
+/* shortcuts in the rail */
+section.pv-today .pv-rail .td-sc .sc-row{display:flex;flex-wrap:wrap;gap:8px}
+section.pv-today .pv-rail .td-sc::before{content:"Shortcuts";display:block;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--pv-meta);font-weight:600;margin-bottom:10px}
+/* page heroes: the two folder cards stack with room, and the sub-tab row sits below them, never under */
+html body .hx .hx-folders:not(#_):not(#__){height:300px}
+html body .hx .hx-fd.a:not(#_):not(#__){top:18px;height:auto;min-height:118px}
+html body .hx .hx-fd.b:not(#_):not(#__){top:150px;height:auto;min-height:128px}
+html body .hx .hx-in:not(#_){min-height:300px;align-items:start}
+html body .hx .p10-bar:not(#_){position:relative;z-index:3;margin-top:12px}
+html body main > section.today.pv-today:not([hidden]):not(#_):not(#__):not(#___){grid-template-rows:none!important;grid-auto-rows:auto!important}
+html body .td-hero.pv-stage .hx-tl:not(#_):not(#__){left:0!important;right:0!important;width:auto!important;margin:0!important;box-sizing:border-box;overflow:hidden}
+html body .td-hero.pv-stage .hx-track:not(#_){min-width:0;overflow:hidden}
+html body section.pv-today>.bf:not(#_):not(#__),html body section.pv-today>.td-grid:not(#_):not(#__){overflow:visible!important;height:auto!important;max-height:none!important;flex:none!important}

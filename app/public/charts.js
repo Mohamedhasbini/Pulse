@@ -426,7 +426,12 @@
     if (!list || !after) return;
     document.body.dataset.pv = id;
     // Today: the hero leaves the left column and spans the whole screen (layer 2); the board rises over its lower edge (layer 3)
-    if (id === 'today' && after.classList.contains('td-hero')) { const sec = after.closest('section'); sec.prepend(after); after.classList.add('pv-stage'); }
+    if (id === 'today' && after.classList.contains('td-hero')) { const sec = after.closest('section'); sec.prepend(after); after.classList.add('pv-stage');
+      // right rail: shortcuts and the to-do list stay in view next to the stage, never at the bottom
+      let rail = sec.querySelector(':scope > .pv-rail'); if (!rail) { rail = document.createElement('aside'); rail.className = 'pv-rail'; rail.setAttribute('aria-label', 'Shortcuts and to-dos'); sec.prepend(rail); }
+      const dock = () => ['.td-sc', '#tdList'].forEach(q => { sec.querySelectorAll(q).forEach(el => { if (el.parentElement !== rail) { rail.querySelector(q)?.remove(); rail.append(el); } }); });
+      dock(); if (!rail._mo) { rail._mo = new MutationObserver(() => { if ([...sec.querySelectorAll('.td-sc, #tdList')].some(el => el.parentElement !== rail)) dock(); }); rail._mo.observe(sec, { childList: true, subtree: true }); }
+      sec.classList.add('pv-today'); }
     const sec = after.parentElement; sec.querySelectorAll('.pv-board').forEach(x => x.remove());
     const box = document.createElement('div'); box.className = 'pv-board'; (ov || after).after(box);
     const d = await data();
