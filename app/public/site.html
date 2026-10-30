@@ -354,6 +354,15 @@ i.wo{background:#4a4f54}i.wi{background:linear-gradient(90deg,#a6d11c,#c6f432)}
 .fsvg{width:100%;height:auto;display:block}.fsvg .ft{fill:#7d838a;font-size:11px}.fsvg .fv{fill:#fff;font-size:13px;font-weight:700}
 @media (max-width:1000px){.money{grid-template-columns:1fr!important}}
 @media (max-width:640px){.cr{grid-template-columns:1fr}.dl{justify-self:start}.fh{flex-direction:column}.fg2{text-align:left}}
+
+/* architecture journeys */
+.arch svg.wires path{fill:none;stroke:rgba(255,255,255,.12);stroke-width:1.4;transition:stroke .6s}
+.arch svg.wires path.done{stroke:rgba(198,244,50,.35)}
+.arch svg.wires path.lit{stroke:#c6f432;stroke-width:2.4;filter:drop-shadow(0 0 6px rgba(198,244,50,.8));animation:none;stroke-dasharray:none}
+.arch svg.wires .dot{fill:#eaffb0;filter:drop-shadow(0 0 8px #c6f432);opacity:0;transition:opacity .4s}
+.node{transition:border-color .5s,box-shadow .5s,background .5s}
+.node.pulse{border-color:rgba(198,244,50,.6);box-shadow:0 0 0 1px rgba(198,244,50,.2),0 0 30px -8px rgba(198,244,50,.6)}
+.node.pulse i{background:#c6f432;color:#111}
 </style>
 </head>
 <body>
@@ -621,12 +630,31 @@ const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.targ
 document.querySelectorAll(".rv").forEach((el,i)=>{el.style.transitionDelay=(i%4)*80+"ms";io.observe(el)});
 
 
-// architecture wires: curved links from each tier to the next, with live data flowing on a few of them
-function wires(){const svg=$("#wires");if(!svg)return;const box=svg.getBoundingClientRect();const c=e=>{const r=e.getBoundingClientRect();return{l:r.left-box.left,r:r.right-box.left,y:r.top-box.top+r.height/2}};
-  const g=k=>[...document.querySelectorAll(`.node[data-w="${k}"]`)].map(c);const A=g("a"),B=g("b"),C=g("c"),D=g("d");let h="";
-  const link=(p,q,live)=>{const mx=(p.r+q.l)/2;h+=`<path class="${live?"live":""}" d="M${p.r} ${p.y} C${mx} ${p.y} ${mx} ${q.y} ${q.l} ${q.y}"/>`};
-  A.forEach((a,i)=>link(a,B[i%B.length],i===0));B.forEach((b,i)=>link(b,C[0],i<2));D.forEach((d,i)=>link(C[0],d,i===0||i===2));svg.innerHTML=h}
-addEventListener("load",wires);document.querySelector(".arch")?.addEventListener("transitionend",wires);addEventListener("resize",()=>{clearTimeout(wires.t);wires.t=setTimeout(wires,150)});setTimeout(wires,1200);
+// architecture wires: four clear journeys, channel > agent > business memory > command center.
+// Each pulse travels one link at a time; nodes light as it arrives. Two journeys overlap, never all at once.
+const JOURNEYS=[{a:0,b:0,d:0,t:"WhatsApp > Front desk > memory > Live dashboard"},{a:2,b:1,d:1,t:"Booking page > Scheduler > memory > Insights"},{a:1,b:2,d:2,t:"Telegram > Support > memory > Ask MXAi"},{a:3,b:3,d:3,t:"WeBook > Marketing > memory > Approvals"}];
+let W={};
+function wires(){const svg=$("#wires");if(!svg)return;const box=svg.getBoundingClientRect();if(!box.width)return;
+  const c=e=>{const r=e.getBoundingClientRect();return{l:r.left-box.left,r:r.right-box.left,y:r.top-box.top+r.height/2}};
+  const N=k=>[...document.querySelectorAll(`.node[data-w="${k}"]`)];W={A:N("a"),B:N("b"),C:N("c"),D:N("d")};
+  const pa=W.A.map(c),pb=W.B.map(c),pc=W.C.map(c),pd=W.D.map(c);
+  const d=(p,q)=>{const mx=(p.r+q.l)/2;return `M${p.r} ${p.y} C${mx} ${p.y} ${mx} ${q.y} ${q.l} ${q.y}`};
+  svg.innerHTML=JOURNEYS.map((j,i)=>`<path id="w${i}a" d="${d(pa[j.a],pb[j.b])}"/><path id="w${i}b" d="${d(pb[j.b],pc[0])}"/><path id="w${i}c" d="${d(pc[0],pd[j.d])}"/>`).join("")
+    +JOURNEYS.map((_,i)=>`<path class="lit" id="l${i}"/><circle class="dot" id="d${i}" r="5"/>`).join("")}
+const tick=f=>setTimeout(()=>f(performance.now()),16);
+function run(i){if(!document.getElementById(`w${i}a`))wires();const j=JOURNEYS[i],segs=["a","b","c"].map(k=>document.getElementById(`w${i}${k}`)),nodes=[W.A[j.a],W.B[j.b],W.C[0],W.D[j.d]],lit=document.getElementById("l"+i),dot=document.getElementById("d"+i);
+  if(!segs[0]||!dot)return;const SEG=1500,HOLD=650;let k=0;nodes[0].classList.add("pulse");
+  const step=()=>{const path=segs[k],L=path.getTotalLength(),t0=performance.now();lit.setAttribute("d",path.getAttribute("d"));lit.style.strokeDasharray=L;dot.style.opacity=1;
+    const f=now=>{const e=Math.min(1,(now-t0)/SEG),q=e<.5?2*e*e:1-Math.pow(-2*e+2,2)/2,pt=path.getPointAtLength(L*q);dot.setAttribute("cx",pt.x);dot.setAttribute("cy",pt.y);lit.style.strokeDashoffset=L*(1-q);path.classList.add("done");
+      if(e<1)return tick(f);nodes[k+1].classList.add("pulse");k++;if(k<3)setTimeout(step,HOLD);else setTimeout(()=>{dot.style.opacity=0;lit.style.strokeDashoffset=L;segs.forEach(s=>s.classList.remove("done"));nodes.forEach(n=>n.classList.remove("pulse"))},1400)};
+    tick(f)};
+  step()}
+// runs while the diagram is on screen; checks its position instead of relying on an observer
+function cycle(){const el=document.querySelector(".arch");if(!el)return;const r=el.getBoundingClientRect();
+  if(document.hidden||r.bottom<0||r.top>innerHeight)return setTimeout(cycle,800);
+  wires();JOURNEYS.forEach((_,i)=>setTimeout(()=>run(i),i*2600));setTimeout(cycle,JOURNEYS.length*2600+3000)}
+setTimeout(cycle,600);
+addEventListener("resize",()=>{clearTimeout(wires.t);wires.t=setTimeout(wires,150)});document.querySelector(".arch")?.addEventListener("transitionend",wires);
 // Demo businesses from the WeBook app
 fetch("/api/webook/businesses").then(r=>r.ok?r.json():[]).then(list=>{list=(Array.isArray(list)?list:list.businesses||[]).slice(0,6);if(!list.length)return;
   $("#demos").innerHTML=list.map(b=>`<a class="demo glass" href="/webook/${b.id}?chat=1"><b>${esc(b.name)}</b><span>${esc([b.emoji,b.type,b.city].filter(Boolean).join(" · "))}</span><em>Chat with the assistant →</em></a>`).join("")}).catch(()=>{});
