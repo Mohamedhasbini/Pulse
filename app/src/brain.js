@@ -95,7 +95,9 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   }
 
   const kw = text.trim().toLowerCase().replace(/[.!]+$/, '');
-  if (/^(stop|unsubscribe|stop offers|no more offers|ستوب|الغاء العروض|إلغاء العروض)$/.test(kw) || /^(offers|yes offers|subscribe|العروض|اشترك)$/.test(kw)) {
+  const lastBot = (await q("SELECT text FROM messages WHERE conversation_id=$1 AND role='assistant' ORDER BY id DESC LIMIT 1", [conv.id]))[0]?.text || '';
+  const yesToOffers = /Reply OFFERS|"العروض"/.test(lastBot) && /^(yes|yes please|yeah|sure|ok|okay|sí|si|claro|oui|نعم|اي|إي|أكيد|ايه)[.! ]*$/.test(kw);
+  if (yesToOffers || /^(stop|unsubscribe|stop offers|no more offers|ستوب|الغاء العروض|إلغاء العروض)$/.test(kw) || /^(offers|yes offers|subscribe|العروض|اشترك)$/.test(kw)) {
     const on = !/^(stop|unsubscribe|stop offers|no more offers|ستوب|الغاء العروض|إلغاء العروض)$/.test(kw), ar = AR.test(text);
     await q('UPDATE customers SET marketing_ok=$1, marketing_at=now() WHERE id=$2', [on, customer.id]);
     const reply = on ? (ar ? 'تم! سنرسل لك عروضنا الخاصة. أرسل STOP في أي وقت لإيقافها.' : "Done! You'll get our special offers. Send STOP anytime to stop them.")
@@ -122,6 +124,12 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   const phoneKnown = !/^(test(?!-lab-)|e2e|walk-in|tg-)/.test(customer.phone) || !!customer.contact_phone;
   // Test lab customers play WhatsApp customers, so they get WhatsApp reminders too
   const options = reminderOptions(String(customer.phone).startsWith('test-lab-') ? 'whatsapp' : channel);
+  // Asked for an email once and the client answered without one: that's a skip. Reminders go in this chat instead,
+  // so the booking never stalls in an email loop (simulation: Karim, Maya, Sara never got booked).
+  const emailAsked = history.some(m => m.role === 'assistant' && /e-?mail|بريد|correo/i.test(m.text));
+  if (customer.reminder_channel === 'email' && !customer.email && emailAsked && !/@/.test(text)) {
+    await q("UPDATE customers SET reminder_channel='chat' WHERE id=$1", [customer.id]); customer.reminder_channel = 'chat';
+  }
   const needEmail = customer.reminder_channel === 'email' && !customer.email;
 
   const context = {
@@ -144,11 +152,11 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
       // One person across WhatsApp, Telegram, WeBook and the booking page: their history below covers all of them.
       channels_used: (await q('SELECT DISTINCT channel FROM conversations WHERE customer_id=$1', [customer.id])).map(r => r.channel),
       returning: hist.visits > 0, visits: hist.visits, last_visit: hist.last_visit, favourite_service: hist.favourite_service,
-      name: customer.name, phone_known: phoneKnown, email: customer.email, reminder_channel_set: !!customer.reminder_channel && hist.visits + theirs.length > 0,
+      name: customer.name, phone_known: phoneKnown, email: customer.email || (emailAsked && !/@/.test(text) ? 'SKIPPED: the client did not give one; never ask for an email again, go on to confirm the booking' : null), reminder_channel_set: !!customer.reminder_channel && hist.visits + theirs.length > 0,
       reminder_channel: customer.reminder_channel, staff_notes: customer.staff_notes || undefined,
       reminder_options: options,
       missing_for_booking: [!customer.name && 'name', !phoneKnown && 'phone',
-        needEmail ? 'email (REQUIRED: they chose email reminders; ask for it now)' : biz.ask_email && emailEnabled() && !customer.email && 'email (optional, they may skip)',
+        needEmail ? 'email (REQUIRED: they chose email reminders; ask for it now)' : biz.ask_email && emailEnabled() && !customer.email && !emailAsked && 'email (optional, they may skip)',
         !(hist.visits + theirs.length) && options.length > 1 && `reminder preference (${options.map(o => CHANNEL[o][0]).join(' or ')})`].filter(Boolean),
       upcoming_bookings: theirs.map(b => ({ ref: ref(b.id), when: label(new Date(b.starts_at)), service: b.service,
         can_change_by_chat: hoursUntil(b.starts_at) >= (biz.cancel_hours ?? 24) })) },
@@ -200,7 +208,8 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     const days = availability(biz, bookings, timeOff, 2), ar = AR.test(text);
     // the day in question is the one the client asked about; only when they named none, the one the reply names
     const T = /tomorrow|بكرا|بكره|غدا|غداً/i, N = /today|اليوم/i;
-    const k = T.test(text) ? 1 : N.test(text) ? 0 : T.test(decision.reply) ? 1 : N.test(decision.reply) ? 0 : -1, d = days[k];
+    const WD = /monday|tuesday|wednesday|thursday|friday|saturday|sunday|lunes|martes|miércoles|jueves|viernes|sábado|domingo|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة|السبت|الأحد/i;
+    const k = T.test(text) ? 1 : N.test(text) ? 0 : WD.test(text) ? -1 : T.test(decision.reply) ? 1 : N.test(decision.reply) ? 0 : -1, d = days[k];
     if (d && !/closed|fully booked/.test(d.free)) {
       // every free start time of the day (ranges like 10:00-19:30 expanded hourly), then one early, one middle, one late
       const mm = h => +h.slice(0, 2) * 60 + +h.slice(3, 5), hh = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -481,6 +490,8 @@ const SPECIALIST = `YOUR ROLE: you are the front desk of this business: a senior
 - SUPPORT: for a complaint, refund, damage, injury, or anything you cannot fix within the policies, take the key details (what happened, when, booking) in one message, tell them the manager will follow up, and use action "handoff". Never promise refunds, discounts or exceptions the business hasn't given you.
 - HONEST: only state facts from the business information and CONTEXT. If you don't know, say you'll check with the team (handoff with unknown_question) instead of guessing.
 - RUDE OR TESTING MESSAGES: insults, "stupid bot", jokes or off-topic requests are not a reason to hand off. Stay polite, steer back to booking, and only hand off when they ask for a person or describe a real problem with a visit.
+- NO DATE LOOPS: if the customer says any / whenever / soonest, or gives only a part of the day (morning, afternoon, evening), never ask for the date again: offer 3 free times on the nearest open day that fits (their part of day if given). If they already said today or tomorrow, use that day. Never send the same question twice in a row.
+- UNKNOWN EXTRAS: only say the business does not offer something when it is clearly a service not in the services list. For anything else not in CONTEXT (gift cards, vouchers, packages, products, group deals) you do not know: say you'll check with the team and set confidence low. Never invent a yes or a no.
 - OFFERS LIST: never say a customer joined or left the offers list. Only the system does that, when they send the single word OFFERS (or العروض) or STOP. If they seem to want offers, tell them to reply OFFERS.
 - CLOSE WELL: after a booking or a solved issue, end with one short helpful line (what to bring, arrive early, how to change it), not a question that reopens the chat.`;
 

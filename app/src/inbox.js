@@ -8,7 +8,7 @@ const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const FOLDERS = {
   needs: `c.needs_attention AND c.channel<>'test'`,
   all: `c.channel<>'test'`,
-  bookings: `c.channel<>'test' AND (c.kind='booking' OR c.outcome='booked')`,
+  bookings: `c.channel<>'test' AND c.outcome='booked'`,
   questions: `c.channel<>'test' AND c.kind='question'`,
   changes: `c.channel<>'test' AND c.kind IN ('change','cancel')`,
   complaints: `c.channel<>'test' AND (c.kind='complaint' OR c.mood='negative')`,

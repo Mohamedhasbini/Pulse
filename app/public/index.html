@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
 <link rel="stylesheet" href="/pulse.css">
 <link rel="stylesheet" href="/command.css">
-<link rel="stylesheet" href="/stone.css">
+<link rel="stylesheet" href="/stone.css?v=7">
 <link rel="icon" href="/pulse-logo.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#e8e6e1">
@@ -288,6 +288,8 @@
             <button class="btn ghost" id="resetBtn" type="button" style="margin-top:12px">New customer</button>
             <div class="log" id="log">Try: "Hi, can I book a haircut on Monday morning?"</div>
           </div>
+          <div class="card glass"><div class="ch"><h2>Test data</h2></div><p class="sub" style="margin:0 0 12px">Delete every conversation and booking made from Test chat, so the dashboard shows only real customers.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn ghost" id="clearBtn" type="button">Delete test data</button><span id="clearAsk" hidden>This can't be undone. <button class="btn" id="clearYes" type="button">Yes, delete</button> <button class="btn ghost" id="clearNo" type="button">Keep it</button></span></div></div>
         </div>
       </div>
     </section>
@@ -482,8 +484,7 @@
         </form>
         <div class="list" id="coupons" style="margin-top:14px"></div>
       </div>
-      <div class="card glass"><div class="ch"><h2>Test data</h2></div><p class="sub" style="margin:0 0 12px">Delete every conversation and booking made from Test chat, so the dashboard shows only real customers.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn ghost" id="clearBtn" type="button">Delete test data</button><span id="clearAsk" hidden>This can't be undone. <button class="btn" id="clearYes" type="button">Yes, delete</button> <button class="btn ghost" id="clearNo" type="button">Keep it</button></span></div></div>
+
     </section>
   </main>
 </div>
@@ -552,7 +553,7 @@
 <script src="/pulse.js"></script>
 <script src="/command.js"></script>
 <script src="/briefing.js"></script>
-<script src="/marketing.js"></script>
+<script src="/marketing.js?v=7"></script>
 <script src="/integrations.js"></script>
 <script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}))</script>
 <script src="/palette.js"></script>

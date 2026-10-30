@@ -150,7 +150,12 @@ export function mountAgents(app, BIZ, { sendWhatsApp, sendTelegram, notify, audi
     res.json({ sent, skipped });
   }));
   app.get('/api/agents/log', wrap(async (_req, res) => {
-    res.json(await q(`SELECT a.agent, a.status, left(a.message, 120) AS message, to_char(a.created_at,'Mon DD HH24:MI') AS at, cu.name
-        FROM agent_actions a LEFT JOIN customers cu ON cu.id=a.customer_id WHERE a.business_id=$1 ORDER BY a.id DESC LIMIT 30`, [BIZ()]));
+    // agent messages and campaign sends together, so every message a client got shows in one log
+    res.json(await q(`SELECT agent, status, message, to_char(t,'Mon DD HH24:MI') AS at, name FROM (
+        SELECT a.agent, a.status, left(a.message, 120) AS message, a.created_at AS t, cu.name
+          FROM agent_actions a LEFT JOIN customers cu ON cu.id=a.customer_id WHERE a.business_id=$1
+        UNION ALL SELECT 'Campaign: ' || COALESCE(c.name,'Offer'), cs.status, left(c.message, 120), cs.at, cu.name
+          FROM campaign_sends cs JOIN campaigns c ON c.id=cs.campaign_id LEFT JOIN customers cu ON cu.id=cs.customer_id WHERE c.business_id=$1
+      ) x ORDER BY t DESC LIMIT 30`, [BIZ()]));
   }));
 }

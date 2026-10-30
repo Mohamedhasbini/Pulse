@@ -51,7 +51,7 @@ $("#mkSend").onclick=async()=>{if(!$("#mkMsg").value.trim()){$("#mkInfo").textCo
 async function loadCampaigns(){let list;try{list=await req("/api/marketing/campaigns")}catch(err){const f=$("#mkCard").querySelector(".form");f.hidden=true;let n=$("#mkLocked");if(!n){n=document.createElement("p");n.id="mkLocked";n.className="sub";n.style.margin="0";f.after(n)}n.textContent=err.message;return}
   $("#mkCard").querySelector(".form").hidden=false;$("#mkLocked")?.remove();
   try{const b=await req("/api/business");$("#mkSvc").innerHTML=b.services.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}catch{}
-  $("#mkPast").innerHTML=list.map(c=>`<div class="item"><div class="grow"><b style="font-weight:500">${esc(c.name||"Offer")}</b><span>${ago(c.at)} · sent to ${c.sent}, skipped ${c.skipped} · ${esc(c.message)}</span></div></div>`).join("")}
+  $("#mkPast").innerHTML=list.map(c=>`<div class="item"><div class="grow"><b style="font-weight:500">${esc(c.name||"Offer")}</b><span>${ago(c.at)} · sent to ${c.sent}, skipped ${c.skipped} · <b>${c.booked} booked</b>${c.revenue?`, ${Math.round(c.revenue)} revenue`:""} · ${esc(c.message)}</span></div></div>`).join("")}
 document.addEventListener("change",async e=>{const x=e.target.closest(".mkOk");if(!x)return;e.stopPropagation();
   try{await req(`/api/customers/${x.dataset.id}/offers`,"POST",{on:x.checked});x.parentElement.lastChild.textContent=x.checked?" Yes":" No";toast(x.checked?"Marked as agreed to offers.":"Offers turned off for this client.")}catch(err){toast(err.message);x.checked=!x.checked}});
 document.addEventListener("click",e=>{if(e.target.closest(".mkOk")||e.target.closest("label.switch")&&e.target.closest("#pplRows"))e.stopPropagation()},true);

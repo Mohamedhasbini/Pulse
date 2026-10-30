@@ -1226,7 +1226,9 @@ app.post('/api/marketing/send', wrap(async (req, res) => {
   await notify(BIZ(), 'marketing', `Offer sent to ${sent} client${sent === 1 ? '' : 's'}`, skipped ? `${skipped} skipped (no consent channel open or already contacted today)` : null);
   res.json({ sent, skipped });
 }));
-app.get('/api/marketing/campaigns', wrap(async (_req, res) => res.json(await q(`SELECT id, name, message, sent, skipped, created_by, ${LOCAL('created_at')} AS at
+app.get('/api/marketing/campaigns', wrap(async (_req, res) => res.json(await q(`SELECT id, name, message, sent, skipped, created_by, ${LOCAL('created_at')} AS at,
+    (SELECT count(DISTINCT b.customer_id) FROM campaign_sends cs JOIN bookings b ON b.customer_id=cs.customer_id AND b.status IN ('confirmed','completed') AND b.created_at BETWEEN cs.at AND cs.at + interval '14 days' WHERE cs.campaign_id=campaigns.id)::int AS booked,
+    (SELECT COALESCE(sum(b.price),0) FROM campaign_sends cs JOIN bookings b ON b.customer_id=cs.customer_id AND b.status IN ('confirmed','completed') AND b.created_at BETWEEN cs.at AND cs.at + interval '14 days' WHERE cs.campaign_id=campaigns.id)::float AS revenue
     FROM campaigns WHERE business_id=$1 ORDER BY id DESC LIMIT 30`, [BIZ()]))));
 app.post('/api/customers/:id/offers', wrap(async (req, res) => {
   await q('UPDATE customers SET marketing_ok=$1, marketing_at=now() WHERE id=$2 AND business_id=$3', [!!req.body.on, +req.params.id, BIZ()]);
