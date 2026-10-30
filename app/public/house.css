@@ -1,18 +1,18 @@
 /* House style (round 3): graphite silk hero, a silver (light) or graphite (dark) working area, flat cards with
    corner brackets, thin large numbers, black/white pill tags, an italic serif for the human touch. No glow.
-   Colour is a small touch per tab: lime for revenue (--rev), blue for every other data series (--accent). */
+   Colour is a small touch per tab: lime green only (--rev and --accent); a second series is graphite grey. */
 :root{--h-serif:"Instrument Serif","Iowan Old Style",Georgia,serif}
 :root[data-theme="light"]{
   --h-ground:#e9ebec;--h-card:#f7f8f8;--h-nest:#eef0f1;--h-rim:rgba(20,21,22,.08);--h-br:#141516;
   --h-ink:#141516;--h-2:#45494e;--h-meta:#878b91;--h-tag:#141516;--h-tag-ink:#fff;
   --h-shadow:0 1px 0 #fff inset,0 10px 26px -20px rgba(20,22,26,.3);
-  --accent:#3d6fe0;--accent-soft:rgba(61,111,224,.12);--accent-line:rgba(61,111,224,.4);--accent-text:#2f5cc4;--rev:#9fd12a;--rev-ink:#3d5208;--good:#4f9d69;--warn:#b7791f;--bad:#d0564f;
+  --accent:#9fd12a;--accent-soft:rgba(159,209,42,.16);--accent-line:rgba(120,160,20,.45);--accent-text:#4a6608;--rev:#9fd12a;--rev-ink:#3d5208;--good:#4f9d69;--warn:#b7791f;--bad:#d0564f;
   --st-acc:#141516}
 :root[data-theme="dark"]{
   --h-ground:#121314;--h-card:#1b1c1e;--h-nest:#242628;--h-rim:rgba(255,255,255,.07);--h-br:#a7aaad;
   --h-ink:#f1f2f2;--h-2:#c3c6c9;--h-meta:#86898d;--h-tag:#f1f2f2;--h-tag-ink:#141516;
   --h-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 20px 40px -26px #000;
-  --accent:#6b9bff;--accent-soft:rgba(107,155,255,.14);--accent-line:rgba(107,155,255,.45);--accent-text:#93b6ff;--rev:#c6ec4f;--rev-ink:#c6ec4f;--good:#6cc08a;--warn:#f0b54a;--bad:#f07a72;
+  --accent:#c6ec4f;--accent-soft:rgba(198,236,79,.14);--accent-line:rgba(198,236,79,.45);--accent-text:#d4f465;--rev:#c6ec4f;--rev-ink:#c6ec4f;--good:#6cc08a;--warn:#f0b54a;--bad:#f07a72;
   color-scheme:dark}
 /* every older palette maps onto the house tokens */
 :root:is([data-theme="light"],[data-theme="dark"]){
