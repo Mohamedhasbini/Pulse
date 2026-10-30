@@ -130,7 +130,8 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   // Asked for an email once and the client answered without one: that's a skip. Reminders go in this chat instead,
   // so the booking never stalls in an email loop (simulation: Karim, Maya, Sara never got booked).
   const emailAsked = history.some(m => m.role === 'assistant' && /e-?mail|بريد|correo/i.test(m.text));
-  if (customer.reminder_channel === 'email' && !customer.email && emailAsked && !/@/.test(text)) {
+  const emailSkipped = emailAsked && !customer.email && !/@/.test(text);
+  if (customer.reminder_channel === 'email' && emailSkipped) {
     await q("UPDATE customers SET reminder_channel='chat' WHERE id=$1", [customer.id]); customer.reminder_channel = 'chat';
   }
   const needEmail = customer.reminder_channel === 'email' && !customer.email;
@@ -230,11 +231,13 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   let attention = null, bookedNow = false;
 
   // Save whatever profile details the customer gave in this message (before booking, so the booking uses them).
+  // a skipped email stays skipped: the AI may not switch the reminders back to email in the same breath
+  if (emailSkipped && decision.customer?.reminder_channel === 'email') decision.customer.reminder_channel = null;
   await saveProfile(customer, decision, text, channel);
   Object.assign(customer, await unify(biz.id, customer.id) || {});
 
   // Email reminders need an email address: never book (or promise one) without it.
-  if (decision.action === 'book' && customer.reminder_channel === 'email' && !customer.email) {
+  if (decision.action === 'book' && customer.reminder_channel === 'email' && !customer.email && !emailSkipped) {
     decision = { ...decision, action: 'none' };
     reply = AR.test(text) ? 'ما هو بريدك الإلكتروني لنرسل لك التذكير؟' : "What's your email address, so we can send you the reminder?";
   }
