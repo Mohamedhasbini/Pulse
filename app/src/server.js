@@ -34,6 +34,7 @@ import { insights } from './insights.js';
 import { VERTICALS, listVerticals, termsOf } from './verticals.js';
 import { startReminders, runReminders, fill } from './reminders.js';
 import { setSenders, startAutopilot, offerWaitlist } from './autopilot.js';
+import { mountHQ } from './hq.js';
 import { compress, fingerprint, rememberUser, recallUser, forgetUser, requestLog, CSP } from './web.js';
 
 const app = express();
@@ -649,6 +650,7 @@ app.get('/api/ai-queue', wrap(async (_req, res) => res.json(await aiQueueStatus(
 app.get('/api/ai-queue/list', wrap(async (req, res) => res.json(await aiQueueList(BIZ(), String(req.query.status || '')))));
 mountLive(app, () => BIZ());
 mountLab(app, () => BIZ());
+mountHQ(app, adminOnly, wrap, audit, aiHealth);
 mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
 setSenders({ sendWhatsApp, sendTelegram }); startAutopilot();
 mountTeam(app, () => BIZ(), { sendWhatsApp, sendTelegram, audit });

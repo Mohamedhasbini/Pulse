@@ -158,8 +158,11 @@ export async function closeBusiness(id) {
 const BACKUPS = process.env.BACKUPS_DIR || '/backups';
 export function lastBackup() {
   try {
-    const f = fs.readdirSync(BACKUPS).filter(x => x.endsWith('.sql.gz')).map(x => ({ x, t: fs.statSync(path.join(BACKUPS, x)).mtimeMs })).sort((a, b) => b.t - a.t)[0];
-    return f ? { file: f.x, at: new Date(f.t).toISOString(), hours: Math.round((Date.now() - f.t) / 36e5 * 10) / 10, count: fs.readdirSync(BACKUPS).filter(x => x.endsWith('.sql.gz')).length } : null;
+    // only real dumps count: an empty or truncated file (under 1 KB) is a failed backup, whatever its date
+    const all = fs.readdirSync(BACKUPS).filter(x => x.endsWith('.sql.gz')).map(x => { const st = fs.statSync(path.join(BACKUPS, x)); return { x, t: st.mtimeMs, size: st.size }; });
+    const good = all.filter(f => f.size >= 1024).sort((a, b) => b.t - a.t), f = good[0], empty = all.filter(f => f.size < 1024).length;
+    return f ? { file: f.x, at: new Date(f.t).toISOString(), hours: Math.round((Date.now() - f.t) / 36e5 * 10) / 10, size_kb: Math.round(f.size / 1024), count: good.length, empty }
+      : empty ? { hours: Infinity, count: 0, empty } : null;
   } catch { return null; }
 }
 async function alertAdmin(text) {
@@ -176,7 +179,8 @@ export async function health(aiHealth) {
   checks.push({ name: 'AI (n8n + Gemini)', ok: a.ok !== false, detail: a.ok === false ? (a.error || 'not answering') : a.ok ? `last reply ${a.ms} ms` : 'no messages yet' });
   checks.push({ name: 'WhatsApp provider', ok: !!(process.env.KAPSO_API_KEY || process.env.WA_ACCESS_TOKEN), detail: process.env.KAPSO_API_KEY ? 'Kapso' : process.env.WA_ACCESS_TOKEN ? 'Meta' : 'not configured' });
   const b = lastBackup();
-  checks.push({ name: 'Daily backup', ok: !!b && b.hours < 26, detail: b ? `last ${b.hours} h ago · ${b.count} kept` : 'no backup found' });
+  checks.push({ name: 'Daily backup', ok: !!b && b.hours < 26 && !b.empty, detail: !b ? 'no backup found' : !b.count ? `${b.empty} empty backup files, none usable`
+    : `last ${b.hours} h ago · ${b.size_kb} KB · ${b.count} kept${b.empty ? ` · ${b.empty} EMPTY` : ''}` });
   const failed = await one(`SELECT count(*)::int n FROM messages WHERE failed AND created_at > now() - interval '1 hour'`).catch(() => ({ n: 0 }));
   checks.push({ name: 'AI replies (last hour)', ok: failed.n < 5, detail: `${failed.n} failed` });
   try { const st = fs.statfsSync('/'); const freePct = Math.round(st.bavail / st.blocks * 100); checks.push({ name: 'Disk space', ok: freePct > 10, detail: `${freePct}% free` }); } catch {}
