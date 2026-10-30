@@ -1,0 +1,97 @@
+/* Glass: the dark theme. Near-black ground with a faint dot grid and two soft glows; every surface is a translucent
+   layer (blur, hairline rim, top highlight) stacked over the one below. Charts are outlined glass bars with a glow,
+   tables are hairline rows, pills and buttons are glass. Light mode stays Stone (stone.css).
+   Signature: the rim light, a thin gradient edge (green → cyan → violet) on the hero card of each page. */
+:root[data-theme="dark"]{
+  --gx-ground:#07080b;--gx-l1:rgba(255,255,255,.035);--gx-l2:rgba(255,255,255,.055);--gx-l3:rgba(255,255,255,.085);
+  --gx-rim:rgba(255,255,255,.075);--gx-rim2:rgba(255,255,255,.14);--gx-hi:inset 0 1px 0 rgba(255,255,255,.06);
+  --gx-ink:#f1f3f7;--gx-2:#a3a9b6;--gx-meta:#6c7280;--gx-acc:#5b8cff;--gx-acc2:#38d3f5;--gx-good:#34d399;--gx-warn:#fbbf24;--gx-bad:#f87171;
+  --gx-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 20px 50px -28px rgba(0,0,0,.9);
+  --gx-blur:saturate(140%) blur(18px);
+  /* map every older palette onto the glass one */
+  --bg:var(--gx-ground);--ground:var(--gx-ground);--solid:#0c0d11;--s1:#101217;--s2:#15171d;--s3:#1b1e26;
+  --glass:var(--gx-l1);--glass2:var(--gx-l2);--edge:var(--gx-rim);--line:var(--gx-rim);--line2:var(--gx-rim2);--hi:rgba(255,255,255,.05);
+  --ink:var(--gx-ink);--ink2:var(--gx-2);--muted:var(--gx-meta);--accent:var(--gx-acc);--accent-soft:rgba(91,140,255,.14);--accent-line:rgba(91,140,255,.45);--accent-text:#8fb0ff;
+  --good:var(--gx-good);--good-soft:rgba(52,211,153,.12);--warn:var(--gx-warn);--bad:var(--gx-bad);--bad-soft:rgba(248,113,113,.12);
+  --grid:rgba(255,255,255,.05);--shadow:var(--gx-shadow);
+  --gp-ground:var(--gx-ground);--gp-card:var(--gx-l1);--gp-nest:var(--gx-l2);--gp-nest2:var(--gx-l3);--gp-edge:var(--gx-rim);--gp-text:var(--gx-ink);--gp-2:var(--gx-2);--gp-meta:var(--gx-meta);
+  --tb-ground:var(--gx-ground);--tb-card:var(--gx-l1);--tb-nest:var(--gx-l2);--tb-rule:var(--gx-rim);--tb-text:var(--gx-ink);--tb-2:var(--gx-2);--tb-meta:var(--gx-meta);
+  --gl-ground:var(--gx-ground);--gl-card:var(--gx-l1);--gl-card2:var(--gx-l2);--gl-edge:var(--gx-rim);--gl-edge2:var(--gx-rim2);--gl-text:var(--gx-ink);--gl-2:var(--gx-2);--gl-meta:var(--gx-meta);--gl-rim:var(--gx-rim);--gl-grid:rgba(255,255,255,.05);
+  --glow1:rgba(91,140,255,.10);--glow2:rgba(52,211,153,.07);--glow3:rgba(139,124,255,.08);
+  color-scheme:dark}
+
+/* ground: dot grid + two glows, fixed so layers slide over it */
+:root[data-theme="dark"] body:not(#_){background:var(--gx-ground)!important;background-image:
+  radial-gradient(900px 520px at 85% -10%,rgba(91,140,255,.12),transparent 65%),
+  radial-gradient(800px 600px at -5% 105%,rgba(52,211,153,.08),transparent 60%),
+  radial-gradient(rgba(255,255,255,.055) 1px,transparent 1.2px)!important;
+  background-size:auto,auto,22px 22px!important;background-attachment:fixed!important;color:var(--gx-ink)}
+
+/* layer 0: sidebar, same ground with a hairline */
+:root[data-theme="dark"] :is(aside,.side,.sidebar,nav.rail):not(#_){background:rgba(7,8,11,.6)!important;backdrop-filter:var(--gx-blur);border-right:1px solid var(--gx-rim)!important}
+
+/* layer 1: cards */
+:root[data-theme="dark"] main :is(.card,.td-card,.mk-card,.sp-card,.glass,.desk-card,.tm-card,.bf):not(.mk-sc):not(#_){
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.02))!important;
+  border:1px solid var(--gx-rim)!important;border-radius:16px!important;box-shadow:var(--gx-shadow),var(--gx-hi)!important;
+  backdrop-filter:var(--gx-blur);-webkit-backdrop-filter:var(--gx-blur)}
+:root[data-theme="dark"] main :is(.card,.td-card,.mk-card,.sp-card):hover:not(#_){border-color:var(--gx-rim2)!important}
+
+/* layer 2: things inside cards (tiles, rows, inputs) sit one step lighter */
+:root[data-theme="dark"] main :is(.mk-sc,.ap-row,.mk-bg section,.statrow>div,#inAiStats>div,.mk-est>div,.kpi,.tile):not(#_){
+  background:var(--gx-l2)!important;border:1px solid var(--gx-rim)!important;border-radius:12px!important;box-shadow:var(--gx-hi)!important}
+:root[data-theme="dark"] main :is(input,select,textarea):not([type=checkbox]):not([type=radio]):not(#_){
+  background:rgba(0,0,0,.35)!important;border:1px solid var(--gx-rim)!important;color:var(--gx-ink)!important;border-radius:10px!important}
+:root[data-theme="dark"] main :is(input,select,textarea):focus:not(#_){border-color:var(--accent-line)!important;box-shadow:0 0 0 3px rgba(91,140,255,.15)!important;outline:0}
+
+/* signature rim light on the first card of each page */
+:root[data-theme="dark"] main section.wrap:not([hidden]) :is(.td-hero,#spKpis,.mk-hero,.bf):not(#_){position:relative}
+:root[data-theme="dark"] main section.wrap:not([hidden]) :is(.td-hero,#spKpis,.mk-hero,.bf):not(#_)::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(115deg,rgba(52,211,153,.55),rgba(56,211,245,.35) 35%,rgba(139,124,255,.45) 70%,rgba(255,255,255,.08));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+
+/* type */
+:root[data-theme="dark"] main :is(h1,h2,h3):not(#_){color:var(--gx-ink)!important}
+:root[data-theme="dark"] main :is(.top h1,h1.ph,.page-head h1):not(#_){font-family:inherit!important;font-weight:600!important;letter-spacing:-.025em!important}
+:root[data-theme="dark"] main :is(small,.sub,.meta,th,dt):not(#_){color:var(--gx-meta)}
+:root[data-theme="dark"] main :is(.kpi b,#spKpis b,.mk-sc-n b,.mk-est dd,dd):not(#_){color:var(--gx-ink);font-variant-numeric:tabular-nums}
+
+/* tables: hairline rows, glowing hover */
+:root[data-theme="dark"] main table:not(#_){border-collapse:separate;border-spacing:0}
+:root[data-theme="dark"] main th:not(#_){background:transparent!important;border-bottom:1px solid var(--gx-rim)!important;color:var(--gx-meta)!important}
+:root[data-theme="dark"] main td:not(#_){border-bottom:1px solid rgba(255,255,255,.04)!important;color:var(--gx-2)}
+:root[data-theme="dark"] main td b:not(#_){color:var(--gx-ink)}
+:root[data-theme="dark"] main tbody tr:hover td:not(#_){background:rgba(91,140,255,.06)!important}
+
+/* charts: outlined glass bars with a soft glow and fine hatching */
+:root[data-theme="dark"] main :is(.bar>i,.bar>span,.mk-mini>i,.pbar>i,.meter>i,[class*="-bar"]>i):not(#_){
+  background:linear-gradient(180deg,rgba(91,140,255,.55),rgba(91,140,255,.18))!important;box-shadow:0 0 0 1px rgba(143,176,255,.55) inset,0 0 14px rgba(91,140,255,.35)!important;border-radius:99px}
+:root[data-theme="dark"] main :is(.bar,.mk-mini,.pbar,.meter,[class*="-bar"]):not(#_){background:rgba(255,255,255,.06)!important}
+:root[data-theme="dark"] main svg :is(rect.bar,rect[data-v],.col rect):not(#_){fill:url(#gxBar);stroke:#8fb0ff;stroke-width:1}
+:root[data-theme="dark"] main svg path:is(.line,.area-line,[data-series]):not(#_){filter:drop-shadow(0 0 6px rgba(91,140,255,.55))}
+
+/* pills, chips, tags */
+:root[data-theme="dark"] main :is(.mk-pill,.chip,.tag,.pill,.badge,.ag-n):not(#_){background:rgba(255,255,255,.06)!important;border:1px solid var(--gx-rim)!important;color:var(--gx-2)!important;border-radius:99px!important}
+:root[data-theme="dark"] main :is(.mk-pill.good,.tag.t-book,.chip.good):not(#_){background:rgba(52,211,153,.12)!important;border-color:rgba(52,211,153,.35)!important;color:#6ee7b7!important}
+:root[data-theme="dark"] main :is(.mk-pill.mid,.chip.need,.chip.warn):not(#_){background:rgba(251,191,36,.1)!important;border-color:rgba(251,191,36,.3)!important;color:#fcd34d!important}
+
+/* buttons: primary = bright pill (like "Get Pro"), ghost = glass */
+:root[data-theme="dark"] main :is(.btn:not(.ghost),.mk-launch,button.primary):not(:disabled):not(#_){background:#f4f6fb!important;color:#0a0b0f!important;border:0!important;border-radius:10px!important;box-shadow:0 0 0 1px rgba(255,255,255,.2),0 6px 20px -8px rgba(255,255,255,.35)!important}
+:root[data-theme="dark"] main :is(.btn.ghost,.mk-ai,.mk-copy,.seg button):not(#_){background:rgba(255,255,255,.05)!important;border:1px solid var(--gx-rim)!important;color:var(--gx-ink)!important;border-radius:10px!important}
+:root[data-theme="dark"] main :is(.btn,.mk-launch,.mk-ai,.mk-copy):hover:not(:disabled):not(#_){filter:brightness(1.1)}
+
+/* open/selected states glow */
+:root[data-theme="dark"] main :is(.mk-sc.open,.ib-row.on,[aria-current="true"]):not(#_){border-color:var(--accent-line)!important;box-shadow:0 0 0 1px var(--accent-line),0 0 24px -6px rgba(91,140,255,.45)!important}
+
+/* motion: layers settle in */
+@media (prefers-reduced-motion:no-preference){
+  :root[data-theme="dark"] main section.wrap:not([hidden]) :is(.card,.td-card,.mk-card,.sp-card):not(#_){animation:gx-in .45s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes gx-in{from{transform:translateY(6px) scale(.995)}to{transform:none}}
+}
+
+/* the old 3D background fogs the glass: the dot grid replaces it */
+:root[data-theme="dark"] canvas.scene3d:not(#_){display:none!important}
+/* highlighted KPI (first tile): a lit glass tile, not an inverted white block */
+:root[data-theme="dark"] main .mk-hero:not(#_){background:linear-gradient(160deg,rgba(91,140,255,.22),rgba(52,211,153,.08) 60%,rgba(255,255,255,.03))!important;color:var(--gx-ink)!important;border:1px solid rgba(143,176,255,.35)!important;box-shadow:0 0 30px -10px rgba(91,140,255,.45),var(--gx-hi)!important}
+:root[data-theme="dark"] main .mk-hero *:not(#_){color:inherit}
+:root[data-theme="dark"] main .mk-hero small:not(#_){color:#a9bdf5!important}

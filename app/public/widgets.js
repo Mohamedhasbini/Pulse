@@ -218,7 +218,7 @@ apply();
 const seg=(k,opts)=>`<div class="cu-seg" data-k="${k}">${opts.map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${String(pref[k])===String(v)}">${l}</button>`).join("")}</div>`;
 function drawCustom(){const look=$("#cuLook .cu-body"),dash=$("#cuDash .cu-body");if(!look||!dash)return;const th=document.documentElement.dataset.theme;
   look.innerHTML=`<div class="cu-grid">
-   <div class="cu-row"><b>Theme</b><small>Dark is easier on the eyes at night.</small><div class="cu-seg" data-theme-seg><button type="button" data-v="dark" aria-pressed="${th==="dark"}">Dark</button><button type="button" data-v="light" aria-pressed="${th==="light"}">Light</button></div></div>
+   <div class="cu-row"><b>Theme</b><small>Glass (dark) or Stone (light).</small><div class="cu-seg" data-theme-seg><button type="button" data-v="dark" aria-pressed="${th==="dark"}">Glass</button><button type="button" data-v="light" aria-pressed="${th==="light"}">Stone</button></div></div>
    <div class="cu-row"><b>Background</b><small>A soft blurred room behind the page, or a plain colour.</small>${seg("bg",[["room","Room"],["plain","Plain"]])}</div>
    <div class="cu-row"><b>Highlight colour</b><small>Buttons, active tabs and highlights.</small><div class="cu-seg">${ACC.map(([v,l,c])=>`<button type="button" class="cu-sw" data-acc="${v}" title="${l}" aria-label="${l}" aria-pressed="${pref.accent===v}" style="background:${c}"></button>`).join("")}</div></div>
    <div class="cu-row"><b>Text size</b><small>Makes everything bigger or smaller.</small>${seg("size",[["s","Small"],["m","Normal"],["l","Large"]])}</div>
