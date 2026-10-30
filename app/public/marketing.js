@@ -48,42 +48,31 @@ window.PulseMarketing = (() => {
       <div class="mk-fb"><i style="width:${Math.max(2, v / m * 100)}%"></i></div><b>${v}</b>${i && steps[i - 1][1] && v <= steps[i - 1][1] ? `<small>${Math.round(v / steps[i - 1][1] * 100)}%</small>` : '<small></small>'}</div>`).join('')}</div>
       <p class="mk-note">Bookings include clients who booked without chatting (booking page, staff).</p></div>`;
   }
-  // Campaign studio: ready drafts you can edit and launch here. Launch creates the discount code (valid 7 days) and
-  // sends through the same Offers sender, so consent, one-offer-a-day and channel rules all still apply.
-  // Campaign studio: one row per ready campaign with the analysis at a glance (goal, segment, audience, offer, value,
-  // status); a click opens the full brief underneath: why it fits now, who it reaches, what success looks like, the
-  // editable message and code, and Launch. Launch creates the code and sends through the Offers sender (consent rules).
+  // Campaign studio: compact cards (segment, audience, reachable, value, status, consent bar); a click opens the
+  // editor under the grid: message, code, %, estimate, Launch. Launch creates the code and sends via the Offers sender.
   let openD = -1;
   function studio(st) {
     if (!st) return '';
-    const a = st.audience, none = !a.opted;
-    const status = d => d.ran ? ['Sent this week', 'done'] : d.reachable ? ['Ready', 'ok'] : d.size ? ['Needs consent', 'wait'] : ['No audience yet', 'none'];
-    const row = (d, i) => { const [stt, cls] = status(d), w = d.size ? Math.round(d.matched / d.size * 100) : 0;
-      return `<tr class="mk-sr ${openD === i ? 'open' : ''}" data-open="${i}" tabindex="0"><td><b>${esc(d.name)}</b><small>${esc(d.goal)}</small></td>
-        <td>${esc(d.audience)}</td>
-        <td class="n"><b>${d.size}</b><div class="mk-mini" title="${d.matched} agreed of ${d.size}"><i style="width:${w}%"></i></div><small>${d.matched} agreed · ${d.reachable} now</small></td>
-        <td>${d.code ? `<span class="mk-code">${esc(d.code)}</span> ${d.pct}% off` : 'Perk, no discount'}</td>
-        <td class="n"><b>${money(d.reachable ? d.estimate.net : d.potential)}</b><small>${d.reachable ? 'expected net' : 'if all agree'}</small></td>
-        <td><span class="mk-pill ${cls === 'ok' ? 'good' : cls === 'wait' ? 'mid' : ''}">${stt}</span></td><td class="mk-chev">${openD === i ? '▴' : '▾'}</td></tr>
-        ${openD === i ? `<tr class="mk-detail"><td colspan="7">${brief(d)}</td></tr>` : ''}`; };
-    return `<div class="mk-card mk-wide"><div class="mk-h"><h3>Campaign studio</h3><small>${st.drafts.length} campaigns ready · click one to open its brief · value from your average ticket (${money(st.ticket)})</small></div>
-      ${none ? `<div class="mk-warn"><b>No client has agreed to offers yet (0 of ${a.clients}).</b> Every booking confirmation now asks “Want our occasional special offers? Reply OFFERS.” Until clients agree, campaigns can be prepared but reach nobody.</div>` : ''}
-      <table class="mk-t mk-st"><thead><tr><th>Campaign</th><th>Target segment</th><th class="n">Audience</th><th>Offer</th><th class="n">Value</th><th>Status</th><th></th></tr></thead><tbody>${st.drafts.map(row).join('')}</tbody></table></div>`;
+    const a = st.audience;
+    const status = d => d.ran ? ['Sent', ''] : d.reachable ? ['Ready', 'good'] : d.size ? ['Needs consent', 'mid'] : ['No audience', ''];
+    const card = (d, i) => { const [stt, cls] = status(d), w = d.size ? Math.round(d.matched / d.size * 100) : 0;
+      return `<button type="button" class="mk-sc ${openD === i ? 'open' : ''}" data-open="${i}">
+        <div class="mk-sc-h"><b>${esc(d.name)}</b><span class="mk-pill ${cls}">${stt}</span></div>
+        <small>${esc(d.audience)}</small>
+        <div class="mk-sc-n"><div><i>Audience</i><b>${d.size}</b></div><div><i>Reachable</i><b>${d.reachable}</b></div><div><i>${d.reachable ? 'Net' : 'Potential'}</i><b>${money(d.reachable ? d.estimate.net : d.potential)}</b></div></div>
+        <div class="mk-mini" title="${d.matched} of ${d.size} agreed to offers"><i style="width:${w}%"></i></div>
+        <div class="mk-sc-f"><span>${d.code ? `<span class="mk-code">${esc(d.code)}</span> ${d.pct}%` : 'Perk'}</span><span>${w}% opted in</span></div></button>`; };
+    const d = st.drafts[openD];
+    return `<div class="mk-card mk-wide"><div class="mk-h"><h3>Campaign studio</h3><small>${a.opted} of ${a.clients} clients opted in · ticket ${money(st.ticket)}</small></div>
+      <div class="mk-sg">${st.drafts.map(card).join('')}</div>${d ? brief(d) : ''}</div>`;
   }
   function brief(d) {
-    const target = Math.max(1, Math.ceil(d.reachable * d.estimate.reply_rate / 100)), perBooking = d.code ? `${d.pct}% off each booking` : 'no discount cost';
-    const why = { winback: 'They already know you and paid before; a nudge after 60 days is the cheapest booking you can win.', second: 'A second visit within 6 weeks is what turns a new client into a regular.',
-      hero: 'Your best earner brings the most per booking, so filling it moves revenue fastest.', quiet: 'Empty hours earn nothing; a day-specific offer fills them without discounting busy days.', vip: 'Loyal clients bring most of your revenue; recognition keeps them, and it costs nothing.' }[d.id] || d.goal;
     return `<article class="mk-d mk-brief" data-d="${openD}">
-      <div class="mk-bg"><section><h4>Why now</h4><p>${esc(why)}</p></section>
-        <section><h4>Who it reaches</h4><p>${esc(d.audience)}: <b>${d.size}</b> clients, <b>${d.matched}</b> agreed to offers, <b>${d.reachable}</b> reachable on their channel right now.${d.size && !d.matched ? ' Nobody has agreed yet, so this waits until clients reply OFFERS.' : ''}</p></section>
-        <section><h4>What success looks like</h4><p>${d.reachable ? `<b>${target}</b> booking${target > 1 ? 's' : ''} from ${d.reachable} messages (~${d.estimate.reply_rate}% reply), about <b>${money(d.estimate.revenue)}</b> revenue, ${perBooking}.` : `With every client agreeing: about <b>${money(d.potential)}</b> net at ~${d.estimate.reply_rate}% reply.`} Results count bookings within 14 days.</p></section>
-        <section><h4>Offer and timing</h4><p>${d.code ? `Code <b>${esc(d.code)}</b>, ${d.pct}% off, valid 7 days after sending.` : 'A perk (first pick of times), no discount.'}${d.warning ? ` <span class="mk-wn">${esc(d.warning)}</span>` : ''}</p></section></div>
-      ${d.ran ? `<p class="mk-ran">Sent ${new Date(d.ran.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} to ${d.ran.sent}. Its results show in the Offers table below; wait a week before sending it again.</p>` : ''}
-      <label class="mk-lbl">Message<textarea rows="3" data-f="message">${esc(d.message)}</textarea></label>
-      ${d.code ? `<div class="mk-row"><label>Code<input data-f="code" value="${esc(d.code)}"></label><label>% off<input data-f="pct" type="number" min="1" max="60" value="${d.pct}"></label></div>` : ''}
-      <dl class="mk-est"><div><dt>Expected bookings</dt><dd>${d.estimate.bookings}</dd></div><div><dt>Revenue</dt><dd>${money(d.estimate.revenue)}</dd></div><div><dt>Discount cost</dt><dd>${money(d.estimate.discount_cost)}</dd></div><div><dt>Net</dt><dd>${money(d.estimate.net)}</dd></div></dl>
-      <footer><button type="button" class="mk-launch" ${d.reachable && !d.ran ? '' : 'disabled'}>${d.ran ? 'Sent this week' : d.reachable ? `Launch to ${d.reachable}` : 'Waiting for consent'}</button><button type="button" class="mk-ai">Improve with AI</button><button type="button" class="mk-copy">Copy message</button></footer>
+      <div class="mk-row mk-ed"><label class="mk-lbl" style="flex:1">Message<textarea rows="3" data-f="message">${esc(d.message)}</textarea></label>
+        ${d.code ? `<label class="mk-lbl">Code<input data-f="code" value="${esc(d.code)}"></label><label class="mk-lbl">% off<input data-f="pct" type="number" min="1" max="60" value="${d.pct}"></label>` : ''}</div>
+      <dl class="mk-est"><div><dt>Bookings</dt><dd>${d.estimate.bookings}</dd></div><div><dt>Revenue</dt><dd>${money(d.estimate.revenue)}</dd></div><div><dt>Discount</dt><dd>${money(d.estimate.discount_cost)}</dd></div><div><dt>Net</dt><dd>${money(d.estimate.net)}</dd></div><div><dt>Reply rate</dt><dd>~${d.estimate.reply_rate}%</dd></div></dl>
+      ${d.warning ? `<p class="mk-wn">${esc(d.warning)}</p>` : ''}
+      <footer><button type="button" class="mk-launch" ${d.reachable && !d.ran ? '' : 'disabled'}>${d.ran ? 'Sent this week' : d.reachable ? `Launch to ${d.reachable}` : 'Waiting for consent'}</button><button type="button" class="mk-ai">Improve with AI</button><button type="button" class="mk-copy">Copy</button></footer>
       <p class="mk-res" aria-live="polite"></p></article>`;
   }
   function ideas(list) {
