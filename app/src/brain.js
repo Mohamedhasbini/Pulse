@@ -2,7 +2,7 @@
 // workflow what to say, carries out any booking/handoff, and returns the reply.
 import fs from 'node:fs';
 import { q, one, withBusinessLock } from './db.js';
-import { complete, hasBackup } from './ai-router.js';
+import { complete, hasBackup, primaryReady } from './ai-router.js';
 import { joinWaitlist, offerWaitlist } from './autopilot.js';
 import { VERTICALS } from './verticals.js';
 import { quickAnswer, smallTalk } from './quick.js';
@@ -181,7 +181,7 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     const chit = !queued && smallTalk(text);
     if (chit) decision = { reply: chit, action: 'none', quick: true };
     else if (!(await takeAiSlot())) decision = await viaBackup(context, biz.id, Object.assign(new Error('AI limit reached for this minute'), { busy: true }));
-    else try { decision = await askN8n(context, +process.env.AI_TIMEOUT_MS || 15000); }
+    else try { decision = primaryReady() ? await viaBackup(context, biz.id, new Error('primary')) : await askN8n(context, +process.env.AI_TIMEOUT_MS || 15000); }
     catch (first) {
       // the main AI failed or hit its quota: the next free provider answers with the same instructions
       console.warn('Main AI failed, trying backups:', first.message);

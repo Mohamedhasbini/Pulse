@@ -6,6 +6,9 @@
 //   GROQ_API_KEY        console.groq.com
 //   OPENROUTER_API_KEY  openrouter.ai (":free" models)
 //   CEREBRAS_API_KEY    cloud.cerebras.ai
+//   ANTHROPIC_API_KEY   console.anthropic.com (paid; ANTHROPIC_MODEL picks the model)
+// AI_PRIMARY=<route id> puts that provider first and, in brain.js, in front of the n8n workflow: the whole platform moves
+// to a new model by changing one line in .env, with every other provider still behind it as a fallback.
 import { credentials } from './integrations.js';
 
 const T = 20000;
@@ -26,8 +29,19 @@ const gemini = model => async (key, prompt, json) => {
   return (j.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
 };
 
+// Anthropic Messages API (no SDK needed): system + user, JSON asked for in the prompt and extracted by the caller
+const anthropic = model => async (key, prompt, json) => {
+  const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', signal: AbortSignal.timeout(T),
+    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model, max_tokens: 2048, temperature: 0.3, messages: [{ role: 'user', content: prompt + (json ? '\n\nAnswer with the JSON object only.' : '') }] }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(j.error?.message || `HTTP ${r.status}`), { status: r.status });
+  return (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+};
+
 // order = best quality per free request first; models can be changed with <PROVIDER>_MODEL
-const ROUTES = [
+const BASE = [
+  { id: 'anthropic', key: 'ANTHROPIC_API_KEY', biz: 'anthropic', call: anthropic(process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5'), paid: true },
   { id: 'gemini-flash-lite', key: 'GEMINI_API_KEY', biz: 'gemini', call: gemini(process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite') },
   { id: 'groq', key: 'GROQ_API_KEY', biz: 'groq', call: openai('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_MODEL || 'openai/gpt-oss-120b') },
   { id: 'gemini-flash', key: 'GEMINI_API_KEY', biz: 'gemini', call: gemini(process.env.GEMINI_MODEL_2 || 'gemini-3.5-flash') },
@@ -35,6 +49,11 @@ const ROUTES = [
   { id: 'cerebras', key: 'CEREBRAS_API_KEY', biz: 'cerebras', call: openai('https://api.cerebras.ai/v1/chat/completions', process.env.CEREBRAS_MODEL || 'llama-3.3-70b') },
   { id: 'openrouter', key: 'OPENROUTER_API_KEY', biz: 'openrouter', call: (k, p) => openai('https://openrouter.ai/api/v1/chat/completions', process.env.OPENROUTER_MODEL || 'openrouter/free')(k, p, false) } // openrouter/free picks whichever free model is up,
 ];
+// paid providers answer only when chosen as primary (never silently as a fallback that costs money)
+export const PRIMARY = process.env.AI_PRIMARY || null;
+const ROUTES = [...BASE.filter(r => r.id === PRIMARY), ...BASE.filter(r => r.id !== PRIMARY && !r.paid)];
+// true when AI_PRIMARY names a configured provider: brain.js then asks it before the n8n workflow
+export const primaryReady = () => !!(PRIMARY && ROUTES[0]?.id === PRIMARY && process.env[ROUTES[0].key]);
 const cool = new Map(), stats = new Map(); // id → skip-until ms; id → { ok, fail, last }
 const note = (id, ok, err) => { const s = stats.get(id) || { ok: 0, fail: 0 }; ok ? s.ok++ : s.fail++; s.last = ok ? 'ok' : String(err).slice(0, 120); s.at = new Date().toISOString(); stats.set(id, s); };
 

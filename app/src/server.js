@@ -33,8 +33,10 @@ import { insights } from './insights.js';
 import { VERTICALS, listVerticals, termsOf } from './verticals.js';
 import { startReminders, runReminders, fill } from './reminders.js';
 import { setSenders, startAutopilot, offerWaitlist } from './autopilot.js';
+import { compress, fingerprint, rememberUser, recallUser, forgetUser, CSP } from './web.js';
 
 const app = express();
+app.use(compress());
 app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 // ---------- WhatsApp webhook (public, no password; protected by Meta's signature) ----------
@@ -93,6 +95,8 @@ app.set('trust proxy', 1);
 app.use((req, res, next) => {
   res.set({ 'X-Frame-Options': 'SAMEORIGIN', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' });
+  // the app pages (dashboard, sign-in) only: client websites and the public site have their own needs
+  if (req.path === '/' || req.path === '/index.html' || req.path === '/login') res.set('Content-Security-Policy', CSP);
   // Requests that change something must come from our own pages, so another website can't act with a signed-in owner's cookie.
   if (req.method !== 'GET' && req.path.startsWith('/api/') && !req.path.startsWith('/api/public/') && !req.path.startsWith('/api/webook/')) {
     const origin = req.get('origin');
@@ -205,7 +209,8 @@ const ctx = new AsyncLocalStorage();
 const BIZ = () => ctx.getStore().biz;
 app.use(wrap(async (req, res, next) => {
   const s = readSession(req.get('cookie'));
-  const user = s && await one('SELECT id, email, name, role, business_id, permissions, totp_enabled, email_2fa, session_version FROM users WHERE id=$1 AND NOT disabled', [s.uid]);
+  let user = s && recallUser(s.uid);
+  if (s && !user) { user = await one('SELECT id, email, name, role, business_id, permissions, totp_enabled, email_2fa, session_version FROM users WHERE id=$1 AND NOT disabled', [s.uid]); if (user) rememberUser(s.uid, user); }
   if (!user || user.session_version !== s.version) {
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Please sign in again.' });
     return res.redirect('/login');
@@ -236,7 +241,9 @@ app.use(wrap(async (req, res, next) => {
     return res.status(402).json({ error: 'A Telegram bot is not in your plan.', locked: 'plan', feature: 'telegram' });
   ctx.run({ biz }, next);
 }));
-app.use(express.static(PUBLIC));
+const assets = fingerprint(PUBLIC);
+app.get(['/', '/index.html'], assets.page);
+app.use(express.static(PUBLIC, { setHeaders: assets.headers }));
 const adminOnly = (req, res, next) => req.user.role === 'admin' ? next() : res.status(403).json({ error: 'Only the platform admin can do this.' });
 mountSiteAdmin(app, adminOnly);
 mountUploads(app, () => BIZ(), audit);
@@ -306,13 +313,13 @@ app.post('/api/me/password', wrap(async (req, res) => {
   if (!checkPassword(req.body.current, u.password_hash)) return res.status(400).json({ error: 'Your current password is wrong.' });
   const weak = weakPassword(req.body.next); if (weak) return res.status(400).json({ error: weak });
   // A new password signs out every other device.
-  const r = await one('UPDATE users SET password_hash=$1, password_changed_at=now(), session_version=session_version+1 WHERE id=$2 RETURNING id, session_version', [hashPassword(req.body.next), u.id]);
+  const r = await one('UPDATE users SET password_hash=$1, password_changed_at=now(), session_version=session_version+1 WHERE id=$2 RETURNING id, session_version', [hashPassword(req.body.next), u.id]); forgetUser(u.id);
   await audit(req, 'password_changed');
   startSession(req, res, r);
   res.json({ ok: true });
 }));
 app.post('/api/me/signout-everywhere', wrap(async (req, res) => {
-  await q('UPDATE users SET session_version=session_version+1 WHERE id=$1', [req.user.id]);
+  await q('UPDATE users SET session_version=session_version+1 WHERE id=$1', [req.user.id]); forgetUser(req.user.id);
   await audit(req, 'signout_everywhere');
   res.set('Set-Cookie', 'rb_session=; Path=/; Max-Age=0').json({ ok: true });
 }));
@@ -459,13 +466,14 @@ app.patch('/api/admin/users/:id', adminOnly, wrap(async (req, res) => {
   const disabled = typeof req.body.disabled === 'boolean' ? req.body.disabled : u.disabled;
   await q(`UPDATE users SET permissions=$1, disabled=$2, name=COALESCE($3, name), session_version = session_version + $4 WHERE id=$5`,
     [perms && JSON.stringify(perms), disabled, req.body.name ? String(req.body.name).trim() : null, req.body.signout || disabled ? 1 : 0, u.id]);
+  forgetUser(u.id);
   await audit(req, 'login_changed', `${u.email}: ${disabled ? 'off' : 'on'}${perms ? ', ' + perms.join(', ') : ''}${req.body.signout ? ', signed out' : ''}`, u.business_id);
   res.json({ ok: true });
 }));
 app.post('/api/admin/users/:id/reset', adminOnly, wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE id=$1', [+req.params.id]);
   if (!u) return res.status(404).json({ error: 'Login not found.' });
-  const out = { email: u.email };
+  const out = { email: u.email }; forgetUser(u.id);
   if (req.body.what === '2fa') await q('UPDATE users SET totp_enabled=false, totp_secret=NULL, email_2fa=false, email_code_hash=NULL, session_version=session_version+1 WHERE id=$1', [u.id]);
   else { out.password = newPassword(); await q('UPDATE users SET password_hash=$1, failed_logins=0, locked_until=NULL, session_version=session_version+1 WHERE id=$2', [hashPassword(out.password), u.id]); }
   await audit(req, req.body.what === '2fa' ? '2fa_reset' : 'password_reset', u.email, u.business_id);
@@ -474,7 +482,7 @@ app.post('/api/admin/users/:id/reset', adminOnly, wrap(async (req, res) => {
 app.delete('/api/admin/users/:id', adminOnly, wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE id=$1', [+req.params.id]);
   if (!u || u.role === 'admin') return res.status(400).json({ error: "This login can't be deleted." });
-  await q('DELETE FROM users WHERE id=$1', [u.id]);
+  await q('DELETE FROM users WHERE id=$1', [u.id]); forgetUser(u.id);
   await audit(req, 'login_deleted', u.email, u.business_id);
   res.json({ ok: true });
 }));

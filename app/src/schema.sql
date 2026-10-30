@@ -444,3 +444,15 @@ UPDATE businesses SET ai_mode='on' WHERE ai_mode IS NULL;
 
 -- Studio: each user's own widget boards, per business
 ALTER TABLE users ADD COLUMN IF NOT EXISTS studio JSONB DEFAULT '{}'::jsonb;
+
+-- Indexes for the paths every request walks: a chat's messages, a client's bookings and chats, a service's bookings
+CREATE INDEX IF NOT EXISTS messages_conv ON messages (conversation_id, id);
+CREATE INDEX IF NOT EXISTS messages_time ON messages (created_at);
+CREATE INDEX IF NOT EXISTS bookings_customer ON bookings (customer_id, starts_at);
+CREATE INDEX IF NOT EXISTS bookings_service ON bookings (service_id);
+CREATE INDEX IF NOT EXISTS bookings_conv ON bookings (conversation_id);
+CREATE INDEX IF NOT EXISTS bookings_biz_created ON bookings (business_id, created_at);
+CREATE INDEX IF NOT EXISTS conversations_customer ON conversations (customer_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS conversations_biz_updated ON conversations (business_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS services_biz ON services (business_id);
+CREATE INDEX IF NOT EXISTS users_biz ON users (business_id);
