@@ -91,3 +91,12 @@ html body .td-hero.td-hero .td-logo{filter:grayscale(1)}
 #labBtn:not(#_):not(#__){background:var(--h-tag)!important;color:var(--h-tag-ink)!important}
 #labBtn:not(#_) *{color:var(--h-tag-ink)!important}
 :root:is([data-theme="light"],[data-theme="dark"]) nav button[aria-current="true"]:not(#_){background:var(--h-card)!important;color:var(--h-ink)!important;box-shadow:var(--h-shadow)!important}
+
+/* calendar: quiet blocks, the service colour only as a thin left edge */
+:root:is([data-theme="light"],[data-theme="dark"]) .gc-b:not(#_){background:color-mix(in srgb,var(--c) 12%,var(--h-card))!important;border:1px solid var(--h-rim)!important;border-left:3px solid color-mix(in srgb,var(--c) 70%,var(--h-meta))!important;color:var(--h-ink)!important;border-radius:10px!important;box-shadow:none!important}
+:root:is([data-theme="light"],[data-theme="dark"]) .gc-b *:not(#_){color:inherit}
+:root:is([data-theme="light"],[data-theme="dark"]) .gc-b small:not(#_){color:var(--h-meta)!important}
+/* pills hug their text */
+:root:is([data-theme="light"],[data-theme="dark"]) main .delta:not(#_){display:inline-flex!important;width:fit-content!important;padding:2px 9px!important;font-size:11.5px}
+/* money columns get the revenue touch */
+:root:is([data-theme="light"],[data-theme="dark"]) #pplRows td:nth-child(6):not(#_),:root:is([data-theme="light"],[data-theme="dark"]) #pplRows td:nth-child(6) *:not(#_){color:var(--rev-ink)!important}
