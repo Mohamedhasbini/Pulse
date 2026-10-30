@@ -302,3 +302,21 @@ html body main :is(input[type="text"],input[type="search"],input:not([type]),tex
 .aic-stats button{align-self:flex-start;margin-top:6px;border:1px solid var(--pv-line);border-radius:999px;padding:6px 12px;background:transparent;color:var(--pv-ink);cursor:pointer}
 .aic-how{padding:22px!important}.aic-how h3{margin:0 0 10px}.aic-how ul{margin:0;padding-left:18px;display:grid;gap:8px;color:var(--pv-meta)}.aic-how b{color:var(--pv-ink)}
 @media (max-width:760px){.aic-sw,.aic-stats{grid-template-columns:1fr}}
+
+/* ===== light mode = silver, grey and graphite (no white) ===== */
+:root[data-theme="light"]:root{
+  --h-ground:#b9bfc4;--h-card:#d3d7da;--h-nest:#c6cbcf;--h-rim:rgba(20,22,24,.14);--h-ink:#15181a;--h-2:#2f3438;--h-meta:#565c62;
+  --h-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 14px 30px -22px rgba(15,17,19,.55);
+  --pv-card:linear-gradient(160deg,#d8dcdf,#c7ccd0);--pv-line:rgba(20,22,24,.14);--pv-track:rgba(20,22,24,.12);--pv-ink:#15181a;--pv-meta:#4f555b;--pv-silver:#3f454b;--pv-lime:#a6d11c}
+:root[data-theme="light"] body:not(#_):not(#__):not(#___){
+  background:radial-gradient(1100px 600px at 85% -10%,#e2e5e7 0%,transparent 60%),radial-gradient(900px 600px at -10% 110%,#8c949b 0%,transparent 60%),linear-gradient(180deg,#c3c8cc 0%,#aab1b7 100%)!important;background-attachment:fixed!important;color:#15181a}
+:root[data-theme="light"] .pv-amb .o1{background:radial-gradient(circle,#e9ecee,transparent 65%)}
+:root[data-theme="light"] .pv-amb .o3{background:radial-gradient(circle,#8f979e,transparent 70%)}
+:root[data-theme="light"] .pv-amb .grid{opacity:.35}
+/* the top bar stays graphite in both modes */
+:root[data-theme="light"] html body nav[aria-label="Main"]:not(#_),:root[data-theme="light"] header.top:not(#_){background:#1b1e21!important;color:#e7eaec}
+/* cards: brushed silver glass instead of white */
+:root[data-theme="light"] main :is(.card,.td-card,.kpi,.td-stat,.pv-c,.pv-ovc,.cc-card):not(.td-hero):not(#_):not(#__){background:linear-gradient(160deg,rgba(226,229,231,.92),rgba(196,201,205,.92))!important;border-color:rgba(20,22,24,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 18px 36px -26px rgba(15,17,19,.6)!important}
+:root[data-theme="light"] main :is(input,textarea,select):not(#_):not(#__){background:rgba(255,255,255,.35)!important;border-color:rgba(20,22,24,.18)!important;color:#15181a}
+:root[data-theme="light"] .pv-kpi>div,:root[data-theme="light"] .pv-kv div,:root[data-theme="light"] .pv-week>div{background:rgba(20,22,24,.06)}
+:root[data-theme="light"] .ai-chip{background:rgba(255,255,255,.12);color:#e7eaec;border-color:rgba(255,255,255,.2)}
