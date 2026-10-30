@@ -436,3 +436,8 @@ ALTER TABLE customers ADD COLUMN IF NOT EXISTS birthday TEXT; -- MM-DD
 CREATE TABLE IF NOT EXISTS autopilot_runs (id SERIAL PRIMARY KEY, business_id INT, job TEXT, period TEXT, at TIMESTAMPTZ DEFAULT now(), UNIQUE (business_id, job, period));
 CREATE TABLE IF NOT EXISTS waitlist (id SERIAL PRIMARY KEY, business_id INT REFERENCES businesses(id) ON DELETE CASCADE, customer_id INT REFERENCES customers(id) ON DELETE CASCADE,
   service_id INT, day DATE, status TEXT DEFAULT 'waiting', created_at TIMESTAMPTZ DEFAULT now(), notified_at TIMESTAMPTZ);
+
+-- AI control: 'on' = the AI answers clients, 'off' = every chat waits for a person in the Inbox
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS ai_mode TEXT DEFAULT 'on';
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS ai_mode_at TIMESTAMPTZ;
+UPDATE businesses SET ai_mode='on' WHERE ai_mode IS NULL;

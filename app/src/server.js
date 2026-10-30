@@ -837,6 +837,21 @@ app.post('/api/conversations/:id/reply', wrap(async (req, res) => {
   if (r.error) return res.status(404).json(r);
   res.json(r);
 }));
+// AI control for the whole business: who answers clients, the AI or the team
+app.get('/api/ai-mode', wrap(async (_req, res) => {
+  const b = await one(`SELECT ai_mode, ${LOCAL('ai_mode_at')} AS since FROM businesses WHERE id=$1`, [BIZ()]);
+  const w = await one(`SELECT count(*) FILTER (WHERE needs_attention)::int AS waiting, count(*) FILTER (WHERE ai_paused)::int AS paused,
+      count(*) FILTER (WHERE updated_at > now() - interval '24 hours')::int AS today FROM conversations WHERE business_id=$1 AND channel <> 'test'`, [BIZ()]);
+  res.json({ mode: b?.ai_mode || 'on', since: b?.since || null, ...w });
+}));
+app.put('/api/ai-mode', wrap(async (req, res) => {
+  const mode = req.body.mode === 'off' ? 'off' : 'on';
+  await q('UPDATE businesses SET ai_mode=$1, ai_mode_at=now() WHERE id=$2', [mode, BIZ()]);
+  // turning the AI back on hands every chat that was only waiting because the AI was off back to it
+  if (mode === 'on' && req.body.resume !== false) await q(`UPDATE conversations SET needs_attention=false, attention_reason=NULL WHERE business_id=$1 AND attention_reason='AI is off: answer from your Inbox' AND NOT ai_paused`, [BIZ()]);
+  await audit(req, 'ai_mode', mode, BIZ());
+  res.json({ ok: true, mode });
+}));
 app.post('/api/conversations/:id/ai', wrap(async (req, res) => {
   await q('UPDATE conversations SET ai_paused=$1 WHERE id=$2 AND business_id=$3', [!!req.body.paused, req.params.id, BIZ()]);
   res.json({ ok: true });

@@ -315,6 +315,23 @@
     return card(44, 'Reminders and no-shows', biz.reminders_enabled ? `Reminders go out ${biz.reminder_hours || 24}h before each visit` : 'Reminders are off. Turning them on cuts no-shows', kv([['No-show rate', ns + '%', `${o.no_show || 0} of ${marked} marked visits`], ['Cancelled', o.cancelled || 0], ['Not marked yet', o.unmarked || 0, 'mark them to keep this honest'], ['Reminders', biz.reminders_enabled ? 'On' : 'Off']]), 1);
   }
 
+  // ---- 45 forecast: next 4 weeks of revenue from the last 12 weeks' trend plus what is already booked
+  function c45({ raw, past }) {
+    const wk = 7 * 864e5, now = Date.now(), live = raw.filter(b => b.status !== 'cancelled');
+    const hist = Array.from({ length: 12 }, (_, i) => rev(past.filter(b => { const t = new Date(b.start); return t > now - (12 - i) * wk && t <= now - (11 - i) * wk; })));
+    const n = hist.length, xm = (n - 1) / 2, ym = hist.reduce((a, b) => a + b, 0) / n;
+    const slope = hist.reduce((a, y, x) => a + (x - xm) * (y - ym), 0) / Math.max(1, hist.reduce((a, _, x) => a + (x - xm) ** 2, 0));
+    const sd = Math.sqrt(hist.reduce((a, y, x) => a + (y - (ym + slope * (x - xm))) ** 2, 0) / Math.max(1, n - 2));
+    const fut = Array.from({ length: 4 }, (_, i) => { const booked = rev(live.filter(b => { const t = new Date(b.start); return t > now + i * wk && t <= now + (i + 1) * wk; })); const trend = Math.max(0, ym + slope * (n + i - xm)); return { booked, f: Math.max(booked, trend), lo: Math.max(booked, trend - sd), hi: trend + sd }; });
+    const all = [...hist, ...fut.map(x => x.hi)], mx = Math.max(1, ...all), W = 600, H = 170, X = i => 10 + i * (W - 20) / 15, Y = v => H - 12 - v / mx * (H - 30);
+    const line = hist.map((v, i) => `${X(i)},${Y(v)}`).join(' '), fl = [`${X(11)},${Y(hist[11])}`, ...fut.map((x, i) => `${X(12 + i)},${Y(x.f)}`)].join(' ');
+    const band = [...fut.map((x, i) => `${X(12 + i)},${Y(x.hi)}`), ...fut.map((x, i) => `${X(12 + i)},${Y(x.lo)}`).reverse()].join(' ');
+    const total = fut.reduce((a, x) => a + x.f, 0), booked = fut.reduce((a, x) => a + x.booked, 0), dir = slope > ym * .02 ? 'rising' : slope < -ym * .02 ? 'slowing' : 'steady';
+    return card(45, 'Forecast, next 4 weeks', 'From your last 12 weeks and what is already booked', `<div class="pv-big">${money(total)} <em>${dir}</em></div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="pv-area"><polygon points="${band}" fill="color-mix(in srgb,var(--pv-lime) 16%,transparent)"/><polyline points="${line}" fill="none" stroke="${S}" stroke-width="2.4" vector-effect="non-scaling-stroke"/><polyline points="${fl}" fill="none" stroke="${L}" stroke-width="3" stroke-dasharray="6 6" vector-effect="non-scaling-stroke"/><line x1="${X(11.5)}" y1="8" x2="${X(11.5)}" y2="${H - 8}" stroke="var(--pv-line)" stroke-dasharray="3 4"/></svg>
+      <ul class="pv-feed"><li><span>Why</span>Trend over 12 weeks is ${dir} (${slope >= 0 ? '+' : ''}${money(slope)} a week).</li><li><span>Booked</span>${money(booked)} of it is already in the calendar.</li><li><span>Range</span>${money(fut.reduce((a, x) => a + x.lo, 0))} to ${money(fut.reduce((a, x) => a + x.hi, 0))} for the 4 weeks.</li></ul>`, 1);
+  }
+
   // ---- Overview: one tile per sub-tab with its headline number; a click opens that sub-tab
   const spark = (arr, h = 30) => { const mx = Math.max(1, ...arr); return `<svg viewBox="0 0 100 ${h}" preserveAspectRatio="none" class="pv-ovs"><polyline points="${arr.map((v, i) => `${i / Math.max(1, arr.length - 1) * 100},${h - 2 - v / mx * (h - 6)}`).join(' ')}" fill="none" stroke="${L}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`; };
   const bars = arr => { const mx = Math.max(1, ...arr); return `<div class="pv-ovb">${arr.map(v => `<i style="height:${Math.max(6, v / mx * 100)}%"></i>`).join('')}</div>`; };
@@ -341,6 +358,7 @@
       'Win back': [away.length, `away 5+ weeks · ${money(away.reduce((s, c) => s + (c.spent || 0), 0))} spent before`, ''],
       Reviews: [moods ? Math.round(happy / moods * 100) + '%' : '—', 'of clients sound happy', ''],
       Conversations: [stats.conv || conv.length, 'chats in the last 30 days', bars((live.d14 || []).map(x => x.n))],
+      'AI control': [window.MXAiMode?.get?.() === 'off' ? 'AI off' : 'AI on', window.MXAiMode?.get?.() === 'off' ? 'your team answers every client' : 'MXAi answers clients 24/7', ''],
       'Delivery queue': [(live.h24 || []).reduce((s, x) => s + (x.failed || 0), 0), 'failed messages, last 24h', bars((live.h24 || []).map(x => x.msgs))],
       'Booking page': [stats.web_bookings || 0, biz.booking_enabled ? 'bookings from your page' : 'page is off', ''],
       Overview: [money(k.revenue), 'won back by marketing', bars((mk.weekly || []).map(x => x.revenue || 0))],
@@ -389,15 +407,15 @@
     return box;
   }
 
-  const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44 };
+  const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44, 45: c45 };
   const PAGES = { today: [16, 8, 7, 15] };
   // sub-tabs get their own board, keyed by tab name, so each one opens on something new
-  const SUB = { insights: { 'AI performance': [15, 7, 17], 'Live flow': [16, 30], Topics: [18, 19], Business: [1, 11, 13, 8], Services: [20, 2, 5], Timing: [21, 4], Channels: [22] },
+  const SUB = { insights: { 'AI performance': [15, 7, 17], 'Live flow': [16, 30], Topics: [18, 19], Business: [45, 1, 11, 13, 8], Services: [20, 2, 5], Timing: [21, 4], Channels: [22] },
     customers: { Clients: [6, 23], Board: [9, 14], 'Win back': [24, 9], Reviews: [19, 15] },
     inbox: { Conversations: [25, 12], 'Needs you': [27, 28], 'Delivery queue': [26, 29] },
     calendar: { Schedule: [3, 10, 31], Requests: [17, 44], 'Booking page': [32, 31] },
     marketing: { Overview: [34, 33], Offers: [35, 37], 'Discount codes': [36], Agents: [37, 24] },
-    pulse: { Approvals: [38, 27], Brief: [8, 31] },
+    pulse: { Approvals: [38, 27], Brief: [8, 31, 45] },
     train: { Coach: [39, 40], Rules: [40], Answers: [40, 28], 'Review replies': [19] },
     settings: { Services: [41], 'Hours & team': [42], FAQs: [40], Channels: [43], Reminders: [44] } };
   // layer 1: a living ground behind everything (slow orbs, grid, scan line) — built once

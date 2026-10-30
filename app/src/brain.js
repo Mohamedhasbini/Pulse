@@ -73,6 +73,13 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     return { reply: null, paused: true, outcome: conv.outcome, conversationId: conv.id };
   }
 
+  // AI switched off for the whole business: nothing is sent automatically, every chat waits for a person.
+  if (biz.ai_mode === 'off') {
+    await q(`UPDATE conversations SET updated_at=now(), needs_attention=true, attention_reason='AI is off: answer from your Inbox' WHERE id=$1`, [conv.id]);
+    await notify(businessId, 'handoff', `${customer.name || 'A customer'} is waiting for a reply (AI is off)`, text.slice(0, 200), { conversationId: conv.id });
+    return { reply: null, paused: true, aiOff: true, outcome: conv.outcome, conversationId: conv.id };
+  }
+
   // Satisfaction: the chat asked "how did I do? 1-5"; a bare number or stars is the answer, not a new question.
   if (!queued && conv.rating_asked_at && conv.rating == null) {
     const t = text.trim(), stars = [...t].filter(c => c === '⭐').length;
