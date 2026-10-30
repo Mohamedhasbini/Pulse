@@ -250,3 +250,34 @@ html body main .pv-c .pv-chip:not(#_){white-space:normal;line-height:1.3}
 .pv-big .pv-unit{display:block;font-size:15px;font-weight:500;color:var(--pv-meta);letter-spacing:0;margin-top:4px}
 /* last blue bits (icons, avatars, swatches) follow the lime/silver palette */
 html body main :is(.td-ic.blue,.mk-sw,.av):not(#_):not(#__){background:color-mix(in srgb,var(--pv-lime) 22%,var(--pv-track))!important;color:var(--pv-ink)!important}
+
+/* ===== classy text: lime is a fill, never a text colour; type stays formal and calm ===== */
+html body main :is(.pv-big em,.pv-ovc em,.pv-feed span,.pv-piv .hl,.pv-scat .q.r,.hx-ans p.a b,.hx-ans .q::before,.pv-chip.warn,.td-hero .rev,.hx-stats b.rev,.co-done,.pc b,.pc strong,.pv-ov .pv-ovc em):not(#_):not(#__){color:var(--pv-ink)!important}
+html body main :is(.pv-ovc em,.pv-feed span,.co-done):not(#_):not(#__){color:var(--pv-silver)!important}
+html body main .pv-chip.warn:not(#_):not(#__){border-color:var(--pv-silver)!important;background:transparent!important}
+html body main .pv-chip.on:not(#_):not(#__){background:var(--pv-ink)!important;color:var(--h-ground,#121314)!important}
+:root[data-theme="dark"] html body main .pv-chip.on:not(#_):not(#__),:root[data-theme="dark"] .pv-chip.on{background:#eef0f2!important;color:#121314!important}
+/* the app accent no longer colours text anywhere in the dashboard */
+html body main :is(p,span,small,b,strong,em,td,th,li,h1,h2,h3,h4,label,a):not(.pv-chip):not(#_){-webkit-text-fill-color:currentColor}
+html body main [style*="--rev"]:not(#_){color:inherit}
+:root:is([data-theme="light"],[data-theme="dark"]):root{--rev:var(--pv-ink)!important;--good:var(--pv-silver)!important}
+
+/* Coach chat: graphite bubbles, crisp white type, quiet confirmations */
+html body main #coMsgs .co-m:not(#_):not(#__){font-size:15px;line-height:1.55;letter-spacing:0;font-weight:400;border-radius:16px;padding:12px 16px;max-width:78%}
+html body main #coMsgs .co-m.me:not(#_):not(#__){background:#2c3035!important;color:#f1f2f2!important;border:1px solid #3a3f44;align-self:flex-end;border-bottom-right-radius:6px}
+html body main #coMsgs .co-m.ai:not(#_):not(#__){background:#1e2124!important;color:#e6e8ea!important;border:1px solid #2a2e33;border-bottom-left-radius:6px}
+html body main #coMsgs .co-done:not(#_):not(#__){font-size:14px;line-height:1.6;color:#b9bec3!important;margin-top:10px;padding-left:12px;border-left:2px solid var(--pv-lime)}
+:root[data-theme="light"] html body main #coMsgs .co-m.me:not(#_):not(#__){background:#141516!important;color:#fff!important}
+:root[data-theme="light"] html body main #coMsgs .co-m.ai:not(#_):not(#__){background:#f4f5f6!important;color:#141516!important;border-color:#e2e4e6}
+:root[data-theme="light"] html body main #coMsgs .co-done:not(#_):not(#__){color:#45494e!important}
+
+/* search bars: one dark glass field, no box inside a box */
+html body .hx-smart:not(#_):not(#__),html body .hx-ask:not(#_):not(#__){background:rgba(255,255,255,.05)!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 18px 40px -26px rgba(0,0,0,.7)!important;backdrop-filter:blur(14px);border-radius:16px!important;padding:6px 6px 6px 18px!important}
+html body .hx-smart input:not(#_):not(#__),html body .hx-ask input:not(#_):not(#__){all:unset;flex:1;min-width:0;background:transparent!important;border:0!important;box-shadow:none!important;color:#f1f2f2!important;font-size:15px!important;padding:8px 0!important}
+html body :is(.hx-smart,.hx-ask) input::placeholder{color:#8a9096!important}
+html body .hx-smart button:not(#_):not(#__){width:38px;height:38px;border-radius:12px;background:#eef0f2!important;color:#121314!important}
+html body .hx-ask>i:not(#_):not(#__){background:#eef0f2!important;color:#121314!important}
+html body :is(.hx-smart,.hx-ask):focus-within{border-color:rgba(255,255,255,.28)!important}
+html body :is(.hx-sugg,.hx-ask) button[data-w]:not(#_),html body .hx-ask button[data-q]:not(#_){background:rgba(255,255,255,.06)!important;color:#d6d8da!important;border:1px solid rgba(255,255,255,.08)!important;font-weight:500}
+/* every other input in the dashboard: same quiet field */
+html body main :is(input[type="text"],input[type="search"],input:not([type]),textarea):not(.hx-smart input):not(.hx-ask input):not(#_){background:rgba(255,255,255,.04);color:var(--pv-ink);border:1px solid var(--pv-line);border-radius:12px}

@@ -33,9 +33,17 @@
       ['Booking page', { page: 'settings', tab: 'booking', bare: true, cards: ['Online booking page'] }]]],
     ['customers', 'Customers', 'Know every client', [
       ['Clients', { page: 'people', tab: 'clients' }],
-      ['Board', { page: 'people', tab: 'board', panes: ['board'] }],
       ['Win back', { page: 'people', tab: 'winback' }],
+      ['Board', { page: 'people', tab: 'board', panes: ['board'] }],
       ['Reviews', { page: 'support', tab: 'reviews', bare: true }]]],
+    ['insights', 'Insights', 'Numbers only: how the AI and the business are doing', [
+      ['Business', { page: 'analytics', tab: 'overview', panes: ['overview', 'next'], drop: ['Services'] }],
+      ['Services', { page: 'analytics', tab: 'overview', panes: ['overview'], cards: ['Services'] }],
+      ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true }],
+      ['Timing', { page: 'analytics', tab: 'timing', panes: ['timing'] }],
+      ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] }],
+      ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true }],
+      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' }]]],
     ['marketing', 'Marketing', 'Bring customers in', [
       ['Overview', { own: 'growth' }],
       ['Offers', { page: 'people', tab: 'offers' }],
@@ -55,14 +63,6 @@
       ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'] }],
       ['Test chat', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
       ['Versions', { entry: 'training', only: ['top', 'learn'] }]]],
-    ['insights', 'Insights', 'Numbers only: how the AI and the business are doing', [
-      ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true }],
-      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' }],
-      ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true }],
-      ['Business', { page: 'analytics', tab: 'overview', panes: ['overview', 'next'], drop: ['Services'] }],
-      ['Services', { page: 'analytics', tab: 'overview', panes: ['overview'], cards: ['Services'] }],
-      ['Timing', { page: 'analytics', tab: 'timing', panes: ['timing'] }],
-      ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] }]]],
     ['settings', 'Settings', 'Set it up once', [
       ['Profile', { page: 'settings', tab: 'details', form: [0, 1, 2, 3, 4, 5, 6, 24] }],
       ['Assistant', { page: 'settings', tab: 'details', form: [7, 8, 9, 17, 18], keep: ['Business type'] }],
