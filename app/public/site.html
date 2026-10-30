@@ -272,12 +272,37 @@ body{background:radial-gradient(1200px 700px at 85% -10%,#2a2e32,transparent 60%
 @media (max-width:900px){.tiers{grid-template-columns:1fr}.arch svg.wires{display:none}}
 .why{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}.why>div{padding:22px}.why b{display:block;font-size:30px;font-weight:800;letter-spacing:-.04em}.why span{color:var(--ink2);font-size:14px}
 @media (max-width:760px){.why{grid-template-columns:1fr}}
+
+/* value: from dashboard to money */
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+.flow div{padding:16px 14px;border-radius:16px;background:var(--s1);border:1px solid var(--line);text-align:center;position:relative}
+.flow div:not(:last-child)::after{content:"→";position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:#c6f432;font-weight:700;z-index:1}
+.flow b{display:block;font-size:15px}.flow small{color:var(--muted);font-size:12px}.flow div:last-child{background:#c6f432;color:#111;border-color:transparent}.flow div:last-child small{color:#2a3300}
+@media (max-width:760px){.flow{grid-template-columns:1fr}.flow div::after{display:none}}
+.vals{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.val{padding:22px;display:flex;flex-direction:column;gap:10px;transition:transform .3s,border-color .3s}.val:hover{transform:translateY(-4px);border-color:rgba(198,244,50,.45)}
+.val .tg{display:flex;justify-content:space-between;align-items:center}.val .tg span{font:700 11px ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.val .tg em{font-style:normal;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#c6f432;color:#111}
+.val .tg em.k{background:#1d2124;color:#c9ced3;border:1px solid var(--line2)}
+.val h3{font-size:19px;letter-spacing:-.02em}.val p{margin:0;color:var(--ink2);font-size:14.5px}
+.val .out{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink2)}.val .out b{display:block;font-size:22px;color:var(--ink);letter-spacing:-.03em}
+@media (max-width:1000px){.vals{grid-template-columns:1fr 1fr}}@media (max-width:560px){.vals{grid-template-columns:1fr}}
+.money{display:grid;grid-template-columns:1fr 1.3fr;gap:16px;margin-top:16px}
+.money>div{padding:26px}
+.stack{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.stack .r{display:grid;grid-template-columns:150px 1fr 70px;gap:12px;align-items:center;font-size:14px}.stack .r span{color:var(--ink2)}.stack .r b{text-align:right}
+.stack .bar{height:14px;border-radius:8px;background:rgba(255,255,255,.06);overflow:hidden}.stack .bar i{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,#a6d11c,#c6f432);transform-origin:left;transform:scaleX(0);transition:transform 1.2s cubic-bezier(.2,.8,.2,1)}
+.rv.on .stack .bar i{transform:scaleX(1)}
+.total{display:flex;justify-content:space-between;align-items:baseline;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}.total b{font-size:40px;letter-spacing:-.05em}.total span{color:var(--ink2);font-size:14px}
+.roles{display:grid;gap:10px;margin-top:16px}.roles div{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:12px 14px;border-radius:14px;background:var(--s1);border:1px solid var(--line);font-size:14px}.roles b{color:var(--ink)}.roles span{color:var(--ink2)}
+@media (max-width:900px){.money{grid-template-columns:1fr}.stack .r{grid-template-columns:110px 1fr 56px}}
+.note{color:var(--muted);font-size:12.5px;margin-top:12px}
 </style>
 </head>
 <body>
 <header><div class="wrap">
   <a class="logo" href="/pulse" aria-label="MXAi home"><i><svg viewBox="0 0 24 24"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i>MXAi</a>
-  <nav><a href="#how">How it works</a><a href="#agents">AI agents</a><a href="#dashboard">Dashboard</a><a href="#features">Features</a><a href="#demo">Live demo</a><a href="#pricing">Pricing</a><a href="/webook">WeBook app</a></nav>
+  <nav><a href="#how">How it works</a><a href="#agents">AI agents</a><a href="#value">Value</a><a href="#dashboard">Dashboard</a><a href="#features">Features</a><a href="#demo">Live demo</a><a href="#pricing">Pricing</a><a href="/webook">WeBook app</a></nav>
   <a class="btn gho signin" href="/login">Sign in</a><a class="btn pri" href="#start" data-kind="signup">Get started</a>
 </div></header>
 
@@ -360,6 +385,35 @@ body{background:radial-gradient(1200px 700px at 85% -10%,#2a2e32,transparent 60%
     <div class="glass agc rv"><span class="ic2">AN</span><b>Analyst agent</b><p>Turns every chat and booking into charts and plain answers.</p><div class="stat"><span>Ask it</span><b>anything</b></div></div>
   </div>
   <div class="why"><div class="glass rv"><b>0</b><span>missed messages, even at 2am</span></div><div class="glass rv"><b>5 agents</b><span>working together on one shared memory of your business</span></div><div class="glass rv"><b>100%</b><span>of actions visible and reversible in your dashboard</span></div></div>
+</div></section>
+
+<section id="value"><div class="wrap">
+  <div class="sh rv"><span class="k">Value</span><h2>A dashboard that makes you money.</h2><p>Most dashboards only show numbers. MXAi turns every conversation into data, every insight into an action, and every action into revenue. It is your command center, your marketing team and your data center in one.</p></div>
+  <div class="flow rv"><div><b>Conversations</b><small>every channel</small></div><div><b>Data</b><small>one business memory</small></div><div><b>Insights</b><small>what is working</small></div><div><b>Actions</b><small>agents do the work</small></div><div><b>Revenue</b><small>more bookings, less loss</small></div></div>
+  <div class="vals">
+    <div class="glass val rv"><div class="tg"><span>Front desk</span><em>Earns</em></div><h3>No customer slips away</h3><p>Every message answered in seconds, day and night, in the client's language, and turned into a booking.</p><div class="out"><b>+0 missed</b>chats that used to go unanswered after hours</div></div>
+    <div class="glass val rv"><div class="tg"><span>Teach</span><em class="k">Learns</em></div><h3>Answers it once, right forever</h3><p>When the AI is unsure, you teach the answer one time. It never asks again, and every client gets the same correct reply.</p><div class="out"><b>Fewer handoffs</b>less of your time on repeated questions</div></div>
+    <div class="glass val rv"><div class="tg"><span>Coach</span><em class="k">Learns</em></div><h3>Talks the way you want</h3><p>Tell it in plain words: "be more formal", "always offer the next free time", "never discount". It becomes a rule instantly.</p><div class="out"><b>Your brand voice</b>on every chat, without training staff</div></div>
+    <div class="glass val rv"><div class="tg"><span>Scheduler</span><em>Earns</em></div><h3>Fuller calendar</h3><p>Offers the free slots first, fills gaps, moves visits instead of losing them and never double-books.</p><div class="out"><b>Higher occupancy</b>chair time sold, not wasted</div></div>
+    <div class="glass val rv"><div class="tg"><span>Reminders</span><em>Saves</em></div><h3>Fewer no-shows</h3><p>Automatic reminders with one-tap confirm or reschedule. Every no-show prevented is money kept.</p><div class="out"><b>Less lost revenue</b>empty chairs refilled from the waitlist</div></div>
+    <div class="glass val rv"><div class="tg"><span>Marketing</span><em>Earns</em></div><h3>Brings clients back</h3><p>Finds clients drifting away, prepares the right offer and discount code, and sends it to the ones who agreed to hear from you.</p><div class="out"><b>Won-back revenue</b>tracked offer by offer, with return on spend</div></div>
+    <div class="glass val rv"><div class="tg"><span>Growth</span><em>Earns</em></div><h3>New customers find you</h3><p>Your own booking page and a listing in the WeBook app bring new clients who book without calling.</p><div class="out"><b>New bookings</b>from people who never messaged you</div></div>
+    <div class="glass val rv"><div class="tg"><span>Insights</span><em class="k">Decides</em></div><h3>Price and plan with data</h3><p>Earnings per chair hour, best services, busy and quiet hours, client value and who came back. Ask any question in plain words.</p><div class="out"><b>Better decisions</b>what to promote, when to open, what to charge</div></div>
+  </div>
+  <div class="money">
+    <div class="glass rv"><span class="mono">Command center</span><h3 style="font-size:24px;margin:10px 0 6px">You stay in control</h3><p style="color:var(--ink2);margin:0">The agents work, you steer. Every action is visible, sensitive ones wait for your approval, and you can step into any chat.</p>
+      <div class="roles"><div><b>Approvals</b><span>offers, refunds and changes you mark as sensitive wait for your OK</span></div><div><b>Inbox</b><span>read every chat and take over with one tap</span></div><div><b>Brief</b><span>a daily summary of what happened and what to do next</span></div><div><b>Ask MXAi</b><span>"why did revenue drop?" answered from your own data</span></div></div></div>
+    <div class="glass rv"><span class="mono">Example month · salon with 3 chairs</span><h3 style="font-size:24px;margin:10px 0 0">Where the extra money comes from</h3>
+      <div class="stack">
+        <div class="r"><span>After-hours bookings</span><div class="bar"><i style="width:100%"></i></div><b>$620</b></div>
+        <div class="r"><span>Gaps filled</span><div class="bar"><i style="width:62%"></i></div><b>$380</b></div>
+        <div class="r"><span>No-shows prevented</span><div class="bar"><i style="width:48%"></i></div><b>$300</b></div>
+        <div class="r"><span>Clients won back</span><div class="bar"><i style="width:70%"></i></div><b>$430</b></div>
+        <div class="r"><span>New from WeBook</span><div class="bar"><i style="width:34%"></i></div><b>$210</b></div>
+      </div>
+      <div class="total"><span>Extra revenue in the month</span><b>$1,940</b></div>
+      <p class="note">Illustration only. Your numbers appear live in your own dashboard.</p></div>
+  </div>
 </div></section>
 
 <section id="architecture"><div class="wrap">
