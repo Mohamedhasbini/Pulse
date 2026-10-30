@@ -79,9 +79,22 @@
       const l = await get('/api/live?days=90'), n = l?.now || {};
       greet.insertAdjacentHTML('beforeend', `<div class="hx-ask"><i>✦</i><input placeholder="Ask anything about your numbers…" aria-label="Ask Pulse AI">${['Why did revenue change?', 'Best service to promote', 'Forecast next month'].map(q => `<button type="button" data-q="${q}">${q}</button>`).join('')}</div>`);
       hero.querySelector('.hx-folders').innerHTML = `<div class="hx-bignum"><span>Earned, last 90 days</span><b>${money(n.earned)}</b><small>${n.earned_prev ? `${n.earned >= n.earned_prev ? '+' : ''}${Math.round((n.earned - n.earned_prev) / n.earned_prev * 100)}% vs the 90 days before` : 'first period'}</small></div>`;
-      const ask = q => window.PulseCommand?.open ? window.PulseCommand.open(q) : window.P10?.ask?.(q);
+      // the answer lands right here, short; "Full answer" opens Pulse AI on the same question
+      const full = q => window.PulseCommand?.open ? window.PulseCommand.open(q) : window.P10?.ask?.(q);
+      greet.insertAdjacentHTML('beforeend', '<div class="hx-ans" hidden aria-live="polite"></div>');
+      const box = $('.hx-ans', greet);
+      const ask = async q => {
+        box.hidden = false; box.className = 'hx-ans busy';
+        box.innerHTML = `<div class="q">${esc(q)}</div><div class="a"><i></i><i></i><i></i></div>`;
+        const r = await fetch('/api/team/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: 'ask', messages: [{ role: 'owner', text: q + ' — Reply in at most 2 short sentences with the key number(s). No lists.' }] }) }).then(x => x.ok ? x.json() : null).catch(() => null);
+        box.className = 'hx-ans';
+        const txt = r?.answer ? esc(r.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n+/g, ' ') : 'Could not get an answer right now.';
+        box.innerHTML = `<div class="q">${esc(q)}</div><p class="a">${txt}</p><div class="f">${r?.sources?.length ? `<small>From ${r.sources.map(x => esc(x.label)).join(', ')}</small>` : '<small></small>'}<span><button type="button" data-full>Full answer →</button><button type="button" data-x aria-label="Close">✕</button></span></div>`;
+        box.querySelector('[data-full]').onclick = () => full(q);
+        box.querySelector('[data-x]').onclick = () => { box.hidden = true; };
+      };
       $('.hx-ask', greet).addEventListener('click', ev => { const b = ev.target.closest('[data-q]'); if (b) ask(b.dataset.q); });
-      $('.hx-ask input', greet).addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.value.trim()) ask(ev.target.value.trim()); });
+      $('.hx-ask input', greet).addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.value.trim()) { ask(ev.target.value.trim()); ev.target.value = ''; } });
     }
     if (id === 'calendar') {
       // Orion chips: Day / Week / Month drive the calendar; Holo: chair time today

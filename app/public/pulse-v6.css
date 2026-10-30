@@ -132,3 +132,15 @@ html body .td-hero.pv-stage:not(#_):not(#__):not(#___){padding-bottom:170px!impo
 .td-hero.pv-stage .hx-tl:not(#_){bottom:56px;border-bottom:1px solid rgba(255,255,255,.06)}
 body[data-pv="today"] .pv-board:not(#_){margin-top:-44px}
 .pv-c svg.pv-beat:not(#_),.pv-c svg.pv-area:not(#_){width:100%!important;max-width:none!important}
+/* stronger than the app's generic card/button rules */
+html body main .hx-ans:not(#_):not(#__){display:block;background:linear-gradient(160deg,rgba(32,36,39,.92),rgba(20,23,25,.96))!important;border:1px solid color-mix(in srgb,var(--pv-lime) 30%,#2a2e33)!important;border-radius:20px!important;padding:18px 20px!important}
+html body main .hx-ans[hidden]:not(#_):not(#__){display:none}
+html body main .hx-ans .f button:not(#_):not(#__){border:0!important;border-radius:99px!important;padding:7px 15px!important;min-height:0!important;height:auto!important;background:rgba(255,255,255,.08)!important;color:#eef0f2!important;font-size:13.5px!important;box-shadow:none!important}
+html body main .hx-ans .f button[data-full]:not(#_):not(#__){background:var(--pv-lime)!important;color:#111!important}
+
+/* Pulse AI panel in the same language: graphite glass, lime accents */
+html body .pc:not(#_){--pc-bg:rgba(16,18,20,.94)}
+html body .pc > div:first-child:not(#_),html body .pc .pc-body:not(#_){background:linear-gradient(160deg,rgba(32,36,39,.96),rgba(15,17,19,.98))!important;border:1px solid #2a2e33!important;border-radius:26px!important;backdrop-filter:blur(20px);color:#eef0f2}
+html body .pc :is(.pc-chip,.pc-act,.pc-abtn):not(#_){border-radius:99px!important;background:rgba(255,255,255,.07)!important;color:#eef0f2!important;border:1px solid #2a2e33!important}
+html body .pc :is(.pc-go,button[type="submit"]):not(#_){background:var(--pv-lime)!important;color:#111!important;border-radius:14px!important}
+html body .pc b:not(#_),html body .pc strong:not(#_){color:var(--pv-lime)}
