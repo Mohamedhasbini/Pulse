@@ -511,6 +511,46 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 .cc-logo i::before{content:"";width:12px;height:10px;background:linear-gradient(#111,#111) 0 0/2.4px 100% no-repeat,linear-gradient(#111,#111) 100% 0/2.4px 100% no-repeat,linear-gradient(45deg,transparent 42%,#111 42% 58%,transparent 58%) 0 0/50% 60% no-repeat,linear-gradient(-45deg,transparent 42%,#111 42% 58%,transparent 58%) 100% 0/50% 60% no-repeat}
 .stage{max-width:1240px!important}.screen .ccw.top{font-size:13.5px}
 </style>
+
+<style id="phone-layer">
+/* ===== Phone layer (loaded last): the site on a phone reads like an app, not a 27,000 px column =====
+   card lists become swipe rows with the next card peeking, the hero dashboard is a preview with a fade,
+   nothing is wider than the screen, no text under 12.5 px, every link is a finger-sized target. */
+@media (max-width:760px){
+  html,body{overflow-x:hidden}
+  img,svg,canvas,video{max-width:100%}
+  /* swipe rows */
+  .vals,.plans,.bento,.core-feats,.nums,.boards,.gcols,.tiers{display:flex!important;flex-wrap:nowrap!important;gap:12px!important;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    margin-left:-20px!important;margin-right:-20px!important;padding:4px 20px 16px!important;scroll-padding-left:20px;scrollbar-width:none;grid-template-columns:none!important}
+  .vals::-webkit-scrollbar,.plans::-webkit-scrollbar,.bento::-webkit-scrollbar,.core-feats::-webkit-scrollbar,.nums::-webkit-scrollbar,.boards::-webkit-scrollbar,.gcols::-webkit-scrollbar,.tiers::-webkit-scrollbar{display:none}
+  .vals>*,.plans>*,.bento>*,.core-feats>*,.nums>*,.boards>*,.gcols>*,.tiers>*{flex:0 0 84%!important;max-width:84%!important;min-width:0!important;scroll-snap-align:start;grid-column:auto!important;grid-row:auto!important;margin:0!important}
+  .plans>*{flex-basis:88%!important;max-width:88%!important}
+  .nums>*{flex-basis:70%!important;max-width:70%!important}
+  /* a quiet hint under each swipe row */
+  .vals::after,.plans::after,.bento::after,.core-feats::after,.boards::after{content:"";flex:0 0 1px}
+  .swipe-hint{display:flex;align-items:center;gap:8px;margin:-6px 0 18px;color:rgba(255,255,255,.62);font-size:13px;letter-spacing:.02em}
+  .swipe-hint::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.18),transparent)}
+  /* the hero dashboard: a preview, not the whole thing */
+  .hero>.wrap:last-of-type{max-height:980px;overflow:hidden;position:relative;-webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent)}
+  .hero .wrap *{min-width:0}
+  .hero .wrap [class*="grid"],.hero .wrap [class*="row"]{max-width:100%}
+  .hero-more{display:flex;justify-content:center;margin:-40px 0 24px;position:relative;z-index:2}
+  .hero-more a{padding:12px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.18);color:#eef0f2;text-decoration:none;font-weight:600;font-size:15px;background:rgba(20,22,24,.7);backdrop-filter:blur(10px)}
+  /* readable and tappable */
+  /* labels and captions: never under 12.5 px, never inflated by a big parent (the price's "/ month") */
+  body .mono2,body .k,body .tg,body small:not(.pr small){font-size:clamp(12.5px,1em,15px)!important}
+  .plan .pr{font-size:42px!important}.plan .pr small{font-size:15px!important}
+  .plans>*{align-self:flex-start}
+  footer a,footer button{display:inline-flex;align-items:center;min-height:44px;padding:4px 0}
+  header a,header button{min-height:40px}
+  section{scroll-margin-top:72px}
+  h2{overflow-wrap:anywhere}
+  .cmp{overflow-x:auto}
+}
+@media (max-width:380px){
+  .vals>*,.bento>*,.core-feats>*,.boards>*,.gcols>*,.tiers>*{flex-basis:90%!important;max-width:90%!important}
+}
+</style>
 </head>
 <body>
 <header><div class="wrap">
@@ -906,5 +946,22 @@ $("#lead").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new 
 </script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 
+
+<script id="phone-layer-js">
+// Phone layer: a "swipe" hint before each swipe row, and a link under the hero preview to the full dashboard section
+(() => {
+  const mq = matchMedia('(max-width:760px)');
+  const add = () => {
+    if (!mq.matches) return;
+    document.querySelectorAll('.vals,.plans,.bento,.core-feats,.boards').forEach(row => {
+      if (row.previousElementSibling?.classList.contains('swipe-hint') || row.scrollWidth <= row.clientWidth + 8) return;
+      const h = document.createElement('div'); h.className = 'swipe-hint'; h.textContent = 'Swipe to see more →'; row.before(h);
+    });
+    const prev = document.querySelector('.hero > .wrap:last-of-type');
+    if (prev && !document.querySelector('.hero-more') && document.getElementById('dashboard')) prev.insertAdjacentHTML('afterend', '<div class="hero-more"><a href="#dashboard">See the full dashboard ↓</a></div>');
+  };
+  addEventListener('load', () => setTimeout(add, 300)); mq.addEventListener?.('change', add);
+})();
+</script>
 </body>
 </html>
