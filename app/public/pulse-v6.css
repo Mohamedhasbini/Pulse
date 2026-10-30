@@ -224,3 +224,12 @@ html body main > section.today.pv-today:not([hidden]):not(#_):not(#__):not(#___)
 html body .td-hero.pv-stage .hx-tl:not(#_):not(#__){left:0!important;right:0!important;width:auto!important;margin:0!important;box-sizing:border-box;overflow:hidden}
 html body .td-hero.pv-stage .hx-track:not(#_){min-width:0;overflow:hidden}
 html body section.pv-today>.bf:not(#_):not(#__),html body section.pv-today>.td-grid:not(#_):not(#__){overflow:visible!important;height:auto!important;max-height:none!important;flex:none!important}
+/* tab pages scroll as one column: nothing is squeezed to 0 height or stretched to a full screen */
+html body main > section.p10-on:not(.today):not([hidden]):not(#_)>*:not(.p10-bar){flex:0 0 auto!important;min-height:min-content}
+html body main > section.p10-on:not(#_) .pv-ov{height:auto!important;max-height:none!important;display:block!important;width:auto!important;position:static!important}
+html body main > section.p10-on:not(#_)>#gcRoot{height:auto!important;min-height:calc(100vh - 140px)!important}
+html body main > section.p10-on:not(#_)>#gcRoot>.gc{height:calc(100vh - 140px)!important}
+html body.x,html body main > section.p10-on:not(#_):not(#__) :is(#tchCoach,#tchRules){min-height:min-content!important;height:auto!important}
+html body main #tchCoach .co-chat:not(#_):not(#__){min-height:560px!important}
+html body main > section.p10-multi:not(#_){align-items:start!important}
+html body main > section.p10-multi:not(#_)>.spane{height:auto!important;align-self:start}

@@ -380,7 +380,7 @@
     const sec = after.parentElement; sec.querySelectorAll('.pv-ov').forEach(x => x.remove());
     if (tabs.length < 2) return;
     const cur = window.P10?.sub?.() ?? 0, first = !cur;
-    const box = document.createElement('nav'); box.className = 'pv-ov' + (first ? '' : ' mini'); box.setAttribute('aria-label', `${page[1]} overview`); after.after(box);
+    const box = document.createElement('div'); box.setAttribute('role', 'navigation'); box.className = 'pv-ov' + (first ? '' : ' mini'); box.setAttribute('aria-label', `${page[1]} overview`); after.after(box);
     const pv = previews(Object.assign(await data(), { page: id }));
     box.innerHTML = (first ? `<header><h2>Overview</h2><small>Everything in ${esc(page[1])} at a glance. Open any card for the details.</small></header>` : '')
       + `<div class="pv-ovg">${tabs.map(([name], i) => { const [big, sub, viz] = pv[name] || ['', esc(page[2] || ''), '']; return `<button type="button" class="pv-ovc${i === cur ? ' on' : ''}" data-i="${i}" style="--i:${i}"><span class="t">${esc(name)}</span>${big !== '' ? `<b>${big}</b>` : ''}<small>${sub}</small>${first ? viz : ''}<em>${i === cur ? 'You are here' : 'Open →'}</em></button>`; }).join('')}</div>`;
