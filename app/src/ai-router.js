@@ -29,10 +29,11 @@ const gemini = model => async (key, prompt, json) => {
 // order = best quality per free request first; models can be changed with <PROVIDER>_MODEL
 const ROUTES = [
   { id: 'gemini-flash-lite', key: 'GEMINI_API_KEY', biz: 'gemini', call: gemini(process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite') },
-  { id: 'groq', key: 'GROQ_API_KEY', biz: 'groq', call: openai('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_MODEL || 'llama-3.3-70b-versatile') },
+  { id: 'groq', key: 'GROQ_API_KEY', biz: 'groq', call: openai('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_MODEL || 'openai/gpt-oss-120b') },
   { id: 'gemini-flash', key: 'GEMINI_API_KEY', biz: 'gemini', call: gemini(process.env.GEMINI_MODEL_2 || 'gemini-3.5-flash') },
+  { id: 'gemini-3.1-lite', key: 'GEMINI_API_KEY', biz: 'gemini', call: gemini(process.env.GEMINI_MODEL_3 || 'gemini-3.1-flash-lite') },
   { id: 'cerebras', key: 'CEREBRAS_API_KEY', biz: 'cerebras', call: openai('https://api.cerebras.ai/v1/chat/completions', process.env.CEREBRAS_MODEL || 'llama-3.3-70b') },
-  { id: 'openrouter', key: 'OPENROUTER_API_KEY', biz: 'openrouter', call: openai('https://openrouter.ai/api/v1/chat/completions', process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct:free') },
+  { id: 'openrouter', key: 'OPENROUTER_API_KEY', biz: 'openrouter', call: (k, p) => openai('https://openrouter.ai/api/v1/chat/completions', process.env.OPENROUTER_MODEL || 'openrouter/free')(k, p, false) } // openrouter/free picks whichever free model is up,
 ];
 const cool = new Map(), stats = new Map(); // id → skip-until ms; id → { ok, fail, last }
 const note = (id, ok, err) => { const s = stats.get(id) || { ok: 0, fail: 0 }; ok ? s.ok++ : s.fail++; s.last = ok ? 'ok' : String(err).slice(0, 120); s.at = new Date().toISOString(); stats.set(id, s); };
@@ -61,6 +62,13 @@ export async function complete(prompt, { json = true, business } = {}) {
   throw new Error(errors.length ? `All backup AIs failed: ${errors.join(' | ')}` : 'No backup AI key is set');
 }
 
+// one live call per provider, for setup checks
+export async function testAll(prompt = 'Reply with JSON {"ok":true}') {
+  const out = [];
+  for (const r of ROUTES) { const key = process.env[r.key]; if (!key) { out.push({ id: r.id, ok: false, error: 'no key' }); continue; }
+    const t0 = Date.now(); try { const text = await r.call(key, prompt, true); out.push({ id: r.id, ok: true, ms: Date.now() - t0, text: text.slice(0, 60) }); } catch (e) { out.push({ id: r.id, ok: false, error: e.message.slice(0, 120) }); } }
+  return out;
+}
 export function routerStatus() {
   return ROUTES.map(r => ({ id: r.id, configured: !!process.env[r.key], resting_until: (cool.get(r.id) || 0) > Date.now() ? new Date(cool.get(r.id)).toISOString() : null, ...stats.get(r.id) }));
 }
