@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Round 4 Draft</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+:root{--serif:"Instrument Serif",Georgia,serif;--rev:#9fd12a;--rev-ink:#4a6608;--data:#3d6fe0}
+html{background:#e7e9eb}
+body{margin:0;min-height:100vh;font:14px/1.5 Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased;background:var(--ground);color:var(--ink);transition:background .3s}
+body.light{--ground:#e7e9eb;--body:#eceeef;--card:#f8f9f9;--nest:#eef0f1;--ink:#141516;--ink2:#45494e;--meta:#878b91;--rule:rgba(20,21,22,.08);--br:#141516;--tag:#141516;--tag-ink:#fff;--shadow:0 1px 0 #fff inset,0 10px 26px -20px rgba(20,22,26,.3);--wave:#b9bdc1;--rev-ink:#4a6608}
+body.dark{--ground:#0d0e0f;--body:#121314;--card:#1b1c1e;--nest:#242628;--ink:#f1f2f2;--ink2:#c3c6c9;--meta:#86898d;--rule:rgba(255,255,255,.07);--br:#a7aaad;--tag:#f1f2f2;--tag-ink:#141516;--shadow:0 1px 0 rgba(255,255,255,.04) inset,0 20px 40px -26px #000;--wave:#55595e;--rev-ink:#c6ec4f;--data:#6b9bff;--rev:#c6ec4f}
+.note{max-width:1400px;margin:0 auto;padding:22px 20px 6px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.note h1{margin:0;font-size:22px;font-weight:500;letter-spacing:-.03em}.note h1 em{font-family:var(--serif);font-weight:400}
+.note p{margin:2px 0 0;color:var(--meta);font-size:13px;max-width:80ch}
+.sw{display:flex;gap:4px;padding:4px;border-radius:99px;background:var(--card);border:1px solid var(--rule)}.sw button{all:unset;cursor:pointer;font-size:12.5px;padding:6px 14px;border-radius:99px;color:var(--meta)}.sw button.on{background:var(--tag);color:var(--tag-ink)}
+.app{max-width:1400px;margin:10px auto 60px;border-radius:26px;overflow:hidden;background:var(--body);box-shadow:0 50px 90px -50px rgba(0,0,0,.55);border:1px solid var(--rule)}
+
+/* ---------- hero ---------- */
+.hero{position:relative;color:#f3f4f4;background:#0f1011;overflow:hidden;padding:20px 28px 0}
+.silk{position:absolute;inset:0;width:100%;height:100%}
+.nav{position:relative;display:flex;align-items:center;gap:22px;z-index:2}
+.logo{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:500;letter-spacing:-.03em}.logo svg{width:26px;height:26px}
+.links{display:flex;gap:2px;margin-left:18px;position:relative}
+.links button{all:unset;cursor:pointer;font-size:13.5px;padding:8px 15px;border-radius:12px;color:#c3c6c9;position:relative;z-index:1;transition:color .2s}
+.links button.on{color:#fff}
+.links .pillbg{position:absolute;top:0;height:100%;border-radius:12px;background:rgba(255,255,255,.11);transition:left .35s cubic-bezier(.2,.8,.2,1),width .35s cubic-bezier(.2,.8,.2,1)}
+.cmd{margin-left:auto;display:flex;align-items:center;gap:10px;padding:8px 10px 8px 14px;border-radius:14px;background:rgba(255,255,255,.08);color:#a9acaf;font-size:13px;cursor:pointer;min-width:260px;border:1px solid rgba(255,255,255,.06)}
+.cmd kbd{margin-left:auto;font:500 11px "Geist Mono";padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.1);color:#d6d8da}
+.cmd .dot{width:7px;height:7px;border-radius:50%;background:var(--rev)}
+.ic{width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.08);display:grid;place-items:center;color:#d6d8da;font-size:13px;position:relative}
+.ic b{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:99px;background:#f3f4f4;color:#141516;font-size:10px;display:grid;place-items:center}
+.me{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#d9d2c6,#857c70);border:2px solid rgba(255,255,255,.25)}
+.hgrid{position:relative;display:grid;grid-template-columns:1fr 430px;gap:24px;margin-top:36px;min-height:250px}
+.greet .eb{font-size:12px;color:#9a9da1;letter-spacing:.02em}
+.greet h1{margin:6px 0 0;font-size:52px;font-weight:500;letter-spacing:-.045em;line-height:1}
+.greet h1 em{display:block;font-family:var(--serif);font-style:italic;font-weight:400;font-size:46px;letter-spacing:-.01em;color:#e6e8e9}
+.greet p{margin:18px 0 0;color:#a9acaf;max-width:52ch}
+.hstats{display:flex;gap:28px;margin-top:22px}
+.hstats div span{display:block;font-size:11.5px;color:#8d9094}.hstats b{font-size:26px;font-weight:300;letter-spacing:-.04em}.hstats b.rev{color:var(--rev)}
+/* folders */
+.folders{position:relative;height:250px}
+.fd{position:absolute;right:-28px;border-radius:18px 0 0 18px;padding:18px 22px;cursor:pointer;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.fd::before{content:attr(data-tab);position:absolute;top:-24px;left:26px;font-size:11.5px;padding:5px 16px 9px;border-radius:12px 12px 0 0;background:inherit}
+.fd:hover{transform:translateY(-6px)}
+.fd.a{top:0;width:390px;height:150px;background:#45484c;color:#fff}.fd.a::before{color:#d6d8da}
+.fd.b{top:96px;width:430px;height:170px;background:#d9dcdf;color:#141516}.fd.b::before{color:#55595e}
+.fd b{display:block;font-size:19px;font-weight:500;letter-spacing:-.02em}.fd small{opacity:.75;font-size:12.5px}
+.fd .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.fd .row span{font-size:11.5px;padding:4px 10px;border-radius:99px;background:rgba(20,21,22,.08)}.fd .row span.k{background:#141516;color:#fff}
+.fd.a .row span{background:rgba(255,255,255,.12)}
+/* day timeline */
+.timeline{position:relative;margin:26px -28px 0;padding:14px 28px 16px;background:rgba(255,255,255,.04);border-top:1px solid rgba(255,255,255,.06);display:grid;grid-template-columns:90px 1fr;gap:16px;align-items:center}
+.timeline .lbl{font-size:12px;color:#9a9da1}.timeline .lbl b{display:block;color:#f3f4f4;font-size:20px;font-weight:300;letter-spacing:-.03em}
+.track{position:relative;height:46px}
+.hours{position:absolute;inset:auto 0 0 0;display:flex;justify-content:space-between;font:500 10px "Geist Mono";color:#6f7276}
+.slot{position:absolute;top:0;height:28px;border-radius:8px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.12);font-size:10.5px;color:#e3e5e6;padding:5px 8px;white-space:nowrap;overflow:hidden}
+.slot.free{background:transparent;border-style:dashed;color:#8d9094}
+.now{position:absolute;top:-6px;bottom:12px;width:2px;background:var(--rev);border-radius:2px}
+.now::after{content:"now";position:absolute;top:-14px;left:-10px;font:600 10px Geist;color:var(--rev)}
+
+/* ---------- body ---------- */
+.body{padding:22px 24px 28px}
+.view{display:none}.view.on{display:block;animation:in .4s cubic-bezier(.2,.8,.2,1)}
+@keyframes in{from{opacity:.4;transform:translateY(8px)}to{opacity:1;transform:none}}
+.grid{display:grid;grid-template-columns:330px 1fr 340px;gap:16px}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{position:relative;background:var(--card);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow);min-width:0;border:1px solid var(--rule);transition:transform .25s}
+.card.br::after{content:"";position:absolute;inset:-1px;border:1.6px solid var(--br);border-radius:inherit;pointer-events:none;opacity:.85;
+  -webkit-mask:linear-gradient(#000 0 0) top left/18px 18px no-repeat,linear-gradient(#000 0 0) bottom right/18px 18px no-repeat;mask:linear-gradient(#000 0 0) top left/18px 18px no-repeat,linear-gradient(#000 0 0) bottom right/18px 18px no-repeat}
+.card.x{cursor:pointer}.card.x:hover{transform:translateY(-2px)}
+.ct{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:500;letter-spacing:-.01em;margin-bottom:12px}
+.ct small{font-size:12px;font-weight:400;color:var(--meta);padding:5px 11px;border-radius:12px;border:1px solid var(--rule)}
+.kpi{display:flex;align-items:center;gap:10px}
+.num{font-size:44px;font-weight:300;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}.num.sm{font-size:32px}
+.num.rev{color:var(--ink)}
+.tag{font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--tag);color:var(--tag-ink)}
+.sub{font-size:13px;color:var(--meta);margin-top:4px}
+.more{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.2,.8,.2,1)}
+.more>div{overflow:hidden}
+.card.open .more{grid-template-rows:1fr}
+.card.open{grid-column:span 1}
+.split{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.split div{background:var(--nest);border-radius:12px;padding:10px 12px}.split span{display:block;font-size:11px;color:var(--meta)}.split b{font-size:17px;font-weight:400;letter-spacing:-.02em}
+.chev{font-size:12px;color:var(--meta);margin-top:10px;display:flex;align-items:center;gap:6px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:400;color:var(--meta);font-size:12px;padding:6px 4px}
+.tbl td{padding:10px 4px;border-top:1px solid var(--rule)}.tbl .n{text-align:right;font-variant-numeric:tabular-nums}
+.tbl tr.r:hover td{background:var(--nest)}
+.av{display:inline-block;width:26px;height:26px;border-radius:50%;vertical-align:middle;margin-right:10px;background:linear-gradient(135deg,#d6cfc4,#857c70)}
+.st{font-size:11.5px;padding:3px 10px;border-radius:99px;border:1px solid var(--rule);color:var(--ink2)}.st.k{background:var(--tag);color:var(--tag-ink);border-color:transparent}
+.money{color:var(--rev-ink);font-weight:500}
+.ai{background:linear-gradient(160deg,#26282a,#141516);color:#f3f4f4;border:0}
+body.dark .ai{background:linear-gradient(160deg,#2c2e31,#1a1b1d)}
+.ai .ct small{color:#b9bcbf;border-color:rgba(255,255,255,.14)}
+.ai p{margin:0 0 14px;font-size:18px;line-height:1.35;letter-spacing:-.015em}.ai p em{font-family:var(--serif);font-size:20px}
+.ask{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 16px;border-radius:14px;background:rgba(255,255,255,.08);font-size:13px;color:#b9bcbf;cursor:pointer}.ask b{margin-left:auto;width:32px;height:32px;border-radius:10px;background:#f3f4f4;color:#141516;display:grid;place-items:center}
+.sugg{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.sugg span{font-size:11.5px;padding:5px 10px;border-radius:10px;background:rgba(255,255,255,.07);color:#cfd1d3;cursor:pointer}
+.act{display:flex;gap:8px;margin-top:12px}.act button{all:unset;cursor:pointer;font-size:12.5px;padding:7px 14px;border-radius:10px;background:#f3f4f4;color:#141516;font-weight:500}.act button.g{background:rgba(255,255,255,.08);color:#e3e5e6}
+.chart{width:100%;height:250px;display:block}.chart text{fill:var(--meta);font-size:11px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--ink2)}.legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;vertical-align:-1px}
+.tip{position:absolute;padding:12px 16px;border-radius:14px;background:var(--card);box-shadow:0 18px 40px -16px rgba(0,0,0,.35);border:1px solid var(--rule);font-size:12.5px;pointer-events:none;transition:left .2s,top .2s}
+.tip b{font-size:24px;font-weight:300;letter-spacing:-.03em}.tip .g{font-size:11px;color:var(--rev-ink);background:color-mix(in srgb,var(--rev) 22%,transparent);padding:2px 7px;border-radius:99px;margin-left:6px;font-weight:600}
+.tip div{color:var(--ink2);margin-top:3px}
+.ring{width:118px;height:118px}.ring text{fill:var(--ink);font:300 26px Geist;letter-spacing:-1px}
+.mini{display:flex;flex-direction:column;gap:8px;flex:1}.mini div{display:flex;justify-content:space-between;font-size:13px;padding-bottom:8px;border-bottom:1px solid var(--rule)}.mini b{font-weight:500}
+.dots{display:flex;align-items:flex-end;gap:5px;height:42px;margin-left:auto}.dots i{width:4px;border-radius:2px;background:var(--wave)}.dots i.on{background:var(--data)}
+.kspark{margin-left:auto;width:140px;height:44px}
+.heat{display:grid;grid-template-columns:40px repeat(7,1fr);gap:4px;font-size:10.5px;color:var(--meta)}
+.heat i{height:20px;border-radius:5px;background:var(--data)}
+.seg{display:flex;flex-direction:column;gap:10px}
+.seg .s{display:grid;grid-template-columns:110px 1fr 40px;gap:10px;align-items:center;font-size:13px}
+.seg .s u{display:block;height:8px;border-radius:99px;background:var(--nest);position:relative;overflow:hidden}.seg .s u i{position:absolute;inset:0 auto 0 0;background:var(--data);border-radius:99px}
+.seg .s .n{text-align:right;font-variant-numeric:tabular-nums}
+.camp{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cc{border-radius:16px;padding:14px;background:var(--nest);position:relative;overflow:hidden;cursor:pointer}
+.cc b{display:block;font-weight:500}.cc small{color:var(--meta);font-size:12px}
+.cc .bar{height:6px;border-radius:99px;background:var(--rule);margin:12px 0 6px;overflow:hidden}.cc .bar i{display:block;height:100%;background:var(--data);border-radius:99px}
+.cc .v{display:flex;justify-content:space-between;font-size:12px;color:var(--meta)}.cc .v b{display:inline;color:var(--rev-ink)}
+
+/* command palette */
+.pal{position:fixed;inset:0;background:rgba(10,11,12,.45);backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:9}
+.pal.on{display:flex;animation:fade .2s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.pbox{width:min(640px,92vw);border-radius:22px;background:#161718;color:#f1f2f2;box-shadow:0 40px 80px -30px #000;border:1px solid rgba(255,255,255,.08);overflow:hidden}
+.pin{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.07);font-size:16px}
+.pin input{all:unset;flex:1;font-size:16px}.pin kbd{font:500 11px "Geist Mono";padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.1)}
+.pgroup{padding:10px 8px}.pgroup h6{margin:4px 10px 6px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#7d8186}
+.pi{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;font-size:14px;cursor:pointer}.pi:hover,.pi.sel{background:rgba(255,255,255,.07)}
+.pi i{width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-style:normal;font-size:12px}.pi small{margin-left:auto;color:#7d8186}
+.pans{padding:16px 20px 20px;border-top:1px solid rgba(255,255,255,.07);display:none}.pans.on{display:block}
+.pans p{margin:0 0 10px;font-size:15px;line-height:1.5}.pans p em{font-family:var(--serif);font-size:17px}
+@media (max-width:1150px){.grid{grid-template-columns:1fr}.hgrid{grid-template-columns:1fr}.folders{display:none}.links{display:none}.cmd{min-width:0}.camp{grid-template-columns:1fr}}
+</style></head><body class="light">
+
+<div class="note"><div><h1>Round 4 · <em>the living front desk</em></h1><p>Round 3's layout, now alive: tabs slide, every tab has its own hero, the day timeline fills hour by hour, cards open in place, folder cards lift, and <b>⌘K</b> (or the Ask bar) opens Nora. Click around: Today, Marketing and Clients are built.</p></div>
+<div class="sw"><button data-m="light" class="on">Light</button><button data-m="dark">Dark</button></div></div>
+
+<div class="app">
+ <div class="hero"><svg class="silk" viewBox="0 0 1400 420" preserveAspectRatio="xMidYMid slice"><defs><filter id="b1"><feGaussianBlur stdDeviation="16"/></filter><filter id="b2"><feGaussianBlur stdDeviation="4"/></filter>
+   <linearGradient id="vg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f1011"/><stop offset=".55" stop-color="#2b2d30" stop-opacity=".5"/><stop offset="1" stop-color="#0f1011"/></linearGradient></defs>
+   <rect width="1400" height="420" fill="#0f1011"/><g filter="url(#b1)"><path d="M480 -40 C580 140 660 200 860 460" stroke="#4b4e52" stroke-width="110" fill="none"/><path d="M640 -60 C720 110 790 230 1000 460" stroke="#2e3033" stroke-width="80" fill="none"/><path d="M800 -40 C860 100 930 250 1150 460" stroke="#57595d" stroke-width="44" fill="none"/></g>
+   <g filter="url(#b2)" opacity=".7"><path d="M540 -40 C620 130 710 210 900 460" stroke="#8a8d91" stroke-width="3" fill="none"/><path d="M720 -40 C780 110 850 240 1060 460" stroke="#9a9da1" stroke-width="2" fill="none"/></g><rect width="1400" height="420" fill="url(#vg)"/></svg>
+  <div class="nav"><div class="logo"><svg viewBox="0 0 48 48"><path d="M8 44V22a16 16 0 0 1 32 0v22M17 44V24a7 7 0 0 1 14 0v20" fill="none" stroke="#f3f4f4" stroke-width="4"/></svg>Brand</div>
+   <div class="links" id="links"><span class="pillbg" id="pillbg"></span></div>
+   <div class="cmd" id="cmd"><span class="dot"></span>Ask Nora or jump to…<kbd>⌘K</kbd></div>
+   <span class="ic">✉<b>3</b></span><span class="ic">◔<b>1</b></span><span class="me"></span></div>
+  <div id="heroView"></div>
+ </div>
+ <div class="body" id="views"></div>
+</div>
+
+<div class="pal" id="pal"><div class="pbox"><div class="pin">✦<input id="pq" placeholder="Ask Nora anything, or type a page or client…"><kbd>esc</kbd></div>
+ <div class="pgroup" id="plist"></div><div class="pans" id="pans"></div></div></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const TABS=['Today','Inbox','Calendar','Clients','Marketing','Insights'];
+links.innerHTML+=TABS.map(t=>`<button data-t="${t}">${t}</button>`).join('');
+const ring=(p,col='var(--data)')=>{const r=50,c=2*Math.PI*r;return `<svg class="ring" viewBox="0 0 118 118"><circle cx="59" cy="59" r="${r}" fill="none" stroke="var(--rule)" stroke-width="7"/><circle cx="59" cy="59" r="${r}" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c*p/100} ${c}" transform="rotate(-90 59 59)"/><text x="59" y="68" text-anchor="middle">${p}%</text></svg>`};
+const spark=col=>`<svg class="kspark" viewBox="0 0 140 44"><path d="M0 34 L10 30 18 36 28 24 36 28 46 18 56 22 64 14 74 20 84 10 92 16 102 8 112 14 122 6 132 12 140 4" fill="none" stroke="${col}" stroke-width="2"/></svg>`;
+const dots=`<div class="dots">${[18,30,22,40,26,36,14,42,24,34,20,38,28].map((h,i)=>`<i class="${i===7?'on':''}" style="height:${h}px"></i>`).join('')}</div>`;
+function waveChart(){const W=760,H=250,base=140,cols=12,cw=38,gap=(W-60-cols*cw)/(cols-1);let g=`<defs><pattern id="wv" width="14" height="8" patternUnits="userSpaceOnUse"><path d="M0 4 Q3.5 0 7 4 T14 4" fill="none" stroke="var(--wave)" stroke-width=".9"/></pattern></defs>`;
+ [[30,20],[80,10],[base,0],[220,10]].forEach(([y,v])=>g+=`<text x="0" y="${y+4}">${v}</text><line x1="26" x2="${W}" y1="${y}" y2="${y}" stroke="var(--rule)" stroke-dasharray="3 5"/>`);
+ const up=[48,44,78,40,66,54,96,62,72,48,66,58],dn=[50,36,28,48,44,38,62,54,32,52,48,34];
+ for(let i=0;i<cols;i++){const x=26+i*(cw+gap);
+  g+=`<g class="col" data-i="${i}" style="cursor:pointer"><rect x="${x-6}" y="8" width="${cw+12}" height="${H-26}" fill="transparent" rx="6" class="hit"/>
+   <rect x="${x}" y="${base-up[i]}" width="${cw}" height="${up[i]-2}" rx="3" fill="url(#wv)" stroke="var(--rule)" class="u"/><rect x="${x}" y="${base-up[i]}" width="${cw}" height="2.4" rx="1" fill="var(--rev)"/>
+   <rect x="${x}" y="${base+2}" width="${cw}" height="${dn[i]}" rx="3" fill="url(#wv)" stroke="var(--rule)" class="d"/><rect x="${x}" y="${base+dn[i]}" width="${cw}" height="2.4" rx="1" fill="var(--data)"/></g>`}
+ ['May','Jun','Jul','Aug','Sep','Oct'].forEach((m,i)=>g+=`<text x="${40+i*128}" y="${H-2}">${m}</text>`);
+ return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" id="wc">${g}</svg>`}
+
+const HERO={
+ Today:()=>`<div class="hgrid"><div class="greet"><div class="eb">Friday 30 October · open until 20:00</div><h1>Good evening,<em>Layla Haddad</em></h1><p>8 appointments today, next at 14:00. Nora answered 23 chats since morning and booked 5 of them.</p>
+   <div class="hstats"><div><span>Booked today</span><b class="rev">$640</b></div><div><span>Chats</span><b>23</b></div><div><span>Reply time</span><b>1.2s</b></div></div></div>
+  <div class="folders"><div class="fd a" data-tab="Next up"><b>Rana · Hair colour</b><small>14:00 – 16:00 · with Maya</small><div class="row"><span>Regular · 7 visits</span><span>Likes ash tones</span></div></div>
+   <div class="fd b" data-tab="Today"><b>Today's schedule</b><small>8 booked · 2 free slots · 78% full</small><div class="row"><span class="k">+2 waitlist</span><span>3 confirmations sent</span><span>1 to mark</span></div></div></div></div>
+  <div class="timeline"><div class="lbl">Today<b>78% full</b></div><div class="track" id="track"></div></div>`,
+ Marketing:()=>`<div class="hgrid"><div class="greet"><div class="eb">Marketing · last 30 days</div><h1>Campaigns brought<em>$3,480 back</em></h1><p>38 bookings from 412 messages. “We miss you” is your best offer this month: 9 of 42 regulars came back.</p>
+   <div class="hstats"><div><span>Revenue won</span><b class="rev">$3,480</b></div><div><span>Conversion</span><b>9.2%</b></div><div><span>Opted in</span><b>64%</b></div></div></div>
+  <div class="folders"><div class="fd a" data-tab="Running"><b>Birthday treat</b><small>Autopilot · 2 sent today</small><div class="row"><span>3 booked this month</span></div></div>
+   <div class="fd b" data-tab="Ready to send"><b>Thursday special</b><small>For 12 regulars · 20% off · ~$240 expected</small><div class="row"><span class="k">Launch</span><span>Edit message</span></div></div></div></div><div style="height:28px"></div>`,
+ Clients:()=>`<div class="hgrid"><div class="greet"><div class="eb">Clients · 201 people</div><h1>Your regulars are<em>your business</em></h1><p>12% of clients bring 48% of revenue. 9 regulars haven't been back in 60 days; Nora can invite them.</p>
+   <div class="hstats"><div><span>Lifetime revenue</span><b class="rev">$48.2k</b></div><div><span>Regulars</span><b>38</b></div><div><span>New this month</span><b>23</b></div></div></div>
+  <div class="folders"><div class="fd a" data-tab="At risk"><b>9 lapsed regulars</b><small>last visit 60–90 days ago</small><div class="row"><span>$1,260 at stake</span></div></div>
+   <div class="fd b" data-tab="VIP"><b>Rana Haddad</b><small>$1,240 lifetime · 14 visits · hair colour</small><div class="row"><span class="k">Send a thank-you</span><span>Profile</span></div></div></div></div><div style="height:28px"></div>`};
+HERO.Inbox=HERO.Calendar=HERO.Insights=HERO.Today;
+
+const AI=(t,acts)=>`<div class="card ai"><div class="ct">Ask Nora <small>AI partner</small></div><p>${t}</p>${acts?`<div class="act">${acts}</div>`:''}<div class="ask" data-open>Ask anything about your business…<b>↑</b></div>
+  <div class="sugg"><span data-q="What needs me today?">What needs me today?</span><span data-q="Best campaign next">Best campaign next</span><span data-q="Forecast November">Forecast November</span></div></div>`;
+const VIEW={
+ Today:`<div class="grid"><div class="col">
+   <div class="card br x" data-x><div class="ct">Revenue this month</div><div class="kpi"><span class="num">$12,480</span><span class="tag">+18%</span></div><div class="kpi"><span class="sub">$10,560 last month</span>${spark('var(--rev)')}</div>
+    <div class="more"><div><div class="split"><div><span>Services</span><b>$9,840</b></div><div><span>Deposits</span><b>$1,200</b></div><div><span>Campaigns</span><b class="money">$3,480</b></div></div><div class="sub" style="margin-top:10px">Best day: Saturday 18 Oct, $1,240.</div></div></div><div class="chev">Click to open ⌄</div></div>
+   <div class="card br x" data-x><div class="ct">Booked by Nora</div><div class="kpi"><span class="num">142</span><span class="tag">+9%</span>${dots}</div><div class="sub">130 last month</div>
+    <div class="more"><div><div class="split"><div><span>WhatsApp</span><b>88</b></div><div><span>Web</span><b>41</b></div><div><span>Telegram</span><b>13</b></div></div></div></div><div class="chev">Click to open ⌄</div></div>
+   <div class="card br"><div class="ct">Agreed to offers <small>201 clients</small></div><div class="kpi" style="gap:18px">${ring(64)}<div class="mini"><div><span>Opted in</span><b>128</b></div><div><span>This week</span><b>+23</b></div><div style="border:0;padding:0"><span>Said stop</span><b>4</b></div></div></div></div></div>
+  <div class="col"><div class="card" style="position:relative"><div class="ct">Bookings trend <small>Hover a month</small></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div class="legend"><span><i style="background:var(--rev)"></i>Revenue</span><span><i style="background:var(--data)"></i>Bookings</span></div><div class="kpi" style="gap:8px"><span class="num sm">1,245</span><span class="tag">+2.7%</span></div></div>
+    ${waveChart()}<div class="tip" id="tip" style="left:40%;top:120px"><b>$1,240</b><span class="g">+12%</span><div>Sep · 96 bookings</div></div></div>
+   <div class="card"><div class="ct">Today's appointments <small>Calendar →</small></div><table class="tbl"><thead><tr><th>Client</th><th>Service</th><th>Time</th><th class="n">Value</th><th>Status</th></tr></thead><tbody>
+    <tr class="r"><td><span class="av"></span>Rana Haddad</td><td>Hair colour</td><td>14:00</td><td class="n money">$90</td><td><span class="st k">Confirmed</span></td></tr>
+    <tr class="r"><td><span class="av"></span>Karim Saad</td><td>Haircut</td><td>16:30</td><td class="n money">$35</td><td><span class="st k">Confirmed</span></td></tr>
+    <tr class="r"><td><span class="av"></span>Lucía Pérez</td><td>Manicure</td><td>18:00</td><td class="n money">$20</td><td><span class="st">Waitlist</span></td></tr></tbody></table></div></div>
+  <div class="col">${AI('Thursday is only <em>30% booked</em>. Send your regulars a Thursday treat? About +$240.','<button>Prepare it</button><button class="g">Not now</button>')}
+   <div class="card br"><div class="ct">Busiest hours <small>4 weeks</small></div><div class="heat">${['','M','T','W','T','F','S','S'].map(d=>`<span>${d}</span>`).join('')}${['10:00','12:00','14:00','16:00','18:00'].map((h,r)=>`<span>${h}</span>`+[...Array(7)].map((_,c)=>`<i style="opacity:${(.12+Math.abs(Math.sin(r*1.3+c*.9))*.85).toFixed(2)}"></i>`).join('')).join('')}</div></div></div></div>`,
+ Marketing:`<div class="grid" style="grid-template-columns:1fr 340px"><div class="col">
+   <div class="card br"><div class="ct">Campaign studio <small>3 ready</small></div><div class="camp">${[['We miss you','Lapsed 60d · 15% off',72,'$405'],['Birthday treat','Birthdays · perk',100,'$150'],['Thursday special','Regulars · 20% off',0,'~$240']].map(([n,s,p,v])=>`<div class="cc"><b>${n}</b><small>${s}</small><div class="bar"><i style="width:${p}%"></i></div><div class="v"><span>${p?p+'% sent':'ready'}</span><span>${v.startsWith('~')?'expected':'won'} <b>${v}</b></span></div></div>`).join('')}</div></div>
+   <div class="card" style="position:relative"><div class="ct">Messages → bookings <small>weekly</small></div>${waveChart()}</div></div>
+  <div class="col">${AI('Your best audience is <em>lapsed regulars</em>: 21% came back. Run “We miss you” again for the 14 you haven\'t reached?','<button>Prepare it</button>')}
+   <div class="card br"><div class="ct">Audience</div><div class="seg">${[['Regulars',38,76],['New',23,46],['Lapsed',14,28],['VIP',9,18]].map(([n,v,p])=>`<div class="s"><span>${n}</span><u><i style="width:${p}%"></i></u><span class="n">${v}</span></div>`).join('')}</div></div></div></div>`,
+ Clients:`<div class="grid" style="grid-template-columns:1fr 340px"><div class="col"><div class="card"><div class="ct">Clients <small>201 · sort by value</small></div><table class="tbl"><thead><tr><th>Client</th><th>Visits</th><th>Last visit</th><th>Favourite</th><th class="n">Spent</th><th>Offers</th></tr></thead><tbody>
+   ${[['Rana Haddad',14,'2 days ago','Hair colour','$1,240','Yes'],['Dana Hayek',9,'1 week ago','Facial','$620','Yes'],['Karim Saad',7,'Today','Haircut','$245','No'],['Tala Hayek',6,'68 days ago','Haircut','$210','Yes'],['Maya Daher',4,'3 weeks ago','Manicure','$96','Yes']].map(r=>`<tr class="r"><td><span class="av"></span>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td class="n money">${r[4]}</td><td><span class="st ${r[5]==='Yes'?'k':''}">${r[5]}</span></td></tr>`).join('')}</tbody></table></div></div>
+  <div class="col">${AI('<em>Tala</em> used to come every 3 weeks and has been away 68 days. Send her a personal note?','<button>Write it</button>')}<div class="card br"><div class="ct">Who brings revenue</div><div class="kpi" style="gap:18px">${ring(48,'var(--rev)')}<div class="mini"><div><span>Top 12%</span><b>48%</b></div><div><span>Regulars</span><b>34%</b></div><div style="border:0;padding:0"><span>Others</span><b>18%</b></div></div></div></div></div></div>`};
+VIEW.Inbox=VIEW.Calendar=VIEW.Insights=`<div class="card br"><div class="ct">Coming in the next round</div><p class="sub">Inbox, Calendar and Insights get their own hero and layout once you approve this direction. Today, Marketing and Clients show the idea.</p></div>`;
+views.innerHTML=TABS.map(t=>`<div class="view" data-v="${t}">${VIEW[t]}</div>`).join('');
+
+function timeline(){const t=$('#track');if(!t)return;const H0=10,H1=20,pct=h=>(h-H0)/(H1-H0)*100;
+ const slots=[[10,11,'Dana · Facial'],[11,12.5,'Test lab'],[12.5,13.5,'Rita'],[14,16,'Rana · Colour'],[16.5,17.25,'Karim'],[17.5,18,'free'],[18,18.5,'Lucía'],[19,20,'free']];
+ t.innerHTML=slots.map(([a,b,n])=>`<div class="slot ${n==='free'?'free':''}" style="left:${pct(a)}%;width:calc(${pct(b)-pct(a)}% - 4px)">${n==='free'?'free':n}</div>`).join('')+`<div class="now" style="left:${pct(13.6)}%"></div><div class="hours">${[10,12,14,16,18,20].map(h=>`<span>${h}:00</span>`).join('')}</div>`}
+function go(t){$$('.links button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));const b=$(`.links button[data-t="${t}"]`);pillbg.style.left=b.offsetLeft+'px';pillbg.style.width=b.offsetWidth+'px';
+ heroView.innerHTML=HERO[t]();$$('.view').forEach(v=>v.classList.toggle('on',v.dataset.v===t));timeline();bindChart()}
+function bindChart(){const svg=$('.view.on #wc'),tip=$('.view.on #tip');if(!svg||!tip)return;const rv=[620,540,980,500,860,720,1240,800,930,610,840,760],bk=[48,44,78,40,66,54,96,62,72,48,66,58],m=['May','May','Jun','Jun','Jul','Jul','Aug','Aug','Sep','Sep','Oct','Oct'];
+ svg.querySelectorAll('.col').forEach(g=>g.addEventListener('mouseenter',()=>{const i=+g.dataset.i,r=g.getBoundingClientRect(),p=svg.parentElement.getBoundingClientRect();
+  svg.querySelectorAll('.u').forEach((u,k)=>u.setAttribute('fill',k===i?'var(--ink)':'url(#wv)'));tip.style.left=Math.min(r.left-p.left+20,p.width-190)+'px';
+  tip.innerHTML=`<b>$${rv[i].toLocaleString()}</b><span class="g">${i?((rv[i]-rv[i-1])/rv[i-1]*100>0?'+':'')+Math.round((rv[i]-rv[i-1])/rv[i-1]*100)+'%':'—'}</span><div>${m[i]} · ${bk[i]} bookings</div>`}))}
+document.addEventListener('click',e=>{const tb=e.target.closest('.links button');if(tb)return go(tb.dataset.t);
+ const x=e.target.closest('[data-x]');if(x){x.classList.toggle('open');x.querySelector('.chev').textContent=x.classList.contains('open')?'Close ⌃':'Click to open ⌄';return}
+ const sm=e.target.closest('.sw button');if(sm){document.body.className=sm.dataset.m;document.documentElement.style.background=sm.dataset.m==="dark"?"#0d0e0f":"#e7e9eb";$$('.sw button').forEach(b=>b.classList.toggle('on',b===sm));return}
+ if(e.target.closest('#cmd,[data-open]'))return openPal('');const q=e.target.closest('[data-q]');if(q)return openPal(q.dataset.q,true);
+ const pi=e.target.closest('.pi');if(pi){if(pi.dataset.go){closePal();return go(pi.dataset.go)}return answer(pi.dataset.ask)}
+ if(e.target.id==='pal')closePal()});
+const ITEMS=[['✦','What needs me today?','ask'],['✦','Which campaign should I run next?','ask'],['✦','Forecast November revenue','ask'],['→','Today','Today'],['→','Marketing','Marketing'],['→','Clients','Clients'],['◔','Rana Haddad · client','Clients']];
+function list(q){q=q.toLowerCase();plist.innerHTML=`<h6>${q?'Results':'Suggestions'}</h6>`+ITEMS.filter(i=>!q||i[1].toLowerCase().includes(q)).map(([ic,t,a],k)=>`<div class="pi ${k?'':'sel'}" ${a==='ask'?`data-ask="${t}"`:`data-go="${a}"`}><i>${ic}</i>${t}<small>${a==='ask'?'Ask Nora':'Go to'}</small></div>`).join('')+(q?`<div class="pi" data-ask="${q}"><i>✦</i>Ask Nora: “${q}”<small>↵</small></div>`:'')}
+function answer(q){pans.classList.add('on');pans.innerHTML=`<p><b>${q}</b></p><p>Two things: <em>1 visit to mark</em> as came or no-show, and Thursday is 30% booked. I prepared a Thursday offer for 12 regulars (about +$240). Want me to send it?</p><div class="act"><button>Send it</button><button class="g">Show me first</button></div>`}
+function openPal(q,ask){pal.classList.add('on');pq.value=q;list(q);pans.classList.remove('on');setTimeout(()=>pq.focus(),30);if(ask)answer(q)}
+function closePal(){pal.classList.remove('on')}
+pq.addEventListener('input',()=>list(pq.value));pq.addEventListener('keydown',e=>{if(e.key==='Enter'&&pq.value.trim())answer(pq.value.trim())});
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openPal('')}if(e.key==='Escape')closePal()});
+addEventListener('resize',()=>go($('.links button.on')?.dataset.t||'Today'));
+go('Today');
+</script></body></html>

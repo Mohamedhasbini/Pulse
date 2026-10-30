@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Name Options</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e6e8ea;color:#141516;font:14px/1.5 Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:40px 16px 80px}
+h1{font-size:clamp(28px,4vw,42px);font-weight:500;letter-spacing:-.035em;margin:0 0 6px}h1 em{font-family:"Instrument Serif",serif;font-weight:400}
+.lead{color:#5f6368;max-width:76ch;margin:0 0 8px}
+h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#80848a;margin:36px 0 12px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.c{border-radius:20px;overflow:hidden;background:#f6f7f7;box-shadow:0 1px 0 #fff inset,0 14px 28px -22px rgba(0,0,0,.35)}
+.m{height:120px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:30px;font-weight:500;letter-spacing:-.04em;color:#f2f3f3;
+  background:linear-gradient(118deg,#0f1011 0%,#1d1f21 32%,#383b3f 48%,#16171a 60%,#2a2d31 72%,#0f1011 100%)}
+.m svg{width:36px;height:36px}
+.l{height:70px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:22px;font-weight:500;letter-spacing:-.035em;background:#e9ebec}.l svg{width:24px;height:24px}
+.t{padding:14px 16px}.t h3{margin:0;font-size:16px;font-weight:500}.t h3 em{font-family:"Instrument Serif",serif;font-weight:400;color:#6b6f73;margin-left:6px;font-size:18px}
+.t p{margin:4px 0 0;color:#5f6368;font-size:12.5px}
+.t .k{display:inline-block;margin-top:8px;font-size:11px;padding:3px 9px;border-radius:99px;background:#141516;color:#fff}
+.t .k.g{background:transparent;border:1px solid rgba(20,21,22,.15);color:#45494e}
+</style></head><body><div class="wrap">
+<h1>Name options · <em>for later</em></h1>
+<p class="lead">Fourteen names in four families, each shown as a mark on the graphite hero and on silver. Tags say what each one is best at. None are checked for trademarks or domains yet; we'll do that once you shortlist 2 or 3.</p>
+<div id="out"></div></div>
+<script>
+const S={
+ arch:c=>`<svg viewBox="0 0 48 48"><path d="M8 44V22a16 16 0 0 1 32 0v22M17 44V24a7 7 0 0 1 14 0v20" fill="none" stroke="${c}" stroke-width="4"/></svg>`,
+ m:c=>`<svg viewBox="0 0 48 48"><path d="M6 42V18a9 9 0 0 1 18 0v24M24 18a9 9 0 0 1 18 0v24" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="42" r="3.4" fill="${c}"/></svg>`,
+ clock:c=>`<svg viewBox="0 0 48 48"><path d="M24 4a20 20 0 1 0 20 20" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round"/><path d="M24 14v10l7 5" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`,
+ door:c=>`<svg viewBox="0 0 48 48"><rect x="9" y="5" width="30" height="39" rx="3" fill="none" stroke="${c}" stroke-width="4"/><circle cx="32" cy="26" r="2.8" fill="${c}"/></svg>`,
+ flame:c=>`<svg viewBox="0 0 48 48"><path d="M24 4c7 9 12 14 12 23a12 12 0 0 1-24 0c0-6 3-10 6-13 0 5 2 8 5 9-2-7 0-13 1-19z" fill="none" stroke="${c}" stroke-width="3.6" stroke-linejoin="round"/></svg>`,
+ window:c=>`<svg viewBox="0 0 48 48"><path d="M10 44V20a14 14 0 0 1 28 0v24z" fill="none" stroke="${c}" stroke-width="4"/><path d="M24 8v36M10 26h28" stroke="${c}" stroke-width="3"/></svg>`,
+ star:c=>`<svg viewBox="0 0 48 48"><path d="M24 4v40M4 24h40M10 10l28 28M38 10 10 38" stroke="${c}" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="24" r="6" fill="${c}"/></svg>`,
+ wave:c=>`<svg viewBox="0 0 48 48"><path d="M4 20c6-8 14-8 20 0s14 8 20 0M4 32c6-8 14-8 20 0s14 8 20 0" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`,
+ knot:c=>`<svg viewBox="0 0 48 48"><circle cx="18" cy="24" r="12" fill="none" stroke="${c}" stroke-width="4"/><circle cx="30" cy="24" r="12" fill="none" stroke="${c}" stroke-width="4"/></svg>`,
+ bell:c=>`<svg viewBox="0 0 48 48"><path d="M12 34V22a12 12 0 0 1 24 0v12M8 34h32M20 40h8" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="7" r="3" fill="${c}"/></svg>`,
+ key:c=>`<svg viewBox="0 0 48 48"><circle cx="16" cy="24" r="9" fill="none" stroke="${c}" stroke-width="4"/><path d="M25 24h18M37 24v7M43 24v5" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`,
+ sun:c=>`<svg viewBox="0 0 48 48"><path d="M6 34a18 18 0 0 1 36 0" fill="none" stroke="${c}" stroke-width="4"/><path d="M4 40h40" stroke="${c}" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="34" r="5" fill="${c}"/></svg>`};
+const F=[
+ ['Welcome and hospitality',[['Atrium','the welcoming hall','The open hall where every guest is received.','arch',['Premium','Easy in AR/ES']],
+  ['Maître','the host who seats you','From maître d’, the person who greets and seats guests.','m',['Luxe','Beauty & dining']],
+  ['Foyer','where visits begin','The entrance room of a home or theatre.','door',['Clear meaning']],
+  ['Vestibule → Vesti','the first room','Short form of vestibule; soft and modern.','window',['Unique']],
+  ['Hostra','the host, always on','Host + -ra; techy, says what it does.','bell',['Says the job']]]],
+ ['Time and the right moment',[['Ora','the hour, now','Italian/Latin for now; tiny and bold.','clock',['Short','App icon']],
+  ['Kairo','the perfect moment','From kairos: the right reply, slot and offer.','star',['Techy']],
+  ['Dawnly','first light of the day','Every day starts organised; warm.','sun',['Friendly']]]],
+ ['Warmth and home',[['Vesta','keeper of the hearth','Roman goddess of the hearth and home; classic.','flame',['Classic','Strong mark']],
+  ['Hearth','the warm centre','Where people gather; calm, trustworthy.','flame',['Warm']],
+  ['Oriel','the bay window','An architectural window that lets light in; elegant.','window',['Elegant','Pairs with Atrium']]]],
+ ['Connection and flow',[['Tandem','two working as one','You and your AI, side by side.','knot',['Partner story']],
+  ['Ripple','one message, many results','A reply that brings bookings back.','wave',['Marketing story']],
+  ['Keyhold','you hold the keys','Your business, fully in hand.','key',['Control story']]]]];
+out.innerHTML=F.map(([fam,list])=>`<h2>${fam}</h2><div class="grid">${list.map(([n,em,t,s,tags])=>`<div class="c"><div class="m">${S[s]('#f2f3f3')}${n.split(' ')[0]}</div><div class="l">${S[s]('#141516')}${n.split(' ')[0]}</div><div class="t"><h3>${n}<em>${em}</em></h3><p>${t}</p>${tags.map((g,i)=>`<span class="k ${i?'g':''}">${g}</span> `).join('')}</div></div>`).join('')}</div>`).join('');
+</script></body></html>
