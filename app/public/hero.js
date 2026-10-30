@@ -58,6 +58,7 @@
     hero.querySelector('.hx-stats').innerHTML = c.stats || '';
     hero.querySelector('.hx-folders').innerHTML = c.folders || '';
     await extras(id, hero);
+    const xs = hero.parentElement.querySelectorAll('.hx-x'); window.PVBoard?.(id, xs[xs.length - 1] || hero);
   }
 
   // ---------- round 5: one idea per tab ----------
@@ -118,6 +119,7 @@
     h.insertAdjacentHTML('beforeend', `<div class="hx-folders hx-today">${c.folders}</div>
       <div class="hx-tl"><div class="hx-tl-l">Today<b>${full}% full</b></div><div class="hx-track">${slots || '<span class="hx-empty">No bookings yet today</span>'}${now > H0 && now < H1 ? `<i class="hx-now" style="left:${pct(now)}%"></i>` : ''}
         <div class="hx-hours">${Array.from({ length: Math.floor((H1 - H0) / 2) + 1 }, (_, i) => `<span>${String(H0 + i * 2).padStart(2, '0')}:00</span>`).join('')}</div></div></div>`);
+    window.PVBoard?.('today', h);
   }
 
   // ---------- sub-tabs: a glass dropdown under each top-bar tab ----------

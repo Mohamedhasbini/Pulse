@@ -1,0 +1,111 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pulse Chart Drafts</title>
+<style>
+:root{--bg:#0f1113;--card:#181b1e;--line:#2a2e33;--ink:#eef0f2;--mute:#9aa1a8;--silver:#c9ced3;--lime:#c6f432;--lime2:#c6f43255}
+body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#23272b,transparent),var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,sans-serif;padding:32px 16px}
+h1{font-size:34px;margin:0 0 6px}p.s{color:var(--mute);margin:0 0 28px}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px;max-width:1400px}
+.c{background:linear-gradient(160deg,#1d2124,#15181a);border:1px solid var(--line);border-radius:22px;padding:20px;overflow:hidden}
+.n{display:inline-block;background:var(--lime);color:#111;font-weight:800;border-radius:99px;padding:2px 10px;font-size:13px}
+.c h3{font-size:18px;margin:10px 0 2px}.c small{color:var(--mute);display:block;margin-bottom:14px;font-size:13px}
+.big{font-size:44px;font-weight:800;letter-spacing:-1px}.mut{color:var(--mute);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.bar{height:8px;border-radius:9px;background:#2a2e33;overflow:hidden}.bar i{display:block;height:100%;background:var(--lime);border-radius:9px}
+.pill{border:1px solid var(--line);border-radius:99px;padding:2px 9px;font-size:12px;color:var(--silver)}
+.heat{display:grid;grid-template-columns:40px repeat(7,1fr);gap:4px;font-size:11px;color:var(--mute)}.heat b{height:22px;border-radius:6px;display:block}
+svg text{fill:var(--mute);font-size:11px}
+</style></head><body>
+<h1>Pulse — 16 chart & table drafts</h1><p class="s">Graphite + silver, lime only. Pick by number (e.g. "1, 4, 9, 12").</p>
+<div class="g">
+
+<div class="c"><span class="n">1</span><h3>Revenue area + ghost last period</h3><small>Insights hero. Lime fill, silver dashed comparison.</small>
+<div class="big">$8,420 <span class="mut">+18% vs last 30d</span></div>
+<svg viewBox="0 0 340 120" width="100%"><defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6f432" stop-opacity=".45"/><stop offset="1" stop-color="#c6f432" stop-opacity="0"/></linearGradient></defs>
+<path d="M0 90 C40 80 60 95 90 70 S150 50 180 60 240 30 270 35 320 15 340 20 L340 120 L0 120Z" fill="url(#a)"/><path d="M0 90 C40 80 60 95 90 70 S150 50 180 60 240 30 270 35 320 15 340 20" stroke="#c6f432" stroke-width="2.5" fill="none"/>
+<path d="M0 100 C50 95 80 90 120 85 S200 70 240 65 300 55 340 50" stroke="#c9ced3" stroke-dasharray="4 4" fill="none" opacity=".6"/></svg></div>
+
+<div class="c"><span class="n">2</span><h3>Pivot table — service × weekday</h3><small>Bookings count, lime intensity = volume. Row & column totals.</small>
+<table><tr><th>Service</th><th>Mon</th><th>Wed</th><th>Fri</th><th>Sat</th><th>Σ</th></tr>
+<tr><td>Haircut</td><td>6</td><td style="background:#c6f43233">9</td><td style="background:#c6f43266">14</td><td style="background:#c6f432;color:#111"><b>21</b></td><td><b>50</b></td></tr>
+<tr><td>Color</td><td>2</td><td>4</td><td style="background:#c6f43233">7</td><td style="background:#c6f43266">11</td><td><b>24</b></td></tr>
+<tr><td>Nails</td><td style="background:#c6f43222">5</td><td>3</td><td style="background:#c6f43233">8</td><td style="background:#c6f43244">9</td><td><b>25</b></td></tr>
+<tr><th>Σ</th><th>13</th><th>16</th><th>29</th><th>41</th><th style="color:var(--lime)">99</th></tr></table></div>
+
+<div class="c"><span class="n">3</span><h3>Radial occupancy gauge</h3><small>Calendar: chair-time booked today.</small>
+<svg viewBox="0 0 200 120" width="100%"><path d="M20 110 A80 80 0 0 1 180 110" stroke="#2a2e33" stroke-width="16" fill="none" stroke-linecap="round"/><path d="M20 110 A80 80 0 0 1 152 54" stroke="#c6f432" stroke-width="16" fill="none" stroke-linecap="round"/><text x="100" y="98" text-anchor="middle" style="fill:#eef0f2;font-size:34px;font-weight:800">74%</text></svg></div>
+
+<div class="c"><span class="n">4</span><h3>Busy-hours heatmap</h3><small>When clients message / book. 7 days × time slots.</small>
+<div class="heat"><span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+<span>9am</span><b style="background:#c6f43222"></b><b style="background:#c6f43233"></b><b style="background:#c6f43222"></b><b style="background:#c6f43244"></b><b style="background:#c6f43266"></b><b style="background:#c6f432aa"></b><b style="background:#2a2e33"></b>
+<span>12pm</span><b style="background:#c6f43244"></b><b style="background:#c6f43255"></b><b style="background:#c6f43244"></b><b style="background:#c6f43266"></b><b style="background:#c6f43299"></b><b style="background:#c6f432"></b><b style="background:#2a2e33"></b>
+<span>3pm</span><b style="background:#c6f43233"></b><b style="background:#c6f43244"></b><b style="background:#c6f43266"></b><b style="background:#c6f43288"></b><b style="background:#c6f432cc"></b><b style="background:#c6f432dd"></b><b style="background:#c6f43211"></b>
+<span>6pm</span><b style="background:#c6f43266"></b><b style="background:#c6f43255"></b><b style="background:#c6f43277"></b><b style="background:#c6f43299"></b><b style="background:#c6f432"></b><b style="background:#c6f43288"></b><b style="background:#2a2e33"></b></div></div>
+
+<div class="c"><span class="n">5</span><h3>Donut — revenue by service</h3><small>Lime for top, silver shades for the rest.</small>
+<svg viewBox="0 0 220 130" width="100%"><g transform="translate(65 65) rotate(-90)" fill="none" stroke-width="22"><circle r="45" stroke="#c6f432" stroke-dasharray="127 283"/><circle r="45" stroke="#c9ced3" stroke-dasharray="70 283" stroke-dashoffset="-129"/><circle r="45" stroke="#7d848b" stroke-dasharray="50 283" stroke-dashoffset="-201"/><circle r="45" stroke="#454b51" stroke-dasharray="30 283" stroke-dashoffset="-253"/></g>
+<text x="65" y="70" text-anchor="middle" style="fill:#eef0f2;font-size:18px;font-weight:800">$8.4k</text><text x="130" y="40">● Haircut 45%</text><text x="130" y="60">● Color 25%</text><text x="130" y="80">● Nails 18%</text><text x="130" y="100">● Spa 12%</text></svg></div>
+
+<div class="c"><span class="n">6</span><h3>Leaderboard table with inline bars</h3><small>Clients / staff ranking. Big name, bar = share.</small>
+<table><tr><th>#</th><th>Client</th><th>Spend</th><th style="width:35%"></th></tr>
+<tr><td>1</td><td><b>Lina K.</b></td><td>$1,240</td><td><div class="bar"><i style="width:100%"></i></div></td></tr>
+<tr><td>2</td><td><b>Rania S.</b></td><td>$980</td><td><div class="bar"><i style="width:79%"></i></div></td></tr>
+<tr><td>3</td><td><b>Maya H.</b></td><td>$760</td><td><div class="bar"><i style="width:61%"></i></div></td></tr></table></div>
+
+<div class="c"><span class="n">7</span><h3>Funnel — message → booking</h3><small>The "living front desk" story in one view.</small>
+<svg viewBox="0 0 340 130" width="100%"><g font-weight="700"><rect x="0" y="5" width="340" height="26" rx="8" fill="#c9ced3" opacity=".25"/><rect x="25" y="37" width="290" height="26" rx="8" fill="#c9ced3" opacity=".4"/><rect x="60" y="69" width="220" height="26" rx="8" fill="#c6f432" opacity=".55"/><rect x="95" y="101" width="150" height="26" rx="8" fill="#c6f432"/></g>
+<text x="10" y="22" style="fill:#eef0f2">Chats 412</text><text x="35" y="54" style="fill:#eef0f2">Asked price 280</text><text x="70" y="86" style="fill:#eef0f2">Offered slot 190</text><text x="105" y="118" style="fill:#111;font-weight:800">Booked 131</text></svg></div>
+
+<div class="c"><span class="n">8</span><h3>KPI strip with sparklines</h3><small>Today top row. Big number, tiny trend.</small>
+<table><tr><td><div class="mut">Bookings</div><div class="big" style="font-size:30px">24</div></td><td><svg width="90" height="30"><polyline points="0,25 15,20 30,22 45,12 60,15 75,6 90,4" stroke="#c6f432" stroke-width="2" fill="none"/></svg></td></tr>
+<tr><td><div class="mut">AI answered</div><div class="big" style="font-size:30px">96%</div></td><td><svg width="90" height="30"><polyline points="0,15 15,12 30,14 45,10 60,8 75,9 90,5" stroke="#c6f432" stroke-width="2" fill="none"/></svg></td></tr></table></div>
+
+<div class="c"><span class="n">9</span><h3>Stacked bars — new vs returning</h3><small>Weekly clients. Lime = returning (loyalty).</small>
+<svg viewBox="0 0 340 130" width="100%"><g>
+<rect x="10" y="50" width="30" height="40" rx="5" fill="#c6f432"/><rect x="10" y="92" width="30" height="28" rx="5" fill="#7d848b"/>
+<rect x="60" y="40" width="30" height="50" rx="5" fill="#c6f432"/><rect x="60" y="92" width="30" height="28" rx="5" fill="#7d848b"/>
+<rect x="110" y="55" width="30" height="35" rx="5" fill="#c6f432"/><rect x="110" y="92" width="30" height="28" rx="5" fill="#7d848b"/>
+<rect x="160" y="30" width="30" height="60" rx="5" fill="#c6f432"/><rect x="160" y="92" width="30" height="28" rx="5" fill="#7d848b"/>
+<rect x="210" y="20" width="30" height="70" rx="5" fill="#c6f432"/><rect x="210" y="92" width="30" height="28" rx="5" fill="#7d848b"/>
+<rect x="260" y="10" width="30" height="80" rx="5" fill="#c6f432"/><rect x="260" y="92" width="30" height="28" rx="5" fill="#7d848b"/></g></svg></div>
+
+<div class="c"><span class="n">10</span><h3>Timeline / gantt — chairs today</h3><small>Calendar day view as horizontal bars per staff.</small>
+<svg viewBox="0 0 340 120" width="100%"><text x="0" y="22">Sara</text><text x="0" y="57">Nour</text><text x="0" y="92">Ali</text>
+<rect x="50" y="10" width="70" height="18" rx="6" fill="#c6f432"/><rect x="130" y="10" width="110" height="18" rx="6" fill="#c9ced3"/><rect x="80" y="45" width="140" height="18" rx="6" fill="#c6f432" opacity=".7"/><rect x="230" y="45" width="60" height="18" rx="6" fill="#c9ced3"/><rect x="50" y="80" width="40" height="18" rx="6" fill="#c9ced3"/><rect x="180" y="80" width="150" height="18" rx="6" fill="#c6f432"/>
+<line x1="200" y1="0" x2="200" y2="110" stroke="#c6f432" stroke-dasharray="2 3"/><text x="204" y="118" style="fill:#c6f432">now</text></svg></div>
+
+<div class="c"><span class="n">11</span><h3>Big number + barcode history</h3><small>Ledger style: each bar = one day of revenue.</small>
+<div class="big">$42,180</div><div class="mut" style="margin-bottom:10px">Last 90 days</div>
+<svg viewBox="0 0 340 50" width="100%" id="bc"></svg></div>
+
+<div class="c"><span class="n">12</span><h3>Status table with chips</h3><small>Inbox / bookings list: who, what, state, AI or human.</small>
+<table><tr><th>Client</th><th>Request</th><th>State</th></tr>
+<tr><td><b>Hiba</b></td><td>Color, Sat 3pm</td><td><span class="pill" style="background:var(--lime);color:#111;border:0">Booked</span></td></tr>
+<tr><td><b>Omar</b></td><td>Price for beard</td><td><span class="pill">AI replied</span></td></tr>
+<tr><td><b>Dana</b></td><td>Complaint</td><td><span class="pill" style="border-color:var(--lime);color:var(--lime)">Needs you</span></td></tr></table></div>
+
+<div class="c"><span class="n">13</span><h3>Bullet chart — goal vs actual</h3><small>Monthly targets with lime progress and silver goal tick.</small>
+<div style="display:grid;gap:14px"><div><div class="mut">Revenue · $8.4k / $10k</div><div class="bar" style="height:14px;position:relative"><i style="width:84%"></i></div></div>
+<div><div class="mut">Bookings · 131 / 120</div><div class="bar" style="height:14px"><i style="width:100%"></i></div></div>
+<div><div class="mut">Reviews · 9 / 20</div><div class="bar" style="height:14px"><i style="width:45%"></i></div></div></div></div>
+
+<div class="c"><span class="n">14</span><h3>Cohort retention grid</h3><small>Clients who came back after month 1, 2, 3.</small>
+<table><tr><th>Joined</th><th>M1</th><th>M2</th><th>M3</th></tr>
+<tr><td>Jul</td><td style="background:#c6f432;color:#111">78%</td><td style="background:#c6f43288">54%</td><td style="background:#c6f43255">41%</td></tr>
+<tr><td>Aug</td><td style="background:#c6f432dd;color:#111">71%</td><td style="background:#c6f43277">49%</td><td class="mut">—</td></tr>
+<tr><td>Sep</td><td style="background:#c6f432ee;color:#111">74%</td><td class="mut">—</td><td class="mut">—</td></tr></table></div>
+
+<div class="c"><span class="n">15</span><h3>Activity ring trio</h3><small>Front-desk health: reply speed, booking rate, no-shows.</small>
+<svg viewBox="0 0 340 110" width="100%"><g fill="none" stroke-width="10" stroke-linecap="round">
+<circle cx="55" cy="50" r="38" stroke="#2a2e33"/><circle cx="55" cy="50" r="38" stroke="#c6f432" stroke-dasharray="220 239" transform="rotate(-90 55 50)"/>
+<circle cx="170" cy="50" r="38" stroke="#2a2e33"/><circle cx="170" cy="50" r="38" stroke="#c6f432" stroke-dasharray="150 239" transform="rotate(-90 170 50)"/>
+<circle cx="285" cy="50" r="38" stroke="#2a2e33"/><circle cx="285" cy="50" r="38" stroke="#c9ced3" stroke-dasharray="25 239" transform="rotate(-90 285 50)"/></g>
+<g style="fill:#eef0f2;font-size:16px;font-weight:800" text-anchor="middle"><text x="55" y="56">8s</text><text x="170" y="56">63%</text><text x="285" y="56">4%</text></g>
+<g text-anchor="middle"><text x="55" y="106">reply</text><text x="170" y="106">booked</text><text x="285" y="106">no-show</text></g></svg></div>
+
+<div class="c"><span class="n">16</span><h3>Live pulse feed (living front desk)</h3><small>Animated heartbeat line + what the AI is doing right now.</small>
+<svg viewBox="0 0 340 60" width="100%"><polyline id="pl" points="0,30 60,30 75,30 85,8 95,52 105,30 170,30 185,30 195,12 205,48 215,30 340,30" stroke="#c6f432" stroke-width="2.5" fill="none" stroke-dasharray="600" stroke-dashoffset="600"><animate attributeName="stroke-dashoffset" from="600" to="0" dur="2.4s" repeatCount="indefinite"/></polyline></svg>
+<table><tr><td class="mut">now</td><td>Booking Hiba · Sat 3pm</td></tr><tr><td class="mut">12s</td><td>Answered price question</td></tr><tr><td class="mut">1m</td><td>Reminder sent to 4 clients</td></tr></table></div>
+
+</div>
+<script>let s='';for(let i=0;i<90;i++){const h=10+Math.abs(Math.sin(i*1.7)*30)+(i%7==5?8:0);s+=`<rect x="${i*3.78}" y="${50-h}" width="2.2" height="${h}" fill="${i>83?'#c6f432':'#7d848b'}"/>`}document.getElementById('bc').innerHTML=s</script>
+</body></html>
