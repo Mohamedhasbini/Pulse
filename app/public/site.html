@@ -424,6 +424,16 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 .demos .dcta{background:linear-gradient(160deg,rgba(198,244,50,.16),rgba(255,255,255,.02))!important;border-color:rgba(198,244,50,.35)!important}
 .demo .mono{margin-bottom:6px}
 .sh h2,.core h2{transform:translateY(var(--py,0));transition:transform .2s linear}
+
+/* six capabilities: two rows of three */
+.core-txt{max-width:640px}
+.core-feats.six{grid-template-columns:repeat(3,1fr);row-gap:64px;padding:44px 6px 26px}
+.core-feats.six>div:nth-child(3n+1)::before{display:none}
+.core-feats.six>div:nth-child(n+4){padding-top:6px}
+.core-feats.six>div:nth-child(n+4)::after{content:"";position:absolute;left:12%;right:12%;top:-34px;height:1px;background:rgba(255,255,255,.1)}
+@media (max-width:1000px){.core-feats.six{grid-template-columns:1fr 1fr}.core-feats.six>div::before,.core-feats.six>div::after{display:none}}
+@media (max-width:560px){.core-feats.six{grid-template-columns:1fr}}
+.core-scene{-webkit-mask-image:linear-gradient(90deg,transparent 0,transparent 18%,#000 46%);mask-image:linear-gradient(90deg,transparent 0,transparent 18%,#000 46%);right:-12%!important}@media (max-width:1000px){.core-scene{-webkit-mask-image:none;mask-image:none}}
 </style>
 </head>
 <body>
@@ -488,13 +498,9 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
   <div class="wrap core-in">
     <div class="core-txt rv">
       <span class="core-badge">MXAi Core</span>
-      <h2>The intelligence that runs your business.</h2>
-      <p>At the heart of MXAi is an AI engine built for real businesses. It reads every conversation, booking and payment as it happens, lets a team of AI agents act on it, and turns the results into decisions you can see. Faster replies, fuller calendars and more revenue, all from one core.</p>
-      <div class="core-feats">
-        <div><span class="cf-ic"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/><path d="M9.5 14.5 12 9l2.5 5.5M10.3 12.8h3.4"/></svg></span><b>Agentic <em>AI engine</em></b><small>Five AI agents that answer, book, support and sell on their own</small></div>
-        <div><span class="cf-ic"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></span><b>Real-time <em>data core</em></b><small>Every chat, booking and dollar in one live business memory</small></div>
-        <div><span class="cf-ic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><b>Command <em>center</em></b><small>See it all, ask anything, approve in one click</small></div>
-      </div>
+      <h2>The intelligence behind every business decision.</h2>
+      <p>MXAi Core learns how your business works: your services, prices, capacity, seasons and customers. It runs a team of AI agents on that knowledge, forecasts what comes next, finds where growth is hiding and turns it into action. Operations, marketing and strategy, powered by one core and steered from your command center.</p>
+      <div class="core-feats six"><div><span class="cf-ic"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg></span><b>Agentic <em>AI engine</em></b><small>A team of AI agents that answer, book, support and follow up on their own</small></div><div><span class="cf-ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></svg></span><b>Built for <em>your business model</em></b><small>Trained on your industry, services, pricing, capacity and customers, not a generic chatbot</small></div><div><span class="cf-ic"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 8-8M14 7h6v6"/></svg></span><b>Forecasts and <em>insights</em></b><small>Revenue, demand and capacity projected ahead, with the reasons behind every change</small></div><div><span class="cf-ic"><svg viewBox="0 0 24 24"><path d="M4 12h3l8-6v12l-8-6"/><path d="M18 9a4 4 0 0 1 0 6"/></svg></span><b>Growth and <em>marketing engine</em></b><small>Finds who to win back, what to promote and when, then runs the campaign for you</small></div><div><span class="cf-ic"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></span><b>Real-time <em>data core</em></b><small>Every conversation, booking, payment and client in one live business memory</small></div><div><span class="cf-ic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><b>Executive <em>command center</em></b><small>One view of the whole business: ask anything, approve in one click, act on what matters</small></div></div>
     </div>
   </div>
   <div class="core-scene" aria-hidden="true">
