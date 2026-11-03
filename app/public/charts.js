@@ -448,7 +448,7 @@
     const target = Math.max(1, Math.round(last * 1.1)), dayN = n.getDate(), dim = (m1 - m0) / 864e5, pace = Math.round(done / Math.max(1, dayN) * dim);
     const pct = done / target * 100, ahead = pace >= target;
     if (!last && !done) return '';
-    return U.meter({ title: 'This month against your goal', pct, span: 12, ctx: `${money(done)} of ${money(target)} · day ${dayN} of ${Math.round(dim)} · ${money(booked)} more already booked`,
+    return U.meter({ title: 'This month against your goal', pct, span: 6, ctx: `${money(done)} of ${money(target)} · day ${dayN} of ${Math.round(dim)} · ${money(booked)} more already booked`,
       why: dayN < 7 ? 'Too early in the month to judge the pace' : ahead ? `On pace for ${money(pace)}, ahead of the goal` : `On pace for ${money(pace)}, ${money(target - pace)} short. Fill the quiet days ahead to close the gap.`,
       state: dayN < 7 ? 'neutral' : ahead ? 'healthy' : pace >= target * .85 ? 'neutral' : 'warning', action: ahead || dayN < 7 ? '' : '<button type="button" class="mx-btn" data-rp-go="growth">Open Win back</button>' });
   }
@@ -456,7 +456,10 @@
     if (!root) return; root.innerHTML = `<div class="mx-grid">${window.MXUI ? [3, 3, 3, 3].map(() => window.MXUI.card({ title: ' ', size: 'compact', span: 3, body: window.MXUI.loading(2) })).join('') : ''}</div>`;
     const d = await data();
     const named = window.P10?.named || (x => x); // charts say Nora; the owner may have renamed the assistant
-    let top = ''; try { top = `<div class="mx-grid">${headline(d)}${goal(d)}</div>`; } catch (e) { console.warn('report headline', e); }
+    let top = '', g2 = ''; try { top = `<div class="mx-grid">${headline(d)}</div>`; g2 = goal(d); } catch (e) { console.warn('report headline', e); }
+    // what to do next: the three most valuable moves, one line each, each with where to act
+    try { const br = await get('/api/briefing'), items = (br?.items || []).slice(0, 3), U = window.MXUI;
+      top += `<div class="mx-grid">${g2}${items.length && U ? U.card({ title: 'What to do next', span: g2 ? 6 : 12, size: 'compact', body: `<div class="mx-list rp-next">${items.map(x => U.row({ dot: x.value ? 'healthy' : 'warning', title: x.text, sub: x.why, value: x.value ? money(x.value) : '' })).join('')}</div>` }) : ''}</div>`; } catch { top += `<div class="mx-grid">${g2}</div>`; }
     root.innerHTML = top + named(REPORT.map(([t, sub, list]) => `<section class="rp-g"><header class="rp-h"><h2>${esc(t)}</h2><p>${esc(sub)}</p></header>
       <div class="mx-grid rp-board">${list.map(([n, span]) => { try { const h = F[n](d); return h ? `<div class="mx-c${span} rp-cell">${h}</div>` : ''; } catch (e) { console.warn('chart', n, e); return ''; } }).join('')}</div></section>`).join(''));
     root.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i));

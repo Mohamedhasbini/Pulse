@@ -575,3 +575,8 @@ html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main 
 }
 #people:not(#_):not(#__):not(#___) .spane>.card{min-height:0!important;height:auto!important;max-height:560px!important;overflow:auto!important}
 @media (max-width:767px){html body main .p10-bar #p10Need:not(#_):not(#__){display:flex!important;flex-wrap:wrap!important;overflow:visible!important;width:100%;margin-left:0!important}html body main .p10-bar #p10Need .need:not(#_){max-width:100%;white-space:normal!important}}
+/* Insights › What to do next: one line per move, the reason in grey after it */
+.rp-next .mx-row .mx-tx{flex-direction:row;align-items:baseline;gap:10px}.rp-next .mx-row .mx-tx b{flex:none;max-width:55%}
+.rp-next .mx-row .mx-tx small{flex:1;min-width:0}
+@media (max-width:767px){.rp-next .mx-row .mx-tx{flex-direction:column;gap:0}.rp-next .mx-row .mx-tx b{max-width:100%}}
+.pa-switch:has(>button:only-of-type){display:none!important}
