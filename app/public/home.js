@@ -1,204 +1,145 @@
-// "Today": the owner's home page. How the business is doing today, what needs doing, the team, health and alerts.
-// It has its own softer bento look on purpose, so it never feels like the data tabs.
+// "Today": the owner's home page, action-led. Seven blocks on the 12-column grid, read in this order:
+// what needs you, today's appointments with the gaps between them, the one recommended action, how full today is,
+// what the AI did, the conversations that matter, and a small business-health strip. Analytics live in Insights.
 (function(){
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const homeBtn=document.querySelector('nav button[data-view="overview"]:not([data-sub])');if(!homeBtn)return;
-const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-let biz=null,live=null,notes=[],ch=null,nFilter="all",timer=null;
+const U=window.MXUI,e=U.esc;
+const DOW=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+let timer=null;
 
 const sec=document.createElement("section");sec.className="wrap today";sec.id="today";sec.hidden=true;
-// One page, read top to bottom: who and when, what MXAi did for you, what needs you and what is coming up,
-// then the quiet checks (health, notifications, team). Every block is visible; nothing hides behind a list.
-sec.innerHTML=`<div class="tdx">
- <header class="tdx-head">
-  <div class="tdx-id"><div class="td-logo" id="tdLogo" role="button" tabindex="0" data-go="team" title="Change your logo in Settings"></div>
-   <div style="min-width:0"><p class="td-eyebrow" id="tdDate"></p><h1 id="tdHello"></h1><p class="tdx-sub" id="tdSub"></p></div></div>
-  <div class="tdx-acts"><button class="tdx-btn pri" type="button" data-go="newbooking">+ New booking</button><button class="tdx-btn" type="button" data-go="ask">Ask MXAi</button></div>
- </header>
- <section class="tdx-value" aria-label="What MXAi did for you in the last 30 days">
-  <div class="tdx-lead"><span>MXAi booked for you · last 30 days</span><b id="tdVal">–</b><small id="tdValL"></small></div>
-  <div class="tdx-figs" id="tdFigs"></div>
- </section>
- <div class="td-card tdx-start" id="tdStart" hidden><div class="td-h"><h2>Go live</h2><span class="td-pill" id="tdStartN"></span></div>
-  <p class="tdx-say">Your receptionist is ready. Finish these steps so customers can reach it.</p><i class="tdx-bar"><u id="tdBar"></u></i><div class="tdx-steps" id="tdSteps"></div></div>
- <div class="tdx-main">
-  <div class="td-card tdx-needs"><div class="td-h"><h2>Needs you</h2><span class="td-pill" id="tdTodoN"></span></div><div id="tdTodo"></div><div id="tdBrief"></div></div>
-  <div class="td-card tdx-day"><div class="td-h"><h2>Coming up</h2><span class="td-pill" id="tdNextN"></span><button class="td-link" type="button" data-go="calendar">Calendar →</button></div>
-   <div class="td-days" id="tdDays"></div><div id="tdNext"></div></div>
- </div>
- <div class="tdx-foot">
-  <div class="td-card"><div class="td-h"><h2>Health</h2><span class="td-pill" id="tdHealthState"></span></div><div id="tdHealth"></div></div>
-  <div class="td-card"><div class="td-h"><h2>Notifications</h2><span class="td-pill" id="tdUnread"></span></div>
-   <div class="td-tabs" id="tdNTabs"><button type="button" data-f="all" aria-pressed="true">All</button><button type="button" data-f="booking" aria-pressed="false">Bookings</button><button type="button" data-f="people" aria-pressed="false">Messages</button></div><div id="tdNotes"></div><button class="td-link tdx-all" type="button" data-go="bell">All notifications →</button></div>
-  <div class="td-card"><div class="td-h"><h2>Your team</h2><button class="td-link" type="button" data-go="team">Edit</button></div><div id="tdTeam"></div></div>
- </div>
- <div id="tdScSlot"></div>
+sec.innerHTML=`<div class="mx-page">
+ <header class="tdh"><div class="tdh-id"><div class="tdh-logo" id="tdLogo" role="button" tabindex="0" data-go="settings" title="Change your logo in Settings"></div>
+   <div style="min-width:0"><p class="tdh-date" id="tdDate"></p><h1 id="tdHello"></h1><p class="tdh-sub" id="tdSub"></p></div></div>
+  <div class="tdh-acts"><button class="mx-btn" type="button" data-go="ask">Ask MXAi</button><button class="mx-btn pri" type="button" data-go="newbooking">+ New booking</button></div></header>
+ <div class="mx-grid" id="tdLive"></div>
+ <div class="mx-grid" id="tdA">${U.card({title:"Needs your attention",span:5,body:U.loading(3)})}${U.card({title:"Today's appointments",span:4,body:U.loading(4)})}${U.card({title:"Recommended action",span:3,body:U.loading(2)})}</div>
+ <div class="mx-grid" id="tdB"></div>
+ <div class="mx-grid" id="tdC"></div>
 </div>`;
 document.querySelector("main").append(sec);
 document.head.insertAdjacentHTML("beforeend",`<style>
-.today{--td-card:var(--gp-card,#fff);--td-ink:var(--gp-text,#151a17);--td-ink2:var(--gp-2,#56605a);--td-mute:var(--gp-meta,#8a948e);--td-line:var(--gl-grid,rgba(0,0,0,.08));--td-soft:var(--gp-nest,rgba(0,0,0,.04));--td-acc:var(--p-green,#1f8f55);--td-need:var(--need,#c45f2a);--td-r:20px;--td-lime:#c6f432}
 main>section.today:not([hidden]){overflow:auto}
-.tdx{display:flex;flex-direction:column;gap:16px;color:var(--td-ink);max-width:1240px;padding-bottom:16px}
-.td-card{background:var(--td-card);border-radius:var(--td-r);padding:18px 20px;border:1px solid var(--td-line);min-width:0;position:relative}
-.td-h{display:flex;align-items:center;gap:8px;margin-bottom:12px}.td-h h2{margin:0;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--td-mute)}
-.td-link{all:unset;cursor:pointer;margin-inline-start:auto;font-size:12.5px;color:var(--td-ink2)}.td-link:hover{color:var(--td-ink)}.td-pill+.td-link{margin-inline-start:8px}
-.td-pill:empty{display:none}.td-pill{white-space:nowrap;margin-inline-start:auto;font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:99px;background:var(--td-soft);color:var(--td-ink2)}
-.td-logo{width:56px;height:56px;flex:none;border-radius:16px;background:#fff center/cover no-repeat;display:grid;place-items:center;font-weight:700;font-size:24px;line-height:1;color:#1f2a24;cursor:pointer;border:1px solid var(--td-line)}
-.td-eyebrow{margin:0;font-size:12.5px;color:var(--td-mute)}
-/* header */
-.tdx-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:6px 2px 0}
-.tdx-id{display:flex;gap:16px;align-items:center;min-width:0}
-.tdx-head h1{margin:2px 0 3px;font-size:26px!important;font-weight:500;letter-spacing:-.02em;line-height:1.15;color:var(--td-ink)}
-.tdx-head h1 em{font-style:normal;color:var(--td-ink2)}
-.tdx-sub{margin:0;font-size:14px;color:var(--td-ink2)}
-.tdx-acts{display:flex;gap:8px;flex-wrap:wrap}
-.tdx-btn{all:unset;box-sizing:border-box;cursor:pointer;min-height:40px;display:inline-flex;align-items:center;padding:0 16px;border-radius:99px;font-size:13.5px;font-weight:500;background:var(--td-soft);color:var(--td-ink);border:1px solid var(--td-line)}
-.tdx-btn.pri{background:var(--gp-text,#141516);color:var(--gp-ground,#fff);border-color:transparent}.tdx-btn:hover{filter:brightness(1.1)}.tdx-btn:focus-visible{outline:2px solid var(--td-ink);outline-offset:2px}
-/* the value band: the one strong surface on the page */
-.tdx-value{display:grid;grid-template-columns:minmax(220px,1fr) minmax(0,2fr);gap:8px;align-items:stretch;background:linear-gradient(135deg,#25272a,#151617 70%);color:#eceeef;border-radius:var(--td-r);padding:24px 26px;border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
-.tdx-lead{display:flex;flex-direction:column;gap:6px;padding-right:20px;border-right:1px solid rgba(255,255,255,.1)}
-.tdx-lead span{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9a9ea2}
-.tdx-lead b{font-size:46px;font-weight:300;letter-spacing:-.03em;line-height:1;color:#fff}
-.tdx-lead small{font-size:13px;color:#b9bcbf}
-.tdx-figs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-.tdx-fig{display:flex;flex-direction:column;gap:6px;padding:2px 20px;border-left:1px solid rgba(255,255,255,.1);min-width:0}.tdx-fig:first-child{border-left:0}
-.tdx-fig span{font-size:12px;color:#9a9ea2}.tdx-fig b{font-size:28px;font-weight:300;letter-spacing:-.02em;line-height:1.1;color:#fff}.tdx-fig small{font-size:12px;color:#b9bcbf}
-.tdx-fig small i{font-style:normal;color:var(--td-lime)}
-/* main: Needs you is wider; it is the reason to open this page */
-.tdx-main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
-.tdx-foot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
-.tdx-say{margin:-4px 0 12px;font-size:14px;color:var(--td-ink2)}
-.tdx-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
-.tdx-steps button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;border:1px solid var(--td-line)}.tdx-steps button:hover{background:var(--td-soft)}
-.tdx-steps b{font-size:13.5px;font-weight:500;color:var(--td-ink)}.tdx-steps small{font-size:12px;color:var(--td-mute)}.tdx-bar{display:block;height:4px;border-radius:99px;background:var(--td-line);overflow:hidden;margin:0 0 14px}.tdx-bar u{display:block;height:100%;background:var(--td-ink);border-radius:99px;transition:width .4s}
-/* the money-ranked briefing lives inside Needs you, without its own heading */
-#tdBrief #bfCard{background:none!important;border:0!important;padding:0!important;margin:0!important;box-shadow:none!important;border-radius:0!important}
-#tdBrief .bf-h h2,#tdBrief #bfSay,#tdBrief .bf-done{display:none!important}#tdBrief .bf-h:has(.bf-money:empty){display:none}
-#tdBrief:not(:has(.bf-list>li:not(.bf-done)):has(.bf-money:empty)){display:none}
-#tdBrief .bf-list:has(>li:not(.bf-done)){margin-top:4px;border-top:1px solid var(--td-line)}
-/* week strip */
-.td-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
-.td-day{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 0;border-radius:12px;font-size:11px;color:var(--td-mute)}
-.td-day b{font-size:16px;font-weight:400;color:var(--td-ink)}.td-day:hover{background:var(--td-soft)}
-.td-day.now{background:#141516;color:#b9bcbf}.td-day.now b{color:#fff}
-.td-day i{width:24px;height:3px;border-radius:9px;background:var(--td-line);overflow:hidden;display:block}.td-day i u{display:block;height:100%;background:var(--td-ink2)}.td-day.now i u{background:var(--td-lime)}
-.td-day.off{opacity:.45}
-/* rows */
-.td-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--td-line)}.td-row:first-child{border-top:0;padding-top:2px}
-.td-row .tx{min-width:0;flex:1;display:flex;flex-direction:column}.td-row .tx b{font-size:13.5px;font-weight:500;color:var(--td-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.td-row .tx small{font-size:12px;color:var(--td-mute)}
-.td-ic{width:8px;height:8px;flex:none;border-radius:50%;font-size:0;background:var(--td-mute)}
-.td-ic.red{background:var(--bad,#e11d48)}.td-ic.amber{background:var(--td-need)}.td-ic.blue{background:var(--td-ink2)}.td-ic.green{background:var(--td-acc)}
-.td-go{all:unset;cursor:pointer;font-size:12.5px;font-weight:500;padding:6px 14px;border-radius:99px;border:1px solid var(--td-line);color:var(--td-ink)}.td-go:hover{background:var(--td-soft)}
-.td-av{width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:13px;color:#fff}
-.td-time{width:52px;flex:none;display:flex;flex-direction:column;align-items:flex-start}.td-time b{font-size:14px;font-weight:500;font-family:'Geist Mono',monospace;color:var(--td-ink)}.td-time small{font-size:11px;color:var(--td-mute)}
-.td-price{font-family:'Geist Mono',monospace;font-size:12.5px;color:var(--td-ink)}
-.td-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--td-acc)}.td-dot.bad{background:var(--bad,#e11d48)}.td-dot.warn{background:var(--td-need)}
-.td-tabs{display:flex;gap:16px;border-bottom:1px solid var(--td-line);margin-bottom:4px}.td-tabs button{all:unset;cursor:pointer;font-size:12.5px;padding:0 0 9px;color:var(--td-mute)}.td-tabs button[aria-pressed=true]{color:var(--td-ink);box-shadow:inset 0 -2px 0 var(--td-ink)}
-.td-note{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--td-line);cursor:pointer}.td-note:last-child{border-bottom:0}.td-note:hover .tx b{text-decoration:underline}
-.td-note .tx b{white-space:normal}.td-note.unread .tx b::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--td-ink);margin-inline-start:6px;vertical-align:middle}
-.tdx-all{display:block;margin-top:10px}
-.td-empty{font-size:13px;color:var(--td-mute);padding:6px 0}
-#tdScSlot:empty{display:none}
-html body .today .td-h .td-link:not(#_),html body .today .td-go:not(#_){display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:99px;line-height:1;box-sizing:border-box}
-/* light mode: graphite capsules on silver; the value band stays graphite, so its text keeps its own colours */
-[data-theme=light] .today .tdx-btn.pri{background:#141516!important;color:#fff!important;border-color:#141516!important}
-[data-theme=light] .today .tdx-btn:not(.pri){background:transparent!important;color:#141516!important;border-color:rgba(20,21,22,.28)!important}
-.today .tdx-value .tdx-lead small,.today .tdx-value .tdx-fig small{color:#b9bcbf!important}.today .tdx-value .tdx-lead span,.today .tdx-value .tdx-fig span{color:#9a9ea2!important}
-.today .tdx-value b{color:#fff!important}.today .tdx-value .tdx-fig small i{color:#c6f432!important}
-#today #tdHealth{display:block!important}#today .td-ic{font-size:0!important;width:8px!important;height:8px!important;min-width:0!important;padding:0!important}
-@media (max-width:1100px){.tdx-main{grid-template-columns:1fr}.tdx-value{grid-template-columns:1fr}.tdx-lead{border-right:0;padding-right:0;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.1)}.tdx-figs{padding-top:10px}.tdx-fig:first-child{padding-left:0}.tdx-foot{grid-template-columns:1fr 1fr}}
-@media (max-width:760px){.tdx-main,.tdx-foot{grid-template-columns:1fr}.tdx-fig{padding:2px 10px}.tdx-fig b{font-size:22px}.tdx-lead b{font-size:38px}.tdx-head h1{font-size:22px!important}.td-logo{width:46px;height:46px}.tdx-acts{width:100%}.tdx-btn{flex:1;justify-content:center}}
+.tdh{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.tdh-id{display:flex;gap:16px;align-items:center;min-width:0}
+.tdh-logo{width:52px;height:52px;flex:none;border-radius:14px;background:#fff center/cover no-repeat;display:grid;place-items:center;font-weight:700;font-size:22px;color:#1f2a24;cursor:pointer;border:1px solid var(--mx-line)}
+.tdh-date{margin:0;font-size:13px;color:var(--mx-mute)}
+.today .tdh h1{margin:2px 0 2px;font-size:28px!important;font-weight:600;letter-spacing:-.025em;line-height:1.15;color:var(--mx-ink)}
+.today .tdh h1 em{font-style:normal;color:var(--mx-ink2);font-weight:500}
+.tdh-sub{margin:0;font-size:14px;color:var(--mx-ink2)}
+.tdh-acts{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:767px){.tdh-acts{width:100%}.tdh-acts .mx-btn{flex:1}.today .tdh h1{font-size:22px!important}}
+.td-steps{display:flex;gap:8px;flex-wrap:wrap}
 </style>`);
 
-// Home opens Today; the data dashboard stays on Live now and the other tabs
-homeBtn.addEventListener("click",e=>{e.stopImmediatePropagation();show()},true);
+const money=v=>{try{return fmt(v)}catch{return "$"+Math.round(v||0).toLocaleString()}};
+const hm=s=>String(s||"").slice(11,16);
+const mins=t=>{const[h,m]=t.split(":");return +h*60+ +m},clock=m=>`${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`;
+const day=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const nora=()=>window.P10?.named?.("Nora")||"Nora";
+
+// Home opens Today; every other page hides it
+homeBtn.addEventListener("click",ev=>{ev.stopImmediatePropagation();show()},true);
 $$("nav button[data-view]").forEach(b=>{if(b!==homeBtn)b.addEventListener("click",()=>{sec.hidden=true;clearInterval(timer)})});
 function show(){if(window.LAB)return;$$("nav button[data-view]").forEach(x=>x.setAttribute("aria-current",x===homeBtn));$$("main > section.wrap").forEach(s=>s.hidden=s!==sec);
   document.body.dataset.page="today";scrollTo(0,0);load();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden&&!sec.hidden&&!document.documentElement.classList.contains("live-on"))load()},30000)}
 window.homeLoad=()=>{if(!sec.hidden)load()}; // live.js calls this the moment data changes
 
-const money=v=>{try{return fmt(v)}catch{return "$"+Math.round(v||0)}};
-const colorOf=s=>{let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))%360;return `hsl(${h} 55% 55%)`};
-const hm=s=>String(s||"").slice(11,16);
 async function load(){
-  const [b,l,n,c,k]=await Promise.all([req("/api/business").catch(()=>null),req("/api/live?days=30").catch(()=>null),req("/api/notifications").catch(()=>({items:[],unread:0})),req("/api/channels").catch(()=>null),req("/api/kpis?days=30").catch(()=>[])]);
-  biz=b;live=l;notes=n.items||[];ch=c;kpis=Array.isArray(k)?k:[];draw(n.unread||0)}
-let kpis=[];
-function openNow(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),r=(biz?.hours?.[d.getDay()]||[]).map(([a,z])=>[a,z].map(t=>{const[h,mm]=t.split(":");return +h*60+ +mm}));
-  const cur=r.find(([a,z])=>m>=a&&m<z);if(cur)return `Open now · until ${String(Math.floor(cur[1]/60)).padStart(2,"0")}:${String(cur[1]%60).padStart(2,"0")}`;
-  const next=r.find(([a])=>a>m);return next?`Opens today at ${String(Math.floor(next[0]/60)).padStart(2,"0")}:${String(next[0]%60).padStart(2,"0")}`:"Closed today"}
-function draw(unread){if(!biz||!live)return;const now=live.now,d=new Date(),h=d.getHours();
-  // hero
-  $("#tdLogo").style.backgroundImage=biz.logo_url?`url("${biz.logo_url}")`:"";$("#tdLogo").textContent=biz.logo_url?"":([...biz.name][0]||"").toUpperCase();
-  $("#tdDate").textContent=`${DOW[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]} · ${openNow()}`;
-  $("#tdHello").innerHTML=`${h<12?"Good morning":h<18?"Good afternoon":"Good evening"}, <em>${esc(biz.name)}</em>`;
-  const tasks=(now.waiting||0)+(now.approvals||0)+(now.unsure||0);
-  $("#tdSub").textContent=`${now.visits_today||0} appointment${now.visits_today===1?"":"s"} today${tasks?` · ${tasks} thing${tasks===1?"":"s"} need${tasks===1?"s":""} you`:" · nothing waiting for you"}.`;
-  // the value line: what the AI booked on its own. Older servers have no ai_value; then count bookings that came through a chat channel this week
-  const chat=(live.channels||[]).filter(c=>!["manual","direct","web","other"].includes(c.channel));
-  const aiV=now.ai_value!=null?now.ai_value:chat.reduce((a,c)=>a+c.value,0),aiN=now.ai_count!=null?now.ai_count:chat.reduce((a,c)=>a+c.n,0);
-  const aiP=now.ai_value_prev,aiC=aiP?Math.round((aiV-aiP)/aiP*100):null;
-  $("#tdVal").textContent=money(aiV);
-  $("#tdValL").textContent=`${aiN} appointment${aiN===1?"":"s"} booked from chats${aiC===null?"":` · ${aiC>=0?"+":"−"}${Math.abs(aiC)}% vs the 30 days before`}`;
-  const sum=f=>kpis.reduce((a,x)=>a+(f(x)||0),0),chats=sum(x=>x.chats),handled=sum(x=>x.handled),ms=kpis.filter(x=>x.reply_ms!=null),avgMs=ms.length?ms.reduce((a,x)=>a+x.reply_ms,0)/ms.length:null;
-  $("#tdFigs").innerHTML=[["Chats answered",chats||"–",chats?`<i>${Math.round(handled/chats*100)}%</i> with no one stepping in`:"none in the last 30 days"],
-    ["Average reply",avgMs==null?"–":`${(avgMs/1000).toFixed(1)}s`,"day and night, every channel"],
-    ["Booked ahead",money(now.upcoming_value||0),`${now.upcoming_count||0} appointment${now.upcoming_count===1?"":"s"} in the calendar`]]
-    .map(([l,v,t])=>`<div class="tdx-fig"><span>${l}</span><b>${v}</b><small>${t}</small></div>`).join("");
-  // week strip
-    $("#tdDays").innerHTML=live.week.map(w=>{const x=new Date(w.d+"T12:00");return `<button type="button" class="td-day${w.today?" now":""}${w.pct===null?" off":""}" data-go="calendar" title="${w.pct===null?"Closed":w.pct+"% booked"}">${DOW[x.getDay()]}<b>${x.getDate()}</b><i><u style="width:${w.pct||0}%"></u></i></button>`}).join("");
-  // to do
-  const todo=[];
-  if(now.waiting)todo.push(["red","💬",`${now.waiting} chat${now.waiting>1?"s":""} waiting for you`,"The AI handed them over","conversations"]);
-  if(now.approvals)todo.push(["amber","✓",`${now.approvals} request${now.approvals>1?"s":""} to approve`,"Changes, cancellations, special requests","approvals"]);
-  if(now.unsure)todo.push(["amber","?",`Check ${now.unsure} unsure repl${now.unsure>1?"ies":"y"}`,"Teach the right answer","training"]);
-  const failed=(live.h24||[]).reduce((a,x)=>a+(x.failed||0),0);if(failed)todo.push(["red","!",`${failed} AI repl${failed>1?"ies":"y"} failed today`,"Clients got a fallback message","health"]);
-  $("#tdTodoN").textContent=todo.length?`${todo.length} open`:"All done";
-  $("#tdTodo").innerHTML=todo.length?todo.map(([c,i,t,s,go])=>`<div class="td-row"><span class="td-ic ${c}">${i}</span><span class="tx"><b>${esc(t)}</b><small>${esc(s)}</small></span><button class="td-go" type="button" data-go="${go}">Open</button></div>`).join(""):`<div class="td-row"><span class="td-ic green">✓</span><span class="tx"><b>You're all caught up</b><small>Your assistant is handling everything.</small></span></div>`;
-  // team
-  const team=String(biz.team||"").split("\n").map(x=>x.trim()).filter(Boolean).map(x=>{const[n,...r]=x.split(/\s+[–—-]\s+/);return{n,r:r.join(" – ")}});
-  const open=/^Open now/.test(openNow());
-  $("#tdTeam").innerHTML=team.length?`<div class="grid">${team.map(m=>`<div class="td-mem"><span class="td-av" style="background:${colorOf(m.n)}">${esc([...m.n][0]||"")}</span><b>${esc(m.n)}</b><small>${esc(m.r||"Team")}</small><small style="color:${open?"#16a34a":"var(--td-mute)"}">${open?"● On shift":"○ Off now"}</small></div>`).join("")}</div>`
-    :`<div class="td-empty">Add your team in Settings → Business details, one per line, like "Layla – colour specialist".</div>`;
-  // next up
-  const up=(live.upcoming||[]).slice(0,4);$("#tdNextN").textContent=now.upcoming_count?`${now.upcoming_count} ahead · ${money(now.upcoming_value||0)}`:"";
-  $("#tdNext").innerHTML=up.length?up.map(u=>{const x=new Date(u.start.replace(" ","T"));return `<div class="td-row"><span class="td-time"><b>${hm(u.start)}</b><small>${DOW[x.getDay()]} ${x.getDate()}</small></span><span class="tx"><b>${esc(u.name||"Customer")}</b><small>${esc(u.service)} · ${u.minutes} min</small></span><span class="td-price">${money(u.price)}</span></div>`}).join("")
-    :`<div class="td-empty">Nothing booked ahead yet.</div>`;
-  // health
-  const ai=live.ai||{},wa=ch?.whatsapp?.configured&&biz.wa_phone_number_id,tg=ch?.telegram?.configured,checks=[
-    [ai.ok===false?"bad":"","AI assistant",ai.ok===false?"Not answering: customers get a fallback message":ai.ok?`Answering · last reply ${(ai.ms/1000).toFixed(1)}s`:"Ready · no messages yet"],
-    [wa?"":"warn","WhatsApp",wa?"Connected":"Not connected for this business"],
-    [tg?"":"warn","Telegram",tg?(ch.telegram.running?"Connected and running":"Connected"):"Not connected"],
-    [failed?"bad":"","Replies in the last 24 h",failed?`${failed} failed`:"No failures"]];
-  const bad=checks.filter(c=>c[0]==="bad").length,warn=checks.filter(c=>c[0]==="warn").length;
-  $("#tdHealthState").textContent=bad?"Needs attention":warn?"Mostly good":"All good";
-  $("#tdHealth").innerHTML=checks.map(([s,t,d])=>`<div class="td-row"><span class="td-dot ${s}"></span><span class="tx"><b>${t}</b><small>${esc(d)}</small></span></div>`).join("");
-  // notifications
-  $("#tdUnread").textContent=unread?`${unread} new`:"";drawNotes();
-  // a business that has not gone live yet: the setup steps lead the page instead of empty boxes
-  const steps=live.setup||[],pending=steps.filter(s=>!s.done);
-  $("#tdStart").hidden=!pending.length;$("#tdStartN").textContent=steps.length?`${steps.length-pending.length} of ${steps.length} done`:"";
-  $("#tdBar").style.width=steps.length?`${Math.round((steps.length-pending.length)/steps.length*100)}%`:"0";
-  $("#tdSteps").innerHTML=pending.map(s=>`<button type="button" data-go="setup"><b>${esc(s.label)}</b><small>Open Settings →</small></button>`).join("")}
+  const t=day(new Date()),get=u=>req(u).catch(()=>null);
+  const [biz,live,ch,wait,brief,cal,kpis]=await Promise.all([get("/api/business"),get("/api/live?days=30"),get("/api/channels"),get("/api/pulse/waiting"),get("/api/briefing"),get(`/api/calendar?from=${t}T00:00&to=${t}T23:59`),get("/api/kpis?days=30")]);
+  if(!biz||!live){$("#tdA").innerHTML=U.card({title:"Today",span:12,state:"critical",body:U.error("today's numbers","reload")});return}
+  draw({biz,live,ch,wait:wait||{items:[]},brief:brief||{items:[]},cal:cal||{bookings:[],timeOff:[]},kpis:Array.isArray(kpis)?kpis:[]})}
 
-const ICON={booking:["green","📅"],cancel:["red","✕"],approval:["amber","✓"],handoff:["red","💬"],unsure:["amber","?"],review:["blue","★"],marketing:["blue","📣"]};
-function drawNotes(){const list=notes.filter(n=>nFilter==="all"||(nFilter==="booking"?["booking","cancel","approval"].includes(n.kind):["handoff","unsure","review"].includes(n.kind))).slice(0,4);
-  $("#tdNotes").innerHTML=list.length?list.map(n=>{const[c,i]=ICON[n.kind]||["blue","•"];return `<div class="td-note${n.read?"":" unread"}" data-c="${n.conversation_id||""}"><span class="td-ic ${c}">${i}</span><span class="tx"><b>${esc(n.title)}</b><small>${esc((n.body||"").split("\n")[0]).slice(0,90)}${n.body?" · ":""}${esc(String(n.at||"").slice(5,16).replace("T"," "))}</small></span></div>`}).join("")
-    :`<div class="td-empty">No notifications here yet.</div>`}
-$("#tdNTabs").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;nFilter=b.dataset.f;$$("#tdNTabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));drawNotes()});
-$("#tdNotes").addEventListener("click",e=>{const n=e.target.closest(".td-note");if(!n)return;go(n.dataset.c?"conversations":"dash");if(n.dataset.c)setTimeout(()=>{try{openConv(+n.dataset.c)}catch{}},300)});
+function openNow(biz){const d=new Date(),m=d.getHours()*60+d.getMinutes(),r=(biz.hours?.[d.getDay()]||[]).map(([a,z])=>[mins(a),mins(z)]);
+  const cur=r.find(([a,z])=>m>=a&&m<z);if(cur)return `Open now · until ${clock(cur[1])}`;const nx=r.find(([a])=>a>m);return nx?`Opens today at ${clock(nx[0])}`:"Closed today"}
 
-// every button on this page goes to the right place
-function go(where){const nav=v=>document.querySelector(`nav button[data-view="${v}"]:not([data-sub])`);
-  const pane=(v,p)=>{const b=document.querySelector(`nav button[data-view="${v}"][data-sub="${p}"]`);if(b)b.click();else{nav(v)?.click();setTimeout(()=>window.tabsOf?.[v]?.(p),30)}};
-  if(where==="bell"){document.getElementById("bellBtn")?.click();return}
-  if(where==="ask"){window.P10?window.P10.go("pulse",1):document.getElementById("hxAsk")?.click();return}
-  if(where==="newbooking"){nav("calendar")?.click();setTimeout(()=>$("#calNew")?.click(),350)}
-  else if(where==="dash"){window.openDashboard?window.openDashboard():pane("overview","summary")}
-  else if(where==="conversations"||where==="approvals"||where==="health")pane("overview",where==="health"?"live":where);
-  else if(where==="team"){nav("setup")?.click();setTimeout(()=>window.tabsOf?.setup?.("details"),30)}
-  else nav(where)?.click()}
-sec.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b){e.stopPropagation();go(b.dataset.go)}});
+// free stretches of at least 30 minutes inside today's opening hours, between the day's bookings and blocked time
+function gaps(biz,cal){const d=new Date(),open=(biz.hours?.[d.getDay()]||[]).map(([a,z])=>[mins(a),mins(z)]);
+  const busy=[...(cal.bookings||[]).filter(b=>!/cancel|no_show/.test(b.status||"")),...(cal.timeOff||[])].map(b=>[mins(hm(b.start)),mins(hm(b.end))]).sort((a,b)=>a[0]-b[0]);
+  const now=d.getHours()*60+d.getMinutes(),out=[];
+  for(const [a,z] of open){let c=Math.max(a,now);for(const [s,f] of busy){if(f<=c||s>=z)continue;if(s-c>=30)out.push([c,s]);c=Math.max(c,f)}if(z-c>=30)out.push([c,z])}
+  const openMin=open.reduce((n,[a,z])=>n+z-a,0),booked=busy.reduce((n,[s,f])=>n+Math.max(0,Math.min(f,1440)-s),0);
+  const closed=open.length>0&&now>=Math.max(...open.map(o=>o[1]));
+  return {list:out,openMin,booked,closed}}
+
+function draw({biz,live,ch,wait,brief,cal,kpis}){
+  const now=live.now||{},d=new Date(),h=d.getHours(),ai=live.ai||{};
+  // header
+  const logo=$("#tdLogo");logo.style.backgroundImage=biz.logo_url?`url("${biz.logo_url}")`:"";logo.textContent=biz.logo_url?"":([...biz.name][0]||"").toUpperCase();
+  $("#tdDate").textContent=`${DOW[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]} · ${openNow(biz)}`;
+  $("#tdHello").innerHTML=`${h<12?"Good morning":h<18?"Good afternoon":"Good evening"}, <em>${e(biz.name)}</em>`;
+
+  // 1 · needs your attention: one queue, most urgent first
+  const need=[],n=k=>(wait.items||[]).filter(x=>x.kind===k).length;
+  if(now.waiting)need.push(["critical",`${now.waiting} chat${now.waiting>1?"s":""} waiting for a person`,`${nora()} handed them to you`,"Reply","p:inbox:1"]);
+  if(ai.ok===false)need.push(["critical",`${nora()} is not answering`,"Clients get a fallback message","Check","p:pulse:0"]);
+  const failed=(live.h24||[]).reduce((a,x)=>a+(x.failed||0),0);if(failed)need.push(["critical",`${failed} repl${failed>1?"ies":"y"} failed to send today`,"Clients may not have seen the answer","Check","p:inbox:0"]);
+  if(n("request"))need.push(["warning",`${n("request")} request${n("request")>1?"s":""} to move or cancel`,"Waiting for your OK","Review","p:calendar:1"]);
+  if(n("question")||now.unsure){const q=n("question")||now.unsure;need.push(["warning",`${q} question${q>1?"s":""} ${nora()} couldn't answer`,"Answer once and it remembers","Teach","p:pulse:0"])}
+  if(n("agent"))need.push(["warning",`${n("agent")} offer${n("agent")>1?"s":""} ready to send`,"Prepared by your growth automations","Review","p:growth:4"]);
+  if(n("lesson"))need.push(["neutral",`${n("lesson")} suggested rule${n("lesson")>1?"s":""}`,`${nora()} learned something from a chat`,"Review","p:pulse:0"]);
+  const wa=ch?.whatsapp?.configured&&biz.wa_phone_number_id;if(!wa)need.push(["warning","WhatsApp is not connected","Clients can't reach you there yet","Connect","p:settings:0"]);
+  const pending=(live.setup||[]).filter(s=>!s.done);
+  const worst=need.some(x=>x[0]==="critical")?"critical":need.some(x=>x[0]==="warning")?"warning":"healthy";
+  const needCard=U.list({title:"Needs your attention",span:5,state:need.length?worst:"healthy",meta:need.length?`${need.length} open`:"",
+    rows:need.slice(0,5).map(([s,t,sub,btn,go])=>U.row({dot:s,title:t,sub,action:U.button(btn,go)})),more:need.length>5?`${need.length-5} more in AI Control and Inbox`:"",
+    emptyTitle:"Nothing needs you right now",emptySub:`${nora()} is handling every chat.`});
+
+  // 2 · today's appointments, with the free time between them
+  const g=gaps(biz,cal),todays=(cal.bookings||[]).filter(b=>!/cancel/.test(b.status||""));
+  const slots=[...todays.map(b=>({at:mins(hm(b.start)),r:U.row({time:hm(b.start),title:b.service,sub:`${b.customer||"Client"} · ${mins(hm(b.end))-mins(hm(b.start))} min`,value:money(b.price),go:"p:calendar:0"})})),
+    ...g.list.slice(0,3).map(([a,z])=>({at:a,r:U.row({time:clock(a),cls:"gap",title:`Free until ${clock(z)}`,sub:`${z-a} min open to book`,go:"p:calendar:0"})}))].sort((a,b)=>a.at-b.at).map(x=>x.r);
+  const value=todays.reduce((a,b)=>a+(b.price||0),0);
+  const apptCard=U.list({title:"Today's appointments",span:4,meta:todays.length?`${todays.length} · ${money(value)}`:"",go:"p:calendar:0",rows:slots,
+    emptyTitle:g.openMin?"No appointments yet today":"Closed today",emptySub:g.openMin?"Free time shows here so you can fill it.":"Enjoy the day off."});
+
+  // 3 · one recommended action: the briefing's most valuable item, else the emptiest day ahead, else teaching
+  let rec=null;const b0=(brief.items||[])[0];
+  const OPEN={inbox:"p:inbox:1",requests:"p:calendar:1"};
+  if(b0)rec={text:b0.text,why:b0.why+(b0.value?` · ${money(b0.value)} ${b0.money||""}`:""),label:/^(mark|teach)$/.test(b0.fix)?"Fix it":"Open",go:b0.fix.startsWith("open:")?(OPEN[b0.fix.slice(5)]||"p:inbox:0"):b0.fix==="teach"?"p:pulse:3":b0.fix.startsWith("agent:")?"p:growth:4":"p:calendar:0"};
+  if(!rec){const ahead=(live.week||[]).filter(w=>!w.today&&w.pct!=null&&new Date(w.d+"T12:00")>d).sort((a,b)=>a.pct-b.pct)[0];
+    if(ahead&&ahead.pct<50)rec={text:`${DOW[new Date(ahead.d+"T12:00").getDay()]} ${ahead.pct?`is only ${ahead.pct}% booked`:"has no bookings yet"}. Invite clients who haven't been in for a while.`,why:"An empty hour can't be sold later.",label:"Open Win back",go:"p:growth:0"}}
+  if(!rec&&pending.length)rec={text:`Finish setup: ${pending[0].label}.`,why:`${pending.length} step${pending.length>1?"s":""} left before ${nora()} works at full strength.`,label:"Open Settings",go:"p:settings:0"};
+  if(!rec)rec={text:"All clear. Nothing needs changing today.",why:`${nora()} is answering and the calendar is in order.`,label:"",go:""};
+  $("#tdA").innerHTML=needCard+apptCard+U.rec({...rec,span:3});
+
+  // 4 · how full today is · 5 · what the AI did · 6 · conversations that matter
+  const pct=g.openMin?g.booked/g.openMin*100:0;
+  const fill=g.openMin?U.meter({title:"Time booked today",pct,ctx:`of your open time is booked`,why:g.closed?"Closed for the rest of today":g.list.length?`${g.list.length} gap${g.list.length>1?"s":""} left, the next at ${clock(g.list[0][0])}`:"No gaps left today",state:g.closed?"neutral":pct>=70?"healthy":pct>=35?"neutral":"warning",span:3})
+    :U.card({title:"Time booked today",size:"compact",span:3,body:U.empty("Closed today","Opening hours are set in Settings.")});
+  const aiCard=U.kpi({title:`${nora()} today`,value:String(now.replies_today||0),ctx:`replies · ${now.booked_today||0} booking${now.booked_today===1?"":"s"} made`,why:now.active_now?`${now.active_now} conversation${now.active_now>1?"s":""} happening now`:now.avg_ms?`Average reply ${(now.avg_ms/1000).toFixed(1)}s`:"Quiet so far today",span:3,action:U.button("Open AI Control","p:pulse:0")});
+  const conv=(live.active||[]).slice().sort((a,b)=>(b.needs_attention-a.needs_attention)||(b.value||0)-(a.value||0)).slice(0,3);
+  const convCard=U.list({title:"Important conversations",span:6,go:"p:inbox:0",rows:conv.map(c=>U.row({dot:c.needs_attention?"warning":"healthy",title:c.name||c.phone||"Client",sub:c.last||"",value:c.needs_attention?"needs you":c.outcome==="booked"?"booked":"",go:`c:${c.id}`})),
+    emptyTitle:"No conversations right now",emptySub:"New chats from clients appear here as they arrive."});
+  $("#tdB").innerHTML=fill+aiCard+convCard;
+
+  // 7 · business health, last 30 days
+  const sum=f=>kpis.reduce((a,x)=>a+(f(x)||0),0),chats=sum(x=>x.chats),handled=sum(x=>x.handled),ms=kpis.filter(x=>x.reply_ms!=null),avg=ms.length?ms.reduce((a,x)=>a+x.reply_ms,0)/ms.length:null;
+  const aiV=now.ai_value||0,aiP=now.ai_value_prev,ch30=aiP?(aiV-aiP)/aiP*100:null;
+  $("#tdC").innerHTML=U.strip({title:"Business health · last 30 days",go:"p:insights:0",items:[
+    ["Booked by MXAi",money(aiV),U.trend(ch30,{vs:"vs 30 days before"})||`<span class="mx-ctx">${now.ai_count||0} appointments</span>`],
+    ["Chats answered alone",chats?`${Math.round(handled/chats*100)}%`:"–",`<span class="mx-ctx">${chats} chats</span>`],
+    ["Average reply",avg==null?"–":`${(avg/1000).toFixed(1)}s`,`<span class="mx-ctx">day and night</span>`],
+    ["Booked ahead",money(now.upcoming_value||0),`<span class="mx-ctx">${now.upcoming_count||0} upcoming</span>`]]});
+
+  // go-live steps lead the page until setup is done
+  $("#tdLive").innerHTML=pending.length?U.card({title:"Go live",span:12,state:"warning",size:"compact",meta:`${(live.setup||[]).length-pending.length} of ${(live.setup||[]).length} done`,
+    body:`<p class="mx-ctx">Finish these so clients can reach ${e(nora())}.</p><div class="td-steps">${pending.map(s=>U.button(s.label,"p:settings:0")).join("")}</div>`}):"";
+  const tasks=need.filter(x=>x[0]!=="neutral").length;
+  $("#tdSub").textContent=`${todays.length} appointment${todays.length===1?"":"s"} today · ${tasks?`${tasks} thing${tasks>1?"s":""} need${tasks===1?"s":""} you`:"nothing waiting for you"}.`}
+
+// every button goes to the right place: p:page:tab, c:conversation, or a named action
+function go(where){
+  if(where.startsWith("p:")){const [,id,i]=where.split(":");return window.P10?.go(id,+i)}
+  if(where.startsWith("c:")){window.P10?.go("inbox",0);setTimeout(()=>window.PulseInbox?.openChat(where.slice(2)),500);return}
+  if(where==="ask")return window.P10?window.P10.go("pulse",1):document.getElementById("hxAsk")?.click();
+  if(where==="settings")return window.P10?.go("settings",0);
+  if(where==="reload")return load();
+  if(where==="newbooking"){window.P10?.go("calendar",0);setTimeout(()=>$("#calNew")?.click(),450)}}
+sec.addEventListener("click",ev=>{const b=ev.target.closest("[data-go]");if(b){ev.stopPropagation();go(b.dataset.go)}});
+sec.addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches(".mx-row[data-go]")){ev.preventDefault();go(ev.target.dataset.go)}});
 
 // open Today on start (unless another page was asked for), once the login is known
 const start=setInterval(()=>{if(window.LAB){clearInterval(start);return}if(typeof me!=="undefined"&&me&&me.business){clearInterval(start);if(!$("#overview").hidden||document.body.dataset.page==="overview"||!document.body.dataset.page)show()}},150);

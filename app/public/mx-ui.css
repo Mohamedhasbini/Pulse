@@ -1,0 +1,84 @@
+/* MXAi component foundation: one grid, four widget formats, six data states, one card anatomy.
+   Spacing is on an 8px scale; every page builds from these instead of styling its own cards. */
+:root{
+  --mx-1:8px;--mx-2:16px;--mx-3:24px;--mx-5:40px;
+  --mx-h-compact:120px;--mx-h-standard:232px;--mx-h-wide:328px;
+  --mx-r:14px;
+  --mx-surf:var(--gp-card,#1b1c1e);--mx-raise:var(--gp-nest,#232528);--mx-line:var(--gl-grid,rgba(255,255,255,.08));
+  --mx-ink:var(--gp-text,#f1f2f2);--mx-ink2:var(--gp-2,#b9bcbf);--mx-mute:var(--gp-meta,#8d9094);
+  --mx-chip:#14181b;--mx-lime:#c6f432;
+  --mx-ok:#5bc48a;--mx-warn:#e0a24a;--mx-crit:#ef6b62;--mx-up:#5bc48a;
+}
+:root[data-theme="light"]{--mx-ok:#1f7a4a;--mx-warn:#9a5a00;--mx-crit:#b42318;--mx-up:#1f7a4a}
+
+/* grid: 12 columns at full width, capped so large monitors get room, not stretched cards */
+.mx-page{display:flex;flex-direction:column;gap:var(--mx-3);max-width:1680px;color:var(--mx-ink);padding-bottom:var(--mx-5)}
+.mx-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--mx-2);align-items:stretch}
+.mx-c3{grid-column:span 3}.mx-c4{grid-column:span 4}.mx-c5{grid-column:span 5}.mx-c6{grid-column:span 6}.mx-c7{grid-column:span 7}.mx-c8{grid-column:span 8}.mx-c9{grid-column:span 9}.mx-c12{grid-column:span 12}
+@media (max-width:1279px){.mx-c3{grid-column:span 6}.mx-c4,.mx-c5,.mx-c7,.mx-c8,.mx-c9{grid-column:span 12}.mx-c6{grid-column:span 6}}
+@media (max-width:767px){.mx-grid{gap:12px}.mx-c6,.mx-c4,.mx-c5,.mx-c7,.mx-c8,.mx-c9,.mx-c12{grid-column:span 12}.mx-c3{grid-column:span 6}}
+
+/* the card: title row, primary number, context, trend, explanation, optional action */
+.mx-card{background:var(--mx-surf);border:1px solid var(--mx-line);border-radius:var(--mx-r);padding:var(--mx-2) 20px;min-width:0;display:flex;flex-direction:column;gap:var(--mx-1);position:relative}
+.mx-card.compact{min-height:var(--mx-h-compact)}.mx-card.standard{min-height:var(--mx-h-standard)}.mx-card.wide{min-height:var(--mx-h-wide)}
+.mx-hd{display:flex;align-items:center;gap:var(--mx-1);min-height:24px}
+.mx-hd h3{margin:0;font-size:13px;font-weight:600;letter-spacing:.01em;color:var(--mx-ink2);flex:1;min-width:0}
+.mx-hd .mx-meta{font-size:12.5px;color:var(--mx-mute);white-space:nowrap}
+.mx-hd a,.mx-hd button.mx-link{all:unset;cursor:pointer;font-size:12.5px;color:var(--mx-ink2);white-space:nowrap}
+.mx-hd a:hover,.mx-hd button.mx-link:hover{color:var(--mx-ink)}
+.mx-num{font-size:32px;font-weight:500;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--mx-ink)}
+.mx-ctx{font-size:13px;color:var(--mx-ink2)}
+.mx-why{font-size:13px;color:var(--mx-mute);line-height:1.45}
+.mx-trend{font-size:12px;font-variant-numeric:tabular-nums;font-weight:500}
+.mx-trend.up{color:var(--mx-up)}.mx-trend.down{color:var(--mx-crit)}.mx-trend.flat{color:var(--mx-mute)}
+.mx-foot{margin-top:auto;display:flex;gap:var(--mx-1);flex-wrap:wrap}
+
+/* states: a chip in the title row and a left rule, so state never relies on colour alone */
+.mx-state{font-size:11px;font-weight:600;letter-spacing:.02em;padding:2px 8px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.mx-card[data-state="critical"]{box-shadow:inset 3px 0 0 var(--mx-crit)}.mx-card[data-state="critical"] .mx-state{color:var(--mx-crit)}
+.mx-card[data-state="warning"]{box-shadow:inset 3px 0 0 var(--mx-warn)}.mx-card[data-state="warning"] .mx-state{color:var(--mx-warn)}
+.mx-card[data-state="healthy"] .mx-state,.mx-card[data-state="improving"] .mx-state{color:var(--mx-ok)}
+.mx-card[data-state="neutral"] .mx-state{color:var(--mx-mute)}
+
+/* buttons */
+.mx-btn{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 14px;border-radius:99px;font-size:13px;font-weight:500;color:var(--mx-ink);border:1px solid var(--mx-line);background:transparent}
+.mx-btn:hover{background:var(--mx-raise)}.mx-btn:focus-visible,.mx-row:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+.mx-btn.pri{background:var(--mx-ink);color:var(--mx-surf);border-color:transparent}
+.mx-btn.sig{background:var(--mx-lime);color:#14181b;border-color:transparent}
+
+/* rows: the list used by needs-you, conversations and appointments */
+.mx-list{display:flex;flex-direction:column;overflow:auto;min-height:0;flex:1}
+.mx-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--mx-line);min-width:0}
+.mx-row:first-child{border-top:0;padding-top:4px}
+.mx-row .mx-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--mx-mute)}
+.mx-row .mx-dot.critical{background:var(--mx-crit)}.mx-row .mx-dot.warning{background:var(--mx-warn)}.mx-row .mx-dot.healthy{background:var(--mx-ok)}
+.mx-row .mx-tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.mx-row .mx-tx b{font-size:13.5px;font-weight:500;color:var(--mx-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx-row .mx-tx small{font-size:12px;color:var(--mx-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx-row .mx-time{width:48px;flex:none;font-family:'Geist Mono',ui-monospace,monospace;font-size:12.5px;color:var(--mx-ink2)}
+.mx-row .mx-val{font-size:13px;font-variant-numeric:tabular-nums;color:var(--mx-ink);white-space:nowrap}
+.mx-row.gap .mx-tx b{color:var(--mx-warn)}.mx-row.gap{border-top-style:dashed}
+.mx-more{font-size:12.5px;color:var(--mx-mute);padding-top:6px}
+
+/* meter: share of something, with the number beside it */
+.mx-meter{height:6px;border-radius:99px;background:var(--mx-raise);overflow:hidden}.mx-meter u{display:block;height:100%;border-radius:99px;background:var(--mx-ink)}
+
+/* the recommended action: the one graphite card on a page, lime only inside it */
+.mx-card.mx-rec{background:#14181b;border-color:#14181b;color:#f1f3f4}
+:root:not([data-theme="light"]) .mx-card.mx-rec{background:#23272b;border-color:rgba(198,244,50,.25)}
+.mx-rec .mx-hd h3{color:#9aa6af}.mx-rec .mx-rec-t{font-size:16px;line-height:1.4;font-weight:500;color:#f1f3f4;margin:0}
+.mx-rec .mx-why{color:#9aa6af}
+
+/* the health strip: four figures in one row, read left to right */
+.mx-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.mx-strip>div{padding:0 20px;border-left:1px solid var(--mx-line);display:flex;flex-direction:column;gap:4px;min-width:0}
+.mx-strip>div:first-child{border-left:0;padding-left:0}
+.mx-strip span{font-size:12.5px;color:var(--mx-mute)}.mx-strip b{font-size:24px;font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--mx-ink)}
+@media (max-width:767px){.mx-strip{grid-template-columns:1fr 1fr;gap:16px 0}.mx-strip>div:nth-child(3){border-left:0;padding-left:0}}
+
+/* empty, loading and error states */
+.mx-empty{display:flex;flex-direction:column;gap:6px;padding:8px 0;color:var(--mx-mute);font-size:13px}.mx-empty b{color:var(--mx-ink2);font-weight:500}
+.mx-skel{border-radius:8px;background:linear-gradient(90deg,var(--mx-raise),var(--mx-line),var(--mx-raise));background-size:200% 100%;animation:mxSk 1.2s linear infinite}
+@keyframes mxSk{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.mx-skel{animation:none}}
+.mx-err{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--mx-crit)}
