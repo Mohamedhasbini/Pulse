@@ -57,7 +57,7 @@
   function c4({ past, conv }) {
     const ord = [1, 2, 3, 4, 5, 6, 0], slots = [9, 11, 13, 15, 17, 19], m = {}; let mx = 1;
     [...past.filter(b => new Date(b.start) > Date.now() - 90 * 864e5).map(b => b.start), ...conv.map(c => c.at)].forEach(s => { const d = new Date(s), h = d.getHours(), i = slots.findIndex(x => h >= x && h < x + 2); if (i < 0) return; const k = d.getDay() + '|' + i; m[k] = (m[k] || 0) + 1; mx = Math.max(mx, m[k]); });
-    return card(4, 'Busy hours', 'Bookings and chats by day and time, last 90 days', `<div class="pv-heat"><span></span>${ord.map(d => `<span>${DAYS[d][0]}</span>`).join('')}
+    return card(4, 'Busiest days and hours', 'Bookings and chats by day and time, last 90 days', `<div class="pv-heat"><span></span>${ord.map(d => `<span>${DAYS[d][0]}</span>`).join('')}
       ${slots.map((s, i) => `<span>${s}h</span>${ord.map(d => { const v = m[d + '|' + i] || 0; return `<b title="${DAYS[d]} ${s}:00 · ${v}" style="background:${v ? a(L, .1 + v / mx * .9) : 'var(--pv-track)'}"></b>`; }).join('')}`).join('')}</div>`);
   }
   // ---- 5 donut by service
@@ -80,7 +80,7 @@
   function c7({ live, conv, past }) {
     const n = live.now || {}, chats = Math.max(conv.length, n.conversations || 0), booked = n.ai_count ?? conv.filter(c => c.outcome === 'booked').length, asked = Math.max(booked, conv.filter(c => c.messages > 2).length), offered = Math.max(booked, Math.round((asked + booked) / 2));
     const st = [['Chats', chats], ['Engaged', asked], ['Offered a slot', offered], ['Booked', booked]], mx = Math.max(1, chats);
-    return card(7, 'From chat to booking', 'What the front desk turned into visits', window.WL ? window.WL.L.pyramid.render({ c: st }) : '');
+    return card(7, 'Chats that became bookings', 'What the front desk turned into visits', window.WL ? window.WL.L.pyramid.render({ c: st }) : '');
   }
   // ---- 8 KPI strip + sparklines
   function c8({ past, live }) {
@@ -95,7 +95,7 @@
     const seen = {}, wk = {}, now = Date.now();
     [...past].sort((x, y) => new Date(x.start) - new Date(y.start)).forEach(b => { const k = b.phone || b.customer, w = Math.floor((now - new Date(b.start)) / (7 * 864e5)); if (w < 8) { wk[w] = wk[w] || [0, 0]; wk[w][seen[k] ? 1 : 0]++; } seen[k] = 1; });
     const ws = Array.from({ length: 8 }, (_, i) => wk[7 - i] || [0, 0]), mx = Math.max(1, ...ws.map(w => w[0] + w[1]));
-    return card(9, 'New vs returning', 'Visits per week, last 8 weeks', `<div class="pv-stack">${ws.map((w, i) => `<div title="${w[1]} returning · ${w[0]} new"><i style="height:${w[1] / mx * 100}%;background:${L}"></i><i style="height:${w[0] / mx * 100}%;background:#7d848b"></i><span>${i === 7 ? 'now' : '-' + (7 - i) + 'w'}</span></div>`).join('')}</div><div class="pv-leg"><span><i style="background:${L}"></i>Returning</span><span><i style="background:#7d848b"></i>New</span></div>`);
+    return card(9, 'New and returning clients', 'Visits per week, last 8 weeks', `<div class="pv-stack">${ws.map((w, i) => `<div title="${w[1]} returning · ${w[0]} new"><i style="height:${w[1] / mx * 100}%;background:${L}"></i><i style="height:${w[0] / mx * 100}%;background:#7d848b"></i><span>${i === 7 ? 'now' : '-' + (7 - i) + 'w'}</span></div>`).join('')}</div><div class="pv-leg"><span><i style="background:${L}"></i>Returning</span><span><i style="background:#7d848b"></i>New</span></div>`);
   }
   // ---- 10 timeline by service today
   function c10({ all }) {
@@ -108,7 +108,7 @@
   // ---- 11 big number + barcode
   function c11({ past }) {
     const now = new Date(new Date().toDateString()), d = Array.from({ length: 90 }, (_, i) => rev(sumIn(past, new Date(+now - (89 - i) * 864e5), new Date(+now - (88 - i) * 864e5)))), mx = Math.max(1, ...d);
-    return card(11, 'Last 90 days', 'Each bar is one day. Lime = this week', `<div class="pv-big">${money(d.reduce((a, b) => a + b, 0))}</div><div class="pv-code">${d.map((v, i) => `<i title="${money(v)}" style="height:${Math.max(4, v / mx * 100)}%;${i > 82 ? `background:${L}` : ''}"></i>`).join('')}</div>`, 1);
+    return card(11, 'Revenue each day, last 90 days', 'Each bar is one day. Lime = this week', `<div class="pv-big">${money(d.reduce((a, b) => a + b, 0))}</div><div class="pv-code">${d.map((v, i) => `<i title="${money(v)}" style="height:${Math.max(4, v / mx * 100)}%;${i > 82 ? `background:${L}` : ''}"></i>`).join('')}</div>`, 1);
   }
   // ---- 12 status table
   function c12({ conv }) {
@@ -120,7 +120,7 @@
     const d = new Date(), m0 = new Date(d.getFullYear(), d.getMonth(), 1), p0 = new Date(d.getFullYear(), d.getMonth() - 1, 1);
     const cur = sumIn(past, m0, new Date(8.64e15)), prev = sumIn(past, p0, m0);
     const g = [['Revenue', rev(cur), Math.max(1, Math.round(rev(prev) * 1.1)), 1], ['Bookings', cur.length, Math.max(1, Math.round(prev.length * 1.1))], ['Clients', new Set(cur.map(b => b.phone)).size, Math.max(1, Math.round(new Set(prev.map(b => b.phone)).size * 1.1))]];
-    return card(13, 'This month vs goal', 'Goal = last month + 10%', `<div class="pv-bul">${g.map(([l, v, t, m]) => `<div><div class="h"><span>${l}</span><b>${m ? money(v) : v} <small>/ ${m ? money(t) : t}</small></b></div><div class="pv-bar lg"><i style="width:${Math.min(100, v / t * 100)}%"></i></div></div>`).join('')}</div>`);
+    return card(13, 'This month against your goal', 'Goal = last month + 10%', `<div class="pv-bul">${g.map(([l, v, t, m]) => `<div><div class="h"><span>${l}</span><b>${m ? money(v) : v} <small>/ ${m ? money(t) : t}</small></b></div><div class="pv-bar lg"><i style="width:${Math.min(100, v / t * 100)}%"></i></div></div>`).join('')}</div>`);
   }
   // ---- 14 cohort retention
   function c14({ past }) {
@@ -128,16 +128,16 @@
     [...past].sort((x, y) => new Date(x.start) - new Date(y.start)).forEach(b => { const k = b.phone || b.customer, m = b.start.slice(0, 7); if (!first[k]) first[k] = m; (visits[k] = visits[k] || new Set()).add(m); });
     const mAdd = (m, n) => { const d = new Date(m + '-01T00:00'); d.setMonth(d.getMonth() + n); return d.toISOString().slice(0, 7); }, cur = new Date().toISOString().slice(0, 7);
     const cohorts = [...new Set(Object.values(first))].sort().slice(-4);
-    if (!cohorts.length) return card(14, 'Who came back', 'Retention by first-visit month', empty('Not enough history yet'));
+    if (!cohorts.length) return card(14, 'Clients who came back', 'Retention by first-visit month', empty('Not enough history yet'));
     const cell = (c, n) => { if (mAdd(c, n) > cur) return '<td class="z">—</td>'; const ks = Object.keys(first).filter(k => first[k] === c), p = Math.round(ks.filter(k => visits[k].has(mAdd(c, n))).length / ks.length * 100); return `<td class="hc" style="--c:${a(L, .08 + p / 100 * .92)}${p > 55 ? ';color:#111' : ''}">${p}%</td>`; };
-    return card(14, 'Who came back', 'Share of each month’s new clients who returned', `<table class="pv-t pv-piv"><thead><tr><th>First visit</th><th>Size</th><th>+1 mo</th><th>+2 mo</th><th>+3 mo</th></tr></thead><tbody>${cohorts.map(c => `<tr><td>${new Date(c + '-01T00:00').toLocaleString(undefined, { month: 'short', year: '2-digit' })}</td><td>${Object.values(first).filter(x => x === c).length}</td>${[1, 2, 3].map(n => cell(c, n)).join('')}</tr>`).join('')}</tbody></table>`);
+    return card(14, 'Clients who came back', 'Share of each month’s new clients who returned', `<table class="pv-t pv-piv"><thead><tr><th>First visit</th><th>Size</th><th>+1 mo</th><th>+2 mo</th><th>+3 mo</th></tr></thead><tbody>${cohorts.map(c => `<tr><td>${new Date(c + '-01T00:00').toLocaleString(undefined, { month: 'short', year: '2-digit' })}</td><td>${Object.values(first).filter(x => x === c).length}</td>${[1, 2, 3].map(n => cell(c, n)).join('')}</tr>`).join('')}</tbody></table>`);
   }
   // ---- 15 activity rings
   function c15({ live, all, conv }) {
     const n = live.now || {}, d30 = all.filter(b => new Date(b.start) > Date.now() - 30 * 864e5), noshow = d30.filter(b => b.status === 'no_show').length;
     const ring = (p, label, val, col = L) => { const C = 2 * Math.PI * 38; return `<div><svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="38" fill="none" stroke="var(--pv-track)" stroke-width="10"/><circle cx="48" cy="48" r="38" fill="none" stroke="${col}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C * Math.min(100, p) / 100} ${C}" transform="rotate(-90 48 48)"/><text x="48" y="55" text-anchor="middle">${val}</text></svg><span>${label}</span></div>`; };
     const sec = n.avg_ms ? n.avg_ms / 1000 : 0, booked = conv.length ? Math.round(conv.filter(c => c.outcome === 'booked').length / conv.length * 100) : 0, ns = d30.length ? Math.round(noshow / d30.length * 100) : 0;
-    return card(15, 'Front-desk health', 'Reply speed, booking rate, no-shows (30 days)', `<div class="pv-rings">${ring(sec ? Math.max(5, 100 - sec * 5) : 0, 'Reply speed', sec ? sec.toFixed(1) + 's' : '—')}${ring(booked, 'Chats booked', booked + '%')}${ring(ns, 'No-shows', ns + '%', S)}</div>`);
+    return card(15, 'How well the front desk is doing', 'Reply speed, booking rate, no-shows (30 days)', `<div class="pv-rings">${ring(sec ? Math.max(5, 100 - sec * 5) : 0, 'Reply speed', sec ? sec.toFixed(1) + 's' : '—')}${ring(booked, 'Chats booked', booked + '%')}${ring(ns, 'No-shows', ns + '%', S)}</div>`);
   }
   // ---- 16 living front desk
   function c16({ conv, all }) {
@@ -160,9 +160,9 @@
   // ---- 18 topic treemap: what clients ask about
   function c18({ conv }) {
     const by = {}; conv.forEach(c => { const t = c.topic || 'Other'; by[t] = by[t] || { n: 0, neg: 0, booked: 0 }; by[t].n++; if (c.mood === 'negative') by[t].neg++; if (c.outcome === 'booked') by[t].booked++; });
-    const rows = Object.entries(by).sort((x, y) => y[1].n - x[1].n); if (!rows.length) return card(18, 'What clients ask about', 'Latest conversations', empty('No conversations yet'));
+    const rows = Object.entries(by).sort((x, y) => y[1].n - x[1].n); if (!rows.length) return card(18, 'What clients ask about most', 'Latest conversations', empty('No conversations yet'));
     const tot = rows.reduce((s, r) => s + r[1].n, 0);
-    return card(18, 'What clients ask about', 'Tile size = how often it comes up. Lime = led to a booking', `<div class="pv-tree">${rows.map(([t, v]) => `<div style="flex:${v.n} 1 ${Math.max(90, v.n / tot * 520)}px;background:${v.booked ? a(L, .25 + v.booked / v.n * .7) : `color-mix(in srgb,${S} ${12 + v.n / rows[0][1].n * 22}%,transparent)`}${v.booked / v.n > .5 ? ';color:#111' : ''}"><b>${esc(t)}</b><span>${v.n} chat${v.n > 1 ? 's' : ''}${v.neg ? ` · ${v.neg} unhappy` : ''}</span></div>`).join('')}</div>`, 1);
+    return card(18, 'What clients ask about most', 'Tile size = how often it comes up. Lime = led to a booking', `<div class="pv-tree">${rows.map(([t, v]) => `<div style="flex:${v.n} 1 ${Math.max(90, v.n / tot * 520)}px;background:${v.booked ? a(L, .25 + v.booked / v.n * .7) : `color-mix(in srgb,${S} ${12 + v.n / rows[0][1].n * 22}%,transparent)`}${v.booked / v.n > .5 ? ';color:#111' : ''}"><b>${esc(t)}</b><span>${v.n} chat${v.n > 1 ? 's' : ''}${v.neg ? ` · ${v.neg} unhappy` : ''}</span></div>`).join('')}</div>`, 1);
   }
   // ---- 19 mood split
   function c19({ conv }) {
@@ -188,13 +188,13 @@
     const by = {}; past.forEach(b => { const k = b.source === 'ai' ? 'AI receptionist' : b.source === 'web' ? 'Booking page' : b.source ? b.source[0].toUpperCase() + b.source.slice(1) : 'You'; by[k] = (by[k] || 0) + 1; });
     const ch = {}; conv.forEach(c => { const k = c.channel === 'test' ? 'Test chat' : c.channel || 'Other'; ch[k] = (ch[k] || 0) + 1; });
     const bars = o => { const r = Object.entries(o).sort((x, y) => y[1] - x[1]), mx = Math.max(1, ...r.map(x => x[1])); return r.length ? r.map(([k, v], i) => `<div class="pv-hb"><span>${esc(k)}</span><div class="pv-bar lg"><i style="width:${v / mx * 100}%;${i ? `background:${S}` : ''}"></i></div><b>${v}</b></div>`).join('') : empty('Nothing yet'); };
-    return card(22, 'Where it comes from', 'Who made the booking, and which channel clients write on', `<div class="pv-two"><div><h4>Bookings by</h4>${bars(by)}</div><div><h4>Chats on</h4>${bars(ch)}</div></div>`, 1);
+    return card(22, 'Where bookings come from', 'Who made the booking, and which channel clients write on', `<div class="pv-two"><div><h4>Bookings by</h4>${bars(by)}</div><div><h4>Chats on</h4>${bars(ch)}</div></div>`, 1);
   }
   // ---- 23 value matrix: visits vs spend
   function c23({ cust }) {
-    const l = cust.filter(c => c.visits || c.spent); if (!l.length) return card(23, 'Client value map', 'Visits vs spend', empty('No paying clients yet'));
+    const l = cust.filter(c => c.visits || c.spent); if (!l.length) return card(23, 'Who visits often and spends most', 'Visits vs spend', empty('No paying clients yet'));
     const mv = Math.max(2, ...l.map(c => c.visits || 0)), ms = Math.max(1, ...l.map(c => c.spent || 0));
-    return card(23, 'Client value map', 'Right = visits often, up = spends more. Top-right are your VIPs', `<div class="pv-scat"><b class="q">Big spenders</b><b class="q r">VIP</b><b class="q b">Loyal</b>${l.slice(0, 80).map(c => { const x = (c.visits || 0) / mv * 94 + 3, y = 97 - (c.spent || 0) / ms * 94, vip = x > 50 && y < 50; return `<i title="${esc(c.name || c.phone)} · ${c.visits || 0} visits · ${money(c.spent)}" style="left:${x}%;top:${y}%;${vip ? `background:${L};width:14px;height:14px` : ''}"></i>`; }).join('')}<small class="xl">visits →</small><small class="yl">spend →</small></div>`, 1);
+    return card(23, 'Who visits often and spends most', 'Right = visits often, up = spends more. Top-right are your VIPs', `<div class="pv-scat"><b class="q">Big spenders</b><b class="q r">VIP</b><b class="q b">Loyal</b>${l.slice(0, 80).map(c => { const x = (c.visits || 0) / mv * 94 + 3, y = 97 - (c.spent || 0) / ms * 94, vip = x > 50 && y < 50; return `<i title="${esc(c.name || c.phone)} · ${c.visits || 0} visits · ${money(c.spent)}" style="left:${x}%;top:${y}%;${vip ? `background:${L};width:14px;height:14px` : ''}"></i>`; }).join('')}<small class="xl">visits →</small><small class="yl">spend →</small></div>`, 1);
   }
   // ---- 24 win-back list
   function c24({ cust }) {
@@ -214,7 +214,7 @@
   function c25({ live }) {
     const f = live.flow || [], ch = [...new Set(f.map(x => x.channel))], oc = [...new Set(f.map(x => x.outcome || 'open'))], cols = [L, S, '#7d848b', '#4a4f54', '#33373b'];
     const tot = c => f.filter(x => x.channel === c).reduce((s, x) => s + x.n, 0), mx = Math.max(1, ...ch.map(tot));
-    return card(25, 'How chats end, by channel', 'Every conversation in the last 30 days', ch.length ? `<div class="pv-sbars">${ch.sort((a, b) => tot(b) - tot(a)).map(c => `<div class="r"><span>${esc(chName(c))}</span><div style="width:${tot(c) / mx * 100}%">${oc.map((o, i) => { const n = f.find(x => x.channel === c && (x.outcome || 'open') === o)?.n || 0; return n ? `<i style="flex:${n};background:${cols[i % 5]}" title="${esc(o)} ${n}"></i>` : ''; }).join('')}</div><b>${tot(c)}</b></div>`).join('')}</div>
+    return card(25, 'How chats end on each channel', 'Every conversation in the last 30 days', ch.length ? `<div class="pv-sbars">${ch.sort((a, b) => tot(b) - tot(a)).map(c => `<div class="r"><span>${esc(chName(c))}</span><div style="width:${tot(c) / mx * 100}%">${oc.map((o, i) => { const n = f.find(x => x.channel === c && (x.outcome || 'open') === o)?.n || 0; return n ? `<i style="flex:${n};background:${cols[i % 5]}" title="${esc(o)} ${n}"></i>` : ''; }).join('')}</div><b>${tot(c)}</b></div>`).join('')}</div>
       <div class="pv-leg">${oc.map((o, i) => `<span><i style="background:${cols[i % 5]}"></i>${esc(o.replace(/_/g, ' '))}</span>`).join('')}</div>` : empty('No chats yet'), 1);
   }
   // 26 delivery: messages + failures, last 24h
@@ -287,7 +287,7 @@
   // 39 AI coverage
   function c39({ stats }) {
     const all = Math.max(1, stats.conv || 0), ans = stats.answered || 0, hand = stats.handoff || 0, C = 2 * Math.PI * 45, p = ans / all;
-    return card(39, 'How much Nora handles alone', 'Chats answered without you, last 30 days', `<div class="pv-donut"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="45" fill="none" stroke="var(--pv-track)" stroke-width="18"/><circle cx="60" cy="60" r="45" fill="none" stroke="${L}" stroke-width="18" stroke-dasharray="${C * p} ${C}" transform="rotate(-90 60 60)"/><text x="60" y="66" text-anchor="middle" class="pv-dv">${Math.round(p * 100)}%</text></svg><ul><li><i style="background:${L}"></i>Answered alone<b>${ans}</b></li><li><i style="background:${S}"></i>Handed to you<b>${hand}</b></li><li><i style="background:#5d6369"></i>Booked from chat<b>${stats.booked_conv || 0}</b></li></ul></div>`);
+    return card(39, 'Chats Nora answered alone', 'Chats answered without you, last 30 days', `<div class="pv-donut"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="45" fill="none" stroke="var(--pv-track)" stroke-width="18"/><circle cx="60" cy="60" r="45" fill="none" stroke="${L}" stroke-width="18" stroke-dasharray="${C * p} ${C}" transform="rotate(-90 60 60)"/><text x="60" y="66" text-anchor="middle" class="pv-dv">${Math.round(p * 100)}%</text></svg><ul><li><i style="background:${L}"></i>Answered alone<b>${ans}</b></li><li><i style="background:${S}"></i>Handed to you<b>${hand}</b></li><li><i style="background:#5d6369"></i>Booked from chat<b>${stats.booked_conv || 0}</b></li></ul></div>`);
   }
   // 40 knowledge base
   function c40({ biz, live }) {
@@ -298,18 +298,18 @@
   function c41({ biz, past }) {
     const s = (biz.services || []).filter(x => x.active !== false), l = past.filter(b => new Date(b.start) > Date.now() - 90 * 864e5);
     const rows = s.map(x => { const b = l.filter(y => y.service === x.name); return [x, b.length, rev(b), (+x.price || 0) / Math.max(1, x.minutes || 60) * 60]; }).sort((a, b) => b[3] - a[3]), mh = Math.max(1, ...rows.map(r => r[3]));
-    return card(41, 'Earnings per chair hour', 'Price ÷ duration, with how often each is booked (90 days)', rows.length ? `<div class="pv-scroll"><table class="pv-t"><thead><tr><th>Service</th><th>Price</th><th>Time</th><th class="bw">Per hour</th><th>Booked</th><th>Revenue</th></tr></thead><tbody>${rows.map(([x, n, r, ph]) => `<tr><td><b>${esc(x.name)}</b></td><td>${money(x.price)}</td><td>${x.minutes} min</td><td><div class="pv-bar"><i style="width:${ph / mh * 100}%"></i></div><small class="m">${money(ph)}/h</small></td><td>${n}</td><td>${money(r)}</td></tr>`).join('')}</tbody></table></div>` : empty('Add services to see this'), 1);
+    return card(41, 'What an hour earns, by service', 'Price ÷ duration, with how often each is booked (90 days)', rows.length ? `<div class="pv-scroll"><table class="pv-t"><thead><tr><th>Service</th><th>Price</th><th>Time</th><th class="bw">Per hour</th><th>Booked</th><th>Revenue</th></tr></thead><tbody>${rows.map(([x, n, r, ph]) => `<tr><td><b>${esc(x.name)}</b></td><td>${money(x.price)}</td><td>${x.minutes} min</td><td><div class="pv-bar"><i style="width:${ph / mh * 100}%"></i></div><small class="m">${money(ph)}/h</small></td><td>${n}</td><td>${money(r)}</td></tr>`).join('')}</tbody></table></div>` : empty('Add services to see this'), 1);
   }
   // 42 open hours vs booked hours per weekday
   function c42({ biz, past }) {
     const ord = [1, 2, 3, 4, 5, 6, 0], h = biz.hours || {}, l = past.filter(b => new Date(b.start) > Date.now() - 56 * 864e5);
     const open = d => (h[d] || []).reduce((s, [a, b]) => s + (parseInt(b) - parseInt(a)), 0), used = d => l.filter(b => new Date(b.start).getDay() === d).reduce((s, b) => s + (new Date(b.end) - new Date(b.start)) / 36e5, 0) / 8;
     const mx = Math.max(1, ...ord.map(open));
-    return card(42, 'Open hours vs booked hours', 'Average week, last 8 weeks. Lime = booked, grey = open but empty', `<div class="pv-week">${ord.map(d => { const o = open(d), u = Math.min(o, used(d)); return `<div><span>${DAYS[d]}</span><div class="dual"><i class="o" style="height:${o / mx * 100}%"></i><i style="height:${u / mx * 100}%"></i></div><b>${o ? Math.round(u / o * 100) + '%' : 'closed'}</b><small>${o}h open</small></div>`; }).join('')}</div>`, 1);
+    return card(42, 'How much of your open time is booked', 'Average week, last 8 weeks. Lime = booked, grey = open but empty', `<div class="pv-week">${ord.map(d => { const o = open(d), u = Math.min(o, used(d)); return `<div><span>${DAYS[d]}</span><div class="dual"><i class="o" style="height:${o / mx * 100}%"></i><i style="height:${u / mx * 100}%"></i></div><b>${o ? Math.round(u / o * 100) + '%' : 'closed'}</b><small>${o}h open</small></div>`; }).join('')}</div>`, 1);
   }
   // 43 channels connected and volume
   function c43({ stats }) {
-    return card(43, 'Chats per channel', 'Last 30 days. Connect more channels to be reachable everywhere', hbars((stats.channels || []).map(x => [chName(x.channel), x.n]).sort((a, b) => b[1] - a[1])), 1);
+    return card(43, 'Where clients write to you', 'Last 30 days. Connect more channels to be reachable everywhere', hbars((stats.channels || []).map(x => [chName(x.channel), x.n]).sort((a, b) => b[1] - a[1])), 1);
   }
   // 44 reminders and no-shows
   function c44({ stats, biz }) {
@@ -329,7 +329,7 @@
     const line = hist.map((v, i) => `${X(i)},${Y(v)}`).join(' '), fl = [`${X(11)},${Y(hist[11])}`, ...fut.map((x, i) => `${X(12 + i)},${Y(x.f)}`)].join(' ');
     const band = [...fut.map((x, i) => `${X(12 + i)},${Y(x.hi)}`), ...fut.map((x, i) => `${X(12 + i)},${Y(x.lo)}`).reverse()].join(' ');
     const total = fut.reduce((a, x) => a + x.f, 0), booked = fut.reduce((a, x) => a + x.booked, 0), dir = slope > ym * .02 ? 'rising' : slope < -ym * .02 ? 'slowing' : 'steady';
-    return card(45, 'Forecast, next 4 weeks', 'From your last 12 weeks and what is already booked', `<div class="pv-big">${money(total)} <em>${dir}</em></div>
+    return card(45, 'Expected revenue in the next 4 weeks', 'From your last 12 weeks and what is already booked', `<div class="pv-big">${money(total)} <em>${dir}</em></div>
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="pv-area"><polygon points="${band}" fill="color-mix(in srgb,var(--pv-lime) 16%,transparent)"/><polyline points="${line}" fill="none" stroke="${S}" stroke-width="2.4" vector-effect="non-scaling-stroke"/><polyline points="${fl}" fill="none" stroke="${L}" stroke-width="3" stroke-dasharray="6 6" vector-effect="non-scaling-stroke"/><line x1="${X(11.5)}" y1="8" x2="${X(11.5)}" y2="${H - 8}" stroke="var(--pv-line)" stroke-dasharray="3 4"/></svg>
       <ul class="pv-feed"><li><span>Why</span>Trend over 12 weeks is ${dir} (${slope >= 0 ? '+' : ''}${money(slope)} a week).</li><li><span>Booked</span>${money(booked)} of it is already in the calendar.</li><li><span>Range</span>${money(fut.reduce((a, x) => a + x.lo, 0))} to ${money(fut.reduce((a, x) => a + x.hi, 0))} for the 4 weeks.</li></ul>`, 1);
   }
@@ -427,9 +427,9 @@
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44, 45: c45 };
   const PAGES = { today: [16, 8, 7, 15] };
   // sub-tabs get their own board, keyed by tab name, so each one opens on something new
-  const SUB = { insights: { 'AI performance': [15, 7, 17], 'Live flow': [16, 30], Topics: [18, 19], Business: [45, 1, 11, 13, 8], Services: [20, 2, 5], Timing: [21, 4], Channels: [22] },
+  const SUB = { insights: { 'AI performance': [15, 7, 17], 'Live flow': [16, 30], Topics: [18, 19], Business: [45, 1, 11, 13, 8], Services: [20, 5], Timing: [4], Channels: [22] },
     customers: { Clients: [6, 23], Board: [9, 14], 'Win back': [24, 9], Reviews: [19, 15] },
-    inbox: { Conversations: [25, 12], 'Needs you': [27, 28], 'Delivery queue': [26, 29] },
+    inbox: { Conversations: [25], 'Needs you': [27, 28], 'Delivery queue': [26, 29] },
     calendar: { Schedule: [3, 10, 31], Requests: [17, 44], 'Booking page': [32, 31] },
     marketing: { Overview: [34, 33], Offers: [35, 37], 'Discount codes': [36], Agents: [37, 24] },
     pulse: { Approvals: [38, 27], Brief: [8, 31, 45] },
