@@ -32,16 +32,16 @@
     const el = more.querySelector('.ph-n'); el.hidden = !n; el.textContent = n;
   }
   function draw() {
-    const { pages, icon, named } = window.P10, cur = document.querySelector('nav[aria-label="Main"] .p10[aria-current="true"]')?.dataset.p10;
+    const { pages, icon, named, group = {}, shown = (_, t) => t.map((x, k) => [x, k]) } = window.P10, cur = document.querySelector('nav[aria-label="Main"] .p10[aria-current="true"]')?.dataset.p10;
     const n = id => +(document.querySelector(`nav .p10[data-p10="${id}"] b`)?.textContent || 0) || 0;
     const lab = document.getElementById('labBtn');
     sheet.innerHTML = `<div class="ph-panel">
       <div class="ph-grab" aria-hidden="true"></div>
       <div class="ph-head"><b>All pages</b><button type="button" class="ph-x" data-close="1" aria-label="Close">${svg('<path d="M6 6l12 12M18 6 6 18"/>')}</button></div>
       <button type="button" class="ph-search" data-search="1">${svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>')}Search pages, clients, chats…</button>
-      <div class="ph-pages">${pages.map(([id, title, , tabs]) => `<section class="ph-pg${id === cur ? ' on' : ''}">
+      <div class="ph-pages">${pages.map(([id, title, , tabs]) => `${group[id] ? `<p class="ph-grp">${e(group[id])}</p>` : ''}<section class="ph-pg${id === cur ? ' on' : ''}">
         <button type="button" class="ph-pt" data-go="${id}" data-k="0"><span class="ph-ic">${svg(icon[id] || '')}</span><span>${e(named(title))}</span>${n(id) ? `<b class="ph-c">${n(id)}</b>` : ''}</button>
-        ${tabs.length > 1 ? `<div class="ph-tabs">${tabs.map(([t], k) => `<button type="button" data-go="${id}" data-k="${k}">${e(named(t))}</button>`).join('')}</div>` : ''}</section>`).join('')}</div>
+        ${tabs.length > 1 ? `<div class="ph-tabs">${shown(id, tabs).map(([[t], k]) => `<button type="button" data-go="${id}" data-k="${k}">${e(named(t))}</button>`).join('')}</div>` : ''}</section>`).join('')}</div>
       <div class="ph-acts">
         <button type="button" data-click="bellBtn">${svg('<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"/>')}Notifications</button>
         <button type="button" data-click="themeBtn">${svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}Light / dark</button>

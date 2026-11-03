@@ -3005,3 +3005,7 @@ html.ph-lock,html.ph-lock body{overflow:hidden}
   .p10-on #coIdeas:not(#_){display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
   .p10-on #coIdeas button{flex:none}
 }
+.p10-grp{margin:14px 0 4px 12px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3,#8d9093)}
+.p10-grp:first-of-type{margin-top:4px}
+.ph-grp{margin:12px 4px 2px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3,#8d9093)}
+.ph-pg:has(+ .ph-grp){border-bottom:0}

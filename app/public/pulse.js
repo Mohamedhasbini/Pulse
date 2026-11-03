@@ -26,8 +26,8 @@
     ['inbox', 'Inbox', 'Talk to your customers', [
       ['Conversations', { own: 'inbox', folder: 'all' }],
       ['Needs you', { own: 'inbox', folder: 'needs' }],
-      ['Delivery queue', { page: 'inbox', tab: 'queue' }],
-      ['AI control', { own: 'aictl' }]]],
+      ['Delivery queue', { page: 'inbox', tab: 'queue' , adv: true }],
+      ['AI control', { own: 'aictl' , adv: true }]]],
     ['calendar', 'Calendar', 'Run your schedule', [
       ['Schedule', { own: 'calendar' }],
       ['Requests', { page: 'inbox', tab: 'conversations', panes: ['approvals'], bare: true }],
@@ -50,36 +50,41 @@
       ['Overview', { own: 'growth' }],
       ['Offers', { page: 'people', tab: 'offers' }],
       ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'] }],
-      ['Agents', { entry: 'agents' }],
+      ['Agents', { entry: 'agents' , adv: true }],
       ['Website texts', { entry: 'website', ws: 0 }],
-      ['Website photos', { entry: 'website', ws: 1 }],
-      ['Website design', { entry: 'website', ws: 2 }],
-      ['Website address', { entry: 'website', ws: 3 }]]],
+      ['Website photos', { entry: 'website', ws: 1 , adv: true }],
+      ['Website design', { entry: 'website', ws: 2 , adv: true }],
+      ['Website address', { entry: 'website', ws: 3 , adv: true }]]],
     ['pulse', 'Ask MXAi', 'Your AI assistant', [['Approvals', { own: 'approvals' }], ['Ask MXAi', { own: 'ask' }], ['Brief', { own: 'brief' }]]],
     ['train', 'Train Nora', 'Make Nora smarter', [
       ['Coach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach'] }],
       ['Rules', { entry: 'training', mode: 'coach', only: ['top', 'tchRules'] }],
       ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'] }],
-      ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'] }]]],
+      ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'] , adv: true }]]],
     ['lab', 'Test lab', 'Try Nora before your customers do', [
       ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'] }],
       ['Test chat', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
-      ['Versions', { entry: 'training', only: ['top', 'learn'] }]]],
+      ['Versions', { entry: 'training', only: ['top', 'learn'] , adv: true }]]],
     ['settings', 'Settings', 'Set it up once', [
       ['Profile', { page: 'settings', tab: 'details', form: [0, 1, 2, 3, 4, 5, 6, 24] }],
-      ['Assistant', { page: 'settings', tab: 'details', form: [7, 8, 9, 17, 18], keep: ['Business type'] }],
+      ['Assistant', { page: 'settings', tab: 'details', form: [7, 8, 9, 17, 18], keep: ['Business type'] , adv: true }],
       ['Hours & team', { page: 'settings', tab: 'details', form: [10, 11, 12, 13] }],
       ['Services', { page: 'settings', tab: 'details', form: [14] }],
       ['FAQs', { page: 'settings', tab: 'details', form: [16] }],
-      ['Policies & payments', { page: 'settings', tab: 'details', form: [15, 19, 20, 21, 22, 23] }],
-      ['Tools', { page: 'settings', tab: 'booking', cards: ['Tools'] }],
+      ['Policies & payments', { page: 'settings', tab: 'details', form: [15, 19, 20, 21, 22, 23] , adv: true }],
+      ['Tools', { page: 'settings', tab: 'booking', cards: ['Tools'] , adv: true }],
       ['Channels', { page: 'settings', tab: 'channels', cards: ['Channels'] }],
-      ['Reminders', { page: 'settings', tab: 'channels', cards: ['Reminders'] }],
+      ['Reminders', { page: 'settings', tab: 'channels', cards: ['Reminders'] , adv: true }],
       ['Security & devices', { page: 'account', tab: 's2fa', panes: ['s2fa', 'sdev'] }],
-      ['Look & layout', { page: 'account', tab: 'look', panes: ['look', 'dash'] }],
-      ['Integrations', { own: 'integrations' }]]],
+      ['Look & layout', { page: 'account', tab: 'look', panes: ['look', 'dash'] , adv: true }],
+      ['Integrations', { own: 'integrations' , adv: true }]]],
   ];
   const BADGE = { inbox: 'apprN', pulse: 'paN', train: 'trN' };
+  // the menu in four groups, each heading drawn before its first page
+  const GROUP = { today: 'Daily', insights: 'Grow', pulse: 'Your AI', settings: 'Setup' };
+  // tabs marked adv show once the owner asks for more detail on that page (remembered), or while one is open
+  const detailOn = id => { try { return localStorage.getItem('mx-detail-' + id) === '1' } catch { return false } };
+  const shown = (id, tabs) => tabs.map((t, k) => [t, k]).filter(([t, k]) => !t[1].adv || detailOn(id) || (current?.[0] === id && tabs[current[1]]?.[1].adv && k >= 0));
   // the receptionist's name as the owner set it (Settings › Assistant), Nora by default
   const nora = () => (typeof biz !== 'undefined' && biz?.assistant_name) || 'Nora';
   const named = t => t.replace(/Nora/g, nora());
@@ -95,8 +100,9 @@
     $$('nav .navpills > button, nav .navpills > .ns').forEach(x => { if (x.id !== 'adminNav') x.classList.add('nav-gone') });
     nav = {};
     for (const [id, label] of PAGES) {
+      if (GROUP[id]) { const g = document.createElement('div'); g.className = 'p10-grp'; g.textContent = GROUP[id]; pills.insertBefore(g, $('#adminNav')); }
       const b = document.createElement('button'); b.type = 'button'; b.className = 'p10'; b.dataset.p10 = id; b.title = label; b.setAttribute('aria-label', label);
-      b.innerHTML = `<svg viewBox="0 0 24 24">${ICON[id]}</svg><span>${label}</span>${BADGE[id] ? `<b class="badge-n p10-n" data-for="${id}" hidden></b>` : ''}`;
+      b.innerHTML = `<svg viewBox="0 0 24 24">${ICON[id] || ICON.insights}</svg><span>${label}</span>${BADGE[id] ? `<b class="badge-n p10-n" data-for="${id}" hidden></b>` : ''}`;
       b.addEventListener('click', ev => { ev.stopImmediatePropagation(); go(id, 0) });
       pills.insertBefore(b, $('#adminNav')); nav[id] = b;
       const tabs = PAGES.find(p => p[0] === id)[3];
@@ -112,7 +118,7 @@
   function mark(id) {
     Object.entries(nav || {}).forEach(([k, b]) => { b.setAttribute('aria-current', String(k === id)); b.querySelector('span').textContent = named(PAGES.find(p => p[0] === k)[1]) });
     // only the open page shows its tabs in the sidebar
-    $$('.p10-sub').forEach(x => { x.hidden = x.dataset.for !== id; x.querySelectorAll('[data-k]').forEach(t => t.setAttribute('aria-current', String(x.dataset.for === id && +t.dataset.k === current?.[1]))) });
+    $$('.p10-sub').forEach(x => { x.hidden = x.dataset.for !== id; const ok = new Set(shown(x.dataset.for, PAGES.find(p => p[0] === x.dataset.for)[3]).map(([, k]) => k)); x.querySelectorAll('[data-k]').forEach(t => t.hidden = !ok.has(+t.dataset.k)); x.querySelectorAll('[data-k]').forEach(t => t.setAttribute('aria-current', String(x.dataset.for === id && +t.dataset.k === current?.[1]))) });
   }
 
   // ---------- opening a page and tab ----------
@@ -194,7 +200,7 @@
     const b = document.createElement('div'); b.className = 'p10-bar';
     const title = named(PAGES.find(p => p[0] === id)[1]), tab = tabs.length > 1 ? tabs[i][0] : '';
     // tabs marked adv stay out of the way until the owner asks for detail (or is already on one)
-    const hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || (() => { try { return localStorage.getItem('mx-detail-' + id) === '1' } catch { return false } })());
+    const hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || detailOn(id));
     b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.adv && !detail ? '' :
       `<button type="button" role="tab" data-t="${k}" aria-selected="${k === i}" aria-pressed="${k === i}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${detail ? 'Simple view' : 'More detail'}</button>` : ''}</div>` : '');
     b.addEventListener('click', ev => {
@@ -365,7 +371,7 @@
   window.openPulse = k => go('pulse', ['approvals', 'ask', 'brief'].indexOf(k) < 0 ? 0 : ['approvals', 'ask', 'brief'].indexOf(k));
   window.openP10 = go;
   // for the search box (palette.js)
-  window.P10 = { pages: PAGES, icon: ICON, named, ask: x => window.PulseCommand ? window.PulseCommand.open(x) : ask(x), go: (id, t) => go(id, t), current: () => current?.[0], sub: () => current?.[1], shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts() };
+  window.P10 = { pages: PAGES, icon: ICON, named, group: GROUP, shown, ask: x => window.PulseCommand ? window.PulseCommand.open(x) : ask(x), go: (id, t) => go(id, t), current: () => current?.[0], sub: () => current?.[1], shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts() };
   // any other way of opening a section (Today's buttons, notifications) drops our tab row so the page isn't mislabelled
   document.addEventListener('click', ev => {
     const n = ev.target.closest('nav button[data-view]'); if (!n || n.classList.contains('p10')) return;
