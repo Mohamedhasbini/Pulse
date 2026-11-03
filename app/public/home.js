@@ -48,9 +48,9 @@ window.homeLoad=()=>{if(!sec.hidden)load()}; // live.js calls this the moment da
 
 async function load(){
   const t=day(new Date()),get=u=>req(u).catch(()=>null);
-  const [biz,live,ch,wait,brief,cal,kpis]=await Promise.all([get("/api/business"),get("/api/live?days=30"),get("/api/channels"),get("/api/pulse/waiting"),get("/api/briefing"),get(`/api/calendar?from=${t}T00:00&to=${t}T23:59`),get("/api/kpis?days=30")]);
+  const [biz,live,ch,wait,brief,cal,kpis,month]=await Promise.all([get("/api/business"),get("/api/live?days=30"),get("/api/channels"),get("/api/pulse/waiting"),get("/api/briefing"),get(`/api/calendar?from=${t}T00:00&to=${t}T23:59`),get("/api/kpis?days=30"),get(`/api/calendar?from=${day(new Date(new Date().getFullYear(),new Date().getMonth()-1,1))}T00:00&to=${t}T23:59`)]);
   if(!biz||!live){$("#tdA").innerHTML=U.card({title:"Today",span:12,state:"critical",body:U.error("today's numbers","reload")});return}
-  draw({biz,live,ch,wait:wait||{items:[]},brief:brief||{items:[]},cal:cal||{bookings:[],timeOff:[]},kpis:Array.isArray(kpis)?kpis:[]})}
+  draw({biz,live,ch,wait:wait||{items:[]},brief:brief||{items:[]},cal:cal||{bookings:[],timeOff:[]},kpis:Array.isArray(kpis)?kpis:[],month:month?.bookings||[]})}
 
 function openNow(biz){const d=new Date(),m=d.getHours()*60+d.getMinutes(),r=(biz.hours?.[d.getDay()]||[]).map(([a,z])=>[mins(a),mins(z)]);
   const cur=r.find(([a,z])=>m>=a&&m<z);if(cur)return `Open now · until ${clock(cur[1])}`;const nx=r.find(([a])=>a>m);return nx?`Opens today at ${clock(nx[0])}`:"Closed today"}
@@ -64,7 +64,7 @@ function gaps(biz,cal){const d=new Date(),open=(biz.hours?.[d.getDay()]||[]).map
   const closed=open.length>0&&now>=Math.max(...open.map(o=>o[1]));
   return {list:out,openMin,booked,closed}}
 
-function draw({biz,live,ch,wait,brief,cal,kpis}){
+function draw({biz,live,ch,wait,brief,cal,kpis,month}){
   const now=live.now||{},d=new Date(),h=d.getHours(),ai=live.ai||{};
   // header
   const logo=$("#tdLogo");logo.style.backgroundImage=biz.logo_url?`url("${biz.logo_url}")`:"";logo.textContent=biz.logo_url?"":([...biz.name][0]||"").toUpperCase();
@@ -117,11 +117,15 @@ function draw({biz,live,ch,wait,brief,cal,kpis}){
 
   // 7 · business health, last 30 days
   const sum=f=>kpis.reduce((a,x)=>a+(f(x)||0),0),chats=sum(x=>x.chats),handled=sum(x=>x.handled),ms=kpis.filter(x=>x.reply_ms!=null),avg=ms.length?ms.reduce((a,x)=>a+x.reply_ms,0)/ms.length:null;
+  const m0=new Date(d.getFullYear(),d.getMonth(),1),paid=month.filter(b=>b.status!=="cancelled"&&new Date(b.start)<=d); // same rule as the Insights goal
+  const lastM=paid.filter(b=>new Date(b.start)<m0).reduce((a,b)=>a+(+b.price||0),0),thisM=paid.filter(b=>new Date(b.start)>=m0).reduce((a,b)=>a+(+b.price||0),0);
+  const target=Math.round(lastM*1.1),dim=new Date(d.getFullYear(),d.getMonth()+1,0).getDate(),pace=Math.round(thisM/Math.max(1,d.getDate())*dim);
+  const goalTxt=!target?`<span class="mx-ctx">set after your first full month</span>`:d.getDate()<7?`<span class="mx-ctx">too early to judge the pace</span>`:pace>=target?`<span class="mx-trend up">on pace for ${money(pace)}</span>`:`<span class="mx-trend down">${money(target-pace)} behind pace</span>`;
   const aiV=now.ai_value||0,aiP=now.ai_value_prev,ch30=aiP?(aiV-aiP)/aiP*100:null;
   $("#tdC").innerHTML=U.strip({title:"Business health · last 30 days",go:"p:insights:0",items:[
     ["Booked by MXAi",money(aiV),U.trend(ch30,{vs:"vs 30 days before"})||`<span class="mx-ctx">${now.ai_count||0} appointments</span>`],
     ["Chats answered alone",chats?`${Math.round(handled/chats*100)}%`:"–",`<span class="mx-ctx">${chats} chats</span>`],
-    ["Average reply",avg==null?"–":`${(avg/1000).toFixed(1)}s`,`<span class="mx-ctx">day and night</span>`],
+    ["Monthly goal",target?`${Math.round(thisM/target*100)}%`:"–",target?`<span class="mx-ctx">${money(thisM)} of ${money(target)}</span> ${goalTxt}`:goalTxt],
     ["Booked ahead",money(now.upcoming_value||0),`<span class="mx-ctx">${now.upcoming_count||0} upcoming</span>`]]});
 
   // go-live steps lead the page until setup is done
