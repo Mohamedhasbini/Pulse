@@ -37,7 +37,7 @@
       ['Win back', { page: 'people', tab: 'winback' }],
       ['Board', { page: 'people', tab: 'board', panes: ['board'] }],
       ['Reviews', { page: 'support', tab: 'reviews', bare: true }]]],
-    ['pulse', 'Your AI', 'Ask it, teach Nora and test it before customers do', [
+    ['pulse', 'Your AI', 'Ask, teach and test Nora', [
       ['Approvals', { own: 'approvals' }],
       ['Ask', { own: 'ask' }],
       ['Brief', { own: 'brief', adv: true }],
@@ -48,7 +48,7 @@
       ['Test chat', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
       ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'], adv: true }],
       ['Versions', { entry: 'training', only: ['top', 'learn'], adv: true }]]],
-    ['insights', 'Insights', 'Numbers only: how the AI and the business are doing', [
+    ['insights', 'Insights', 'How the business is doing', [
       ['Business', { page: 'analytics', tab: 'overview', panes: ['overview', 'next'], drop: ['Services'] }],
       ['Services', { page: 'analytics', tab: 'overview', panes: ['overview'], cards: ['Services'] }],
       ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true }],

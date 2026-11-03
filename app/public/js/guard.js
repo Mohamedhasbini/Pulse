@@ -47,7 +47,9 @@
   function compact(root) {
     root.querySelectorAll('.hx').forEach(h => {
       const f = h.querySelector('.hx-folders'), hasSide = f && f.textContent.trim().length > 0, hasExtra = h.querySelector('.hx-ask,.hx-smart,.hx-bignum,.hx-tl');
-      h.classList.toggle('hx-compact', !hasSide && !hasExtra);
+      // work pages always get the short header: title, purpose and tabs; the numbers live on Today and Insights
+      const work = /^(inbox|calendar|customers|pulse|settings)$/.test(window.P10?.current?.() || '');
+      h.classList.toggle('hx-compact', work || (!hasSide && !hasExtra)); h.classList.toggle('hx-work', work);
     });
   }
   let t = 0;

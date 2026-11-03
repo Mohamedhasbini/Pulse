@@ -51,10 +51,11 @@
     const id = window.P10?.current?.() || '';
     if (id === 'today') { bar.classList.add('hx-skip'); return today(); }
     const title = (window.P10?.pages || []).find(p => p[0] === id)?.[1] || $('.p10-purpose b', bar)?.textContent.split('›')[0].trim() || '';
-    const hero = document.createElement('div'); hero.className = 'hx'; hero.innerHTML = `<div class="hx-in"><div class="hx-greet"><h1>${esc(title)}<em>${esc(LINES[id] || '')}</em></h1><div class="hx-stats"></div></div><div class="hx-folders"></div></div>`;
+    const hero = document.createElement('div'); hero.className = 'hx'; hero.innerHTML = `<div class="hx-in"><div class="hx-greet"><h1>${esc(title)}<em>${esc(window.P10 ? window.P10.named(window.P10.pages.find(p => p[0] === id)?.[2] || LINES[id] || '') : LINES[id] || '')}</em></h1><div class="hx-stats"></div></div><div class="hx-folders"></div></div>`;
     bar.before(hero); hero.append(bar);
     const c = await content(id);
-    if (c.line) hero.querySelector('em').textContent = c.line;
+    // work pages keep their purpose line; Insights and Marketing lead with their headline number
+    if (c.line && !/^(inbox|calendar|customers|pulse|settings)$/.test(id)) hero.querySelector('em').textContent = c.line;
     hero.querySelector('.hx-stats').innerHTML = c.stats || '';
     hero.querySelector('.hx-folders').innerHTML = c.folders || '';
     await extras(id, hero);
