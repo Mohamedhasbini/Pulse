@@ -119,3 +119,14 @@ html body .hx-tbars i:not(.on):not(#_){background:color-mix(in srgb,var(--h-ink)
 .hx-cf{grid-column:1/-1;display:flex;justify-content:space-between;border-top:1px solid var(--h-rim);padding-top:10px;font-size:12.5px;color:var(--h-meta)}.hx-cf b{color:var(--rev-ink);font-weight:500}
 @media (max-width:1100px){.hx-cards{grid-template-columns:1fr}.hx-chair{grid-template-columns:1fr}.hx-bignum{position:static;text-align:left;margin-top:16px}}
 .hx .p10-bar .pa-switch button.pa-more:not(#_){color:#8d9093!important;font-size:.92em;margin-left:6px;border:1px dashed rgba(255,255,255,.18)!important}
+/* one quiet page frame: a plain title row with the purpose under it, then the tabs on a hairline. No silk, folders or header numbers */
+html body main .hx:not(#_):not(#__){background:none!important;box-shadow:none!important;border-radius:0!important;padding:4px 0 0!important;margin:0 0 18px!important;color:var(--gp-text)!important;overflow:visible!important;min-height:0!important}
+html body main .hx .hx-in:not(#_):not(#__){display:block!important;min-height:0!important;padding:0!important}
+html body main .hx :is(.hx-folders,.hx-stats):not(#_):not(#__){display:none!important}
+html body main .hx .hx-greet h1:not(#_):not(#__){font-size:30px!important;font-weight:600!important;letter-spacing:-.025em!important;color:var(--gp-text)!important}
+html body main .hx .hx-greet h1 em:not(#_):not(#__){display:block;margin-top:6px;font-family:inherit!important;font-style:normal!important;font-size:15px!important;font-weight:400!important;letter-spacing:0!important;color:var(--gp-meta)!important}
+html body main .hx .p10-bar:not(#_):not(#__){margin:16px 0 0!important;padding:0 0 10px!important;background:none!important;border:0!important;border-bottom:1px solid var(--gl-grid)!important;border-radius:0!important}
+html body main .hx .p10-bar .pa-switch button:not(#_):not(#__){color:var(--gp-meta)!important}
+html body main .hx .p10-bar .pa-switch button[aria-selected="true"]:not(#_):not(#__){background:var(--gp-text)!important;color:var(--gp-ground)!important}
+html body main .hx .p10-need:not(#_) *:not(#_){color:var(--gp-2)!important}
+html body .hx.hx-work ~ .hx-x:not(#_):not(#__){display:none!important}

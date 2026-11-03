@@ -422,8 +422,9 @@
     train: { Coach: [39, 40], Rules: [40], Answers: [40, 28], 'Review replies': [19] },
     settings: { Services: [41], 'Hours & team': [42], FAQs: [40], Channels: [43], Reminders: [44] } };
   // layer 1: a living ground behind everything (slow orbs, grid, scan line) — built once
+  // the moving background (orbs, grid, scan line) is gone: a quiet page reads faster
   function ambient() {
-    if ($('.pv-amb')) return;
+    $('.pv-amb')?.remove(); return;
     const a = document.createElement('div'); a.className = 'pv-amb'; a.setAttribute('aria-hidden', 'true');
     a.innerHTML = '<i class="o1"></i><i class="o2"></i><i class="o3"></i><b class="grid"></b><b class="scan"></b>';
     document.body.prepend(a);
@@ -448,12 +449,12 @@
     // the tab row already lists every tab, so the old Overview card grid is no longer drawn
     after?.parentElement?.querySelectorAll(':scope > .pv-ov').forEach(x => x.remove());
     // work pages put the job first: charts and the owner's own widgets sit below it, under one quiet divider
+    // work pages are for doing things: no chart boards and no widget area. Charts live in Insights (and Marketing's own numbers)
+    if (after && WORK.includes(id)) { after.parentElement.querySelectorAll(':scope > .pv-tail, :scope > .st-mine, :scope > .pv-board').forEach(x => x.remove()); return; }
     let anchor = after;
-    if (after && WORK.includes(id)) { const s2 = after.parentElement; let t = s2.querySelector(':scope > .pv-tail');
-      if (!t) { t = document.createElement('div'); t.className = 'pv-tail'; t.innerHTML = '<span>Charts and your widgets</span>'; } s2.append(t); anchor = t; }
     const ov = null;
     // the owner's own view of this page and sub-tab (Studio may still be loading on the first page: queue it)
-    if (after && id !== 'studio') { if (window.MXStudio) await window.MXStudio.page(id, anchor, sub); else (window.__stPending = window.__stPending || []).push(() => window.MXStudio.page(id, anchor, sub).then(() => window.MXStudio.decorate(after.parentElement.querySelector(':scope > .pv-board'), id, sub))); }
+    if (after && id === 'insights') { if (window.MXStudio) await window.MXStudio.page(id, anchor, sub); else (window.__stPending = window.__stPending || []).push(() => window.MXStudio.page(id, anchor, sub).then(() => window.MXStudio.decorate(after.parentElement.querySelector(':scope > .pv-board'), id, sub))); }
     if (!list || !after) return;
     document.body.dataset.pv = id;
     // Today: the hero leaves the left column and spans the whole screen (layer 2); the board rises over its lower edge (layer 3)
