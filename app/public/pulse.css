@@ -3020,3 +3020,10 @@ html body main :is(.card,.pv-c,.td-card,.mk-card):not(#_):not(#__){border-radius
 html body main .pv-c:not(#_):not(#__){padding:18px 20px!important}
 html body main :is(.pv-c,.card,.mk-card) h3:not(#_):not(#__){font-size:17px!important;font-weight:500!important;letter-spacing:-.01em!important}
 html body main .mk-card h3:not(#_):not(#__){font-size:15px!important}
+/* Insights report: four groups read top to bottom, each with a plain question as its heading */
+.rp{display:flex;flex-direction:column;gap:34px;padding-bottom:24px}
+.rp-h{margin:0 0 12px}.rp-h h2{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em;color:var(--gp-text)}.rp-h p{margin:4px 0 0;font-size:14px;color:var(--gp-meta)}
+.rp-wait{color:var(--gp-meta)}
+.rp-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+.rp-board .pv-c.w{grid-column:1/-1}
+@media(max-width:760px){.rp-board{grid-template-columns:1fr}}

@@ -409,6 +409,20 @@
     return box;
   }
 
+  // Insights as one report: each group answers one question an owner asks, in reading order. Every other chart is under Explore
+  const REPORT = [['Money', 'What came in, what is coming, and from which services', [1, 45, 5]],
+    ['Clients', 'Who comes back, and who is worth winning back', [9, 24]],
+    ['When you are busy', 'Bookings and chats by day and hour', [4]],
+    ['Your AI front desk', 'How much it handles alone, and how chats turn into visits', [39, 15, 7]]];
+  window.PVReport = async root => {
+    if (!root) return; root.innerHTML = '<p class="rp-wait">Reading your numbers…</p>';
+    const d = await data();
+    const named = window.P10?.named || (x => x); // charts say Nora; the owner may have renamed the assistant
+    root.innerHTML = named(REPORT.map(([t, sub, list]) => `<section class="rp-g"><header class="rp-h"><h2>${esc(t)}</h2><p>${esc(sub)}</p></header>
+      <div class="rp-board">${list.map(n => { try { return F[n](d); } catch (e) { console.warn('chart', n, e); return ''; } }).join('')}</div></section>`).join(''));
+    root.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i));
+    countUp(root);
+  };
   window.PVData = data; // Studio builds its widgets from the same live data
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44, 45: c45 };
   const PAGES = { today: [16, 8, 7, 15] };

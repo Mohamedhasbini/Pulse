@@ -49,9 +49,10 @@
       ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'], adv: true }],
       ['Versions', { entry: 'training', only: ['top', 'learn'], adv: true }]]],
     ['insights', 'Insights', 'How the business is doing', [
-      ['Business', { page: 'analytics', tab: 'overview', panes: ['overview', 'next'], drop: ['Services'] }],
-      ['Services', { page: 'analytics', tab: 'overview', panes: ['overview'], cards: ['Services'] }],
-      ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true }],
+      ['Report', { own: 'report' }],
+      ['Business', { page: 'analytics', tab: 'overview', panes: ['overview', 'next'], drop: ['Services'] , adv: true }],
+      ['Services', { page: 'analytics', tab: 'overview', panes: ['overview'], cards: ['Services'] , adv: true }],
+      ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true , adv: true }],
       ['Timing', { page: 'analytics', tab: 'timing', panes: ['timing'] , adv: true }],
       ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] , adv: true }],
       ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true , adv: true }],
@@ -83,7 +84,7 @@
   ];
   const BADGE = { inbox: 'apprN', pulse: 'paN' };
   // pages that were merged: [new page, tab index] for each old tab
-  const MOVED = { studio: i => ['insights', 7 + i], train: i => ['pulse', 3 + i], lab: i => ['pulse', [8, 7, 9][i] ?? 7],
+  const MOVED = { studio: i => ['insights', 8 + i], train: i => ['pulse', 3 + i], lab: i => ['pulse', [8, 7, 9][i] ?? 7],
     marketing: i => i >= 4 ? ['settings', 12 + i - 4] : ['marketing', i] };
   // the menu in four groups, each heading drawn before its first page
   const GROUP = { today: 'Daily', insights: 'Grow', settings: 'Setup' };
@@ -208,7 +209,7 @@
     // tabs marked adv stay out of the way until the owner asks for detail (or is already on one)
     const sel = tabs[i][1].hidden ? 0 : i, hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || detailOn(id));
     b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.hidden || (o.adv && !detail) ? '' :
-      `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" aria-pressed="${k === sel}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${detail ? 'Simple view' : 'More detail'}</button>` : ''}</div>` : '');
+      `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" aria-pressed="${k === sel}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${id === 'insights' ? (detail ? 'Back to the report' : 'Explore all charts') : detail ? 'Simple view' : 'More detail'}</button>` : ''}</div>` : '');
     b.addEventListener('click', ev => {
       const d = ev.target.closest('[data-detail]');
       if (d) { try { localStorage.setItem('mx-detail-' + id, d.dataset.detail) } catch {} return go(id, tabs[i][1].adv && d.dataset.detail === '0' ? 0 : i) }
@@ -251,6 +252,7 @@
     if (key === 'studio' || key === 'studiolib') { const s = page(key, key === 'studio' ? 'Studio' : 'Widget library', key === 'studio' ? 'Your own board: any data, any design, placed anywhere.' : 'Every chart and table design, drawn from your live data.', '<div id="stRoot"></div>'); s.hidden = false; key === 'studio' ? window.MXStudio?.mountBoard(s) : window.MXStudio?.mountLib(s); }
     if (key === 'aictl') { const s = page('aictl', 'AI control', 'Decide who answers your clients: MXAi or your team.', '<div id="aiRoot"></div>'); s.hidden = false; window.MXAiMode?.mount(s); }
     if (key === 'integrations') { const s = page('integrations', 'Integrations', '', '<div id="igRoot"></div>'); s.hidden = false; window.PulseIntegrations?.mount(s); }
+    if (key === 'report') { const s = page('report', 'Insights', '', '<div id="rpRoot" class="rp"></div>'); s.hidden = false; window.PVReport?.(s.querySelector('#rpRoot')); }
     if (key === 'growth') { const s = page('growth', 'Marketing', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }
     if (key === 'brief') { const s = page('brief', 'Weekly brief', 'This week against last week, and the agents\' results. Worked out from your own numbers.', '<div id="paBrief"></div>'); s.hidden = false; loadBrief(); }
     if (key === 'ask') { const s = page('ask', 'Ask MXAi', 'Ask anything about your business. MXAi looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); window.PulseCommand?.open(); }
