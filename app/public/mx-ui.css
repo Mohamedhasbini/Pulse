@@ -322,3 +322,16 @@
   :root .ib:not(#_):not(#__) .ib-read{min-height:70vh}
   :root .ib:not(#_):not(#__) .ib-m{max-width:88%}
 }
+/* Inbox fixes after the first look: the list has its own search, so the header one goes; older rules set four
+   row columns and grey folder buttons, these win */
+#p10-inbox .hx-greet>:is(.hx-smart,.hx-sugg){display:none!important}
+:root .ib:not(#_):not(#__) .ib-row{grid-template-columns:36px minmax(0,1fr) auto!important;grid-template-areas:"av who at" "av what ch"!important}
+:root .ib:not(#_):not(#__) .ib-row>*{grid-column:auto!important;grid-row:auto!important}
+:root .ib:not(#_):not(#__) .ib-row>.ib-av{grid-area:av!important}:root .ib:not(#_):not(#__) .ib-row>.ib-who{grid-area:who!important}
+:root .ib:not(#_):not(#__) .ib-row>.ib-what{grid-area:what!important}:root .ib:not(#_):not(#__) .ib-row>.ib-at{grid-area:at!important}:root .ib:not(#_):not(#__) .ib-row>.ib-ch{grid-area:ch!important}
+:root .ib:not(#_):not(#__) .ib-row:not(.on):not(:hover){background:transparent!important}
+:root .ib:not(#_):not(#__) .ib-folders button{background:transparent!important;border:0!important;box-shadow:none!important}
+:root .ib:not(#_):not(#__) .ib-folders button:hover,:root .ib:not(#_):not(#__) .ib-folders button[aria-current="true"]{background:var(--mx-raise)!important;color:var(--mx-ink)!important}
+:root .ib:not(#_):not(#__) .ib-folders button[aria-current="true"] b{background:var(--mx-surf)}
+:root .ib:not(#_):not(#__) .ib-folders button span{color:inherit!important}
+:root .ib:not(#_):not(#__) .ib-bar input{background-color:var(--mx-raise)!important}
