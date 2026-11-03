@@ -591,6 +591,65 @@
     root.onclick = ev => { const c = ev.target.closest('[data-tb]'); if (c) { const [id, k] = c.dataset.tb.split(':'), t = team.find(a => a.id === id)?.tasks[+k]; if (t) window.P10?.go(...t.go); return; }
       const q = ev.target.closest('[data-ask]'); if (q) window.PulseCommand?.open(q.dataset.ask); };
   };
+  // Insights › Finance: revenue, costs, profit and margin; where the money goes; the funnel; costs by category with
+  // fixed against variable; revenue by channel or service; then every cost line. Costs come from Settings › Costs
+  let finDays = 30;
+  window.PVFinance = async root => {
+    const U = window.MXUI; if (!root || !U) return;
+    if (!root.innerHTML) root.innerHTML = `<div class="mx-grid">${[3, 3, 3, 3].map(() => U.card({ title: ' ', size: 'compact', span: 3, body: U.loading(2) })).join('')}</div>`;
+    const r = await fetch(`/api/finance/summary?days=${finDays}`).then(x => x.ok ? x.json() : null).catch(() => null);
+    if (!r) { root.innerHTML = U.card({ title: 'Finance', span: 12, state: 'critical', body: U.error('your finance figures') }); return; }
+    const ch = (a, b) => b ? (a - b) / Math.abs(b) * 100 : null, per = { 7: 'last 7 days', 30: 'last 30 days', 90: 'last 90 days', 365: 'last 12 months' }[finDays];
+    const pick = U.segmented([['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['365', '12 months']], String(finDays), 'Period');
+    const noCosts = !r.has_costs, addCosts = U.button('Add your costs', 'fin:costs', 'pri');
+    const kpis = [
+      U.kpi({ title: 'Revenue', value: money(r.revenue), ctx: `${r.bookings} visits · ${per}`, change: ch(r.revenue, r.revenue_prev), vs: 'vs the period before', state: 'neutral' }),
+      U.kpi({ title: 'Costs', value: noCosts ? '–' : money(r.spend), ctx: noCosts ? 'none entered yet' : `${money(r.fixed)} fixed · ${money(r.variable)} variable`, change: noCosts ? null : ch(r.spend, r.spend_prev), lowerIsBetter: true, vs: 'vs the period before', state: noCosts ? 'empty' : 'neutral', action: noCosts ? addCosts : '' }),
+      U.kpi({ title: 'Profit', value: noCosts ? '–' : money(r.profit), ctx: noCosts ? 'needs your costs' : 'revenue after costs', change: noCosts ? null : ch(r.profit, r.profit_prev), vs: 'vs the period before', state: noCosts ? 'empty' : r.profit >= 0 ? 'healthy' : 'critical' }),
+      U.kpi({ title: 'Margin', value: noCosts || r.margin == null ? '–' : `${Math.round(r.margin)}%`, ctx: noCosts ? 'needs your costs' : 'of every $1 you keep', state: noCosts ? 'empty' : r.margin >= 20 ? 'healthy' : r.margin >= 0 ? 'warning' : 'critical' })].join('');
+    const flow = U.card({ title: 'Cash flow', span: 12, link: pick, body: `<div class="mx-big"><b>${money(r.revenue)}</b>${U.trend(ch(r.revenue, r.revenue_prev), { vs: 'vs the period before' })}<span class="mx-ctx">from your services, ${per}</span></div>
+      ${r.flow.in.length ? U.sankey({ ins: r.flow.in, outs: r.flow.out.length ? r.flow.out : [{ label: 'Kept', value: r.revenue }], links: r.flow.links.length ? r.flow.links : r.flow.in.map(x => ({ from: x.label, to: 'Kept', value: x.value })) }, { fmt: money }) : U.empty('No revenue in this period')}
+      ${noCosts ? `<p class="mx-why">Add your rent, salaries, products and other costs in Settings to see where the money goes. ${U.button('Add your costs', 'fin:costs')}</p>` : ''}` });
+    const f = r.funnel || {}, steps = [{ label: 'Chats', value: f.chats || 0 }, { label: 'Answered', value: f.talked || 0 }, { label: 'Booked', value: f.booked || 0 }, { label: 'Came', value: f.came || 0 }];
+    const funnel = U.card({ title: 'From chat to visit', span: 5, size: 'wide', meta: per, body: f.chats ? U.flowFunnel(steps) : U.empty('No chats in this period') });
+    const cats = U.card({ title: 'Costs by category', span: 4, size: 'wide', meta: noCosts ? '' : `${Math.round(r.fixed / Math.max(1, r.spend) * 100)}% fixed`,
+      body: noCosts ? U.empty('No costs entered', 'Fixed costs (rent, salaries) and variable ones (products, card fees) go in Settings › Costs.') + `<div class="mx-foot">${addCosts}</div>` : U.gauge(r.by_category, { fmt: money }) });
+    const chans = U.card({ title: 'Revenue by channel', span: 3, size: 'wide', body: U.barList(r.by_channel.slice(0, 6).map(x => ({ label: x.label, value: x.value })), money) + `<p class="mx-ctx" style="margin-top:10px">By service</p>` + U.barList(r.by_service.slice(0, 4), money) });
+    const KIND = { month: 'per month', percent: '% of revenue', booking: 'per booking' };
+    const table = U.card({ title: 'Every cost', span: 12, link: U.link('Edit in Settings', 'fin:costs'), body: U.table(['Cost', 'Category', 'Type', 'Basis', 'This period', 'Share'],
+      [...r.costs].sort((a, b) => b.total - a.total).map(c => ({ go: 'fin:costs', cells: [c.name, c.category, { html: U.chip(c.kind === 'fixed' ? 'Fixed' : 'Variable', c.kind === 'fixed' ? 'neutral' : 'healthy') }, `${c.basis === 'percent' ? c.amount + '%' : money(c.amount)} ${KIND[c.basis]}`, money(c.total), r.spend ? `${Math.round(c.total / r.spend * 100)}%` : '–'] })),
+      'No costs yet. Add them in Settings › Costs.') });
+    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${flow}</div><div class="mx-grid">${funnel}${cats}${chans}</div><div class="mx-grid">${table}</div>`;
+    root.onclick = ev => { const s = ev.target.closest('[data-seg]'); if (s) { finDays = +s.dataset.seg; window.PVFinance(root); return; }
+      if (ev.target.closest('[data-go="fin:costs"]')) { window.P10?.go('settings', 0); setTimeout(() => window.P10setPart?.('costs'), 300); } };
+  };
+
+  // Settings › Costs: the owner's running costs, one row each — what, category, fixed or variable, amount
+  const CATS = ['Rent', 'Salaries', 'Products', 'Marketing', 'Software', 'Utilities', 'Card fees', 'Other'];
+  window.PVCosts = async box => {
+    const U = window.MXUI; if (!box || !U) return;
+    let list = await fetch('/api/finance/costs').then(x => x.ok ? x.json() : []).catch(() => []);
+    const row = (c, i) => `<div class="cst-row" data-i="${i}">
+      <input aria-label="Cost name" placeholder="e.g. Rent" value="${esc(c.name || '')}" data-k="name">
+      <select aria-label="Category" data-k="category">${CATS.map(x => `<option${x === c.category ? ' selected' : ''}>${x}</option>`).join('')}</select>
+      <select aria-label="Type" data-k="basis"><option value="month"${c.basis === 'month' ? ' selected' : ''}>Fixed, per month</option><option value="percent"${c.basis === 'percent' ? ' selected' : ''}>Variable, % of revenue</option><option value="booking"${c.basis === 'booking' ? ' selected' : ''}>Variable, per booking</option></select>
+      <input aria-label="Amount" type="number" min="0" step="0.01" value="${c.amount ?? ''}" data-k="amount" placeholder="${c.basis === 'percent' ? '%' : '$'}">
+      <input aria-label="Paid through (optional)" placeholder="Channel (optional)" value="${esc(c.channel || '')}" data-k="channel">
+      <button type="button" class="cst-del" data-del="${i}" aria-label="Remove this cost">✕</button></div>`;
+    const draw = () => { box.innerHTML = `<div class="set-card"><div class="set-card-h"><div><b>Running costs</b><small>Fixed costs are counted per month; variable ones follow your revenue or your bookings. Finance uses these for profit, margin and cash flow.</small></div></div>
+      <div class="cst-head"><span>Cost</span><span>Category</span><span>Type</span><span>Amount</span><span>Channel</span><span></span></div>
+      <div class="cst-list">${list.length ? list.map(row).join('') : `<p class="mx-ctx" style="padding:8px 0">No costs yet. Add your rent, salaries, products and card fees.</p>`}</div>
+      <div class="cst-foot"><button type="button" class="mx-btn" data-add>+ Add a cost</button><button type="button" class="mx-btn pri" data-save>Save costs</button><span class="cst-msg" role="status"></span></div></div>`; };
+    draw();
+    const read = () => { list = [...box.querySelectorAll('.cst-row')].map(r => Object.fromEntries([...r.querySelectorAll('[data-k]')].map(f => [f.dataset.k, f.dataset.k === 'amount' ? +f.value || 0 : f.value]))); };
+    box.onclick = async ev => {
+      if (ev.target.closest('[data-add]')) { read(); list.push({ name: '', category: 'Other', basis: 'month', amount: '' }); draw(); box.querySelector('.cst-row:last-child input')?.focus(); return; }
+      const d = ev.target.closest('[data-del]'); if (d) { read(); list.splice(+d.dataset.del, 1); draw(); return; }
+      if (ev.target.closest('[data-save]')) { read(); const msg = box.querySelector('.cst-msg'); msg.textContent = 'Saving…';
+        const r = await fetch('/api/finance/costs', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ costs: list }) }).catch(() => null);
+        if (r?.ok) { list = await r.json(); draw(); box.querySelector('.cst-msg').textContent = `Saved ${list.length} cost${list.length === 1 ? '' : 's'}.`; } else msg.textContent = "Couldn't save. Try again."; }
+    };
+  };
   window.PVData = data; // Studio builds its widgets from the same live data
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44, 45: c45 };
   const PAGES = { today: [16, 8, 7, 15] };

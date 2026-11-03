@@ -59,7 +59,8 @@
       ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true , adv: true }],
       ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' , adv: true }],
       ['My board', { own: 'studio', adv: true }],
-      ['Chart library', { own: 'studiolib', adv: true }]]],
+      ['Chart library', { own: 'studiolib', adv: true }],
+      ['Finance', { own: 'finance' }]]],
     ['pulse', 'AI Control', 'Review, teach and test Nora', [
       ['To review', { own: 'approvals' }],
       ['Ask', { own: 'ask', hidden: true }],
@@ -98,7 +99,7 @@
     customers: i => i === 1 ? ['growth', 1] : i >= 4 ? ['growth', i - 2] : ['customers', i] };
   // the menu in four groups, each heading drawn before its first page
   const GROUP = {};
-  const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Account & security', 's2fa'], ['Look', 'look'], ['Website', 13], ['Integrations', 12]];
+  const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Costs', 'costs'], ['Account & security', 's2fa'], ['Look', 'look'], ['Website', 13], ['Integrations', 12]];
   // tabs marked adv show once the owner asks for more detail on that page (remembered), or while one is open
   const detailOn = id => { try { return localStorage.getItem('mx-detail-' + id) === '1' } catch { return false } };
   const shown = (id, tabs) => tabs.map((t, k) => [t, k]).filter(([t, k]) => t[1].hidden ? false : !t[1].adv || detailOn(id) || (current?.[0] === id && tabs[current[1]]?.[1].adv && k >= 0));
@@ -219,9 +220,16 @@
   let setPartNow = 'details';
   function setPart(k) {
     setPartNow = k; const st = $('#setup'); if (st) st.dataset.part = k;
+    // the section list sits inside the page as a side menu, like a settings window
+    const ix = $('.p10-bar .set-ix'); if (st && ix) { $$('#setup > .set-ix').forEach(x => x.remove()); st.prepend(ix); }
+    // the menu left the tab row, so it answers its own clicks
+    if (st && !st.dataset.ixOn) { st.dataset.ixOn = 1; st.addEventListener('click', ev => { const j = ev.target.closest('.set-ix [data-jump]'); if (j) return setPart(j.dataset.jump); const t = ev.target.closest('.set-ix [data-t]'); if (t) go('settings', +t.dataset.t); }); }
+    if (st && !st.querySelector('.spane[data-pane="costs"]')) { const c = document.createElement('div'); c.className = 'spane'; c.dataset.pane = 'costs'; c.innerHTML = '<h2>Costs</h2><div id="cstRoot"></div>'; st.append(c); }
+    if (k === 'costs') window.PVCosts?.($('#cstRoot'));
     $$('.set-ix [data-jump]').forEach(x => x.setAttribute('aria-current', x.dataset.jump === k));
     $('main')?.scrollTo?.(0, 0);
   }
+  window.P10setPart = k => setPart(k);
   function bar(id, i, purpose, tabs) {
     $$('.p10-bar').forEach(x => x.remove());
     const sec = $('main > section:not([hidden])'); if (!sec) return;
@@ -278,6 +286,7 @@
     if (key === 'aictl') { const s = page('aictl', 'AI control', 'Decide who answers your clients: MXAi or your team.', '<div id="aiRoot"></div>'); s.hidden = false; window.MXAiMode?.mount(s); }
     if (key === 'integrations') { const s = page('integrations', 'Integrations', '', '<div id="igRoot"></div>'); s.hidden = false; window.PulseIntegrations?.mount(s); }
     if (key === 'report') { const s = page('report', 'Insights', '', '<div id="rpRoot" class="rp"></div>'); s.hidden = false; window.PVReport?.(s.querySelector('#rpRoot')); }
+    if (key === 'finance') { const s = page('finance', 'Insights', '', '<div id="fnRoot" class="rp"></div>'); s.hidden = false; window.PVFinance?.(s.querySelector('#fnRoot')); }
     if (key === 'aiperf') { const s = page('aiperf', 'AI Control', '', '<div id="apRoot" class="rp"></div>'); s.hidden = false; window.PVAIPerf?.(s.querySelector('#apRoot')); }
     if (key === 'growthhome') { const s = page('growthhome', 'Growth', '', '<div id="grRoot" class="rp"></div>'); s.hidden = false; window.PVGrowth?.(s.querySelector('#grRoot')); }
     if (key === 'growth') { const s = page('growth', 'Marketing', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }

@@ -617,3 +617,70 @@ html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main 
 .tb-ask{all:unset;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--mx-ink2);padding:6px 2px}.tb-ask:hover{color:var(--mx-ink)}
 #agents:not(#_) #tmDesk{display:none!important}
 #agents:not(#_) #tbRoot{margin-bottom:12px}
+
+/* ── Settings in the top menu (the gear goes; Settings is a page like the others) */
+@media (min-width:768px){html body nav[aria-label="Main"] .p10[data-p10="settings"]:not(#_):not(#__){display:inline-flex!important}html body #setBtn:not(#_){display:none!important}}
+
+/* ── Settings as a settings window: a side menu of sections on the left, the chosen section on the right */
+@media (min-width:900px){
+  #setup:not(#_):not(#__){display:grid!important;grid-template-columns:230px minmax(0,1fr);column-gap:16px;align-items:start}
+  #setup:not(#_):not(#__)>.set-ix{grid-column:1;grid-row:1/span 30;position:sticky;top:0;display:flex!important;flex-direction:column;align-items:stretch;gap:2px;padding:10px;border-radius:16px;background:var(--mx-surf)!important}
+  #setup:not(#_):not(#__)>.spane{grid-column:2}
+}
+#setup:not(#_):not(#__)>.set-ix button{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--mx-ink2)}
+#setup:not(#_):not(#__)>.set-ix button:hover{background:var(--mx-raise);color:var(--mx-ink)}
+#setup:not(#_):not(#__)>.set-ix button[aria-current="true"]{background:var(--mx-raise)!important;color:var(--mx-ink);box-shadow:none}
+:root[data-theme="light"] #setup:not(#_):not(#__)>.set-ix button[aria-current="true"]{background:#fff!important;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+#setup:not(#_):not(#__)>.set-ix::before{content:"Settings";display:block;padding:4px 12px 8px;font-size:12px;font-weight:600;color:var(--mx-mute)}
+#setup[data-part="costs"]:not(#_):not(#__):not(#___):not(#____)>.spane[data-pane="costs"]{display:block!important}
+/* section cards: label and explanation on the left, the control on the right */
+.set-card{background:var(--mx-surf);border-radius:16px;padding:16px 18px}
+.set-card-h{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.set-card-h b{display:block;font-size:15px;color:var(--mx-ink)}.set-card-h small{display:block;font-size:13px;color:var(--mx-mute);max-width:70ch;margin-top:2px}
+/* the cost editor */
+.cst-head,.cst-row{display:grid;grid-template-columns:minmax(120px,1.4fr) minmax(110px,1fr) minmax(150px,1.2fr) 100px minmax(100px,1fr) 36px;gap:8px;align-items:center}
+.cst-head{font-size:12px;color:var(--mx-mute);padding:0 2px 6px}
+.cst-list{display:flex;flex-direction:column;gap:8px}
+.cst-row :is(input,select){width:100%;min-width:0;box-sizing:border-box;height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--mx-line);background:var(--mx-raise);color:var(--mx-ink);font:inherit;font-size:13.5px}
+:root[data-theme="light"] .cst-row :is(input,select){background:#fff}
+.cst-row :is(input,select):focus{outline:2px solid var(--mx-ink);outline-offset:1px}
+.cst-del{all:unset;cursor:pointer;width:36px;height:36px;display:grid;place-items:center;border-radius:10px;color:var(--mx-mute)}.cst-del:hover{background:var(--mx-raise);color:var(--mx-crit)}
+.cst-foot{display:flex;align-items:center;gap:8px;margin-top:14px}.cst-msg{font-size:13px;color:var(--mx-mute)}
+@media (max-width:767px){.cst-head{display:none}.cst-row{grid-template-columns:1fr 1fr;padding:10px;border-radius:12px;background:var(--mx-raise)}.cst-row>:first-child{grid-column:1/-1}}
+
+/* ── finance charts */
+.mx-sankey{position:relative;height:320px;margin:14px 0 22px}
+.mx-sankey svg{position:absolute;inset:0;width:100%;height:100%}
+.mx-sk-l,.mx-sk-r{position:absolute;top:0;bottom:0;width:14%}.mx-sk-l{left:0}.mx-sk-r{right:0}
+.mx-sk-l span,.mx-sk-r span{position:absolute;display:flex;flex-direction:column;justify-content:center;min-height:18px;overflow:hidden}
+.mx-sk-l span{right:6px;left:0;text-align:right}.mx-sk-r span{left:6px;right:0}
+.mx-sankey b{font-size:12.5px;font-weight:600;color:var(--mx-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mx-sankey small{font-size:11.5px;color:var(--mx-mute)}
+.mx-sk-ax{position:absolute;left:0;right:0;bottom:-20px;display:flex;justify-content:space-between;font-size:11.5px;color:var(--mx-mute)}
+.mx-gauge{position:relative;display:flex;flex-direction:column;align-items:center}
+.mx-gauge svg{width:100%;max-width:260px}.mx-gauge .tr{stroke:var(--mx-raise)}:root[data-theme="light"] .mx-gauge .tr{stroke:#fff}
+.mx-gauge-c{margin-top:-58px;text-align:center}.mx-gauge-c b{display:block;font-size:30px;font-weight:600;letter-spacing:-.02em}.mx-gauge-c small{font-size:12px;color:var(--mx-mute)}
+.mx-gauge-k{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin-top:16px;font-size:12.5px;color:var(--mx-ink2)}
+.mx-gauge-k span{display:inline-flex;align-items:center;gap:6px}.mx-gauge-k i{width:10px;height:10px;border-radius:3px}.mx-gauge-k b{color:var(--mx-ink);font-weight:600}
+.mx-ffun{position:relative}
+.mx-ffun svg{width:100%;height:170px;display:block}.mx-ffun path{opacity:.9}
+.mx-ffun-p{position:absolute;left:0;right:0;top:0;height:170px;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;align-items:center}
+.mx-ffun-p span{display:flex;justify-content:center;transform:translateX(-22%)}.mx-ffun-p em{font-style:normal;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--mx-surf);color:var(--mx-ink)}
+.mx-ffun-k{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;margin-top:12px}
+.mx-ffun-k>div{padding:8px 10px;border-radius:12px;background:var(--mx-raise);min-width:0}:root[data-theme="light"] .mx-ffun-k>div{background:#fff}
+.mx-ffun-k span{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mx-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mx-ffun-k i{width:8px;height:8px;border-radius:3px;flex:none}
+.mx-ffun-k b{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+@media (max-width:767px){.mx-sankey{height:260px}.mx-sk-l,.mx-sk-r{width:24%}.mx-ffun-k{grid-auto-flow:row;grid-template-columns:1fr 1fr}}
+/* the top menu fits all eight places plus Settings: tighter pills, the Ask box narrower */
+@media (min-width:768px){
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__){gap:2px!important;flex-wrap:nowrap;min-width:0}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .p10{padding:6px 10px!important;font-size:13px!important;white-space:nowrap}
+  html body nav[aria-label="Main"]:not(#_) #hxAsk{max-width:190px;min-width:0}
+  html body nav[aria-label="Main"]:not(#_) #hxAsk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media (min-width:768px) and (max-width:1279px){html body nav[aria-label="Main"]:not(#_) #hxAsk kbd{display:none}}
+
+@media (min-width:900px){
+  html body main #setup:not(#_):not(#__):not(#___):not(#____){display:grid!important;grid-template-columns:230px minmax(0,1fr);column-gap:16px;align-items:start}
+  html body main #setup:not(#_):not(#__):not(#___):not(#____)>*{grid-column:2}
+  html body main #setup:not(#_):not(#__):not(#___):not(#____)>.set-ix{grid-column:1;grid-row:1/span 40}
+}
+@media (min-width:768px){html body nav[aria-label="Main"]:not(#_):not(#__) .ph-more{display:none!important}}

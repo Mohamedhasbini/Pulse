@@ -65,7 +65,7 @@ const ROUTES = [
   [/^\/api\/(calendar|bookings|time-off|requests)/, 'calendar'],
   [/^\/api\/(customers|marketing)/, 'customers'],
   [/^\/api\/tools/, 'setup'],
-  [/^\/api\/insights/, 'insights'],
+  [/^\/api\/(insights|finance)/, 'insights'],
   [/^\/api\/(learning|review|ai-rules|coach|pulse)/, 'teach'],
   [/^\/api\/(test-chat|test-data)/, 'testchat'],
   [/^\/api\/site/, 'website'],

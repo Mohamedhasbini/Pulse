@@ -459,3 +459,6 @@ CREATE INDEX IF NOT EXISTS users_biz ON users (business_id);
 
 -- Decision trail: for each AI reply, which provider answered, the action it took and its stated reason
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS trail JSONB;
+
+-- Running costs the owner enters in Settings › Costs: fixed per month, or variable (share of revenue / per booking)
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS costs JSONB DEFAULT '[]'::jsonb;

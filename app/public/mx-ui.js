@@ -127,5 +127,41 @@
       <div class="mx-key">${list.map((x, i) => `<span><i style="background:${SER[i]}"></i>${esc(x.label)} <small>${Math.round(x.value / tot * 100)}%</small><b>${esc(fmt(x.value))}</b></span>`).join('')}</div></div>`; };
   // the area fill gradient is defined once per page
   if (typeof document !== 'undefined' && document.body && !document.getElementById('mxDefs')) document.body.insertAdjacentHTML('beforeend', '<svg id="mxDefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="mxAreaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--mx-s1)" stop-opacity=".35"/><stop offset="1" stop-color="var(--mx-s1)" stop-opacity="0"/></linearGradient></defs></svg>');
+  // ── finance charts (after the BoardUI finance and marketing templates)
+  const SERIES = ['var(--mx-s1)', 'var(--mx-s2)', 'var(--mx-s3)', 'var(--mx-s4)', 'var(--mx-s5)'];
+  const cash = v => '$' + Math.round(v || 0).toLocaleString();
+  Object.assign(MXUI, {
+    // sankey: sources on the left, destinations on the right, each link as wide as its money
+    sankey: ({ ins, outs, links }, { h = 320, fmt = cash } = {}) => {
+      const W = 1000, pad = 10, tin = ins.reduce((s, x) => s + x.value, 0) || 1, tout = outs.reduce((s, x) => s + x.value, 0) || 1;
+      const scaleIn = (h - pad * (ins.length - 1)) / tin, scaleOut = (h - pad * (outs.length - 1)) / tout;
+      let y = 0; const L = ins.map((n, i) => { const o = { ...n, y, hgt: Math.max(2, n.value * scaleIn), c: SERIES[i % 5], off: 0 }; y += o.hgt + pad; return o; });
+      y = 0; const R = outs.map(n => { const o = { ...n, y, hgt: Math.max(2, n.value * scaleOut), off: 0 }; y += o.hgt + pad; return o; });
+      const paths = links.filter(l => l.value > 0).map(l => { const a = L.find(n => n.label === l.from), b = R.find(n => n.label === l.to); if (!a || !b) return '';
+        const ha = l.value * scaleIn, hb = l.value * scaleOut, y0 = a.y + a.off + ha / 2, y1 = b.y + b.off + hb / 2; a.off += ha; b.off += hb;
+        return `<path d="M 160 ${y0} C 500 ${y0}, 500 ${y1}, 840 ${y1}" stroke="${a.c}" stroke-width="${Math.max(1, (ha + hb) / 2)}" fill="none" opacity=".32"><title>${esc(l.from)} → ${esc(l.to)}: ${fmt(l.value)}</title></path>`; }).join('');
+      return `<div class="mx-sankey"><svg viewBox="0 0 ${W} ${h}" preserveAspectRatio="none" role="img" aria-label="Where the money goes">${paths}
+        ${L.map(n => `<rect x="152" y="${n.y}" width="8" height="${n.hgt}" rx="3" fill="${n.c}"/>`).join('')}${R.map(n => `<rect x="840" y="${n.y}" width="8" height="${n.hgt}" rx="3" fill="${n.label === 'Profit' ? 'var(--mx-s1)' : 'var(--mx-mute)'}"/>`).join('')}</svg>
+        <div class="mx-sk-l">${L.map(n => `<span style="top:${n.y / h * 100}%;height:${n.hgt / h * 100}%"><b>${esc(n.label)}</b><small>${fmt(n.value)}</small></span>`).join('')}</div>
+        <div class="mx-sk-r">${R.map(n => `<span style="top:${n.y / h * 100}%;height:${n.hgt / h * 100}%"><b>${esc(n.label)}</b><small>${Math.round(n.value / tout * 100)}%</small></span>`).join('')}</div>
+        <div class="mx-sk-ax"><span>Income</span><span>Spending</span></div></div>`; },
+    // gauge: a half ring split into segments, the lead share in the middle, a legend with amounts under it
+    gauge: (items, { fmt = cash, center = '' } = {}) => {
+      const tot = items.reduce((s, x) => s + x.value, 0) || 1, R = 80, C = Math.PI * R, gap = 6; let off = 0;
+      const arcs = items.slice(0, 5).map((x, i) => { const len = Math.max(0, x.value / tot * C - gap); const d = `<circle cx="100" cy="100" r="${R}" fill="none" stroke="${SERIES[i]}" stroke-width="22" stroke-linecap="round" stroke-dasharray="${len} ${2 * Math.PI * R}" stroke-dashoffset="${-off}" transform="rotate(180 100 100)"/>`; off += x.value / tot * C; return d; }).join('');
+      const lead = items[0];
+      return `<div class="mx-gauge"><svg viewBox="0 0 200 112" aria-hidden="true"><circle cx="100" cy="100" r="${R}" fill="none" class="tr" stroke-width="22" stroke-dasharray="${C} ${2 * C}" transform="rotate(180 100 100)"/>${arcs}</svg>
+        <div class="mx-gauge-c"><b>${lead ? Math.round(lead.value / tot * 100) : 0}%</b><small>${esc(center || lead?.label || '')}</small></div>
+        <div class="mx-gauge-k">${items.slice(0, 5).map((x, i) => `<span><i style="background:${SERIES[i]}"></i>${esc(x.label)} <b>${fmt(x.value)}</b></span>`).join('')}</div></div>`; },
+    // flow funnel: each step a band as tall as its count, joined to the next, with its share of the first
+    flowFunnel: steps => {
+      const top = Math.max(1, steps[0]?.value || 1), W = 100 / steps.length;
+      const bands = steps.map((s, i) => { const h = Math.max(4, s.value / top * 100), n = steps[i + 1], h2 = n ? Math.max(4, n.value / top * 100) : h;
+        const x0 = i * W, x1 = x0 + W * .55, x2 = (i + 1) * W;
+        return `<path d="M${x0} ${50 - h / 2} L${x1} ${50 - h / 2} C${x1 + W * .25} ${50 - h / 2} ${x1 + W * .2} ${50 - h2 / 2} ${x2} ${50 - h2 / 2} L${x2} ${50 + h2 / 2} C${x1 + W * .2} ${50 + h2 / 2} ${x1 + W * .25} ${50 + h / 2} ${x1} ${50 + h / 2} L${x0} ${50 + h / 2} Z" fill="${SERIES[i % 5]}"/>`; }).join('');
+      return `<div class="mx-ffun"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${bands}</svg>
+        <div class="mx-ffun-p">${steps.map(s => `<span><em>${Math.round(s.value / top * 100)}%</em></span>`).join('')}</div>
+        <div class="mx-ffun-k">${steps.map((s, i) => `<div><span><i style="background:${SERIES[i % 5]}"></i>${esc(s.label)}</span><b>${Number(s.value).toLocaleString()}</b></div>`).join('')}</div></div>`; },
+  });
   window.MXUI = MXUI;
 })();
