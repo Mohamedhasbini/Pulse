@@ -563,3 +563,15 @@ html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main 
   html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .p10[data-p10][aria-current="true"]{color:var(--mx-ink)!important;background:var(--mx-raise)!important}
   html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .ph-more{display:none!important}
 }
+/* phone pass: rings stack above their legend, legends truncate, the client list box keeps its height, need pills wrap */
+@media (max-width:767px){
+  .mx-rings{flex-direction:column;align-items:stretch}.mx-rings svg{align-self:center;width:150px;height:150px}
+  .mx-key span{min-width:0}.mx-key span>:not(b):not(i){overflow:hidden;text-overflow:ellipsis}
+  .mx-key{width:100%}
+  #people:not(#_):not(#__) .spane>.card{display:block!important;max-height:560px!important;overflow:auto!important}
+  :root .p10-bar:not(#_):not(#__) .p10-need{flex-wrap:wrap;margin-left:0;max-width:100%}
+  :root .p10-bar:not(#_):not(#__) .p10-need>*{max-width:100%;white-space:normal}
+  .mx-tiles b{font-size:15px}
+}
+#people:not(#_):not(#__):not(#___) .spane>.card{min-height:0!important;height:auto!important;max-height:560px!important;overflow:auto!important}
+@media (max-width:767px){html body main .p10-bar #p10Need:not(#_):not(#__){display:flex!important;flex-wrap:wrap!important;overflow:visible!important;width:100%;margin-left:0!important}html body main .p10-bar #p10Need .need:not(#_){max-width:100%;white-space:normal!important}}
