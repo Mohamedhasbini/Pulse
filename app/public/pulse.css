@@ -3027,3 +3027,21 @@ html body main .mk-card h3:not(#_):not(#__){font-size:15px!important}
 .rp-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
 .rp-board .pv-c.w{grid-column:1/-1}
 @media(max-width:760px){.rp-board{grid-template-columns:1fr}}
+/* Settings as one page: parts stacked in one column, each with its name, and a sticky row of chips to jump between them */
+html body #setup.set-one:not(#_):not(#__){display:block!important}
+html body #setup.set-one > .spane:not([hidden]):not(#_){display:block!important;margin:0 0 30px;scroll-margin-top:120px}
+#setup.set-one > .spane[data-pane]::before{display:block;margin:0 0 12px;font-size:20px;font-weight:600;letter-spacing:-.02em;color:var(--gp-text)}
+#setup.set-one > .spane[data-pane="details"]::before{content:"Business"}
+#setup.set-one > .spane[data-pane="channels"]::before{content:"Channels & reminders"}
+#setup.set-one > .spane[data-pane="booking"]::before{content:"Booking & payments"}
+#setup.set-one > .spane[data-pane="codes"]::before{content:"Discount codes"}
+#setup.set-one > .spane[data-pane="s2fa"]::before{content:"Account & security"}
+#setup.set-one > .spane[data-pane="sdev"]::before{content:"Devices"}
+#setup.set-one > .spane[data-pane="look"]::before{content:"Look"}
+#setup.set-one > .spane[data-pane="dash"]::before{content:"Dashboard layout"}
+.set-ix{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.set-ix button{all:unset;cursor:pointer;font-size:13px;padding:7px 13px;border-radius:99px;border:1px solid var(--gl-grid);color:var(--gp-2)}
+.set-ix button:hover{color:var(--gp-text);background:var(--gp-nest)}
+.set-ix button:focus-visible{outline:2px solid var(--gp-text);outline-offset:2px}
+@media (min-width:768px){html body nav[aria-label="Main"] .p10[data-p10="settings"]:not(#_){display:none!important}}
+@media (max-width:767px){#setBtn{display:none!important}}

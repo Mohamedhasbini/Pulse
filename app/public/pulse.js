@@ -64,29 +64,31 @@
       ['My board', { own: 'studio', adv: true }],
       ['Chart library', { own: 'studiolib', adv: true }]]],
     ['settings', 'Settings', 'Set it up once', [
-      ['Profile', { page: 'settings', tab: 'details', form: [0, 1, 2, 3, 4, 5, 6, 24] }],
-      ['Assistant', { page: 'settings', tab: 'details', form: [7, 8, 9, 17, 18], keep: ['Business type'] , adv: true }],
-      ['Hours & team', { page: 'settings', tab: 'details', form: [10, 11, 12, 13] }],
-      ['Services', { page: 'settings', tab: 'details', form: [14] }],
-      ['FAQs', { page: 'settings', tab: 'details', form: [16] }],
-      ['Policies & payments', { page: 'settings', tab: 'details', form: [15, 19, 20, 21, 22, 23] , adv: true }],
-      ['Tools', { page: 'settings', tab: 'booking', cards: ['Tools'] , adv: true }],
-      ['Channels', { page: 'settings', tab: 'channels', cards: ['Channels'] }],
-      ['Reminders', { page: 'settings', tab: 'channels', cards: ['Reminders'] , adv: true }],
-      ['Security & devices', { page: 'account', tab: 's2fa', panes: ['s2fa', 'sdev'] }],
-      ['Look & layout', { page: 'account', tab: 'look', panes: ['look', 'dash'] , adv: true }],
-      ['Integrations', { own: 'integrations' , adv: true }],
-      ['Website', { entry: 'website', ws: 0 }],
-      ['Website photos', { entry: 'website', ws: 1, adv: true }],
-      ['Website design', { entry: 'website', ws: 2, adv: true }],
-      ['Website address', { entry: 'website', ws: 3, adv: true }]]],
+      ['All settings', { page: 'settings', tab: 'details', panes: ['details', 'channels', 'booking', 'codes', 's2fa', 'sdev', 'look', 'dash'], cls: 'set-one' }],
+      ['Profile', { page: 'settings', tab: 'details', form: [0, 1, 2, 3, 4, 5, 6, 24], hidden: true, parent: 0 }],
+      ['Assistant', { page: 'settings', tab: 'details', form: [7, 8, 9, 17, 18], keep: ['Business type'], hidden: true, parent: 0 }],
+      ['Hours & team', { page: 'settings', tab: 'details', form: [10, 11, 12, 13], hidden: true, parent: 0 }],
+      ['Services', { page: 'settings', tab: 'details', form: [14], hidden: true, parent: 0 }],
+      ['FAQs', { page: 'settings', tab: 'details', form: [16], hidden: true, parent: 0 }],
+      ['Policies & payments', { page: 'settings', tab: 'details', form: [15, 19, 20, 21, 22, 23], hidden: true, parent: 0 }],
+      ['Tools', { page: 'settings', tab: 'booking', cards: ['Tools'], hidden: true, parent: 0 }],
+      ['Channels', { page: 'settings', tab: 'channels', cards: ['Channels'], hidden: true, parent: 0 }],
+      ['Reminders', { page: 'settings', tab: 'channels', cards: ['Reminders'], hidden: true, parent: 0 }],
+      ['Security & devices', { page: 'account', tab: 's2fa', panes: ['s2fa', 'sdev'], hidden: true, parent: 0 }],
+      ['Look & layout', { page: 'account', tab: 'look', panes: ['look', 'dash'], hidden: true, parent: 0 }],
+      ['Integrations', { own: 'integrations', hidden: true, parent: 0 }],
+      ['Website', { entry: 'website', ws: 0, hidden: true, parent: 0 }],
+      ['Website photos', { entry: 'website', ws: 1, hidden: true, parent: 0 }],
+      ['Website design', { entry: 'website', ws: 2, hidden: true, parent: 0 }],
+      ['Website address', { entry: 'website', ws: 3, hidden: true, parent: 0 }]]],
   ];
   const BADGE = { inbox: 'apprN', pulse: 'paN' };
   // pages that were merged: [new page, tab index] for each old tab
   const MOVED = { studio: i => ['insights', 8 + i], train: i => ['pulse', 3 + i], lab: i => ['pulse', [8, 7, 9][i] ?? 7],
-    marketing: i => i >= 4 ? ['settings', 12 + i - 4] : ['customers', 4 + i] };
+    marketing: i => i >= 4 ? ['settings', 13 + i - 4] : ['customers', 4 + i] };
   // the menu in four groups, each heading drawn before its first page
   const GROUP = {};
+  const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Account & security', 's2fa'], ['Look', 'look'], ['Website', 13], ['Integrations', 12]];
   // tabs marked adv show once the owner asks for more detail on that page (remembered), or while one is open
   const detailOn = id => { try { return localStorage.getItem('mx-detail-' + id) === '1' } catch { return false } };
   const shown = (id, tabs) => tabs.map((t, k) => [t, k]).filter(([t, k]) => t[1].hidden ? false : !t[1].adv || detailOn(id) || (current?.[0] === id && tabs[current[1]]?.[1].adv && k >= 0));
@@ -118,6 +120,9 @@
         pills.insertBefore(sub, $('#adminNav'));
       }
     }
+    const gear = document.createElement('button'); gear.type = 'button'; gear.id = 'setBtn'; gear.title = 'Settings'; gear.setAttribute('aria-label', 'Settings');
+    gear.innerHTML = `<svg viewBox="0 0 24 24">${ICON.settings}</svg>`; gear.addEventListener('click', () => go('settings', 0));
+    $('nav .navfoot')?.prepend(gear);
     return true;
   }
   function mark(id) {
@@ -207,9 +212,13 @@
     const title = named(PAGES.find(p => p[0] === id)[1]), tab = tabs.length > 1 ? tabs[i][0] : '';
     // tabs marked adv stay out of the way until the owner asks for detail (or is already on one)
     const sel = tabs[i][1].hidden ? (tabs[i][1].parent ?? 0) : i, hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || detailOn(id));
-    b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.hidden || (o.adv && !detail) ? '' :
+    b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.filter(t => !t[1].hidden).length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.hidden || (o.adv && !detail) ? '' :
       `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" aria-pressed="${k === sel}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${id === 'insights' ? (detail ? 'Back to the report' : 'Explore all charts') : detail ? 'Fewer tools' : 'More tools'}</button>` : ''}</div>` : '');
+    // Settings is one page: a row of chips jumps to each part; Website and Integrations open their own screens
+    if (id === 'settings' && i === 0) b.insertAdjacentHTML('beforeend', `<div class="set-ix" role="navigation" aria-label="Settings sections">${SET_IX.map(([l, k]) =>
+      `<button type="button" ${typeof k === 'number' ? `data-t="${k}"` : `data-jump="${k}"`}>${e(l)}</button>`).join('')}</div>`);
     b.addEventListener('click', ev => {
+      const jmp = ev.target.closest('[data-jump]'); if (jmp) return $(`#setup > .spane[data-pane="${jmp.dataset.jump}"]`)?.scrollIntoView({ block: 'start' });
       const d = ev.target.closest('[data-detail]');
       if (d) { try { localStorage.setItem('mx-detail-' + id, d.dataset.detail) } catch {} return go(id, tabs[i][1].adv && d.dataset.detail === '0' ? 0 : i) }
       const t = ev.target.closest('[data-t]'); if (t) go(id, +t.dataset.t) });
