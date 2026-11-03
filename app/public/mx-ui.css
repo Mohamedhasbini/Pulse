@@ -525,3 +525,32 @@ html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main 
 /* inner tiles (campaign templates, autopilot switches, next-campaign cards) sit on the card: white in light, one step up in dark */
 :root main:not(#_):not(#__) :is(.mk-sc,.ap-row,.mk-next>*,.mk-row2b .mk-card>div>div,.mk-aud li){background:var(--mx-raise)!important;border:0!important;box-shadow:none!important;border-radius:12px!important}
 :root[data-theme="light"] main:not(#_):not(#__) :is(.mk-sc,.ap-row,.mk-next>*,.mk-row2b .mk-card>div>div,.mk-aud li){background:#fff!important}
+/* ── Customers › Clients: the summary above replaces the old figure row; the list is a box that scrolls with its
+   headings in view, so the page stays one screen of meaning instead of 4,600px of rows */
+#people:not(#_) #pplKpis{display:none!important}
+#people:not(#_) .spane>#cuSum{margin-bottom:12px}
+#people:not(#_) .spane>.card{max-height:640px;overflow:auto;padding-top:0!important}
+#people:not(#_) .spane>.card thead th{position:sticky;top:0;z-index:1;background:var(--mx-surf)!important}
+#people:not(#_) .spane>.card tbody tr{background:transparent!important}
+#people:not(#_) .spane>.card tbody td{border-bottom:1px solid var(--mx-line)!important;background:transparent!important}
+:root[data-theme="light"] #people:not(#_) .spane>.card tbody tr:hover td{background:#fff!important}
+/* ── Settings: one part at a time (Business, Channels, Booking with codes, Account with developer, Look with the
+   dashboard), chosen from a row of tabs; forms on the board card with quiet fields */
+#setup[data-part]:not(#_):not(#__):not(#___):not(#____)>.spane{display:none!important}
+#setup[data-part="details"]:not(#_):not(#__):not(#___):not(#____)>.spane[data-pane="details"],#setup[data-part="channels"]:not(#_):not(#__):not(#___):not(#____)>.spane[data-pane="channels"],
+#setup[data-part="booking"]:not(#_):not(#__):not(#___):not(#____)>.spane:is([data-pane="booking"],[data-pane="codes"]),#setup[data-part="s2fa"]:not(#_):not(#__):not(#___):not(#____)>.spane:is([data-pane="s2fa"],[data-pane="sdev"]),
+#setup[data-part="look"]:not(#_):not(#__):not(#___):not(#____)>.spane:is([data-pane="look"],[data-pane="dash"]){display:block!important}
+#setup:not(#_)>.spane+.spane{margin-top:12px}
+:root .set-ix:not(#_){display:inline-flex!important;gap:2px;padding:3px;border-radius:12px;background:var(--mx-raise);flex-wrap:wrap}
+:root[data-theme="light"] .set-ix:not(#_){background:#ebebeb}
+:root .set-ix:not(#_) button{all:unset;cursor:pointer;padding:6px 12px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mx-mute)}
+:root .set-ix:not(#_) button:hover{color:var(--mx-ink)}
+:root .set-ix:not(#_) button[aria-current="true"]{background:var(--mx-surf);color:var(--mx-ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+:root[data-theme="light"] .set-ix:not(#_) button[aria-current="true"]{background:#fff}
+/* form fields: quiet, rounded, white on the grey card in light, one step up in dark */
+:root #setup:not(#_):not(#__) :is(input:not([type=checkbox]):not([type=radio]):not([type=color]),select,textarea){background:var(--mx-raise)!important;border:1px solid transparent!important;border-radius:10px!important;
+  box-shadow:none!important;color:var(--mx-ink)!important;font-size:13.5px!important;padding:8px 12px!important;min-height:38px}
+:root[data-theme="light"] #setup:not(#_):not(#__) :is(input:not([type=checkbox]):not([type=radio]):not([type=color]),select,textarea){background:#fff!important;border-color:#ebebeb!important}
+:root #setup:not(#_):not(#__) :is(input,select,textarea):focus{outline:2px solid var(--mx-ink)!important;outline-offset:1px}
+:root #setup:not(#_):not(#__) .spane>h2,:root #setup:not(#_):not(#__) .spane>h3{font-size:16px;font-weight:600;letter-spacing:-.01em;margin:4px 0 6px}
+:root #setup:not(#_):not(#__) label{color:var(--mx-ink2)}

@@ -519,6 +519,31 @@
     root.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i)); countUp(root);
     root.addEventListener('click', ev => { const t = ev.target.closest('[data-go^="a:"]'); if (t) window.P10?.go('pulse', +t.dataset.go.slice(2)); });
   };
+  // Customers › Clients: who the clients are, read before the full list — four figures, then the groups, the top
+  // spenders and new clients per month. Test entries are left out, as in the list's default
+  window.PVCustomers = async sec => {
+    const U = window.MXUI, spane = sec?.querySelector('.spane'); if (!U || !spane) return;
+    let box = spane.querySelector('#cuSum'); if (!box) { box = document.createElement('div'); box.id = 'cuSum'; box.className = 'mx-page'; spane.prepend(box); }
+    const raw = await get('/api/customers'), all = (Array.isArray(raw) ? raw : raw?.rows || []).filter(c => !/^(test|e2e)/i.test(c.phone || '') && !/^test /i.test(c.name || ''));
+    const T = Date.now(), ago = c => c.last_booking ? (T - new Date(c.last_booking)) / 864e5 : null;
+    const regulars = all.filter(c => c.visits >= 2), spent = all.reduce((s, c) => s + (+c.spent || 0), 0), opted = all.filter(c => c.marketing_ok).length;
+    const newM = all.filter(c => c.since && T - new Date(c.since) < 30 * 864e5).length;
+    const kpis = [
+      U.kpi({ title: 'Clients', value: String(all.length), ctx: `${newM} joined in the last 30 days`, state: 'neutral' }),
+      U.kpi({ title: 'Regulars', value: String(regulars.length), ctx: `${all.length ? Math.round(regulars.length / all.length * 100) : 0}% came twice or more`, state: 'neutral' }),
+      U.kpi({ title: 'Lifetime spend', value: money(spent), ctx: `${money(all.length ? spent / all.length : 0)} per client`, state: 'neutral' }),
+      U.kpi({ title: 'Agreed to offers', value: `${all.length ? Math.round(opted / all.length * 100) : 0}%`, ctx: `${opted} can receive offers`, state: opted / Math.max(1, all.length) < .2 ? 'warning' : 'healthy' })].join('');
+    // groups: by how recently and how often they come
+    const g = { 'Regulars (2+ visits, seen in 45 days)': 0, 'New (1 visit)': 0, 'Drifting away (45–120 days)': 0, 'Lost (120+ days)': 0, 'Booked, not come yet': 0 };
+    all.forEach(c => { const d = ago(c); if (!c.visits) g['Booked, not come yet']++; else if (d != null && d > 120) g['Lost (120+ days)']++; else if (d != null && d > 45) g['Drifting away (45–120 days)']++; else if (c.visits >= 2) g['Regulars (2+ visits, seen in 45 days)']++; else g['New (1 visit)']++; });
+    const groups = U.card({ title: 'Client groups', span: 5, size: 'wide', body: U.rings(Object.entries(g).filter(([, v]) => v).map(([label, value]) => ({ label, value }))) });
+    const top = [...all].sort((a, b) => (b.spent || 0) - (a.spent || 0)).slice(0, 6);
+    const best = U.card({ title: 'Top clients by spend', span: 4, size: 'wide', body: top.length ? U.barList(top.map(c => ({ label: c.name || c.phone, value: +c.spent || 0 })), money) : U.empty('No visits yet') });
+    const months = []; for (let i = 5; i >= 0; i--) { const a = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1), z = new Date(a.getFullYear(), a.getMonth() + 1, 1);
+      months.push({ l: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][a.getMonth()], v: all.filter(c => c.since && new Date(c.since) >= a && new Date(c.since) < z).length }); }
+    const joined = U.card({ title: 'New clients per month', span: 3, size: 'wide', body: U.columns(months, { h: 170 }) });
+    box.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${groups}${best}${joined}</div>`;
+  };
   window.PVData = data; // Studio builds its widgets from the same live data
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44, 45: c45 };
   const PAGES = { today: [16, 8, 7, 15] };

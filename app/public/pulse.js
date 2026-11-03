@@ -215,6 +215,13 @@
     }
   }
   // the one tab row: page purpose on the left, tabs (if more than one) on the right
+  // Settings shows one part at a time, chosen from its row of tabs; the choice is kept for the visit
+  let setPartNow = 'details';
+  function setPart(k) {
+    setPartNow = k; const st = $('#setup'); if (st) st.dataset.part = k;
+    $$('.set-ix [data-jump]').forEach(x => x.setAttribute('aria-current', x.dataset.jump === k));
+    $('main')?.scrollTo?.(0, 0);
+  }
   function bar(id, i, purpose, tabs) {
     $$('.p10-bar').forEach(x => x.remove());
     const sec = $('main > section:not([hidden])'); if (!sec) return;
@@ -225,10 +232,10 @@
     b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.filter(t => !t[1].hidden).length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.hidden || (o.adv && !detail) ? '' :
       `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" aria-pressed="${k === sel}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv && id === 'insights' ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${id === 'insights' ? (detail ? 'Back to the report' : 'Explore all charts') : detail ? 'Fewer tools' : 'More tools'}</button>` : ''}</div>` : '');
     // Settings is one page: a row of chips jumps to each part; Website and Integrations open their own screens
-    if (id === 'settings' && i === 0) b.insertAdjacentHTML('beforeend', `<div class="set-ix" role="navigation" aria-label="Settings sections">${SET_IX.map(([l, k]) =>
-      `<button type="button" ${typeof k === 'number' ? `data-t="${k}"` : `data-jump="${k}"`}>${e(l)}</button>`).join('')}</div>`);
+    if (id === 'settings' && i === 0) { b.insertAdjacentHTML('beforeend', `<div class="set-ix" role="navigation" aria-label="Settings sections">${SET_IX.map(([l, k]) =>
+      `<button type="button" ${typeof k === 'number' ? `data-t="${k}"` : `data-jump="${k}"`}>${e(l)}</button>`).join('')}</div>`); setTimeout(() => setPart(setPartNow)); }
     b.addEventListener('click', ev => {
-      const jmp = ev.target.closest('[data-jump]'); if (jmp) return $(`#setup > .spane[data-pane="${jmp.dataset.jump}"]`)?.scrollIntoView({ block: 'start' });
+      const jmp = ev.target.closest('[data-jump]'); if (jmp) return setPart(jmp.dataset.jump);
       const d = ev.target.closest('[data-detail]');
       if (d) { try { localStorage.setItem('mx-detail-' + id, d.dataset.detail) } catch {} return go(id, tabs[i][1].adv && d.dataset.detail === '0' ? 0 : i) }
       const t = ev.target.closest('[data-t]'); if (t) go(id, +t.dataset.t) });

@@ -110,6 +110,7 @@
         <div class="hx-tbars">${by.map((v, i) => `<div><i class="${v === mx && v ? 'on' : ''}" style="height:${Math.max(6, v / mx * 100)}%"></i><span>${9 + i * 2}h</span></div>`).join('')}</div></div></div>`);
     }
     if (id === 'customers') {
+      window.PVCustomers?.(hero.closest('main > section'));
       // Orion match cards: the top three clients with a loyalty ring
       const all = await get('/api/customers'), list = (Array.isArray(all) ? all : all?.rows || []).filter(c => !/^(test|sim-|e2e)/.test(c.phone || '') || c.visits);
       const top = [...list].sort((a, b) => (b.spent || 0) - (a.spent || 0)).slice(0, 3);
