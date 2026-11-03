@@ -238,3 +238,87 @@
 .mx-think i:nth-child(2){animation-delay:.15s}.mx-think i:nth-child(3){animation-delay:.3s}.mx-think span{margin-left:6px}
 @keyframes mxTh{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
 @media (prefers-reduced-motion:reduce){.mx-think i{animation:none;opacity:.6}.mx-toast,.mx-rad .fg{transition:opacity .2s}}
+
+/* ── Inbox on the board system: three panels as cards on the canvas (folders · chats · the open chat), quiet rows
+   with one strong line each, the client's numbers as small tiles, and a composer drawn like the MXAi chat */
+:root .ib:not(#_):not(#__){gap:16px;height:calc(100vh - 150px)!important;font-size:14px;color:var(--mx-ink)}
+:root .ib:not(#_):not(#__)>:is(.ib-folders,.ib-list,.ib-read){background:var(--mx-surf)!important;border:0!important;border-radius:var(--mx-r)!important;
+  box-shadow:0 0 0 1px var(--mx-line),0 1px 2px rgba(0,0,0,.05)!important;backdrop-filter:none!important}
+/* folders: a calm vertical menu, the count as a small tile */
+:root .ib:not(#_):not(#__) .ib-folders{padding:8px!important;gap:2px!important;align-self:start}
+:root .ib:not(#_):not(#__) .ib-folders button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--mx-ink2)}
+:root .ib:not(#_):not(#__) .ib-folders button span{flex:1}
+:root .ib:not(#_):not(#__) .ib-folders button:hover{background:var(--mx-raise);color:var(--mx-ink)}
+:root .ib:not(#_):not(#__) .ib-folders button.on,:root .ib:not(#_):not(#__) .ib-folders button[aria-current],:root .ib:not(#_):not(#__) .ib-folders button[aria-pressed="true"]{background:var(--mx-raise);color:var(--mx-ink)}
+:root .ib:not(#_):not(#__) .ib-folders b{min-width:22px;padding:1px 7px;border-radius:7px;background:var(--mx-raise);font-size:11.5px;font-weight:600;color:var(--mx-mute);text-align:center;font-variant-numeric:tabular-nums}
+:root .ib:not(#_):not(#__) .ib-folders b:empty{display:none}
+/* the list: search on top, rows with avatar, name, one line, time */
+:root .ib:not(#_):not(#__) .ib-list{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+:root .ib:not(#_):not(#__) .ib-bar{display:flex;align-items:center;gap:6px;padding:12px!important;border-bottom:1px solid var(--mx-line)!important;background:none!important}
+:root .ib:not(#_):not(#__) .ib-bar input{flex:1;min-width:0;height:36px;padding:0 12px 0 34px!important;border-radius:10px!important;border:0!important;background:var(--mx-raise) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 11px center/15px!important;
+  color:var(--mx-ink)!important;font-size:13.5px!important;box-shadow:none!important}
+:root .ib:not(#_):not(#__) .ib-range{font-size:12px;color:var(--mx-mute);white-space:nowrap;font-variant-numeric:tabular-nums}
+:root .ib:not(#_):not(#__) .ib-nav{all:unset;cursor:pointer;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;color:var(--mx-ink2);font-size:16px}
+:root .ib:not(#_):not(#__) .ib-nav:hover{background:var(--mx-raise)}
+:root .ib:not(#_):not(#__) #ibRows{flex:1;overflow:auto;padding:6px}
+:root .ib:not(#_):not(#__) .ib-row{all:unset;box-sizing:border-box;cursor:pointer;width:100%;display:grid!important;grid-template-columns:36px 1fr auto;grid-template-areas:"av who at" "av what ch";column-gap:12px;row-gap:2px;
+  padding:10px!important;border-radius:12px;border:0!important;background:none!important;transition:background-color .15s}
+:root .ib:not(#_):not(#__) .ib-row+.ib-row{box-shadow:0 -1px 0 var(--mx-line)}
+:root .ib:not(#_):not(#__) .ib-row:hover,:root .ib:not(#_):not(#__) .ib-row:hover+.ib-row{box-shadow:none}
+:root .ib:not(#_):not(#__) .ib-row:hover{background:var(--mx-raise)!important}
+:root .ib:not(#_):not(#__) .ib-row.on{background:var(--mx-raise)!important;box-shadow:inset 3px 0 0 var(--mx-ink)!important}
+:root .ib:not(#_):not(#__) .ib-row:focus-visible{outline:2px solid var(--mx-ink);outline-offset:-2px}
+:root .ib:not(#_):not(#__) .ib-av{grid-area:av;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--mx-raise);color:var(--mx-ink2);font-size:12px;font-weight:600;box-shadow:inset 0 0 0 1px var(--mx-line)}
+:root .ib:not(#_):not(#__) .ib-row.on .ib-av{background:var(--mx-surf)}
+:root .ib:not(#_):not(#__) .ib-who{grid-area:who;font-size:14px;font-weight:500;color:var(--mx-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .ib:not(#_):not(#__) .ib-row.unread .ib-who{font-weight:650}
+:root .ib:not(#_):not(#__) .ib-row.unread .ib-at{color:var(--mx-ink);font-weight:600}
+:root .ib:not(#_):not(#__) .ib-what{grid-area:what;display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;color:var(--mx-mute)}
+:root .ib:not(#_):not(#__) .ib-snip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .ib:not(#_):not(#__) .ib-what .chip{flex:none;font-style:normal;font-size:11px;font-weight:600;padding:1px 7px;border-radius:6px;border:0;background:var(--mx-raise);color:var(--mx-ink2)}
+:root .ib:not(#_):not(#__) .ib-what .chip.need{color:var(--mx-warn);background:color-mix(in srgb,var(--mx-warn) 15%,transparent)}
+:root .ib:not(#_):not(#__) .ib-at{grid-area:at;font-size:12px;color:var(--mx-mute);text-align:right;font-variant-numeric:tabular-nums}
+:root .ib:not(#_):not(#__) .ib-ch{grid-area:ch;font-size:11px;color:var(--mx-mute);text-align:right}
+:root .ib:not(#_):not(#__) .ib-none,:root .ib:not(#_):not(#__) .ib-empty{padding:40px 20px;text-align:center;color:var(--mx-mute);font-size:13.5px}
+/* the open chat: header with actions, the client in three tiles, the thread, the composer */
+:root .ib:not(#_):not(#__) .ib-read{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+:root .ib:not(#_):not(#__) .ib-head{display:flex;align-items:center;gap:12px;padding:14px 16px!important;border-bottom:1px solid var(--mx-line)!important;background:none!important}
+:root .ib:not(#_):not(#__) .ib-head>div:not(.ib-acts){flex:1;min-width:0}
+:root .ib:not(#_):not(#__) .ib-head h2{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--mx-ink)}
+:root .ib:not(#_):not(#__) .ib-head small{display:block;font-size:12.5px;color:var(--mx-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .ib:not(#_):not(#__) .ib-acts{display:flex;gap:6px}
+:root .ib:not(#_):not(#__) .ib-read .btn{min-height:34px;padding:0 13px!important;border-radius:10px!important;font-size:13px!important;font-weight:500!important;background:var(--mx-ink)!important;color:var(--mx-surf)!important;border:0!important;box-shadow:none!important}
+:root .ib:not(#_):not(#__) .ib-read .btn.ghost{background:var(--mx-surf)!important;color:var(--mx-ink)!important;box-shadow:0 0 0 1px var(--mx-line)!important}
+:root .ib:not(#_):not(#__) .ib-read .btn.ghost:hover{background:var(--mx-raise)!important}
+:root .ib:not(#_):not(#__) .ib-cust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px 16px!important;border-bottom:1px solid var(--mx-line)!important;background:none!important}
+:root .ib:not(#_):not(#__) .ib-cust:empty{display:none}
+:root .ib:not(#_):not(#__) .ib-cust span{padding:8px 10px;border-radius:10px;background:var(--mx-raise);font-size:12px;color:var(--mx-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .ib:not(#_):not(#__) .ib-cust b{display:block;font-size:15px;font-weight:600;color:var(--mx-ink);font-variant-numeric:tabular-nums}
+:root .ib:not(#_):not(#__) .ib-msgs{flex:1;overflow:auto;padding:16px!important;display:flex;flex-direction:column;gap:10px;background:none!important}
+:root .ib:not(#_):not(#__) .ib-m{max-width:78%;display:flex;flex-direction:column;gap:3px}
+:root .ib:not(#_):not(#__) .ib-m p{margin:0;padding:9px 13px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-wrap;background:var(--mx-raise)!important;color:var(--mx-ink)!important;border:0!important}
+:root .ib:not(#_):not(#__) .ib-m.customer{align-self:flex-start}
+:root .ib:not(#_):not(#__) .ib-m.customer p{border-radius:16px 16px 16px 6px}
+:root .ib:not(#_):not(#__) .ib-m:is(.assistant,.staff){align-self:flex-end;align-items:flex-end}
+:root .ib:not(#_):not(#__) .ib-m:is(.assistant,.staff) p{border-radius:16px 16px 6px 16px;background:var(--mx-ink)!important;color:var(--mx-surf)!important}
+:root .ib:not(#_):not(#__) .ib-m.staff p{box-shadow:inset 0 0 0 1.5px var(--mx-lime)}
+:root .ib:not(#_):not(#__) .ib-m small{font-size:11.5px;color:var(--mx-mute);padding:0 4px}
+:root .ib:not(#_):not(#__) .ib-why{font-size:12.5px;color:var(--mx-ink2);max-width:100%}
+:root .ib:not(#_):not(#__) .ib-why summary{cursor:pointer;color:var(--mx-mute);padding:0 4px}
+:root .ib:not(#_):not(#__) .ib-why[open]{padding:10px 12px;border-radius:12px;background:var(--mx-surf);box-shadow:0 0 0 1px var(--mx-line)}
+:root .ib:not(#_):not(#__) .ib-why dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0}
+:root .ib:not(#_):not(#__) .ib-why dt{color:var(--mx-mute)}
+:root .ib:not(#_):not(#__) .ib-reply{display:flex;align-items:center;gap:8px;margin:12px!important;padding:6px 6px 6px 16px!important;border-radius:18px!important;background:var(--mx-surf)!important;
+  box-shadow:0 0 0 1px var(--mx-line2,var(--mx-line)),0 6px 18px -12px rgba(0,0,0,.35)!important;border:0!important}
+:root .ib:not(#_):not(#__) .ib-reply input{flex:1;min-width:0;height:36px;border:0!important;background:transparent!important;box-shadow:none!important;outline:0;font-size:14px!important;color:var(--mx-ink)!important;padding:0!important}
+:root .ib:not(#_):not(#__) .ib-reply .btn{min-height:36px;border-radius:12px!important;background:var(--mx-lime)!important;color:#14181b!important;font-weight:600!important}
+:root .ib:not(#_):not(#__) .ib-back{all:unset;cursor:pointer;display:none;width:32px;height:32px;place-items:center;border-radius:9px}
+:root .ib:not(#_):not(#__) .ib-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+@media (max-width:900px){
+  :root .ib:not(#_):not(#__){height:auto!important;gap:12px}
+  :root .ib:not(#_):not(#__) .ib-folders{flex-direction:row;overflow-x:auto;padding:6px!important}
+  :root .ib:not(#_):not(#__) .ib-folders button{white-space:nowrap;flex:none}
+  :root .ib:not(#_):not(#__) .ib-back{display:grid}
+  :root .ib:not(#_):not(#__) .ib-read{min-height:70vh}
+  :root .ib:not(#_):not(#__) .ib-m{max-width:88%}
+}
