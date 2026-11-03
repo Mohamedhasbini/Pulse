@@ -168,7 +168,7 @@ html body .pl-t:not(#_) tbody tr:hover{background:color-mix(in srgb,var(--pv-ink
 /* ===== Future Utility light mode (chosen 2026-11-03). Loaded last so it is the one source of truth for light.
    Mist canvas, crisp near-white surfaces, graphite as the accent; lime only inside graphite pieces. ===== */
 :root[data-theme="light"]:not(#_),:root[data-theme="light"]:not(#_) body{
-  --fu-canvas:#f5f5f5;--fu-side:#f5f5f5;--fu-surf:#ffffff;--fu-raise:#f5f5f5;--fu-line:#e8e8e8;--fu-line2:#d4d4d4;
+  --fu-canvas:#ffffff;--fu-side:#ffffff;--fu-surf:#f7f7f7;--fu-raise:#ffffff;--fu-line:#ebebeb;--fu-line2:#d4d4d4;
   --fu-ink:#0a0a0a;--fu-ink2:#404040;--fu-mute:#737373;--fu-chip:#0a0a0a;--fu-lime:#c6f432;
   --fu-ok:#15803d;--fu-warn:#b45309;--fu-crit:#dc2626;--fu-c2:#a1a1a1;--fu-c3:#525252;
   --bg:var(--fu-canvas);--ground:var(--fu-canvas);--gp-ground:var(--fu-canvas);--gl-ground:var(--fu-canvas);--st-ground:var(--fu-canvas);
@@ -214,9 +214,22 @@ html body .pl-t:not(#_) tbody tr:hover{background:color-mix(in srgb,var(--pv-ink
 :root:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.kpi,.td-stat,.cc-card,.mx-card){background:var(--fu-surf)!important;border:0!important;
   box-shadow:0 0 0 1px var(--fu-line),0 1px 2px rgba(0,0,0,.05)!important}
 :root:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.mx-card):hover{border:0!important;box-shadow:0 0 0 1px var(--fu-line2),0 1px 2px rgba(0,0,0,.05)!important}
-:root[data-theme="light"]:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.kpi,.td-stat,.cc-card,.mx-card){box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1px 2px -1px rgba(0,0,0,.06),0 2px 4px rgba(0,0,0,.04)!important}
+:root[data-theme="light"]:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.kpi,.td-stat,.cc-card,.mx-card){box-shadow:none!important;border-radius:16px!important}
+:root[data-theme="light"]:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.mx-card):hover{box-shadow:none!important}
+/* light = BoardUI marketing: a plain white page, #f7f7f7 cards with no edge, white pieces inside them */
+:root[data-theme="light"]:not(#_):not(#__) body{background:#fff!important;background-image:none!important}
 :root:not([data-theme="light"]):not(#_):not(#__):not(#___) main .td-day.now{background:var(--fu-lime)!important;color:#0a0a0a!important}
 /* the theme switch: instant swap, no element transitions fighting it */
 .theme-switching,.theme-switching *{transition:none!important}
 ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
 ::view-transition-new(root){z-index:2}
+:root[data-theme="light"] body:not(#_):not(#__):not(#___):not(#____){background:#fff!important;background-image:none!important}
+/* light top bar like the template's chrome: white, a hairline under it, dark text; the active place is a soft grey pill */
+:root[data-theme="light"]:not(#_):not(#__) :is(.topbar,header.top,#top,.p10-top,body>header,body>nav){background:#fff!important;color:#0a0a0a!important;border-bottom:1px solid #ebebeb!important;box-shadow:none!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____){background:#fff!important;border-bottom:1px solid #ebebeb!important;box-shadow:none!important;backdrop-filter:none!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) :is(button,a,span,kbd,b,small):not([class*="badge"]):not([class*="count"]):not(.n){color:#404040!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) :is(button,a){background-color:transparent!important;border-color:#ebebeb!important;box-shadow:none!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) :is(button,a):hover{background-color:#f5f5f5!important;color:#0a0a0a!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) :is(.p10.on,[aria-current="page"],[aria-current="true"],.on){background-color:#f5f5f5!important;color:#0a0a0a!important;font-weight:600}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) :is(input,[class*="search"],[class*="ask"],[class*="cmd"]){background-color:#f5f5f5!important;color:#404040!important;border-color:transparent!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) svg{color:#404040;stroke:currentColor}

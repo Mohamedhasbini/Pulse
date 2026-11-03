@@ -12,8 +12,6 @@
   // ---------- top bar: the Ask pill ----------
   function askPill() {
     const nav = $('nav[aria-label="Main"]'); if (!nav || $('#hxAsk')) return;
-    // the top bar is graphite in both modes; set inline so no older theme rule can repaint it
-    if (matchMedia('(min-width:1001px)').matches) nav.style.setProperty('background', '#0f1011', 'important');
     const b = document.createElement('button'); b.type = 'button'; b.id = 'hxAsk';
     b.innerHTML = '<i></i><span>Ask Nora or jump to…</span><kbd>Ctrl K</kbd>';
     b.addEventListener('click', () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })));

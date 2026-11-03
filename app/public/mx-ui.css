@@ -335,3 +335,65 @@
 :root .ib:not(#_):not(#__) .ib-folders button[aria-current="true"] b{background:var(--mx-surf)}
 :root .ib:not(#_):not(#__) .ib-folders button span{color:inherit!important}
 :root .ib:not(#_):not(#__) .ib-bar input{background-color:var(--mx-raise)!important}
+
+/* ── Calendar on the board system: side panel and grid as cards, one Day/Week/Month switch (inside the grid),
+   bookings as soft tiles tinted by their service with a solid edge, today marked in ink not green */
+#p10-calendar .p10-bar>.hx-chips{display:none!important}
+:root .gc:not(#_):not(#__){gap:16px!important}
+:root .gc:not(#_):not(#__) :is(.gc-side,.gc-main){background:var(--mx-surf)!important;border:0!important;border-radius:var(--mx-r)!important;box-shadow:0 0 0 1px var(--mx-line),0 1px 2px rgba(0,0,0,.05)!important;backdrop-filter:none!important}
+:root .gc:not(#_):not(#__) .gc-side{padding:14px!important;display:flex;flex-direction:column;gap:14px;align-self:start}
+:root .gc:not(#_):not(#__) .gc-side .btn{border-radius:12px!important;min-height:38px;font-weight:600!important}
+:root .gc:not(#_):not(#__) .gc-side .btn:not(.gc-new){background:var(--mx-surf)!important;color:var(--mx-ink)!important;box-shadow:0 0 0 1px var(--mx-line)!important;border:0!important}
+/* the small month: plain numbers, today an ink dot, days with bookings underlined by a dot, the shown range a soft band */
+:root .gc:not(#_):not(#__) .gc-mini-h{font-size:13px;font-weight:600;color:var(--mx-ink)}
+:root .gc:not(#_):not(#__) .gc-mini-h button{all:unset;cursor:pointer;width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:var(--mx-ink2)}
+:root .gc:not(#_):not(#__) .gc-mini-h button:hover{background:var(--mx-raise)}
+:root .gc:not(#_):not(#__) .gc-mini-g>*{border-radius:8px!important;font-size:12px;color:var(--mx-ink2);background:none!important;font-variant-numeric:tabular-nums}
+:root .gc:not(#_):not(#__) .gc-mini-g .out{color:var(--mx-mute);opacity:.6}
+:root .gc:not(#_):not(#__) .gc-mini-g .inrange{background:var(--mx-raise)!important;color:var(--mx-ink)}
+:root .gc:not(#_):not(#__) .gc-mini-g .today{background:var(--mx-ink)!important;color:var(--mx-surf)!important;font-weight:600}
+:root .gc:not(#_):not(#__) .gc-mini-g .busy{text-decoration:none;position:relative}
+:root .gc:not(#_):not(#__) .gc-mini-g button:hover{background:var(--mx-raise)!important}
+:root .gc:not(#_):not(#__) .gc-legend{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--mx-ink2)}
+:root .gc:not(#_):not(#__) .gc-legend i{width:10px;height:10px;border-radius:3px;margin-right:8px}
+/* the grid card: toolbar, day heads, hour lines */
+:root .gc:not(#_):not(#__) .gc-main{overflow:hidden}
+:root .gc:not(#_):not(#__) .gc-head{padding:12px 14px!important;border-bottom:1px solid var(--mx-line)!important;background:none!important;gap:8px}
+:root .gc:not(#_):not(#__) .gc-head h2,:root .gc:not(#_):not(#__) .gc-head b{font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--mx-ink)}
+:root .gc:not(#_):not(#__) .gc-head .btn,:root .gc:not(#_):not(#__) .gc-arrow{all:unset;cursor:pointer;height:32px;min-width:32px;padding:0 10px;box-sizing:border-box;display:inline-grid;place-items:center;border-radius:10px;font-size:13px;font-weight:500;color:var(--mx-ink);box-shadow:0 0 0 1px var(--mx-line)}
+:root .gc:not(#_):not(#__) .gc-arrow{box-shadow:none;padding:0}
+:root .gc:not(#_):not(#__) :is(.gc-head .btn,.gc-arrow):hover{background:var(--mx-raise)}
+:root .gc:not(#_):not(#__) .gc-views{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:var(--mx-raise)!important;border:0!important}
+:root .gc:not(#_):not(#__) .gc-views button{all:unset;cursor:pointer;padding:6px 12px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mx-mute)}
+:root .gc:not(#_):not(#__) .gc-views button:hover{color:var(--mx-ink)}
+:root .gc:not(#_):not(#__) .gc-views :is(button.on,button[aria-pressed="true"],button[aria-selected="true"]){background:var(--mx-surf)!important;color:var(--mx-ink)!important;box-shadow:0 0 0 1px var(--mx-line),0 1px 2px rgba(0,0,0,.08)}
+:root .gc:not(#_):not(#__) .gc-dh{font-size:12px;color:var(--mx-mute);background:none!important;border-color:var(--mx-line)!important}
+:root .gc:not(#_):not(#__) .gc-dh b{font-size:15px;font-weight:600;color:var(--mx-ink);margin-left:4px;font-variant-numeric:tabular-nums}
+:root .gc:not(#_):not(#__) .gc-dh.today b{display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:50%;background:var(--mx-ink)!important;color:var(--mx-surf)!important}
+:root .gc:not(#_):not(#__) .gc-col.today{background:color-mix(in srgb,var(--mx-ink) 3%,transparent)!important}
+:root .gc:not(#_):not(#__) :is(.gc-col,.gc-grid,.gc-times,.gc-corner){border-color:var(--mx-line)!important}
+:root .gc:not(#_):not(#__) .gc-times{font-family:inherit!important;font-size:11.5px!important;color:var(--mx-mute)!important;font-variant-numeric:tabular-nums}
+:root .gc:not(#_):not(#__) .gc-now{background:var(--mx-crit)!important;height:2px!important}
+/* bookings: tinted tile, solid service edge, name strong, service quiet */
+:root .gc:not(#_):not(#__) .gc-b{background:color-mix(in srgb,var(--c,#737373) 14%,var(--mx-surf))!important;border:0!important;border-radius:8px!important;
+  box-shadow:inset 3px 0 0 var(--c,#737373)!important;color:var(--mx-ink)!important;padding:4px 8px 4px 10px!important;text-align:left;font-size:11.5px;line-height:1.3;overflow:hidden}
+:root .gc:not(#_):not(#__) .gc-b b{font-weight:600;font-size:12px;color:var(--mx-ink)}
+:root .gc:not(#_):not(#__) .gc-b:hover{background:color-mix(in srgb,var(--c,#737373) 22%,var(--mx-surf))!important}
+:root .gc:not(#_):not(#__) .gc-b:focus-visible{outline:2px solid var(--mx-ink);outline-offset:1px}
+:root .gc:not(#_):not(#__) .gc-off,.gc-off-b{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--mx-raise) 6px 7px)!important}
+/* month view */
+:root .gc:not(#_):not(#__) .gc-mh{font-size:12px;color:var(--mx-mute);background:none!important}
+:root .gc:not(#_):not(#__) .gc-md{border-color:var(--mx-line)!important;background:none!important}
+:root .gc:not(#_):not(#__) .gc-md.out{opacity:.5}
+:root .gc:not(#_):not(#__) .gc-md.today>:first-child{background:var(--mx-ink)!important;color:var(--mx-surf)!important;border-radius:50%}
+:root .gc:not(#_):not(#__) .gc-chip{border-radius:6px!important;background:color-mix(in srgb,var(--c,#737373) 14%,var(--mx-surf))!important;box-shadow:inset 2px 0 0 var(--c,#737373);color:var(--mx-ink)!important;border:0!important}
+:root .gc:not(#_):not(#__) .gc-badge{border-radius:7px!important;background:var(--mx-raise)!important;color:var(--mx-ink2)!important}
+/* light mode panels follow the cards: #f7f7f7, no edge (Inbox, Calendar, chat inputs keep white inside) */
+:root[data-theme="light"] .ib:not(#_):not(#__)>:is(.ib-folders,.ib-list,.ib-read),:root[data-theme="light"] .gc:not(#_):not(#__) :is(.gc-side,.gc-main){box-shadow:none!important;border-radius:16px!important}
+:root[data-theme="light"] .mx-card:not(#_){box-shadow:none}
+:root[data-theme="light"] .mx-strip>div{border-color:transparent!important}
+/* Block time is a button, not an off-hours band */
+:root .gc:not(#_):not(#__) .btn.gc-off{background:var(--mx-surf)!important}
+:root[data-theme="light"] .gc:not(#_):not(#__) .btn.gc-off{background:#fff!important}
+:root[data-theme="light"]{--mx-shadow:none}
+:root[data-theme="light"] .hx-ask:not(#_):not(#__){box-shadow:none!important;border-color:transparent!important;border-radius:16px!important}
