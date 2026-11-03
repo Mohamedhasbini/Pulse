@@ -550,6 +550,47 @@
     const joined = U.card({ title: 'New clients per month', span: 3, size: 'wide', body: U.columns(months, { h: 170 }) });
     box.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${groups}${best}${joined}</div>`;
   };
+  // ── the agent team: each specialist's read of their area and their tasks, from /api/team/status, with Lina's
+  // prepared growth ideas and Sam's briefing added as tasks. Every task knows where it is done
+  const TEAM_TONE = { need: ['Needs you', 'warning', 2], bad: ['Problem', 'critical', 3] };
+  const TEAM_COL = { maya: 'var(--mx-s2)', omar: 'var(--mx-s3)', lina: 'var(--mx-s1)', sam: 'var(--mx-s5)' };
+  // older links name pages from before the redesign; each lands on the page that does that job now
+  const route = g => { if (!g) return ['today', 0]; const p = g.page || g.view, t = g.tab || '';
+    if (p === 'calendar') return ['calendar', t === 'requests' ? 1 : 0];
+    if (p === 'inbox') return ['inbox', 0];
+    if (p === 'support') return t === 'gaps' ? ['pulse', 0] : ['pulse', 9];
+    if (p === 'people' || p === 'customers') return ['customers', 0];
+    if (p === 'growth' || p === 'marketing') return ['growth', 0];
+    if (p === 'analytics' || p === 'performance') return ['insights', 0];
+    return [p, 0]; };
+  window.PVTeam = async () => {
+    const [st, mk, br] = await Promise.all([get('/api/team/status'), get('/api/marketing/overview?days=90'), get('/api/briefing')]);
+    const team = (st?.team || []).map(a => ({ ...a, color: TEAM_COL[a.id] || 'var(--mx-s2)',
+      tasks: (a.items || []).filter(x => x.tone || /\d/.test(x.text)).map(x => ({ title: x.text, tone: x.tone, go: route(x.go) })) }));
+    const lina = team.find(a => a.id === 'lina'), sam = team.find(a => a.id === 'sam');
+    (mk?.ideas || []).forEach(x => lina?.tasks.push({ title: x.title, sub: x.why, tone: 'need', go: ['growth', 2], value: x.value }));
+    // her read follows her tasks: prepared ideas replace "no one to contact"
+    if (lina && mk?.ideas?.length && /^no one/i.test(lina.advice || '')) lina.advice = `${mk.ideas.length} growth idea${mk.ideas.length > 1 ? 's' : ''} ready. Best first: ${mk.ideas[0].title.toLowerCase()}.`;
+    (br?.items || []).filter(x => !/chat|teach|question/i.test(x.text)).slice(0, 3).forEach(x => sam?.tasks.push({ title: x.text, sub: x.why, go: ['insights', 0], value: x.value }));
+    team.forEach(a => { a.tasks.sort((x, y) => (TEAM_TONE[y.tone]?.[2] || 1) - (TEAM_TONE[x.tone]?.[2] || 1)); a.open = a.tasks.filter(t => t.tone).length; });
+    return team;
+  };
+  window.PVTeam.tone = TEAM_TONE;
+  // Automations › the board: one column per agent, a card per task (priority, area, what, why); a card opens its page
+  window.PVBoardTeam = async root => {
+    const U = window.MXUI; if (!root || !U) return;
+    root.innerHTML = `<div class="tb-board">${[1, 2, 3, 4].map(() => `<div class="tb-col">${U.loading(4)}</div>`).join('')}</div>`;
+    const team = await window.PVTeam(); window.PVBoardTeam.last = team;
+    root.innerHTML = `<div class="tb-board">${team.map(a => `<section class="tb-col" aria-label="${esc(a.name)}">
+      <header><i style="background:${a.color}">${esc(a.name[0])}</i><div><b>${esc(a.name)}</b><small>${esc(a.role)}</small></div><span>${a.open}/${a.tasks.length}</span></header>
+      <p class="tb-say">${esc(a.advice || '')}</p>
+      <div class="tb-cards">${a.tasks.length ? a.tasks.map((t, k) => { const tn = TEAM_TONE[t.tone] || ['Info', 'neutral'];
+        return `<button type="button" class="tb-card" data-tb="${esc(a.id)}:${k}"><div class="tb-tags">${U.chip(tn[0], tn[1])}<span class="tb-area">${esc(a.role)}</span>${t.value ? `<span class="tb-val">${money(t.value)}</span>` : ''}</div>
+          <b>${esc(t.title)}</b>${t.sub ? `<small>${esc(t.sub)}</small>` : ''}</button>`; }).join('') : `<div class="tb-empty">${U.empty('All clear', 'Nothing for you here right now.')}</div>`}</div>
+      <button type="button" class="tb-ask" data-ask="${esc(a.ask || '')}">Ask ${esc(a.name)} for advice →</button></section>`).join('')}</div>`;
+    root.onclick = ev => { const c = ev.target.closest('[data-tb]'); if (c) { const [id, k] = c.dataset.tb.split(':'), t = team.find(a => a.id === id)?.tasks[+k]; if (t) window.P10?.go(...t.go); return; }
+      const q = ev.target.closest('[data-ask]'); if (q) window.PulseCommand?.open(q.dataset.ask); };
+  };
   window.PVData = data; // Studio builds its widgets from the same live data
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44, 45: c45 };
   const PAGES = { today: [16, 8, 7, 15] };

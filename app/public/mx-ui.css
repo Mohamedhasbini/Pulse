@@ -583,3 +583,37 @@ html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main 
 /* chart keys: what each line or band means, drawn in its own style */
 .pv-key{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:12.5px;color:var(--mx-ink2)}
 .pv-key span{display:inline-flex;align-items:center;gap:7px}.pv-key svg{width:22px;height:10px;flex:none}
+
+/* ── agent team: Today's team grid and the Automations board (after the BoardUI project board) */
+.tm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tm-tile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:var(--mx-raise);min-width:0;transition:transform .15s cubic-bezier(.23,1,.32,1)}
+:root[data-theme="light"] .tm-tile{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.tm-tile:hover{transform:translateY(-1px)}.tm-tile:active{transform:scale(.98)}.tm-tile:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+.tm-who{display:flex;align-items:center;gap:10px;min-width:0}
+.tm-av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:700;font-size:14px;color:#14181b;font-style:normal}
+.tm-who b{display:block;font-size:14px;font-weight:600;color:var(--mx-ink)}.tm-who small{display:block;font-size:12px;color:var(--mx-mute)}
+.tm-who .mx-chip{margin-left:auto}
+.tm-say{margin:0;font-size:12.5px;line-height:1.4;color:var(--mx-ink2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tm-next{font-size:12px;padding:5px 8px;border-radius:8px;background:var(--mx-surf);color:var(--mx-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root[data-theme="light"] .tm-next{background:#f5f5f5}
+.tm-alert{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;margin-bottom:10px;background:color-mix(in srgb,var(--mx-crit) 12%,transparent);color:var(--mx-ink);font-size:13px}
+.tm-alert b{flex:1}
+@media (max-width:767px){.tm-grid{grid-template-columns:1fr}}
+.tb-board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(280px,1fr);gap:12px;overflow-x:auto;padding-bottom:4px;align-items:start}
+.tb-col{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:var(--mx-surf);min-width:0;max-height:640px}
+:root:not([data-theme="light"]) .tb-col{box-shadow:0 0 0 1px var(--mx-line)}
+.tb-col header{display:flex;align-items:center;gap:10px}.tb-col header i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:13px;color:#14181b;flex:none}
+.tb-col header b{display:block;font-size:14px;color:var(--mx-ink)}.tb-col header small{font-size:12px;color:var(--mx-mute)}
+.tb-col header span{margin-left:auto;font-size:12.5px;color:var(--mx-mute);font-variant-numeric:tabular-nums}
+.tb-say{margin:0;font-size:12.5px;line-height:1.4;color:var(--mx-ink2)}
+.tb-cards{display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0}
+.tb-card{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:var(--mx-raise);transition:transform .15s cubic-bezier(.23,1,.32,1)}
+:root[data-theme="light"] .tb-card{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.tb-card:hover{transform:translateY(-1px)}.tb-card:active{transform:scale(.98)}.tb-card:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+.tb-card b{font-size:13.5px;font-weight:600;line-height:1.35;color:var(--mx-ink)}.tb-card small{font-size:12px;line-height:1.4;color:var(--mx-mute)}
+.tb-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tb-area{font-size:11.5px;padding:2px 8px;border-radius:7px;box-shadow:inset 0 0 0 1px var(--mx-line);color:var(--mx-ink2)}
+.tb-val{margin-left:auto;font-size:12px;font-weight:600;color:var(--mx-ink);font-variant-numeric:tabular-nums}
+.tb-ask{all:unset;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--mx-ink2);padding:6px 2px}.tb-ask:hover{color:var(--mx-ink)}
+#agents:not(#_) #tmDesk{display:none!important}
+#agents:not(#_) #tbRoot{margin-bottom:12px}

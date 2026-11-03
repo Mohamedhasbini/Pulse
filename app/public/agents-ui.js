@@ -48,7 +48,10 @@ document.addEventListener("click",async e=>{
 // their question, so every conversation happens in one place.
 const TONE={need:"Needs you",bad:"Problem",good:"Good"};
 let team=[];
-async function loadTeam(){const box=$("#tmDesk");if(!box.innerHTML)box.innerHTML=`<p class="sub">Reading your data…</p>`;
+async function loadTeam(){const box=$("#tmDesk");
+  // the board leads the tab: a column per agent, a card per task
+  let tb=$("#tbRoot");if(!tb){tb=document.createElement("div");tb.id="tbRoot";box.before(tb)}window.PVBoardTeam?.(tb);
+ if(!box.innerHTML)box.innerHTML=`<p class="sub">Reading your data…</p>`;
   try{team=(await req("/api/team/status")).team}catch(e){box.innerHTML=`<p class="sub">${esc(e.message)}</p>`;return}
   if(box.querySelector(".desk-fix:not([hidden])"))return; // never wipe a fix the owner is in the middle of
   box.innerHTML=team.map((e,ei)=>{const flags=(e.items||[]).filter(i=>i.tone),more=(e.items||[]).filter(i=>!i.tone);

@@ -49,9 +49,9 @@ window.homeLoad=()=>{if(!sec.hidden)load()}; // live.js calls this the moment da
 
 async function load(){
   const t=day(new Date()),get=u=>req(u).catch(()=>null);
-  const [hist,biz,live,ch,wait,brief,cal,kpis,month]=await Promise.all([window.PVData?window.PVData().catch(()=>null):null,get("/api/business"),get("/api/live?days=30"),get("/api/channels"),get("/api/pulse/waiting"),get("/api/briefing"),get(`/api/calendar?from=${t}T00:00&to=${t}T23:59`),get("/api/kpis?days=30"),get(`/api/calendar?from=${day(new Date(new Date().getFullYear(),new Date().getMonth()-1,1))}T00:00&to=${t}T23:59`)]);
+  const [team,hist,biz,live,ch,wait,brief,cal,kpis,month]=await Promise.all([window.PVTeam?window.PVTeam().catch(()=>null):null,window.PVData?window.PVData().catch(()=>null):null,get("/api/business"),get("/api/live?days=30"),get("/api/channels"),get("/api/pulse/waiting"),get("/api/briefing"),get(`/api/calendar?from=${t}T00:00&to=${t}T23:59`),get("/api/kpis?days=30"),get(`/api/calendar?from=${day(new Date(new Date().getFullYear(),new Date().getMonth()-1,1))}T00:00&to=${t}T23:59`)]);
   if(!biz||!live){$("#tdA").innerHTML=U.card({title:"Today",span:12,state:"critical",body:U.error("today's numbers","reload")});return}
-  draw({biz,live,ch,wait:wait||{items:[]},brief:brief||{items:[]},cal:cal||{bookings:[],timeOff:[]},kpis:Array.isArray(kpis)?kpis:[],month:month?.bookings||[],hist:hist||{all:[],past:[],cust:[]}})}
+  draw({biz,live,ch,wait:wait||{items:[]},brief:brief||{items:[]},cal:cal||{bookings:[],timeOff:[]},kpis:Array.isArray(kpis)?kpis:[],month:month?.bookings||[],hist:hist||{all:[],past:[],cust:[]},team:team||[]})}
 
 function openNow(biz){const d=new Date(),m=d.getHours()*60+d.getMinutes(),r=(biz.hours?.[d.getDay()]||[]).map(([a,z])=>[mins(a),mins(z)]);
   const cur=r.find(([a,z])=>m>=a&&m<z);if(cur)return `Open now · until ${clock(cur[1])}`;const nx=r.find(([a])=>a>m);return nx?`Opens today at ${clock(nx[0])}`:"Closed today"}
@@ -96,7 +96,7 @@ function busy(past){const H=[10,11,12,13,14,15,16,17,18,19],D=[1,2,3,4,5,6,0],g=
   past.forEach(b=>{const t=new Date(b.start),r=D.indexOf(t.getDay()),c=H.indexOf(t.getHours());if(r>=0&&c>=0)g[r][c]++});
   return U.heat(g,D.map(x=>DOW[x].slice(0,3)),H.map(h=>h%2?"":String(h)))}
 
-function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist}=x;
+function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team}=x;
   const now=live.now||{},d=new Date(),h=d.getHours(),ai=live.ai||{};
   // header
   const logo=$("#tdLogo");logo.style.backgroundImage=biz.logo_url?`url("${biz.logo_url}")`:"";logo.textContent=biz.logo_url?"":([...biz.name][0]||"").toUpperCase();
@@ -123,8 +123,15 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist}=x;
   if(!rec&&pending.length)rec={text:`Finish setup: ${pending[0].label}.`,why:`${pending.length} step${pending.length>1?"s":""} left before ${nora()} works at full strength.`,label:"Open Settings",go:"p:settings:0"};
   if(rec&&need[0]?.[0]==="critical"&&rec.go===need[0][4])rec=null; // the top of the list already says it
   const recRow=rec?`<div class="mx-rec-row"><p>${e(rec.text)}<small>${e(rec.why)}</small></p>${rec.go?U.button(rec.label,rec.go):""}</div>`:"";
-  const needCard=U.card({title:"Needs your attention",span:5,size:"wide",state:need.length?worst:"healthy",meta:need.length?`${need.length} open`:"",
-    body:recRow+`<div class="mx-list">${need.length?need.slice(0,5).map(([s,t,sub,btn,go])=>U.row({dot:s,title:t,sub,action:U.button(btn,go)})).join(""):U.empty("Nothing needs you right now",`${nora()} is handling every chat.`)}</div>`});
+  // your team today: each agent's read of their area and their next task; a tile opens that task. Problems no
+  // agent owns (the AI down, failed sends, WhatsApp not connected) sit above the team as one line each
+  const sys=need.filter(([s,t])=>s==="critical"&&!/chat/.test(t)||/WhatsApp/.test(t)).slice(0,2);
+  const open=(team||[]).reduce((a,m)=>a+(m.open||0),0);
+  const tiles=(team||[]).map((m,k)=>{const t=m.tasks[0],tn=window.PVTeam?.tone?.[t?.tone];
+    return `<button type="button" class="tm-tile" data-tm="${k}"><span class="tm-who"><i class="tm-av" style="background:${m.color}">${e(m.name[0])}</i><span><b>${e(m.name)}</b><small>${e(m.role)}</small></span>${m.open?U.chip(`${m.open} open`,tn?.[1]||"warning"):U.chip("All clear","healthy")}</span>
+      <p class="tm-say">${e(m.advice||"")}</p>${t?`<span class="tm-next">Next: ${e(t.title)}</span>`:""}</button>`}).join("");
+  const needCard=U.card({title:"Your team today",span:5,size:"wide",state:open?worst:"healthy",meta:open?`${open} open`:"all clear",link:U.link("Board","p:growth:5"),
+    body:sys.map(([,t,sub,btn,go])=>`<div class="tm-alert"><b>${e(t)}</b>${U.button(btn,go)}</div>`).join("")+(tiles?`<div class="tm-grid">${tiles}</div>`:`<div class="mx-list">${need.slice(0,5).map(([s,t,sub,btn,go])=>U.row({dot:s,title:t,sub,action:U.button(btn,go)})).join("")}</div>`)});
   $("#tdA").innerHTML=needCard+earnCard(hist.past||[]);
 
   // band 2 · bookings over 30 days beside the AI front desk and the busy hours
@@ -170,7 +177,8 @@ function go(where){
   if(where==="settings")return window.P10?.go("settings",0);
   if(where==="reload")return load();
   if(where==="newbooking"){window.P10?.go("calendar",0);setTimeout(()=>$("#calNew")?.click(),450)}}
-sec.addEventListener("click",ev=>{const sg=ev.target.closest("[data-seg]");if(sg&&last){const v=sg.dataset.seg;if(["d","w","m"].includes(v)){earnBy=v;$("#tdA").lastElementChild.outerHTML=earnCard(last.hist.past||[])}else{tblBy=v;$("#tdD").lastElementChild.outerHTML=apptTable(last.hist.all||[])}return}
+sec.addEventListener("click",ev=>{const tm=ev.target.closest("[data-tm]");if(tm&&last){const m=last.team[+tm.dataset.tm],t=m?.tasks[0];if(t)window.P10?.go(...t.go);else window.PulseCommand?.open(m?.ask);return}
+  const sg=ev.target.closest("[data-seg]");if(sg&&last){const v=sg.dataset.seg;if(["d","w","m"].includes(v)){earnBy=v;$("#tdA").lastElementChild.outerHTML=earnCard(last.hist.past||[])}else{tblBy=v;$("#tdD").lastElementChild.outerHTML=apptTable(last.hist.all||[])}return}
   const b=ev.target.closest("[data-go]");if(b){ev.stopPropagation();go(b.dataset.go)}});
 sec.addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches(".mx-row[data-go],tr[data-go]")){ev.preventDefault();go(ev.target.dataset.go)}});
 
