@@ -6,7 +6,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const homeBtn=document.querySelector('nav button[data-view="overview"]:not([data-sub])');if(!homeBtn)return;
 const U=window.MXUI,e=U.esc;
 const DOW=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-let timer=null,last=null,earnBy="w",tblBy="today";
+let timer=null,last=null,earnBy="w",tblBy="today",bkDays=30,svDays=30;
 
 const sec=document.createElement("section");sec.className="wrap today";sec.id="today";sec.hidden=true;
 sec.innerHTML=`<div class="mx-page">
@@ -87,10 +87,16 @@ function apptTable(all){const now=new Date(),d0=new Date(now.toDateString()),end
   return U.card({title:"Appointments ahead",span:7,size:"wide",meta:`${rows.length} · ${money(sumP(rows))}`,link:U.segmented([["today","Today"],["week","Next 7 days"]],tblBy,"Range"),
     body:U.table(["Client","Service","When","Status","Price"],rows.slice(0,10).map(b=>({go:"p:calendar:0",cells:[{html:`<span class="who"><i>${e(init(b.customer))}</i>${e(b.customer||"Client")}</span>`},b.service||"",when(b),{html:st(b)},money(b.price)]})),
       tblBy==="today"?"No appointments today":"Nothing booked in the next 7 days")+(rows.length>10?`<p class="mx-more">${rows.length-10} more in Calendar</p>`:"")})}
-// revenue by service over the last 30 days, as rings with their shares
-function svcCard(list){const by={};list.forEach(b=>{const k=b.service||"Other";by[k]=(by[k]||0)+(+b.price||0)});
+// revenue by service over the chosen days, as rings with their shares
+function svcCard(past){const from=Date.now()-svDays*864e5,by={};past.filter(b=>+new Date(b.start)>=from).forEach(b=>{const k=b.service||"Other";by[k]=(by[k]||0)+(+b.price||0)});
   const items=Object.entries(by).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value);
-  return U.card({title:"Revenue by service",span:5,size:"wide",meta:"last 30 days",body:items.length?U.rings(items,money):U.empty("No visits in the last 30 days")})}
+  return U.card({title:"Revenue by service",span:5,size:"wide",cls:"td-sv",link:U.segmented([["7","7 days"],["30","30 days"],["90","90 days"]],String(svDays),"Period"),body:items.length?U.rings(items,money):U.empty(`No visits in the last ${svDays} days`)})}
+// bookings per day over the chosen days, against the same length of time before
+function bookingsCard(hist){const d0=new Date(new Date().toDateString()),n=bkDays,per=[],lab=[],inD=(a,z)=>(hist.all||[]).filter(b=>{const t=new Date(b.start);return t>=a&&t<z}).length;
+  for(let i=n-1;i>=0;i--){const a=new Date(+d0-i*864e5);per.push(inD(a,new Date(+a+864e5)));lab.push(`${a.getDate()} ${MON[a.getMonth()]}`)}
+  const prev=inD(new Date(+d0-(2*n-1)*864e5),new Date(+d0-(n-1)*864e5)),tot=per.reduce((a,b)=>a+b,0);
+  return U.card({title:"Bookings",span:6,size:"wide",cls:"td-bk",link:U.segmented([["7","7 days"],["30","30 days"],["90","90 days"]],String(n),"Period"),
+    body:`<div class="mx-big"><b>${tot}</b>${U.trend(pctCh(tot,prev),{vs:`vs the ${n} days before`})}<span class="mx-ctx">visits, last ${n} days</span></div>${U.area(per,lab,{h:180})}`})}
 // busy hours: weekdays × opening hours, counted from the last 180 days of visits
 function busy(past){const H=[10,11,12,13,14,15,16,17,18,19],D=[1,2,3,4,5,6,0],g=D.map(()=>H.map(()=>0));
   past.forEach(b=>{const t=new Date(b.start),r=D.indexOf(t.getDay()),c=H.indexOf(t.getHours());if(r>=0&&c>=0)g[r][c]++});
@@ -135,10 +141,8 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team}=
   $("#tdA").innerHTML=needCard+earnCard(hist.past||[]);
 
   // band 2 · bookings over 30 days beside the AI front desk and the busy hours
-  const d0=new Date(d.toDateString()),per=[],lab=[],inD=(a,z)=>(hist.all||[]).filter(b=>{const t=new Date(b.start);return t>=a&&t<z}).length;
-  for(let i=29;i>=0;i--){const a=new Date(+d0-i*864e5);per.push(inD(a,new Date(+a+864e5)));lab.push(`${a.getDate()} ${MON[a.getMonth()]}`)}
-  const prev30=inD(new Date(+d0-59*864e5),new Date(+d0-29*864e5)),tot30=per.reduce((a,b)=>a+b,0);
-  const bookCard=U.card({title:"Bookings, last 30 days",span:6,size:"wide",meta:`${(hist.cust||[]).length} clients`,body:`<div class="mx-big"><b>${tot30}</b>${U.trend(pctCh(tot30,prev30),{vs:"vs 30 days before"})}<span class="mx-ctx">visits</span></div>${U.area(per,lab,{h:180})}`});
+  const d0=new Date(d.toDateString());
+  const bookCard=bookingsCard(hist);
   const sum=f=>kpis.reduce((a,x)=>a+(f(x)||0),0),chats=sum(x=>x.chats),handled=sum(x=>x.handled),ms=kpis.filter(x=>x.reply_ms!=null),avg=ms.length?ms.reduce((a,x)=>a+x.reply_ms,0)/ms.length:null;
   const aiCard=U.card({title:`${nora()}, your front desk`,span:6,size:"wide",link:U.link("AI Control","p:pulse:0"),
     body:`<div class="mx-tiles"><div><b>${chats?Math.round(handled/chats*100)+"%":"–"}</b><span>answered alone</span></div><div><b>${avg?(avg/1000).toFixed(1)+"s":"–"}</b><span>average reply</span></div><div><b>${money(now.ai_value||0)}</b><span>booked by ${e(nora())}</span></div><div><b>${now.replies_today||0}</b><span>replies today</span></div></div>
@@ -161,7 +165,7 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team}=
       why:!target?"":d.getDate()<7?"Too early to judge the pace":pace>=target?`On pace for ${money(pace)}`:`${money(target-pace)} behind pace`,state:!target||d.getDate()<7?"neutral":pace>=target?"healthy":"warning"})].join("");
 
   // band 4 · the appointments ahead
-  $("#tdD").innerHTML=svcCard(c30)+apptTable(hist.all||[]);
+  $("#tdD").innerHTML=svcCard(hist.past||[])+apptTable(hist.all||[]);
 
   // no Go live card: unfinished setup still shows as the recommended action in Needs your attention
   $("#tdLive").innerHTML=false?U.card({title:"Go live",span:12,state:"warning",size:"compact",meta:`${(live.setup||[]).length-pending.length} of ${(live.setup||[]).length} done`,
@@ -178,7 +182,8 @@ function go(where){
   if(where==="reload")return load();
   if(where==="newbooking"){window.P10?.go("calendar",0);setTimeout(()=>$("#calNew")?.click(),450)}}
 sec.addEventListener("click",ev=>{const tm=ev.target.closest("[data-tm]");if(tm&&last){const m=last.team[+tm.dataset.tm],t=m?.tasks[0];if(t)window.P10?.go(...t.go);else window.PulseCommand?.open(m?.ask);return}
-  const sg=ev.target.closest("[data-seg]");if(sg&&last){const v=sg.dataset.seg;if(["d","w","m"].includes(v)){earnBy=v;$("#tdA").lastElementChild.outerHTML=earnCard(last.hist.past||[])}else{tblBy=v;$("#tdD").lastElementChild.outerHTML=apptTable(last.hist.all||[])}return}
+  const sg=ev.target.closest("[data-seg]");if(sg&&last){const v=sg.dataset.seg;if(sg.closest(".td-bk")){bkDays=+v;sg.closest(".mx-card").outerHTML=bookingsCard(last.hist);return}if(sg.closest(".td-sv")){svDays=+v;sg.closest(".mx-card").outerHTML=svcCard(last.hist.past||[]);return}
+  if(["d","w","m"].includes(v)){earnBy=v;$("#tdA").lastElementChild.outerHTML=earnCard(last.hist.past||[])}else{tblBy=v;$("#tdD").lastElementChild.outerHTML=apptTable(last.hist.all||[])}return}
   const b=ev.target.closest("[data-go]");if(b){ev.stopPropagation();go(b.dataset.go)}});
 sec.addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches(".mx-row[data-go],tr[data-go]")){ev.preventDefault();go(ev.target.dataset.go)}});
 

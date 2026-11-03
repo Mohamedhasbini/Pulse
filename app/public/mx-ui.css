@@ -623,7 +623,7 @@ html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main 
 
 /* ── Settings as a settings window: a side menu of sections on the left, the chosen section on the right */
 @media (min-width:900px){
-  #setup:not(#_):not(#__){display:grid!important;grid-template-columns:230px minmax(0,1fr);column-gap:16px;align-items:start}
+  #setup:not([hidden]):not(#_):not(#__){display:grid!important;grid-template-columns:230px minmax(0,1fr);column-gap:16px;align-items:start}
   #setup:not(#_):not(#__)>.set-ix{grid-column:1;grid-row:1/span 30;position:sticky;top:0;display:flex!important;flex-direction:column;align-items:stretch;gap:2px;padding:10px;border-radius:16px;background:var(--mx-surf)!important}
   #setup:not(#_):not(#__)>.spane{grid-column:2}
 }
@@ -679,8 +679,10 @@ html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main 
 @media (min-width:768px) and (max-width:1279px){html body nav[aria-label="Main"]:not(#_) #hxAsk kbd{display:none}}
 
 @media (min-width:900px){
-  html body main #setup:not(#_):not(#__):not(#___):not(#____){display:grid!important;grid-template-columns:230px minmax(0,1fr);column-gap:16px;align-items:start}
+  html body main #setup:not([hidden]):not(#_):not(#__):not(#___):not(#____){display:grid!important;grid-template-columns:230px minmax(0,1fr);column-gap:16px;align-items:start}
   html body main #setup:not(#_):not(#__):not(#___):not(#____)>*{grid-column:2}
   html body main #setup:not(#_):not(#__):not(#___):not(#____)>.set-ix{grid-column:1;grid-row:1/span 40}
 }
 @media (min-width:768px){html body nav[aria-label="Main"]:not(#_):not(#__) .ph-more{display:none!important}}
+.rp-period{display:flex;justify-content:flex-end;margin-bottom:12px}
+html body main>section[hidden]:not(#_):not(#__):not(#___):not(#____):not(#_____){display:none!important}
