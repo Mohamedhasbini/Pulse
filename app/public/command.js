@@ -281,19 +281,30 @@
     $('.pc-mem summary', root).textContent = `Memory · ${list.length}`;
     box.innerHTML = list.length ? list.map(f => `<p>${esc(f.fact)}<button type="button" data-forget="${f.id}" aria-label="Forget this">✕</button></p>`).join('') : '<p class="pc-none">Tell me your goals and preferences and I’ll remember them.</p>';
   }
-  function open(q) { if (!root) build(); root.hidden = false; document.body.classList.add('pc-on'); draw(); loadMemory(); $('textarea', root).focus(); if (q) ask(q); }
-  function close() { if (root) root.hidden = true; document.body.classList.remove('pc-on'); }
+  // the chat is a page of its own under the top bar (above the phone's bottom bar), opened from the MXAi tab
+  const dock = () => { const nav = document.querySelector('nav[aria-label="Main"]'), r = nav?.getBoundingClientRect(); if (!root || !r) return;
+    const atBottom = r.top > innerHeight / 2; root.style.top = atBottom ? '0px' : `${Math.round(r.bottom)}px`; root.style.bottom = atBottom ? `${Math.round(innerHeight - r.top)}px` : '0px'; };
+  const mark = on => document.querySelectorAll('nav .pc-tab').forEach(b => b.setAttribute('aria-current', String(on)));
+  function open(q) { if (!root) build(); root.hidden = false; document.body.classList.add('pc-on'); dock(); mark(true);
+    document.querySelectorAll('nav .p10[aria-current="true"]:not(.pc-tab)').forEach(b => b.dataset.pcWas = '1');
+    draw(); loadMemory(); $('textarea', root).focus(); if (q) ask(q); }
+  function close() { if (root) root.hidden = true; document.body.classList.remove('pc-on'); mark(false); }
+  addEventListener('resize', () => { if (root && !root.hidden) dock(); });
+  // any other tab in the menu leaves the chat
+  document.addEventListener('click', ev => { if (root && !root.hidden && ev.target.closest('nav .p10:not(.pc-tab), nav #setBtn')) close(); }, true);
   document.addEventListener('keydown', ev => {
     if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'j') { ev.preventDefault(); root && !root.hidden ? close() : open(); }
     else if (ev.key === 'Escape' && root && !root.hidden) close();
   });
   // a launcher at the top of the sidebar, so the chat is one click from every page
   const launch = setInterval(() => {
-    const nav = document.querySelector('nav .navpills'); if (!nav || window.LAB) return;
+    const nav = document.querySelector('nav .navpills'); if (!nav || window.LAB || !nav.querySelector('.p10[data-p10]')) return;
     clearInterval(launch);
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'pc-launch';
-    b.innerHTML = '<span class="pc-logo sm" aria-hidden="true"></span><span>Ask MXAi Assistant</span><kbd>Ctrl J</kbd>'; b.addEventListener('click', () => open());
-    nav.prepend(b);
+    // MXAi is a tab in the menu, beside Settings; it toggles the chat
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'p10 pc-tab'; b.title = 'MXAi Assistant (Ctrl J)'; b.setAttribute('aria-label', 'MXAi Assistant');
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.6L12 15l-1.8-4.4L5.5 9l4.7-1.4z"/><path d="M18 15l.8 2 2 .8-2 .8L18 21l-.8-2.4-2-.8 2-.8z"/></svg><span>MXAi</span>';
+    b.addEventListener('click', ev => { ev.stopImmediatePropagation(); root && !root.hidden ? close() : open(); });
+    const set = nav.querySelector('.p10[data-p10="settings"]'); set ? nav.insertBefore(b, set) : nav.append(b);
   }, 400);
   setTimeout(() => clearInterval(launch), 20000);
   window.PulseCommand = { open, close, ask: q => open(q) };

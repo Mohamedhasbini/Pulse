@@ -773,3 +773,37 @@ html body .pv-c:not(#_):not(#__) :is(.pv-scroll,.pv-tbl,table){max-height:300px;
 html body .pv-c:not(#_):not(#__) .pv-feed li{padding:6px 0!important}
 html body .rp-cell .pv-heat b:not(#_){height:20px!important}
 html body .pv-c:not(#_):not(#__)>header h3{font-size:14px!important}html body .pv-c:not(#_):not(#__)>header small{font-size:12px!important}
+
+/* ── MXAi as a tab: the chat sits under the top bar like a page, light in both themes (Claude / ChatGPT style):
+   a soft history column on the left, one wide centred conversation, a roomy composer */
+html body .pc:not(#_):not(#__):not(#___){position:fixed!important;left:0!important;right:0!important;z-index:35!important;grid-template-columns:260px 1fr!important;
+  --pc-bg:#ffffff;--pc-side:#f7f7f7;--pc-raise:#f4f4f4;--pc-line:#ebebeb;--pc-line2:#d4d4d4;--pc-ink:#0a0a0a;--pc-mut:#6b6b6b;--pc-dim:#9a9a9a;
+  background:#ffffff!important;color:#0a0a0a!important;color-scheme:light}
+html body .pc:not(#_):not(#__):not(#___) .pc-side{background:#f7f7f7!important;border-right:1px solid #ebebeb!important;padding:14px 12px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-main>header .pc-x,html body .pc:not(#_):not(#__):not(#___) .pc-main>header kbd{display:none}
+html body .pc:not(#_):not(#__):not(#___) :is(.pc-log,.pc-dock){max-width:860px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-m.you .pc-b{background:#f4f4f4!important;box-shadow:none!important}
+html body .pc:not(#_):not(#__):not(#___) :is(.pc-trail,.pc-data){background:#fff!important;box-shadow:0 0 0 1px #ebebeb!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-in{background:#fff!important;box-shadow:0 0 0 1px #e5e5e5,0 10px 30px -18px rgba(0,0,0,.25)!important;border-radius:26px!important;padding:14px 14px 10px 20px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-in:focus-within{box-shadow:0 0 0 1.5px #0a0a0a,0 10px 30px -18px rgba(0,0,0,.25)!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-send{background:#0a0a0a!important;color:#fff!important;box-shadow:none!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-chip{color:#6b6b6b!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-new{background:#fff!important;box-shadow:0 0 0 1px #ebebeb!important;color:#0a0a0a!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-search{background:#fff!important;border:1px solid #ebebeb!important;color:#0a0a0a!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-list [data-th]{color:#3f3f3f!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-list [data-th]:hover,html body .pc:not(#_):not(#__):not(#___) .pc-list [aria-current="true"]{background:#ececec!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-sugg button{background:#fff!important;box-shadow:0 0 0 1px #ebebeb!important;color:#6b6b6b!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-sugg button b{color:#0a0a0a!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-sic{background:#f4f4f4!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-hello h1{color:#0a0a0a!important;font-size:30px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-a{color:#1a1a1a!important}
+body.pc-on main:not(.pc-main){visibility:hidden}
+/* the MXAi tab in the menu */
+html body nav[aria-label="Main"] .pc-tab:not(#_):not(#__){display:inline-flex!important;align-items:center;gap:6px}
+html body nav[aria-label="Main"] .pc-tab:not(#_) svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+html body nav[aria-label="Main"] .pc-tab[aria-current="true"]:not(#_){background:var(--mx-raise)!important;color:var(--mx-ink)!important}
+html body.pc-on nav[aria-label="Main"] .p10[aria-current="true"]:not(.pc-tab):not(#_):not(#__):not(#___){background:transparent!important;color:inherit!important;font-weight:inherit}
+@media (min-width:768px){html body nav[aria-label="Main"] .pc-tab:not(#_) svg{display:none}}
+@media (max-width:767px){html body .pc:not(#_):not(#__):not(#___){grid-template-columns:1fr!important}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .pc-tab{display:flex!important;flex-direction:column;flex:0 0 76px;min-height:50px;justify-content:center;gap:3px;font-size:11px!important;color:var(--mx-mute)!important;background:none!important}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .pc-tab svg{width:22px;height:22px;display:block}}
