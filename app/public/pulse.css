@@ -3015,3 +3015,8 @@ html body .hx.hx-work .hx-stats:not(#_):not(#__){display:none!important}
 .pv-tail::before,.pv-tail::after{content:"";height:1px;flex:1;background:var(--gl-grid,rgba(127,127,127,.2))}
 .pv-tail::before{flex:0 0 24px}
 html body .hx.hx-work ~ .hx-x.hx-cards:not(#_){display:none!important}
+/* one card language on every page: 18px corners, 20px sides, titles at 17px medium */
+html body main :is(.card,.pv-c,.td-card,.mk-card):not(#_):not(#__){border-radius:18px!important}
+html body main .pv-c:not(#_):not(#__){padding:18px 20px!important}
+html body main :is(.pv-c,.card,.mk-card) h3:not(#_):not(#__){font-size:17px!important;font-weight:500!important;letter-spacing:-.01em!important}
+html body main .mk-card h3:not(#_):not(#__){font-size:15px!important}

@@ -25,7 +25,7 @@
     ['today', 'Today', 'What is happening and what needs you now', [['Today', { entry: 'home' }]]],
     ['inbox', 'Inbox', 'Talk to your customers', [
       ['Conversations', { own: 'inbox', folder: 'all' }],
-      ['Needs you', { own: 'inbox', folder: 'needs' }],
+      ['Needs you', { own: 'inbox', folder: 'needs', hidden: true }], // the inbox has its own Needs you folder; kept so links to it still work
       ['Delivery queue', { page: 'inbox', tab: 'queue' , adv: true }],
       ['AI control', { own: 'aictl' , adv: true }]]],
     ['calendar', 'Calendar', 'Run your schedule', [
@@ -89,7 +89,7 @@
   const GROUP = { today: 'Daily', insights: 'Grow', settings: 'Setup' };
   // tabs marked adv show once the owner asks for more detail on that page (remembered), or while one is open
   const detailOn = id => { try { return localStorage.getItem('mx-detail-' + id) === '1' } catch { return false } };
-  const shown = (id, tabs) => tabs.map((t, k) => [t, k]).filter(([t, k]) => !t[1].adv || detailOn(id) || (current?.[0] === id && tabs[current[1]]?.[1].adv && k >= 0));
+  const shown = (id, tabs) => tabs.map((t, k) => [t, k]).filter(([t, k]) => t[1].hidden ? false : !t[1].adv || detailOn(id) || (current?.[0] === id && tabs[current[1]]?.[1].adv && k >= 0));
   // the receptionist's name as the owner set it (Settings › Assistant), Nora by default
   const nora = () => (typeof biz !== 'undefined' && biz?.assistant_name) || 'Nora';
   const named = t => t.replace(/Nora/g, nora());
@@ -206,9 +206,9 @@
     const b = document.createElement('div'); b.className = 'p10-bar';
     const title = named(PAGES.find(p => p[0] === id)[1]), tab = tabs.length > 1 ? tabs[i][0] : '';
     // tabs marked adv stay out of the way until the owner asks for detail (or is already on one)
-    const hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || detailOn(id));
-    b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.adv && !detail ? '' :
-      `<button type="button" role="tab" data-t="${k}" aria-selected="${k === i}" aria-pressed="${k === i}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${detail ? 'Simple view' : 'More detail'}</button>` : ''}</div>` : '');
+    const sel = tabs[i][1].hidden ? 0 : i, hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || detailOn(id));
+    b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.hidden || (o.adv && !detail) ? '' :
+      `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" aria-pressed="${k === sel}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${detail ? 'Simple view' : 'More detail'}</button>` : ''}</div>` : '');
     b.addEventListener('click', ev => {
       const d = ev.target.closest('[data-detail]');
       if (d) { try { localStorage.setItem('mx-detail-' + id, d.dataset.detail) } catch {} return go(id, tabs[i][1].adv && d.dataset.detail === '0' ? 0 : i) }

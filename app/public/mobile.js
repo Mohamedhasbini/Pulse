@@ -23,6 +23,9 @@
     sheet.addEventListener('click', click);
     addEventListener('keydown', ev => { if (ev.key === 'Escape' && !sheet.hidden) close(); });
     setInterval(badge, 3000); badge();
+    // More lights up while a page that lives in it is open
+    const sync = () => { const cur = window.P10?.current?.(); more.setAttribute('aria-current', String(!!cur && !MAIN.includes(cur))); };
+    new MutationObserver(ms => { if (ms.some(m => m.target !== more)) sync(); }).observe(pills, { subtree: true, attributes: true, attributeFilter: ['aria-current'] }); sync();
     return true;
   }
   // the count on More: what is waiting on the pages it holds
