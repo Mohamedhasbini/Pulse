@@ -807,3 +807,69 @@ html body.pc-on nav[aria-label="Main"] .p10[aria-current="true"]:not(.pc-tab):no
 @media (max-width:767px){html body .pc:not(#_):not(#__):not(#___){grid-template-columns:1fr!important}
   html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .pc-tab{display:flex!important;flex-direction:column;flex:0 0 76px;min-height:50px;justify-content:center;gap:3px;font-size:11px!important;color:var(--mx-mute)!important;background:none!important}
   html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .pc-tab svg{width:22px;height:22px;display:block}}
+
+/* ── Inbox, Gmail-style: an insight strip, a folder rail, roomy rows with a colour per person, the open chat beside */
+#p10-inbox .ib-ins{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+#p10-inbox .ib-in{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:16px;background:var(--mx-surf);position:relative;overflow:hidden}
+#p10-inbox .ib-in::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--mx-line)}
+#p10-inbox .ib-in.warn::before{background:var(--mx-warn)}#p10-inbox .ib-in.ok::before{background:var(--mx-s1)}
+#p10-inbox .ib-in span{font-size:12.5px;color:var(--mx-mute)}#p10-inbox .ib-in b{font-size:24px;font-weight:600;letter-spacing:-.02em;color:var(--mx-ink);font-variant-numeric:tabular-nums}
+#p10-inbox .ib-in small{font-size:12px;color:var(--mx-mute)}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___){grid-template-columns:220px minmax(420px,1.3fr) minmax(380px,1fr)!important;gap:12px!important;height:calc(100vh - 230px)!important;min-height:520px}
+/* the folder rail: no card, rounded pills like Gmail */
+html body #p10-inbox .ib:not(#_):not(#__):not(#___)>.ib-folders{background:transparent!important;box-shadow:none!important;padding:0!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders button{display:flex;align-items:center;gap:12px;padding:10px 14px!important;border-radius:0 99px 99px 0!important;margin-right:8px;font-size:14px!important;color:var(--mx-ink2)!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders button[aria-current="true"]{background:color-mix(in srgb,var(--mx-s1) 26%,var(--mx-surf))!important;color:var(--mx-ink)!important;font-weight:600!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders b{background:transparent!important;font-size:12.5px!important;color:inherit!important;font-weight:600}
+/* the list and the open chat: clean white panels in light, one step up in dark */
+html body #p10-inbox .ib:not(#_):not(#__):not(#___)>:is(.ib-list,.ib-read){background:var(--mx-surf)!important;border-radius:18px!important;box-shadow:none!important}
+:root[data-theme="light"] #p10-inbox .ib:not(#_):not(#__):not(#___)>:is(.ib-list,.ib-read){background:#fff!important;box-shadow:0 0 0 1px #ebebeb,0 1px 3px rgba(0,0,0,.04)!important}
+:root[data-theme="light"] #p10-inbox .ib-in{background:#fff;box-shadow:0 0 0 1px #ebebeb}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-bar{padding:14px 16px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-bar input{height:42px;border-radius:12px!important;font-size:14px!important}
+:root[data-theme="light"] #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-bar input{background-color:#f4f4f4!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) #ibRows{padding:4px 8px 8px}
+/* a row: avatar · name · label and preview · channel · time — 64px, unread in bold */
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row{grid-template-columns:40px minmax(0,150px) minmax(0,1fr) auto!important;grid-template-areas:"av who what at"!important;
+  align-items:center;column-gap:14px;min-height:64px;padding:10px 12px!important;border-radius:12px;box-shadow:none!important;margin-bottom:2px}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row+.ib-row{box-shadow:0 -1px 0 var(--mx-line)!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row:hover{background:var(--mx-raise)!important;box-shadow:0 1px 3px rgba(0,0,0,.06)!important}
+:root[data-theme="light"] #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row:hover{background:#f7f7f7!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row.on{background:color-mix(in srgb,var(--mx-s2) 10%,transparent)!important;box-shadow:inset 3px 0 0 var(--mx-s2)!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-av{width:40px;height:40px;font-size:13px;background:hsl(var(--h) 70% 90%)!important;color:hsl(var(--h) 45% 28%)!important;box-shadow:none!important}
+:root:not([data-theme="light"]) #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-av{background:hsl(var(--h) 35% 26%)!important;color:hsl(var(--h) 70% 85%)!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-who{font-size:14.5px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-what{font-size:13.5px!important;gap:8px}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row.unread .ib-snip{color:var(--mx-ink);font-weight:500}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-ch{grid-area:at!important;align-self:end;display:inline-flex;align-items:center;gap:6px;font-size:11.5px}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-ch::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ch)}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-at{align-self:start;font-size:12.5px}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-at,html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-ch{justify-self:end}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row{grid-template-rows:auto auto}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-av{grid-row:1/3!important;grid-area:auto!important;grid-column:1!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-who{grid-row:1/3!important;grid-area:auto!important;grid-column:2!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-what{grid-row:1/3!important;grid-area:auto!important;grid-column:3!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-at{grid-row:1!important;grid-area:auto!important;grid-column:4!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-ch{grid-row:2!important;grid-area:auto!important;grid-column:4!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-what .chip{padding:2px 8px;border-radius:7px}
+/* the open chat */
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-head{padding:16px 20px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-head h2{font-size:18px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-cust{padding:12px 20px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-msgs{padding:20px!important;gap:12px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-m p{font-size:14.5px!important;padding:10px 14px!important}
+:root[data-theme="light"] #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-m.customer p{background:#f1f1f1!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-reply{margin:14px 16px 16px!important}
+@media (max-width:1279px){html body #p10-inbox .ib:not(#_):not(#__):not(#___){grid-template-columns:200px minmax(0,1fr) minmax(0,1fr)!important}#p10-inbox .ib-ins{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){#p10-inbox .ib-ins{grid-template-columns:1fr 1fr;gap:8px}html body #p10-inbox .ib:not(#_):not(#__):not(#___){grid-template-columns:1fr!important;height:auto!important}
+  html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders{flex-direction:row!important}html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders button{border-radius:99px!important;margin:0}
+  html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row{grid-template-columns:40px minmax(0,1fr) auto!important}
+  html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-who{grid-row:1!important;grid-column:2!important}html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-what{grid-row:2!important;grid-column:2!important}
+  html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-at,html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-ch{grid-column:3!important}}
+html body #p10-inbox :has(>#ibIns):not(#_){display:flex!important;flex-direction:column!important}
+html body #p10-inbox #ibIns:not(#_){width:100%;flex:none}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row{grid-template-columns:40px minmax(0,120px) minmax(0,1fr) auto!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-m.customer p:not(#_){background:var(--mx-raise)!important;color:var(--mx-ink)!important}
+:root[data-theme="light"] #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-m.customer p:not(#_){background:#f1f1f1!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-m.customer:not(#_){background:transparent!important;box-shadow:none!important;padding:0!important}
