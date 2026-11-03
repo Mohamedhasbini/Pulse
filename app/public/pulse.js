@@ -335,10 +335,10 @@
   const pageLabel = id => named(PAGES.find(p => p[0] === id)?.[1] || id);
   async function loadShortcuts() { try { sc = await req('/api/shortcuts'); } catch {} drawShortcuts(); }
   function drawShortcuts() {
-    const kp = $('#tdKpis') || $('.today .td-hero'); if (!kp) return;
+    const slot = $('#tdScSlot'), kp = slot || $('#tdKpis') || $('.today .td-hero'); if (!kp) return;
     let box = $('#tdSc');
     if (!box) {
-      kp.insertAdjacentHTML('afterend', '<div class="td-card td-sc" id="tdSc" aria-label="Your shortcuts"></div>');
+      kp.insertAdjacentHTML(slot ? 'beforeend' : 'afterend', '<div class="td-card td-sc" id="tdSc" aria-label="Your shortcuts"></div>');
       box = $('#tdSc'); box.addEventListener('click', scClick);
     }
     const list = sc.shortcuts || [];

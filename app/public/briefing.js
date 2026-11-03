@@ -7,8 +7,9 @@
   let box = null;
 
   function mount() {
-    const hero = $('.today .td-hero') || $('#tdKpis'); if (!hero || $('#bfCard')) return !!$('#bfCard');
-    hero.insertAdjacentHTML('afterend', `<div class="td-card bf" id="bfCard" aria-live="polite"><div class="bf-h"><div><h2>Today's briefing</h2><p id="bfSay">Reading your business…</p></div>
+    // Today keeps a place for it inside Needs you; older layouts put it after the hero
+    const slot = $('#tdBrief'), hero = slot || $('.today .td-hero') || $('#tdKpis'); if (!hero || $('#bfCard')) return !!$('#bfCard');
+    hero.insertAdjacentHTML(slot ? 'beforeend' : 'afterend', `<div class="td-card bf" id="bfCard" aria-live="polite"><div class="bf-h"><div><h2>Today's briefing</h2><p id="bfSay">Reading your business…</p></div>
       <div class="bf-money" id="bfMoney"></div></div><ol class="bf-list" id="bfList"></ol></div>`);
     box = $('#bfCard'); return true;
   }
