@@ -742,3 +742,34 @@ html body .pc:not(#_):not(#__):not(#___) .pc-data{background:var(--pc-raise)!imp
 html body .pc:not(#_):not(#__):not(#___) .pc-data :is(td,th){color:var(--pc-ink)!important;opacity:1!important;font-size:13.5px!important;border-color:var(--pc-line)!important;background:transparent!important}
 html body .pc:not(#_):not(#__):not(#___) .pc-data th{color:var(--pc-mut)!important;font-weight:500!important;font-size:12px!important}
 html body .pc:not(#_):not(#__):not(#___) .pc-data td.n{font-variant-numeric:tabular-nums}
+
+/* ── compact pass: cards hug their content; one-figure cards are small, charts only as tall as their data needs */
+html body .mx-card:not(#_):not(#__){min-height:0!important;padding:14px 16px!important;gap:8px!important}
+html body .mx-card:not(#_):not(#__) .mx-hd{flex-wrap:nowrap;row-gap:0;gap:10px;min-height:28px}
+html body .mx-card:not(#_):not(#__) .mx-ic{width:28px;height:28px;border-radius:9px;margin-right:0}
+html body .mx-card:not(#_):not(#__) .mx-ic svg{width:15px;height:15px}
+html body .mx-card:not(#_):not(#__) .mx-hd h3{order:0;flex:1 1 auto;font-size:13.5px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body .mx-card:not(#_):not(#__) .mx-num{font-size:26px!important}
+html body .mx-card:not(#_):not(#__) .mx-why{padding-top:8px;font-size:12.5px!important}
+html body .mx-card:not(#_):not(#__) .mx-big b{font-size:24px}
+/* chart heights */
+html body .mx-cols:not(#_) :is(.mx-cols-in,.mx-axis){height:140px!important}
+html body .mx-area:not(#_) :is(.mx-area-in,.mx-axis){height:130px!important}
+html body .mx-rings:not(#_) svg{width:120px!important;height:120px!important}
+html body .mx-sankey:not(#_){height:240px!important}
+html body .mx-gauge:not(#_) svg{max-width:200px}html body .mx-gauge-c:not(#_){margin-top:-46px}html body .mx-gauge-c:not(#_) b{font-size:24px}
+html body .mx-ffun:not(#_) svg,html body .mx-ffun:not(#_) .mx-ffun-p{height:110px!important}
+html body .mx-heat:not(#_) i{height:11px}
+html body .mx-bar:not(#_){height:30px}
+.tm-say{-webkit-line-clamp:2}.tm-tile{padding:10px!important;gap:6px!important}.tm-av{width:30px!important;height:30px!important;font-size:12px!important}
+/* the older Insights charts: smaller headline figures, shorter plots, long tables scroll inside the card */
+html body .pv-c:not(#_):not(#__){padding:14px 16px!important;min-height:0!important}
+html body .pv-c:not(#_):not(#__) .pv-big{font-size:26px!important;margin-bottom:4px!important}
+html body .pv-c:not(#_):not(#__) .pv-big em{font-size:13px!important}
+html body .pv-c:not(#_):not(#__) svg.pv-area{height:130px!important}
+html body .pv-c:not(#_):not(#__) .pv-donut svg{width:110px!important;height:110px!important}
+html body .pv-c:not(#_):not(#__) .pv-stack{height:150px!important}
+html body .pv-c:not(#_):not(#__) :is(.pv-scroll,.pv-tbl,table){max-height:300px;overflow:auto;display:block}
+html body .pv-c:not(#_):not(#__) .pv-feed li{padding:6px 0!important}
+html body .rp-cell .pv-heat b:not(#_){height:20px!important}
+html body .pv-c:not(#_):not(#__)>header h3{font-size:14px!important}html body .pv-c:not(#_):not(#__)>header small{font-size:12px!important}
