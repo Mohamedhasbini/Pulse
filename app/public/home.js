@@ -1,12 +1,12 @@
-// "Today": the owner's home page, action-led. Seven blocks on the 12-column grid, read in this order:
-// what needs you, today's appointments with the gaps between them, the one recommended action, how full today is,
-// what the AI did, the conversations that matter, and a small business-health strip. Analytics live in Insights.
+// "Today": the owner's home page and a summary of everything, in four bands on the 12-column grid:
+// what needs you (the one recommended action first) beside what was earned; bookings over 30 days beside the AI
+// front desk and the busy hours; four headline figures; then the appointments ahead as a table.
 (function(){
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const homeBtn=document.querySelector('nav button[data-view="overview"]:not([data-sub])');if(!homeBtn)return;
 const U=window.MXUI,e=U.esc;
 const DOW=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-let timer=null;
+let timer=null,last=null,earnBy="w",tblBy="today";
 
 const sec=document.createElement("section");sec.className="wrap today";sec.id="today";sec.hidden=true;
 sec.innerHTML=`<div class="mx-page">
@@ -14,9 +14,10 @@ sec.innerHTML=`<div class="mx-page">
    <div style="min-width:0"><p class="tdh-date" id="tdDate"></p><h1 id="tdHello"></h1><p class="tdh-sub" id="tdSub"></p></div></div>
   <div class="tdh-acts"><button class="mx-btn" type="button" data-go="ask">Ask MXAi</button><button class="mx-btn pri" type="button" data-go="newbooking">+ New booking</button></div></header>
  <div class="mx-grid" id="tdLive"></div>
- <div class="mx-grid" id="tdA">${U.card({title:"Needs your attention",span:5,body:U.loading(3)})}${U.card({title:"Today's appointments",span:4,body:U.loading(4)})}${U.card({title:"Recommended action",span:3,body:U.loading(2)})}</div>
+ <div class="mx-grid" id="tdA">${U.card({title:"Needs your attention",span:5,body:U.loading(3)})}${U.card({title:"Earned",span:7,size:"wide",body:U.loading(5)})}</div>
  <div class="mx-grid" id="tdB"></div>
  <div class="mx-grid" id="tdC"></div>
+ <div class="mx-grid" id="tdD"></div>
 </div>`;
 document.querySelector("main").append(sec);
 document.head.insertAdjacentHTML("beforeend",`<style>
@@ -48,9 +49,9 @@ window.homeLoad=()=>{if(!sec.hidden)load()}; // live.js calls this the moment da
 
 async function load(){
   const t=day(new Date()),get=u=>req(u).catch(()=>null);
-  const [biz,live,ch,wait,brief,cal,kpis,month]=await Promise.all([get("/api/business"),get("/api/live?days=30"),get("/api/channels"),get("/api/pulse/waiting"),get("/api/briefing"),get(`/api/calendar?from=${t}T00:00&to=${t}T23:59`),get("/api/kpis?days=30"),get(`/api/calendar?from=${day(new Date(new Date().getFullYear(),new Date().getMonth()-1,1))}T00:00&to=${t}T23:59`)]);
+  const [hist,biz,live,ch,wait,brief,cal,kpis,month]=await Promise.all([window.PVData?window.PVData().catch(()=>null):null,get("/api/business"),get("/api/live?days=30"),get("/api/channels"),get("/api/pulse/waiting"),get("/api/briefing"),get(`/api/calendar?from=${t}T00:00&to=${t}T23:59`),get("/api/kpis?days=30"),get(`/api/calendar?from=${day(new Date(new Date().getFullYear(),new Date().getMonth()-1,1))}T00:00&to=${t}T23:59`)]);
   if(!biz||!live){$("#tdA").innerHTML=U.card({title:"Today",span:12,state:"critical",body:U.error("today's numbers","reload")});return}
-  draw({biz,live,ch,wait:wait||{items:[]},brief:brief||{items:[]},cal:cal||{bookings:[],timeOff:[]},kpis:Array.isArray(kpis)?kpis:[],month:month?.bookings||[]})}
+  draw({biz,live,ch,wait:wait||{items:[]},brief:brief||{items:[]},cal:cal||{bookings:[],timeOff:[]},kpis:Array.isArray(kpis)?kpis:[],month:month?.bookings||[],hist:hist||{all:[],past:[],cust:[]}})}
 
 function openNow(biz){const d=new Date(),m=d.getHours()*60+d.getMinutes(),r=(biz.hours?.[d.getDay()]||[]).map(([a,z])=>[mins(a),mins(z)]);
   const cur=r.find(([a,z])=>m>=a&&m<z);if(cur)return `Open now · until ${clock(cur[1])}`;const nx=r.find(([a])=>a>m);return nx?`Opens today at ${clock(nx[0])}`:"Closed today"}
@@ -64,14 +65,41 @@ function gaps(biz,cal){const d=new Date(),open=(biz.hours?.[d.getDay()]||[]).map
   const closed=open.length>0&&now>=Math.max(...open.map(o=>o[1]));
   return {list:out,openMin,booked,closed}}
 
-function draw({biz,live,ch,wait,brief,cal,kpis,month}){
+const sumP=l=>l.reduce((a,b)=>a+(+b.price||0),0),pctCh=(a,b)=>b?(a-b)/b*100:null;
+// what was earned, by day (14), week (12) or month (6), from bookings that happened and were not cancelled
+function earned(past,by){const d0=new Date(new Date().toDateString()),out=[],inR=(a,z)=>sumP(past.filter(b=>{const t=new Date(b.start);return t>=a&&t<z}));
+  if(by==="d")for(let i=13;i>=0;i--){const a=new Date(+d0-i*864e5);out.push({l:i?String(a.getDate()):"Today",v:inR(a,new Date(+a+864e5))})}
+  if(by==="w"){const mon=new Date(+d0-((d0.getDay()+6)%7)*864e5);for(let i=11;i>=0;i--){const a=new Date(+mon-i*7*864e5);out.push({l:i?`${a.getDate()} ${MON[a.getMonth()]}`:"This wk",v:inR(a,new Date(+a+7*864e5))})}}
+  if(by==="m")for(let i=5;i>=0;i--){const a=new Date(d0.getFullYear(),d0.getMonth()-i,1);out.push({l:MON[a.getMonth()],v:inR(a,new Date(d0.getFullYear(),d0.getMonth()-i+1,1))})}
+  return out}
+// the headline is the whole span; the change compares the last full period with the one before (a period that has
+// only just started would always look like a drop)
+function earnCard(past){const pts=earned(past,earnBy),full=pts.at(-2)?.v||0,prev=pts.at(-3)?.v,ch=pctCh(full,prev),tot=pts.reduce((a,p)=>a+p.v,0);
+  const per={d:"yesterday",w:"last full week",m:"last full month"}[earnBy],span={d:"last 14 days",w:"last 12 weeks",m:"last 6 months"}[earnBy];
+  return U.card({title:"Earned",span:7,size:"wide",link:U.segmented([["d","Days"],["w","Weeks"],["m","Months"]],earnBy,"Period"),
+    body:`<div class="mx-big"><b>${money(tot)}</b><span class="mx-ctx">${span} · ${per} ${money(full)}</span>${U.trend(ch,{vs:"vs the one before"})}</div>${U.columns(pts,{pre:"$",h:190})}`})}
+// the appointments ahead, as a table: today, or the next 7 days
+function apptTable(all){const now=new Date(),d0=new Date(now.toDateString()),end=new Date(+d0+(tblBy==="today"?1:7)*864e5);
+  const rows=all.filter(b=>{const t=new Date(b.start);return t>=d0&&t<end}).sort((a,b)=>new Date(a.start)-new Date(b.start));
+  const st=b=>new Date(b.end||b.start)<now?U.chip("Done","healthy"):/pending|request/.test(b.status||"")?U.chip("Waiting","warning"):U.chip("Confirmed");
+  const init=n=>String(n||"C").split(/\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase();
+  const when=b=>{const t=new Date(b.start);return `${tblBy==="today"?"":DOW[t.getDay()].slice(0,3)+" "}${hm(b.start)}`};
+  return U.card({title:"Appointments ahead",span:12,meta:`${rows.length} · ${money(sumP(rows))}`,link:U.segmented([["today","Today"],["week","Next 7 days"]],tblBy,"Range"),
+    body:U.table(["Client","Service","When","Status","Price"],rows.slice(0,10).map(b=>({go:"p:calendar:0",cells:[{html:`<span class="who"><i>${e(init(b.customer))}</i>${e(b.customer||"Client")}</span>`},b.service||"",when(b),{html:st(b)},money(b.price)]})),
+      tblBy==="today"?"No appointments today":"Nothing booked in the next 7 days")+(rows.length>10?`<p class="mx-more">${rows.length-10} more in Calendar</p>`:"")})}
+// busy hours: weekdays × opening hours, counted from the last 180 days of visits
+function busy(past){const H=[10,11,12,13,14,15,16,17,18,19],D=[1,2,3,4,5,6,0],g=D.map(()=>H.map(()=>0));
+  past.forEach(b=>{const t=new Date(b.start),r=D.indexOf(t.getDay()),c=H.indexOf(t.getHours());if(r>=0&&c>=0)g[r][c]++});
+  return U.heat(g,D.map(x=>DOW[x].slice(0,3)),H.map(h=>h%2?"":String(h)))}
+
+function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist}=x;
   const now=live.now||{},d=new Date(),h=d.getHours(),ai=live.ai||{};
   // header
   const logo=$("#tdLogo");logo.style.backgroundImage=biz.logo_url?`url("${biz.logo_url}")`:"";logo.textContent=biz.logo_url?"":([...biz.name][0]||"").toUpperCase();
   $("#tdDate").textContent=`${DOW[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]} · ${openNow(biz)}`;
   $("#tdHello").innerHTML=`${h<12?"Good morning":h<18?"Good afternoon":"Good evening"}, <em>${e(biz.name)}</em>`;
 
-  // 1 · needs your attention: one queue, most urgent first
+  // band 1 · needs your attention (with the recommended action on top) beside what was earned
   const need=[],n=k=>(wait.items||[]).filter(x=>x.kind===k).length;
   if(now.waiting)need.push(["critical",`${now.waiting} chat${now.waiting>1?"s":""} waiting for a person`,`${nora()} handed them to you`,"Reply","p:inbox:1"]);
   if(ai.ok===false)need.push(["critical",`${nora()} is not answering`,"Clients get a fallback message","Check","p:pulse:0"]);
@@ -83,55 +111,51 @@ function draw({biz,live,ch,wait,brief,cal,kpis,month}){
   const wa=ch?.whatsapp?.configured&&biz.wa_phone_number_id;if(!wa)need.push(["warning","WhatsApp is not connected","Clients can't reach you there yet","Connect","p:settings:0"]);
   const pending=(live.setup||[]).filter(s=>!s.done);
   const worst=need.some(x=>x[0]==="critical")?"critical":need.some(x=>x[0]==="warning")?"warning":"healthy";
-  const needCard=U.list({title:"Needs your attention",span:5,state:need.length?worst:"healthy",meta:need.length?`${need.length} open`:"",
-    rows:need.slice(0,5).map(([s,t,sub,btn,go])=>U.row({dot:s,title:t,sub,action:U.button(btn,go)})),more:need.length>5?`${need.length-5} more in AI Control and Inbox`:"",
-    emptyTitle:"Nothing needs you right now",emptySub:`${nora()} is handling every chat.`});
-
-  // 2 · today's appointments, with the free time between them
-  const g=gaps(biz,cal),todays=(cal.bookings||[]).filter(b=>!/cancel/.test(b.status||""));
-  const slots=[...todays.map(b=>({at:mins(hm(b.start)),r:U.row({time:hm(b.start),title:b.service,sub:`${b.customer||"Client"} · ${mins(hm(b.end))-mins(hm(b.start))} min`,value:money(b.price),go:"p:calendar:0"})})),
-    ...g.list.slice(0,3).map(([a,z])=>({at:a,r:U.row({time:clock(a),cls:"gap",title:`Free until ${clock(z)}`,sub:`${z-a} min open to book`,go:"p:calendar:0"})}))].sort((a,b)=>a.at-b.at).map(x=>x.r);
-  const value=todays.reduce((a,b)=>a+(b.price||0),0);
-  const apptCard=U.list({title:"Today's appointments",span:4,meta:todays.length?`${todays.length} · ${money(value)}`:"",go:"p:calendar:0",rows:slots,
-    emptyTitle:g.openMin?"No appointments yet today":"Closed today",emptySub:g.openMin?"Free time shows here so you can fill it.":"Enjoy the day off."});
-
-  // 3 · one recommended action: the briefing's most valuable item, else the emptiest day ahead, else teaching
   let rec=null;const b0=(brief.items||[])[0];
   const OPEN={inbox:"p:inbox:1",requests:"p:calendar:1"};
   if(b0)rec={text:b0.text,why:b0.why+(b0.value?` · ${money(b0.value)} ${b0.money||""}`:""),label:/^(mark|teach)$/.test(b0.fix)?"Fix it":"Open",go:b0.fix.startsWith("open:")?(OPEN[b0.fix.slice(5)]||"p:inbox:0"):b0.fix==="teach"?"p:pulse:3":b0.fix.startsWith("agent:")?"p:growth:5":"p:calendar:0"};
   if(!rec){const ahead=(live.week||[]).filter(w=>!w.today&&w.pct!=null&&new Date(w.d+"T12:00")>d).sort((a,b)=>a.pct-b.pct)[0];
     if(ahead&&ahead.pct<50)rec={text:`${DOW[new Date(ahead.d+"T12:00").getDay()]} ${ahead.pct?`is only ${ahead.pct}% booked`:"has no bookings yet"}. Invite clients who haven't been in for a while.`,why:"An empty hour can't be sold later.",label:"Open Win back",go:"p:growth:1"}}
   if(!rec&&pending.length)rec={text:`Finish setup: ${pending[0].label}.`,why:`${pending.length} step${pending.length>1?"s":""} left before ${nora()} works at full strength.`,label:"Open Settings",go:"p:settings:0"};
-  if(!rec)rec={text:"All clear. Nothing needs changing today.",why:`${nora()} is answering and the calendar is in order.`,label:"",go:""};
-  $("#tdA").innerHTML=needCard+apptCard+U.rec({...rec,span:3});
+  if(rec&&need[0]?.[0]==="critical"&&rec.go===need[0][4])rec=null; // the top of the list already says it
+  const recRow=rec?`<div class="mx-rec-row"><p>${e(rec.text)}<small>${e(rec.why)}</small></p>${rec.go?U.button(rec.label,rec.go):""}</div>`:"";
+  const needCard=U.card({title:"Needs your attention",span:5,size:"wide",state:need.length?worst:"healthy",meta:need.length?`${need.length} open`:"",
+    body:recRow+`<div class="mx-list">${need.length?need.slice(0,5).map(([s,t,sub,btn,go])=>U.row({dot:s,title:t,sub,action:U.button(btn,go)})).join(""):U.empty("Nothing needs you right now",`${nora()} is handling every chat.`)}</div>`});
+  $("#tdA").innerHTML=needCard+earnCard(hist.past||[]);
 
-  // 4 · how full today is · 5 · what the AI did · 6 · conversations that matter
-  const pct=g.openMin?g.booked/g.openMin*100:0;
-  const fill=g.openMin?U.meter({title:"Time booked today",pct,ctx:`of your open time is booked`,why:g.closed?"Closed for the rest of today":g.list.length?`${g.list.length} gap${g.list.length>1?"s":""} left, the next at ${clock(g.list[0][0])}`:"No gaps left today",state:g.closed?"neutral":pct>=70?"healthy":pct>=35?"neutral":"warning",span:3})
-    :U.card({title:"Time booked today",size:"compact",span:3,body:U.empty("Closed today","Opening hours are set in Settings.")});
-  const aiCard=U.kpi({title:`${nora()} today`,value:String(now.replies_today||0),ctx:`replies · ${now.booked_today||0} booking${now.booked_today===1?"":"s"} made`,why:now.active_now?`${now.active_now} conversation${now.active_now>1?"s":""} happening now`:now.avg_ms?`Average reply ${(now.avg_ms/1000).toFixed(1)}s`:"Quiet so far today",span:3,action:U.button("Open AI Control","p:pulse:0")});
-  const conv=(live.active||[]).slice().sort((a,b)=>(b.needs_attention-a.needs_attention)||(b.value||0)-(a.value||0)).slice(0,3);
-  const convCard=U.list({title:"Important conversations",span:6,go:"p:inbox:0",rows:conv.map(c=>U.row({dot:c.needs_attention?"warning":"healthy",title:c.name||c.phone||"Client",sub:c.last||"",value:c.needs_attention?"needs you":c.outcome==="booked"?"booked":"",go:`c:${c.id}`})),
-    emptyTitle:"No conversations right now",emptySub:"New chats from clients appear here as they arrive."});
-  $("#tdB").innerHTML=fill+aiCard+convCard;
-
-  // 7 · business health, last 30 days
+  // band 2 · bookings over 30 days beside the AI front desk and the busy hours
+  const d0=new Date(d.toDateString()),per=[],lab=[],inD=(a,z)=>(hist.all||[]).filter(b=>{const t=new Date(b.start);return t>=a&&t<z}).length;
+  for(let i=29;i>=0;i--){const a=new Date(+d0-i*864e5);per.push(inD(a,new Date(+a+864e5)));lab.push(`${a.getDate()} ${MON[a.getMonth()]}`)}
+  const prev30=inD(new Date(+d0-59*864e5),new Date(+d0-29*864e5)),tot30=per.reduce((a,b)=>a+b,0);
+  const bookCard=U.card({title:"Bookings, last 30 days",span:6,size:"wide",meta:`${(hist.cust||[]).length} clients`,body:`<div class="mx-big"><b>${tot30}</b>${U.trend(pctCh(tot30,prev30),{vs:"vs 30 days before"})}<span class="mx-ctx">visits</span></div>${U.area(per,lab,{h:180})}`});
   const sum=f=>kpis.reduce((a,x)=>a+(f(x)||0),0),chats=sum(x=>x.chats),handled=sum(x=>x.handled),ms=kpis.filter(x=>x.reply_ms!=null),avg=ms.length?ms.reduce((a,x)=>a+x.reply_ms,0)/ms.length:null;
+  const aiCard=U.card({title:`${nora()}, your front desk`,span:6,size:"wide",link:U.link("AI Control","p:pulse:0"),
+    body:`<div class="mx-tiles"><div><b>${chats?Math.round(handled/chats*100)+"%":"–"}</b><span>answered alone</span></div><div><b>${avg?(avg/1000).toFixed(1)+"s":"–"}</b><span>average reply</span></div><div><b>${money(now.ai_value||0)}</b><span>booked by ${e(nora())}</span></div><div><b>${now.replies_today||0}</b><span>replies today</span></div></div>
+      <p class="mx-ctx" style="margin:6px 0 0">Busiest hours, last 6 months</p>${busy(hist.past||[])}`});
+  $("#tdB").innerHTML=bookCard+aiCard;
+
+  // band 3 · four headline figures, each with its change
   const m0=new Date(d.getFullYear(),d.getMonth(),1),paid=month.filter(b=>b.status!=="cancelled"&&new Date(b.start)<=d); // same rule as the Insights goal
   const lastM=paid.filter(b=>new Date(b.start)<m0).reduce((a,b)=>a+(+b.price||0),0),thisM=paid.filter(b=>new Date(b.start)>=m0).reduce((a,b)=>a+(+b.price||0),0);
   const target=Math.round(lastM*1.1),dim=new Date(d.getFullYear(),d.getMonth()+1,0).getDate(),pace=Math.round(thisM/Math.max(1,d.getDate())*dim);
-  const goalTxt=!target?`<span class="mx-ctx">set after your first full month</span>`:d.getDate()<7?`<span class="mx-ctx">too early to judge the pace</span>`:pace>=target?`<span class="mx-trend up">on pace for ${money(pace)}</span>`:`<span class="mx-trend down">${money(target-pace)} behind pace</span>`;
-  const aiV=now.ai_value||0,aiP=now.ai_value_prev,ch30=aiP?(aiV-aiP)/aiP*100:null;
-  $("#tdC").innerHTML=U.strip({title:"Business health · last 30 days",go:"p:insights:0",items:[
-    ["Booked by MXAi",money(aiV),U.trend(ch30,{vs:"vs 30 days before"})||`<span class="mx-ctx">${now.ai_count||0} appointments</span>`],
-    ["Chats answered alone",chats?`${Math.round(handled/chats*100)}%`:"–",`<span class="mx-ctx">${chats} chats</span>`],
-    ["Monthly goal",target?`${Math.round(thisM/target*100)}%`:"–",target?`<span class="mx-ctx">${money(thisM)} of ${money(target)}</span> ${goalTxt}`:goalTxt],
-    ["Booked ahead",money(now.upcoming_value||0),`<span class="mx-ctx">${now.upcoming_count||0} upcoming</span>`]]});
+  const past=hist.past||[],t30=+d0-29*864e5,t60=+d0-59*864e5,c30=past.filter(b=>+new Date(b.start)>=t30),p30=past.filter(b=>{const t=+new Date(b.start);return t>=t60&&t<t30});
+  const v1=c30.length?sumP(c30)/c30.length:0,v0=p30.length?sumP(p30)/p30.length:0;
+  const firstSeen={};past.forEach(b=>{const k=b.customer||b.phone;if(k){const t=+new Date(b.start);firstSeen[k]=Math.min(firstSeen[k]??t,t)}});
+  const newC=Object.values(firstSeen).filter(t=>t>=t30).length;
+  $("#tdC").innerHTML=[
+    U.kpi({title:"Clients",value:String((hist.cust||[]).length),ctx:`${newC} new in the last 30 days`,state:"neutral"}),
+    U.kpi({title:"Booked ahead",value:money(now.upcoming_value||0),ctx:`${now.upcoming_count||0} upcoming visits`,state:"neutral"}),
+    U.kpi({title:"Average visit value",value:money(v1),ctx:"last 30 days",change:pctCh(v1,v0),vs:"vs 30 days before",state:"neutral"}),
+    U.kpi({title:"Monthly goal",value:target?`${Math.round(thisM/target*100)}%`:"–",ctx:target?`${money(thisM)} of ${money(target)}`:"set after your first full month",
+      why:!target?"":d.getDate()<7?"Too early to judge the pace":pace>=target?`On pace for ${money(pace)}`:`${money(target-pace)} behind pace`,state:!target||d.getDate()<7?"neutral":pace>=target?"healthy":"warning"})].join("");
+
+  // band 4 · the appointments ahead
+  $("#tdD").innerHTML=apptTable(hist.all||[]);
 
   // go-live steps lead the page until setup is done
   $("#tdLive").innerHTML=pending.length?U.card({title:"Go live",span:12,state:"warning",size:"compact",meta:`${(live.setup||[]).length-pending.length} of ${(live.setup||[]).length} done`,
     body:`<p class="mx-ctx">Finish these so clients can reach ${e(nora())}.</p><div class="td-steps">${pending.map(s=>U.button(s.label,"p:settings:0")).join("")}</div>`}):"";
-  const tasks=need.filter(x=>x[0]!=="neutral").length;
+  const todays=(cal.bookings||[]).filter(b=>!/cancel/.test(b.status||"")),tasks=need.filter(x=>x[0]!=="neutral").length;
   $("#tdSub").textContent=`${todays.length} appointment${todays.length===1?"":"s"} today · ${tasks?`${tasks} thing${tasks>1?"s":""} need${tasks===1?"s":""} you`:"nothing waiting for you"}.`}
 
 // every button goes to the right place: p:page:tab, c:conversation, or a named action
@@ -142,8 +166,9 @@ function go(where){
   if(where==="settings")return window.P10?.go("settings",0);
   if(where==="reload")return load();
   if(where==="newbooking"){window.P10?.go("calendar",0);setTimeout(()=>$("#calNew")?.click(),450)}}
-sec.addEventListener("click",ev=>{const b=ev.target.closest("[data-go]");if(b){ev.stopPropagation();go(b.dataset.go)}});
-sec.addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches(".mx-row[data-go]")){ev.preventDefault();go(ev.target.dataset.go)}});
+sec.addEventListener("click",ev=>{const sg=ev.target.closest("[data-seg]");if(sg&&last){const v=sg.dataset.seg;if(["d","w","m"].includes(v)){earnBy=v;$("#tdA").lastElementChild.outerHTML=earnCard(last.hist.past||[])}else{tblBy=v;$("#tdD").innerHTML=apptTable(last.hist.all||[])}return}
+  const b=ev.target.closest("[data-go]");if(b){ev.stopPropagation();go(b.dataset.go)}});
+sec.addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches(".mx-row[data-go],tr[data-go]")){ev.preventDefault();go(ev.target.dataset.go)}});
 
 // open Today on start (unless another page was asked for), once the login is known
 const start=setInterval(()=>{if(window.LAB){clearInterval(start);return}if(typeof me!=="undefined"&&me&&me.business){clearInterval(start);if(!$("#overview").hidden||document.body.dataset.page==="overview"||!document.body.dataset.page)show()}},150);

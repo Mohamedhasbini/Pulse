@@ -95,5 +95,29 @@
     // thinking: three dots for an answer on its way
     thinking: (label = 'Thinking') => `<span class="mx-think" role="status"><i></i><i></i><i></i><span>${esc(label)}</span></span>`,
   });
+  // ── charts for summary pages: columns with a value axis, a soft area line, a dot heatmap and a plain table
+  const nice = v => { if (v <= 0) return 1; const p = 10 ** Math.floor(Math.log10(v)), n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; };
+  const short = v => v >= 1e6 ? (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M' : v >= 1e3 ? (v / 1e3).toFixed(1).replace(/\.0$/, '') + 'K' : String(Math.round(v));
+  const axis = (top, pre) => [1, .5, 0].map(f => `<span>${pre}${short(top * f)}</span>`).join('');
+  Object.assign(MXUI, {
+    // columns: each bar is its value against a rounded top; the track behind shows the room left; the last bar is "now"
+    columns: (pts, { pre = '', h = 200 } = {}) => { const top = nice(Math.max(1, ...pts.map(p => p.v)));
+      return `<div class="mx-cols" style="--h:${h}px"><div class="mx-axis">${axis(top, pre)}</div><div class="mx-cols-in">${pts.map((p, i) =>
+        `<div class="mx-col${i === pts.length - 1 ? ' now' : ''}" title="${esc(p.l)}: ${esc(pre + Math.round(p.v).toLocaleString())}"><div class="mx-col-t"><i style="height:${Math.max(p.v ? 3 : 0, p.v / top * 100)}%"></i></div><span>${esc(p.l)}</span></div>`).join('')}</div></div>`; },
+    // area: one line with a soft fill under it, value axis on the left, a few date labels under it
+    area: (vals, labels = [], { pre = '', h = 200 } = {}) => { const top = nice(Math.max(1, ...vals)), n = Math.max(1, vals.length - 1);
+      const pt = vals.map((v, i) => `${(i / n * 100).toFixed(2)},${(100 - v / top * 100).toFixed(2)}`).join(' ');
+      const tick = labels.length ? labels.filter((_, i) => i % Math.ceil(labels.length / 6) === 0 || i === labels.length - 1) : [];
+      return `<div class="mx-area" style="--h:${h}px"><div class="mx-axis">${axis(top, pre)}</div><div class="mx-area-in"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <polygon points="0,100 ${pt} 100,100" class="f"/><polyline points="${pt}" class="l" vector-effect="non-scaling-stroke"/></svg>
+        <div class="mx-xl">${tick.map(t => `<span>${esc(t)}</span>`).join('')}</div></div></div>`; },
+    // heat: rows × columns of dots, darker = busier; rows and columns are labelled
+    heat: (grid, rows, cols) => { const top = Math.max(1, ...grid.flat());
+      return `<div class="mx-heat" style="--c:${cols.length}"><span></span>${cols.map(c => `<b>${esc(c)}</b>`).join('')}${grid.map((r, i) => `<b>${esc(rows[i])}</b>${r.map(v =>
+        `<i style="--a:${v ? .18 + .82 * v / top : 0}" title="${v}"></i>`).join('')}`).join('')}</div>`; },
+    // table: header, rows of cells; a cell may be HTML (chips) when marked {html}
+    table: (head, rows, empty = 'Nothing here yet') => rows.length ? `<div class="mx-tbl"><table><thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r =>
+      `<tr${r.go ? ` data-go="${esc(r.go)}" tabindex="0"` : ''}>${r.cells.map(c => `<td>${c && c.html != null ? c.html : esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : MXUI.empty(empty),
+  });
   window.MXUI = MXUI;
 })();
