@@ -918,3 +918,41 @@ html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-grid{grid-template-
 html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b *{color:#fff!important;opacity:.95}
 html body main .gc:not(#_):not(#__):not(#___):not(#____),html body main #p10-calendar .card:has(.gc):not(#_):not(#__):not(#___):not(#____){background:transparent!important;box-shadow:none!important}
 html body main .gc:not(#_):not(#__):not(#___):not(#____):not(#_____) .gc-side .gc-new{background:#fff!important;background-image:none!important;color:#0a0a0a!important;filter:none!important;opacity:1!important}:root:not([data-theme="light"]) main .gc:not(#_):not(#__):not(#___):not(#____):not(#_____) .gc-side .gc-new{background:#262626!important;color:#fafafa!important}
+/* the chat is light in both themes, so everything inside an answer is too: tables, rows, figures in code style,
+   bold and italic text (older dark-theme rules painted rows black and figures white) */
+html body .pc:not(#_):not(#__):not(#___) :is(.pc-mdt,.pc-mdt table,.pc-mdt thead,.pc-mdt tbody,.pc-mdt tr,.pc-mdt td){background:#fff!important;color:#0a0a0a!important;border-color:#ebebeb!important;box-shadow:none!important;border-radius:0!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-mdt{border:1px solid #ebebeb!important;border-radius:12px!important;overflow:hidden}
+html body .pc:not(#_):not(#__):not(#___) .pc-mdt th{background:#f7f7f7!important;color:#6b6b6b!important;border-color:#ebebeb!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-mdt tbody tr:hover td{background:#fafafa!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-a code{background:#f1f1f1!important;color:#0a0a0a!important;border:1px solid #e5e5e5!important;font-size:13px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-a :is(strong,b,em,i,span,a,p,li,h1,h2,h3,h4){color:inherit!important;background:transparent!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-a a{color:#2563eb!important;text-decoration:underline}
+html body .pc:not(#_):not(#__):not(#___) :is(.pc-data,.pc-data table,.pc-data tr,.pc-data td){background:#fff!important;color:#0a0a0a!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-data th{background:#fff!important;color:#6b6b6b!important}
+html body .pc:not(#_):not(#__):not(#___) :is(.pc-acts,.pc-tools,.pc-src) :is(button,a,span){color:#525252!important;background:transparent!important}
+/* the top menu, explicit per theme: plain text tabs, the current one on a soft pill; Back to Lab as an outline button */
+html body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab){color:#a3a3a3!important;background:transparent!important}
+html body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab):hover{color:#fafafa!important;background:#1f1f1f!important}
+html body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab)[aria-current="true"]{color:#fafafa!important;background:#262626!important;font-weight:600}
+html body nav[aria-label="Main"]:not(#_):not(#__):not(#___) #labBtn{color:#fafafa!important;background:transparent!important;box-shadow:inset 0 0 0 1px #404040!important;border:0!important}
+:root[data-theme="light"] body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab){color:#525252!important}
+:root[data-theme="light"] body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab):hover{color:#0a0a0a!important;background:#f5f5f5!important}
+:root[data-theme="light"] body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab)[aria-current="true"]{color:#0a0a0a!important;background:#f0f0f0!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___) #labBtn{color:#0a0a0a!important;box-shadow:inset 0 0 0 1px #e5e5e5!important}
+/* while the chat is open, only the MXAi tab is marked */
+html body.pc-on nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) .p10:not(.pc-tab)[aria-current="true"]{background:transparent!important;font-weight:inherit;color:#a3a3a3!important}
+:root[data-theme="light"] body.pc-on nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) .p10:not(.pc-tab)[aria-current="true"]{color:#525252!important}
+/* table titles inside answers */
+html body .pc:not(#_):not(#__):not(#___) .pc-dh :is(b,small,span){color:#0a0a0a!important}html body .pc:not(#_):not(#__):not(#___) .pc-dh small{color:#6b6b6b!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-dh button{color:#0a0a0a!important;background:#fff!important;box-shadow:0 0 0 1px #e5e5e5!important;border:0!important}
+/* the chat on a phone: a slim composer so the conversation has the screen */
+@media (max-width:767px){
+  html body .pc:not(#_):not(#__):not(#___) .pc-dock{padding:0 10px 8px!important}
+  html body .pc:not(#_):not(#__):not(#___) .pc-in{padding:8px 8px 8px 14px!important;border-radius:20px!important}
+  html body .pc:not(#_):not(#__):not(#___) .pc-inbar .pc-chip,html body .pc:not(#_):not(#__):not(#___) .pc-note{display:none!important}
+  html body .pc:not(#_):not(#__):not(#___) .pc-inbar{margin-top:4px!important}
+  html body .pc:not(#_):not(#__):not(#___) .pc-in textarea{font-size:15px!important;min-height:22px}
+  html body .pc:not(#_):not(#__):not(#___) .pc-main>header{padding:8px 12px!important}
+  html body .pc:not(#_):not(#__):not(#___) .pc-log{padding:8px 12px 12px!important}
+}
+@media (max-width:767px){html body .pc:not(.pc-sideopen):not(#_):not(#__):not(#___) .pc-side{box-shadow:none!important;visibility:hidden}}
