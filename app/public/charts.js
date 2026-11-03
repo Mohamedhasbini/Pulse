@@ -20,6 +20,8 @@
     const T = Date.now(), past = all.filter(b => new Date(b.start) <= T);
     return { raw, all, past, live: live || {}, cust: Array.isArray(cust) ? cust : cust?.rows || [], conv: Array.isArray(conv) ? conv : [], stats: stats || {}, mk: mk || {}, biz: biz || {} };
   }
+  // a key under a chart: each line drawn the way it appears (solid, dashed or a shaded band) with what it means
+  const key = items => `<div class="pv-key">${items.map(([kind, col, label]) => `<span><svg viewBox="0 0 22 10" aria-hidden="true">${kind === 'band' ? `<rect x="1" y="1" width="20" height="8" rx="2" fill="color-mix(in srgb,${col} 22%,transparent)"/>` : `<line x1="1" y1="5" x2="21" y2="5" stroke="${col}" stroke-width="2.5" stroke-linecap="round"${kind === 'dash' ? ' stroke-dasharray="4 3"' : ''}/>`}</svg>${esc(label)}</span>`).join('')}</div>`;
   const sumIn = (list, d0, d1) => list.filter(b => { const t = new Date(b.start); return t >= d0 && t < d1; });
   const rev = l => l.reduce((s, b) => s + (+b.price || 0), 0);
 
@@ -30,9 +32,9 @@
     const tc = cur.reduce((a, b) => a + b, 0), tp = prev.reduce((a, b) => a + b, 0), mx = Math.max(1, ...cur, ...prev);
     const pts = arr => arr.map((v, i) => `${(i / (D - 1) * 600).toFixed(1)},${(150 - v / mx * 130).toFixed(1)}`).join(' ');
     const pct = tp ? Math.round((tc - tp) / tp * 100) : null;
-    return card(1, 'Revenue, last 30 days', 'Lime is now, the dashed line is the 30 days before', `<div class="pv-big">${money(tc)} <em class="${pct < 0 ? 'dn' : ''}">${pct == null ? 'first period' : (pct >= 0 ? '+' : '') + pct + '%'}</em></div>
+    return card(1, 'Revenue, last 30 days', 'Each day, against the same day a month earlier', `<div class="pv-big">${money(tc)} <em class="${pct < 0 ? 'dn' : ''}">${pct == null ? 'first period' : (pct >= 0 ? '+' : '') + pct + '%'}</em></div>
       <svg viewBox="0 0 600 160" preserveAspectRatio="none" class="pv-area"><defs><linearGradient id="pvA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--pv-lime)" stop-opacity=".45"/><stop offset="1" stop-color="var(--pv-lime)" stop-opacity="0"/></linearGradient></defs>
-      <polygon points="0,160 ${pts(cur)} 600,160" fill="url(#pvA)"/><polyline points="${pts(prev)}" fill="none" stroke="${S}" stroke-dasharray="5 5" opacity=".6" stroke-width="2" vector-effect="non-scaling-stroke"/><polyline points="${pts(cur)}" fill="none" stroke="${L}" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>`, 1);
+      <polygon points="0,160 ${pts(cur)} 600,160" fill="url(#pvA)"/><polyline points="${pts(prev)}" fill="none" stroke="${S}" stroke-dasharray="5 5" opacity=".6" stroke-width="2" vector-effect="non-scaling-stroke"/><polyline points="${pts(cur)}" fill="none" stroke="${L}" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>${key([['line', L, 'Last 30 days'], ['dash', S, 'The 30 days before']])}`, 1);
   }
   // ---- 2 pivot: service x weekday
   function c2({ past }) {
@@ -331,6 +333,7 @@
     const total = fut.reduce((a, x) => a + x.f, 0), booked = fut.reduce((a, x) => a + x.booked, 0), dir = slope > ym * .02 ? 'rising' : slope < -ym * .02 ? 'slowing' : 'steady';
     return card(45, 'Expected revenue in the next 4 weeks', 'From your last 12 weeks and what is already booked', `<div class="pv-big">${money(total)} <em>${dir}</em></div>
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="pv-area"><polygon points="${band}" fill="color-mix(in srgb,var(--pv-lime) 16%,transparent)"/><polyline points="${line}" fill="none" stroke="${S}" stroke-width="2.4" vector-effect="non-scaling-stroke"/><polyline points="${fl}" fill="none" stroke="${L}" stroke-width="3" stroke-dasharray="6 6" vector-effect="non-scaling-stroke"/><line x1="${X(11.5)}" y1="8" x2="${X(11.5)}" y2="${H - 8}" stroke="var(--pv-line)" stroke-dasharray="3 4"/></svg>
+      ${key([['line', S, 'Last 12 weeks'], ['dash', L, 'Expected next 4 weeks'], ['band', L, 'Likely range']])}
       <ul class="pv-feed"><li><span>Why</span>Trend over 12 weeks is ${dir} (${slope >= 0 ? '+' : ''}${money(slope)} a week).</li><li><span>Booked</span>${money(booked)} of it is already in the calendar.</li><li><span>Range</span>${money(fut.reduce((a, x) => a + x.lo, 0))} to ${money(fut.reduce((a, x) => a + x.hi, 0))} for the 4 weeks.</li></ul>`, 1);
   }
 
