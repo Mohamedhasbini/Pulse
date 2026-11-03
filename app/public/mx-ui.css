@@ -442,3 +442,45 @@
 @media (max-width:767px){.mx-tiles{grid-template-columns:1fr 1fr}.mx-cols-in{gap:3px}.mx-col span{font-size:10px}}
 .mx-heat{gap:3px 4px}.mx-heat i{aspect-ratio:auto;height:14px;max-height:none;border-radius:4px}
 :root[data-theme="light"] .mx-heat i{background:#fff}
+/* page switches are instant: no slide-in for the page, no replayed rise/grow/draw on charts (they made every tab
+   switch look like it loaded twice) */
+main>section.wrap:not([hidden]),main>section.wrap:not([hidden])>*{animation:none!important}
+.pv-c,.pv-bar i,.pv-stack i,.pv-code i,.pv-sbars i,.hx,.hx *{animation:none!important}
+.pv-area polyline,.pv-sp polyline{stroke-dashoffset:0!important;animation:none!important}
+main>section.hx-wait{visibility:hidden}
+
+/* ── chart colours (after the BoardUI finance and marketing templates): one fresh green leads (our lime), then blue,
+   purple, pink and yellow for further series. Text stays neutral; colour is only for marks */
+:root:not(#_):not(#__){--mx-s1:#c6f432;--mx-s2:#60a5fa;--mx-s3:#c084fc;--mx-s4:#f472b6;--mx-s5:#facc15;--mx-s1-ink:#14181b}
+:root[data-theme="light"]:not(#_):not(#__){--mx-s1:#9be31a;--mx-s2:#3b82f6;--mx-s3:#a855f7;--mx-s4:#ec4899;--mx-s5:#eab308}
+/* the older Insights charts read --pv-lime / --pv-silver: lead in green, second series in blue */
+:root:not(#_):not(#__):not(#___){--pv-lime:var(--mx-s1);--pv-silver:var(--mx-s2);--pv-track:var(--mx-raise)}
+:root[data-theme="light"]:not(#_):not(#__):not(#___){--pv-track:#fff}
+/* columns: green bars on a soft track; the current period a touch deeper */
+.mx-col-t i{background:var(--mx-s1)!important;opacity:.95}
+.mx-col.now .mx-col-t i,:root[data-theme="light"] .mx-col.now .mx-col-t i{background:var(--mx-s1)!important;opacity:1;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--mx-ink) 18%,transparent)}
+:root[data-theme="light"] .mx-col-t{background:#fff}
+/* area: green line with a fill that fades downwards */
+.mx-area .l{stroke:var(--mx-s1)!important;stroke-width:2.5}
+.mx-area .f{fill:url(#mxAreaG)!important}
+:root[data-theme="light"] .mx-area .l{stroke:#65a30d!important}
+/* heat: purple steps, like the activity grid */
+.mx-heat i::after{background:var(--mx-s3)!important}
+/* funnel, stages, spark and radial pick up the series colours */
+.mx-fun-s:nth-child(1) .mx-fun-col i{background:var(--mx-s1)}.mx-fun-s:nth-child(2) .mx-fun-col i{background:var(--mx-s2);opacity:1}
+.mx-fun-s:nth-child(3) .mx-fun-col i{background:var(--mx-s3);opacity:1}.mx-fun-s:nth-child(4) .mx-fun-col i{background:var(--mx-s4);opacity:1}
+.mx-stg .s0{background:var(--mx-s1)}.mx-stg .s1{background:var(--mx-s2);opacity:1}.mx-stg .s2{background:var(--mx-s3);opacity:1}.mx-stg .s3{background:var(--mx-s4);opacity:1}
+.mx-spark i.now{background:var(--mx-s1)}.mx-rad .fg{stroke:var(--mx-s1)}
+.mx-bar i{background:color-mix(in srgb,var(--mx-s2) 22%,var(--mx-raise))}
+/* rings: one ring per series, outermost first, each a share of its own total */
+.mx-rings{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.mx-rings svg{width:170px;height:170px;flex:none;transform:rotate(-90deg)}
+.mx-rings circle{fill:none;stroke-width:9;stroke-linecap:round}.mx-rings .tr{stroke:var(--mx-raise)}
+:root[data-theme="light"] .mx-rings .tr{stroke:#fff}
+.mx-key{display:flex;flex-direction:column;gap:8px;font-size:13px;min-width:0;flex:1}
+.mx-key span{display:flex;align-items:center;gap:8px;color:var(--mx-ink2);white-space:nowrap}
+.mx-key i{width:10px;height:10px;border-radius:3px;flex:none}.mx-key b{margin-left:auto;color:var(--mx-ink);font-weight:600;font-variant-numeric:tabular-nums}
+:root[data-theme="light"] .mx-seg{background:#ebebeb}:root[data-theme="light"] .mx-seg button[aria-selected="true"]{background:#fff!important;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+:root:not(#_):not(#__):not(#___) body{--pv-lime:var(--mx-s1);--pv-silver:var(--mx-s2);--pv-track:var(--mx-raise);--d1:var(--mx-s1);--d2:var(--mx-s2);--d3:var(--mx-s5);--d4:var(--mx-s3)}
+:root[data-theme="light"]:not(#_):not(#__):not(#___) body{--pv-track:#fff}
+.rp-cell .pv-heat b{border-radius:6px!important}

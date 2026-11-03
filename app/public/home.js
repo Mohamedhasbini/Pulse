@@ -84,9 +84,13 @@ function apptTable(all){const now=new Date(),d0=new Date(now.toDateString()),end
   const st=b=>new Date(b.end||b.start)<now?U.chip("Done","healthy"):/pending|request/.test(b.status||"")?U.chip("Waiting","warning"):U.chip("Confirmed");
   const init=n=>String(n||"C").split(/\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase();
   const when=b=>{const t=new Date(b.start);return `${tblBy==="today"?"":DOW[t.getDay()].slice(0,3)+" "}${hm(b.start)}`};
-  return U.card({title:"Appointments ahead",span:12,meta:`${rows.length} · ${money(sumP(rows))}`,link:U.segmented([["today","Today"],["week","Next 7 days"]],tblBy,"Range"),
+  return U.card({title:"Appointments ahead",span:7,size:"wide",meta:`${rows.length} · ${money(sumP(rows))}`,link:U.segmented([["today","Today"],["week","Next 7 days"]],tblBy,"Range"),
     body:U.table(["Client","Service","When","Status","Price"],rows.slice(0,10).map(b=>({go:"p:calendar:0",cells:[{html:`<span class="who"><i>${e(init(b.customer))}</i>${e(b.customer||"Client")}</span>`},b.service||"",when(b),{html:st(b)},money(b.price)]})),
       tblBy==="today"?"No appointments today":"Nothing booked in the next 7 days")+(rows.length>10?`<p class="mx-more">${rows.length-10} more in Calendar</p>`:"")})}
+// revenue by service over the last 30 days, as rings with their shares
+function svcCard(list){const by={};list.forEach(b=>{const k=b.service||"Other";by[k]=(by[k]||0)+(+b.price||0)});
+  const items=Object.entries(by).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value);
+  return U.card({title:"Revenue by service",span:5,size:"wide",meta:"last 30 days",body:items.length?U.rings(items,money):U.empty("No visits in the last 30 days")})}
 // busy hours: weekdays × opening hours, counted from the last 180 days of visits
 function busy(past){const H=[10,11,12,13,14,15,16,17,18,19],D=[1,2,3,4,5,6,0],g=D.map(()=>H.map(()=>0));
   past.forEach(b=>{const t=new Date(b.start),r=D.indexOf(t.getDay()),c=H.indexOf(t.getHours());if(r>=0&&c>=0)g[r][c]++});
@@ -150,7 +154,7 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist}=x;
       why:!target?"":d.getDate()<7?"Too early to judge the pace":pace>=target?`On pace for ${money(pace)}`:`${money(target-pace)} behind pace`,state:!target||d.getDate()<7?"neutral":pace>=target?"healthy":"warning"})].join("");
 
   // band 4 · the appointments ahead
-  $("#tdD").innerHTML=apptTable(hist.all||[]);
+  $("#tdD").innerHTML=svcCard(c30)+apptTable(hist.all||[]);
 
   // go-live steps lead the page until setup is done
   $("#tdLive").innerHTML=pending.length?U.card({title:"Go live",span:12,state:"warning",size:"compact",meta:`${(live.setup||[]).length-pending.length} of ${(live.setup||[]).length} done`,
@@ -166,7 +170,7 @@ function go(where){
   if(where==="settings")return window.P10?.go("settings",0);
   if(where==="reload")return load();
   if(where==="newbooking"){window.P10?.go("calendar",0);setTimeout(()=>$("#calNew")?.click(),450)}}
-sec.addEventListener("click",ev=>{const sg=ev.target.closest("[data-seg]");if(sg&&last){const v=sg.dataset.seg;if(["d","w","m"].includes(v)){earnBy=v;$("#tdA").lastElementChild.outerHTML=earnCard(last.hist.past||[])}else{tblBy=v;$("#tdD").innerHTML=apptTable(last.hist.all||[])}return}
+sec.addEventListener("click",ev=>{const sg=ev.target.closest("[data-seg]");if(sg&&last){const v=sg.dataset.seg;if(["d","w","m"].includes(v)){earnBy=v;$("#tdA").lastElementChild.outerHTML=earnCard(last.hist.past||[])}else{tblBy=v;$("#tdD").lastElementChild.outerHTML=apptTable(last.hist.all||[])}return}
   const b=ev.target.closest("[data-go]");if(b){ev.stopPropagation();go(b.dataset.go)}});
 sec.addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches(".mx-row[data-go],tr[data-go]")){ev.preventDefault();go(ev.target.dataset.go)}});
 

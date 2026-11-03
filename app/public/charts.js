@@ -534,7 +534,7 @@
       requestAnimationFrame(step);
     });
   }
-  const WORK = ['inbox', 'calendar', 'customers', 'growth', 'pulse', 'settings'];
+  const WORK = ['inbox', 'calendar', 'customers', 'growth', 'pulse', 'settings', 'insights'];
   window.PVBoard = async (id, after) => {
     ambient();
     const sub = ($('.p10-bar [aria-selected="true"]')?.textContent || '').replace(/\s*\d+$/, '').trim();

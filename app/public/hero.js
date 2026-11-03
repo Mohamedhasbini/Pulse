@@ -49,15 +49,18 @@
     const id = window.P10?.current?.() || '';
     if (id === 'today') { bar.classList.add('hx-skip'); return today(); }
     const title = (window.P10?.pages || []).find(p => p[0] === id)?.[1] || $('.p10-purpose b', bar)?.textContent.split('›')[0].trim() || '';
+    // the page stays invisible until its header is complete (at most 250 ms), so it never shows half-built and then jumps
+    const sec0 = bar.closest('main > section'), reveal = () => sec0?.classList.remove('hx-wait'); sec0?.classList.add('hx-wait'); setTimeout(reveal, 250);
     const hero = document.createElement('div'); hero.className = 'hx'; hero.innerHTML = `<div class="hx-in"><div class="hx-greet"><h1>${esc(title)}<em>${esc(window.P10 ? window.P10.named(window.P10.pages.find(p => p[0] === id)?.[2] || LINES[id] || '') : LINES[id] || '')}</em></h1><div class="hx-stats"></div></div><div class="hx-folders"></div></div>`;
     bar.before(hero); hero.append(bar);
     const c = await content(id);
     // work pages keep their purpose line; Insights and Marketing lead with their headline number
-    if (c.line && !/^(inbox|calendar|customers|growth|pulse|settings)$/.test(id)) hero.querySelector('em').textContent = c.line;
+    // the purpose line stays as drawn: swapping it for a number after the fetch made the header jump
     hero.querySelector('.hx-stats').innerHTML = c.stats || '';
     hero.querySelector('.hx-folders').innerHTML = c.folders || '';
     await extras(id, hero);
     const xs = hero.parentElement.querySelectorAll('.hx-x'); window.PVBoard?.(id, xs[xs.length - 1] || hero);
+    reveal();
   }
 
   // ---------- round 5: one idea per tab ----------
@@ -75,8 +78,8 @@
     }
     if (id === 'insights') {
       // Ledgerix: the one big number, with the Ask bar under it
-      const l = await get('/api/live?days=90'), n = l?.now || {};
       greet.insertAdjacentHTML('beforeend', `<div class="hx-ask"><i>✦</i><input placeholder="Ask anything about your numbers…" aria-label="Ask MXAi Assistant">${['Why did revenue change?', 'Best service to promote', 'Forecast next month'].map(q => `<button type="button" data-q="${q}">${q}</button>`).join('')}</div>`);
+      const l = await get('/api/live?days=90'), n = l?.now || {};
       hero.querySelector('.hx-folders').innerHTML = `<div class="hx-bignum"><span>Earned, last 90 days</span><b>${money(n.earned)}</b><small>${n.earned_prev ? `${n.earned >= n.earned_prev ? '+' : ''}${Math.round((n.earned - n.earned_prev) / n.earned_prev * 100)}% vs the 90 days before` : 'first period'}</small></div>`;
       // the answer lands right here, short; "Full answer" opens MXAi Assistant on the same question
       const full = q => window.PulseCommand?.open ? window.PulseCommand.open(q) : window.P10?.ask?.(q);

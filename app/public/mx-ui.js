@@ -119,5 +119,13 @@
     table: (head, rows, empty = 'Nothing here yet') => rows.length ? `<div class="mx-tbl"><table><thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r =>
       `<tr${r.go ? ` data-go="${esc(r.go)}" tabindex="0"` : ''}>${r.cells.map(c => `<td>${c && c.html != null ? c.html : esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : MXUI.empty(empty),
   });
+  // rings: concentric arcs, one per item (largest first), each its share of the total, with a legend beside
+  const SER = ['var(--mx-s1)', 'var(--mx-s2)', 'var(--mx-s3)', 'var(--mx-s4)', 'var(--mx-s5)'];
+  MXUI.rings = (items, fmt = v => v) => { const tot = Math.max(1, items.reduce((s, x) => s + x.value, 0)), list = items.slice(0, 5);
+    return `<div class="mx-rings"><svg viewBox="0 0 170 170" aria-hidden="true">${list.map((x, i) => { const r = 78 - i * 14, c = 2 * Math.PI * r;
+      return `<circle cx="85" cy="85" r="${r}" class="tr"/><circle cx="85" cy="85" r="${r}" stroke="${SER[i]}" stroke-dasharray="${Math.max(2, c * x.value / tot)} ${c}"/>`; }).join('')}</svg>
+      <div class="mx-key">${list.map((x, i) => `<span><i style="background:${SER[i]}"></i>${esc(x.label)} <small>${Math.round(x.value / tot * 100)}%</small><b>${esc(fmt(x.value))}</b></span>`).join('')}</div></div>`; };
+  // the area fill gradient is defined once per page
+  if (typeof document !== 'undefined' && document.body && !document.getElementById('mxDefs')) document.body.insertAdjacentHTML('beforeend', '<svg id="mxDefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="mxAreaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--mx-s1)" stop-opacity=".35"/><stop offset="1" stop-color="var(--mx-s1)" stop-opacity="0"/></linearGradient></defs></svg>');
   window.MXUI = MXUI;
 })();
