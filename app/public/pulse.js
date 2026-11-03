@@ -41,10 +41,10 @@
       ['Business', { page: 'analytics', tab: 'overview', panes: ['overview', 'next'], drop: ['Services'] }],
       ['Services', { page: 'analytics', tab: 'overview', panes: ['overview'], cards: ['Services'] }],
       ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true }],
-      ['Timing', { page: 'analytics', tab: 'timing', panes: ['timing'] }],
-      ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] }],
-      ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true }],
-      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' }]]],
+      ['Timing', { page: 'analytics', tab: 'timing', panes: ['timing'] , adv: true }],
+      ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] , adv: true }],
+      ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true , adv: true }],
+      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' , adv: true }]]],
     ['studio', 'Studio', 'Build your own views from 64 chart and table designs', [['My board', { own: 'studio' }], ['Library', { own: 'studiolib' }]]],
     ['marketing', 'Marketing', 'Bring customers in', [
       ['Overview', { own: 'growth' }],
@@ -193,9 +193,14 @@
     const sec = $('main > section:not([hidden])'); if (!sec) return;
     const b = document.createElement('div'); b.className = 'p10-bar';
     const title = named(PAGES.find(p => p[0] === id)[1]), tab = tabs.length > 1 ? tabs[i][0] : '';
-    b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l], k) =>
-      `<button type="button" role="tab" data-t="${k}" aria-selected="${k === i}" aria-pressed="${k === i}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}</div>` : '');
-    b.addEventListener('click', ev => { const t = ev.target.closest('[data-t]'); if (t) go(id, +t.dataset.t) });
+    // tabs marked adv stay out of the way until the owner asks for detail (or is already on one)
+    const hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || (() => { try { return localStorage.getItem('mx-detail-' + id) === '1' } catch { return false } })());
+    b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.adv && !detail ? '' :
+      `<button type="button" role="tab" data-t="${k}" aria-selected="${k === i}" aria-pressed="${k === i}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${detail ? 'Simple view' : 'More detail'}</button>` : ''}</div>` : '');
+    b.addEventListener('click', ev => {
+      const d = ev.target.closest('[data-detail]');
+      if (d) { try { localStorage.setItem('mx-detail-' + id, d.dataset.detail) } catch {} return go(id, tabs[i][1].adv && d.dataset.detail === '0' ? 0 : i) }
+      const t = ev.target.closest('[data-t]'); if (t) go(id, +t.dataset.t) });
     sec.prepend(b); sec.classList.add('p10-on');
     need(id);
   }

@@ -19,7 +19,7 @@ export function mountSite(app) {
   // fonts are public too: the sign-in page uses them, and the browser may keep them for a month
   app.get(['/fonts.css', /^\/fonts\/[\w.-]+\.woff2$/], (req, res) => res.set('Cache-Control', 'public, max-age=2592000').sendFile(PUBLIC + req.path));
   app.get('/', (req, res, next) => readSession(req.get('cookie')) ? next() : res.sendFile(PUBLIC + '/site.html'));
-  app.get(['/dashboard', '/app'], (_req, res) => res.redirect('/'));
+  app.get(['/dashboard', '/app'], (req, res) => res.redirect(readSession(req.get('cookie')) ? '/' : '/login'));
 
   // Every "Powered by MXAi" link goes through here, so we know which business sent the visitor.
   app.get('/go', wrap(async (req, res) => {
