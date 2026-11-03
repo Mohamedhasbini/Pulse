@@ -554,3 +554,12 @@ html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main 
 :root #setup:not(#_):not(#__) :is(input,select,textarea):focus{outline:2px solid var(--mx-ink)!important;outline-offset:1px}
 :root #setup:not(#_):not(#__) .spane>h2,:root #setup:not(#_):not(#__) .spane>h3{font-size:16px;font-weight:600;letter-spacing:-.01em;margin:4px 0 6px}
 :root #setup:not(#_):not(#__) label{color:var(--mx-ink2)}
+/* phone bar: every page in one row that scrolls sideways, instead of four pages and a More sheet */
+@media (max-width:767px){
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__){display:flex!important;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;gap:2px}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__)::-webkit-scrollbar{display:none}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .p10[data-p10]{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;
+    flex:0 0 76px;min-height:50px;padding:4px 2px!important;border-radius:12px;font-size:11px!important;font-weight:500;color:var(--mx-mute)!important;background:none!important;border:0!important;scroll-snap-align:start}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .p10[data-p10][aria-current="true"]{color:var(--mx-ink)!important;background:var(--mx-raise)!important}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .ph-more{display:none!important}
+}

@@ -156,8 +156,8 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist}=x;
   // band 4 · the appointments ahead
   $("#tdD").innerHTML=svcCard(c30)+apptTable(hist.all||[]);
 
-  // go-live steps lead the page until setup is done
-  $("#tdLive").innerHTML=pending.length?U.card({title:"Go live",span:12,state:"warning",size:"compact",meta:`${(live.setup||[]).length-pending.length} of ${(live.setup||[]).length} done`,
+  // no Go live card: unfinished setup still shows as the recommended action in Needs your attention
+  $("#tdLive").innerHTML=false?U.card({title:"Go live",span:12,state:"warning",size:"compact",meta:`${(live.setup||[]).length-pending.length} of ${(live.setup||[]).length} done`,
     body:`<p class="mx-ctx">Finish these so clients can reach ${e(nora())}.</p><div class="td-steps">${pending.map(s=>U.button(s.label,"p:settings:0")).join("")}</div>`}):"";
   const todays=(cal.bookings||[]).filter(b=>!/cancel/.test(b.status||"")),tasks=need.filter(x=>x[0]!=="neutral").length;
   $("#tdSub").textContent=`${todays.length} appointment${todays.length===1?"":"s"} today · ${tasks?`${tasks} thing${tasks>1?"s":""} need${tasks===1?"s":""} you`:"nothing waiting for you"}.`}
