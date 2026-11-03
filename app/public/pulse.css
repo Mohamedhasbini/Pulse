@@ -3024,9 +3024,9 @@ html body main .mk-card h3:not(#_):not(#__){font-size:15px!important}
 .rp{display:flex;flex-direction:column;gap:34px;padding-bottom:24px}
 .rp-h{margin:0 0 12px}.rp-h h2{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em;color:var(--gp-text)}.rp-h p{margin:4px 0 0;font-size:14px;color:var(--gp-meta)}
 .rp-wait{color:var(--gp-meta)}
-.rp-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
-.rp-board .pv-c.w{grid-column:1/-1}
-@media(max-width:760px){.rp-board{grid-template-columns:1fr}}
+/* report charts sit in grid cells; the chart card fills its cell so a row shares one height */
+.rp-cell{display:flex;min-width:0}.rp-cell>.pv-c{flex:1;min-width:0;margin:0!important}
+.rp{gap:var(--mx-3,24px)}
 /* Settings as one page: parts stacked in one column, each with its name, and a sticky row of chips to jump between them */
 html body #setup.set-one:not(#_):not(#__){display:block!important}
 html body #setup.set-one > .spane:not([hidden]):not(#_){display:block!important;margin:0 0 30px;scroll-margin-top:120px}
@@ -3045,3 +3045,4 @@ html body #setup.set-one > .spane:not([hidden]):not(#_){display:block!important;
 .set-ix button:focus-visible{outline:2px solid var(--gp-text);outline-offset:2px}
 @media (min-width:768px){html body nav[aria-label="Main"] .p10[data-p10="settings"]:not(#_){display:none!important}}
 @media (max-width:767px){#setBtn{display:none!important}}
+.rp-cell .pv-heat b{aspect-ratio:auto!important;height:26px!important;min-height:0!important;border-radius:5px}

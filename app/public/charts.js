@@ -410,17 +410,57 @@
   }
 
   // Insights as one report: each group answers one question an owner asks, in reading order. Every other chart is under Explore
-  const REPORT = [['Money', 'What came in, what is coming, and from which services', [1, 45, 5]],
-    ['Clients', 'Who comes back, and who is worth winning back', [9, 24]],
-    ['When you are busy', 'Bookings and chats by day and hour', [4]],
-    ['Your AI front desk', 'How much it handles alone, and how chats turn into visits', [39, 15, 7]]];
+  // Insights as one report: headline figures with the reason each moved, the month against its goal, then four groups
+  // of charts placed on the 12-column grid. Each group answers one question; every other chart is under Explore
+  const REPORT = [['Money', 'What came in, what is coming, and from which services', [[1, 8], [45, 4], [5, 12]]],
+    ['Clients', 'Who comes back, and who is worth winning back', [[9, 6], [24, 6]]],
+    ['When you are busy', 'Bookings and chats by day and hour', [[4, 12]]],
+    ['Your AI front desk', 'How much it handles alone, and how chats turn into visits', [[39, 4], [15, 4], [7, 4]]]];
+  const pctCh = (a, b) => b ? (a - b) / b * 100 : null;
+  const stateOf = (ch, lowerIsBetter) => ch == null ? 'neutral' : (lowerIsBetter ? -ch : ch) >= 5 ? 'improving' : (lowerIsBetter ? -ch : ch) <= -10 ? 'warning' : 'neutral';
+  // the headline row: four plain figures for the last 30 days against the 30 before, each with why it moved
+  function headline(d) {
+    const U = window.MXUI, T = Date.now(), D = 30 * 864e5;
+    const cur = d.past.filter(b => T - new Date(b.start) < D), prev = d.past.filter(b => { const a = T - new Date(b.start); return a >= D && a < 2 * D; });
+    const r1 = rev(cur), r0 = rev(prev), rc = pctCh(r1, r0);
+    // which service moved revenue most
+    const by = l => l.reduce((m, b) => (m[b.service] = (m[b.service] || 0) + (+b.price || 0), m), {});
+    const a = by(cur), b = by(prev), moves = [...new Set([...Object.keys(a), ...Object.keys(b)])].map(k => [k, (a[k] || 0) - (b[k] || 0)]).sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]));
+    const why1 = moves[0] && moves[0][1] ? `Mostly ${moves[0][1] > 0 ? 'from' : 'down on'} ${moves[0][0]} (${moves[0][1] > 0 ? '+' : '−'}${money(Math.abs(moves[0][1]))})` : 'No change between the two periods';
+    const days = cur.reduce((m, x) => (m[new Date(x.start).getDay()] = (m[new Date(x.start).getDay()] || 0) + 1, m), {});
+    const top = Object.entries(days).sort((x, y) => y[1] - x[1])[0], DN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const v1 = cur.length ? r1 / cur.length : 0, v0 = prev.length ? r0 / prev.length : 0;
+    // clients who came back: of those whose first visit was 31 to 120 days ago, how many visited again
+    const first = {}, count = {};
+    d.past.forEach(x => { const k = x.customer || x.phone; if (!k) return; const t = +new Date(x.start); first[k] = Math.min(first[k] ?? t, t); count[k] = (count[k] || 0) + 1; });
+    const cohort = Object.keys(first).filter(k => { const age = T - first[k]; return age > D && age <= 4 * D; }), back = cohort.filter(k => count[k] > 1).length;
+    const ret = cohort.length ? back / cohort.length * 100 : null;
+    return [
+      U.kpi({ title: 'Revenue', value: money(r1), ctx: `last 30 days · ${cur.length} visits`, change: rc, vs: 'vs 30 days before', why: why1, state: stateOf(rc) }),
+      U.kpi({ title: 'Bookings', value: String(cur.length), ctx: 'visits in the last 30 days', change: pctCh(cur.length, prev.length), vs: 'vs 30 days before', why: top ? `${DN[top[0]]} is your busiest day (${top[1]} visits)` : 'No visits yet', state: stateOf(pctCh(cur.length, prev.length)) }),
+      U.kpi({ title: 'Average visit value', value: money(v1), ctx: 'per visit', change: pctCh(v1, v0), vs: 'vs 30 days before', why: v1 > v0 && v0 ? 'Clients are choosing bigger services' : v0 && v1 < v0 ? 'Smaller services more often' : 'Steady', state: stateOf(pctCh(v1, v0)) }),
+      U.kpi({ title: 'Clients who came back', value: ret == null ? '–' : `${Math.round(ret)}%`, ctx: ret == null ? 'not enough history yet' : `${back} of ${cohort.length} newer clients`, why: ret == null ? 'Shows once clients are 1 to 4 months old' : ret < 40 ? 'A win-back offer at day 45 usually helps' : 'Good loyalty for a service business', state: ret == null ? 'empty' : ret >= 55 ? 'healthy' : ret < 40 ? 'warning' : 'neutral' })].join('');
+  }
+  // the month against its goal (last month + 10%), with the pace it is on
+  function goal(d) {
+    const U = window.MXUI, n = new Date(), m0 = new Date(n.getFullYear(), n.getMonth(), 1), m1 = new Date(n.getFullYear(), n.getMonth() + 1, 1), p0 = new Date(n.getFullYear(), n.getMonth() - 1, 1);
+    const last = rev(sumIn(d.past, p0, m0)), done = rev(sumIn(d.past, m0, n)), booked = rev(sumIn(d.all.filter(b => new Date(b.start) > n), n, m1));
+    const target = Math.max(1, Math.round(last * 1.1)), dayN = n.getDate(), dim = (m1 - m0) / 864e5, pace = Math.round(done / Math.max(1, dayN) * dim);
+    const pct = done / target * 100, ahead = pace >= target;
+    if (!last && !done) return '';
+    return U.meter({ title: 'This month against your goal', pct, span: 12, ctx: `${money(done)} of ${money(target)} · day ${dayN} of ${Math.round(dim)} · ${money(booked)} more already booked`,
+      why: dayN < 7 ? 'Too early in the month to judge the pace' : ahead ? `On pace for ${money(pace)}, ahead of the goal` : `On pace for ${money(pace)}, ${money(target - pace)} short. Fill the quiet days ahead to close the gap.`,
+      state: dayN < 7 ? 'neutral' : ahead ? 'healthy' : pace >= target * .85 ? 'neutral' : 'warning', action: ahead || dayN < 7 ? '' : '<button type="button" class="mx-btn" data-rp-go="growth">Open Win back</button>' });
+  }
   window.PVReport = async root => {
-    if (!root) return; root.innerHTML = '<p class="rp-wait">Reading your numbers…</p>';
+    if (!root) return; root.innerHTML = `<div class="mx-grid">${window.MXUI ? [3, 3, 3, 3].map(() => window.MXUI.card({ title: ' ', size: 'compact', span: 3, body: window.MXUI.loading(2) })).join('') : ''}</div>`;
     const d = await data();
     const named = window.P10?.named || (x => x); // charts say Nora; the owner may have renamed the assistant
-    root.innerHTML = named(REPORT.map(([t, sub, list]) => `<section class="rp-g"><header class="rp-h"><h2>${esc(t)}</h2><p>${esc(sub)}</p></header>
-      <div class="rp-board">${list.map(n => { try { return F[n](d); } catch (e) { console.warn('chart', n, e); return ''; } }).join('')}</div></section>`).join(''));
+    let top = ''; try { top = `<div class="mx-grid">${headline(d)}${goal(d)}</div>`; } catch (e) { console.warn('report headline', e); }
+    root.innerHTML = top + named(REPORT.map(([t, sub, list]) => `<section class="rp-g"><header class="rp-h"><h2>${esc(t)}</h2><p>${esc(sub)}</p></header>
+      <div class="mx-grid rp-board">${list.map(([n, span]) => { try { const h = F[n](d); return h ? `<div class="mx-c${span} rp-cell">${h}</div>` : ''; } catch (e) { console.warn('chart', n, e); return ''; } }).join('')}</div></section>`).join(''));
     root.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i));
+    root.querySelector('[data-rp-go]')?.addEventListener('click', () => window.P10?.go('growth', 0));
     countUp(root);
   };
   window.PVData = data; // Studio builds its widgets from the same live data
