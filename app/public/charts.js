@@ -480,6 +480,29 @@
     root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${win ? `<div class="mx-c8 rp-cell">${win}</div>` : ''}${camp}</div>${res ? `<div class="mx-grid"><div class="mx-c12 rp-cell">${res}</div></div>` : ''}`;
     root.addEventListener('click', ev => { const b = ev.target.closest('[data-go^="g:"]'); if (b) window.P10?.go('growth', +b.dataset.go.slice(2)); });
   };
+  // AI Control › Performance: is the receptionist doing a good job? Last 15 days against the 15 before
+  window.PVAIPerf = async root => {
+    const U = window.MXUI; if (!root || !U) return;
+    root.innerHTML = `<div class="mx-grid">${[3, 3, 3, 3].map(() => U.card({ title: ' ', size: 'compact', span: 3, body: U.loading(2) })).join('')}</div>`;
+    const [d, k, w] = await Promise.all([data(), get('/api/kpis?days=30'), get('/api/pulse/waiting')]);
+    const days = Array.isArray(k) ? k : [], a = days.slice(-15), b = days.slice(0, -15);
+    const S = (l, f) => l.reduce((s, x) => s + (f(x) || 0), 0), avgMs = l => { const m = l.filter(x => x.reply_ms != null); return m.length ? S(m, x => x.reply_ms) / m.length : null; };
+    const share = l => S(l, x => x.chats) ? S(l, x => x.handled) / S(l, x => x.chats) * 100 : null;
+    const sa = share(a), sb = share(b), ra = avgMs(a), rb = avgMs(b);
+    // same funnel as the chart below: conversations against bookings the AI made (30 days)
+    const nw = d.live.now || {}, chats30 = Math.max(d.conv.length, nw.conversations || 0), booked30 = nw.ai_count ?? d.conv.filter(c => c.outcome === 'booked').length;
+    const ca = chats30 ? Math.min(100, booked30 / chats30 * 100) : null, cb = null;
+    const q = (w?.items || []).filter(x => x.kind === 'question').length || d.live.now?.unsure || 0, nm = window.P10?.named?.('Nora') || 'Nora';
+    const kpis = [
+      U.kpi({ title: 'Chats answered alone', value: sa == null ? '–' : `${Math.round(sa)}%`, ctx: `${S(a, x => x.chats)} chats in 15 days`, change: sa != null && sb != null ? sa - sb : null, vs: 'pts', why: sa == null ? 'No chats yet' : sa >= 85 ? `${nm} rarely needs you` : 'Teach the questions that come to you most', state: sa == null ? 'empty' : sa >= 85 ? 'healthy' : sa >= 70 ? 'neutral' : 'warning' }),
+      U.kpi({ title: 'Average reply', value: ra == null ? '–' : `${(ra / 1000).toFixed(1)}s`, ctx: 'from message to answer', change: ra && rb ? (ra - rb) / rb * 100 : null, lowerIsBetter: true, vs: 'vs 15 days before', why: ra == null ? 'No replies yet' : ra <= 5000 ? 'Faster than any person can type' : 'Slower than usual; check AI health', state: ra == null ? 'empty' : ra <= 5000 ? 'healthy' : 'warning' }),
+      U.kpi({ title: 'Chats that became bookings', value: ca == null ? '–' : `${Math.round(ca)}%`, ctx: `${booked30} of ${chats30} chats in 30 days`, why: ca == null ? 'No chats yet' : ca >= 30 ? 'Strong for a front desk' : 'Offering times earlier in the chat usually helps', state: ca == null ? 'empty' : ca >= 30 ? 'healthy' : 'neutral' }),
+      U.kpi({ title: 'Questions to teach', value: String(q), ctx: q ? `${nm} couldn't answer these` : 'nothing waiting', why: q ? 'Answer once and it remembers for every client' : 'Every question had an answer', state: q ? 'warning' : 'healthy', action: q ? U.button('Teach now', 'a:3') : '' })].join('');
+    const cell = (n, span) => { try { const h = F[n](d); return h ? `<div class="mx-c${span} rp-cell">${h}</div>` : ''; } catch { return ''; } };
+    root.innerHTML = (window.P10?.named || (x => x))(`<div class="mx-grid">${kpis}</div><div class="mx-grid">${cell(39, 4)}${cell(15, 4)}${cell(7, 4)}</div><div class="mx-grid">${cell(18, 12)}</div><div class="mx-grid">${cell(29, 6)}${cell(26, 6)}</div>`);
+    root.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i)); countUp(root);
+    root.addEventListener('click', ev => { const t = ev.target.closest('[data-go^="a:"]'); if (t) window.P10?.go('pulse', +t.dataset.go.slice(2)); });
+  };
   window.PVData = data; // Studio builds its widgets from the same live data
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44, 45: c45 };
   const PAGES = { today: [16, 8, 7, 15] };
