@@ -9,6 +9,8 @@
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || [] } catch { return [] } };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(threads.slice(0, 40))) } catch {} };
   let threads = load(), cur = null, busy = false, root = null, filter = '';
+  // an answer cut off by a reload or a closed tab never finishes: show it as interrupted, with Retry
+  threads.forEach(t => (t.msgs || []).forEach(m => { delete m.reveal; if (m.pending) Object.assign(m, { pending: false, error: true, text: m.text || 'The answer was interrupted before it finished. Press Retry to ask again.' }); }));
 
   const SUGG = [
     ['What needs me today?', 'Today'],
@@ -180,7 +182,7 @@
   function reveal(m) {
     if (CALM || m.error) return draw();
     m.reveal = 0;
-    const tick = () => { m.reveal = Math.min(m.text.length, m.reveal + Math.max(6, Math.round(m.text.length / 70))); if (m.reveal >= m.text.length) { delete m.reveal; return draw(true); } draw(true); requestAnimationFrame(tick); };
+    const tick = () => { m.reveal = Math.min(m.text.length, m.reveal + Math.max(12, Math.round(m.text.length / 20))); if (m.reveal >= m.text.length) { delete m.reveal; return draw(true); } draw(true); requestAnimationFrame(tick); };
     requestAnimationFrame(tick);
   }
 

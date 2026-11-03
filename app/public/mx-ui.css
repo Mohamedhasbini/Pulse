@@ -686,3 +686,59 @@ html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main 
 @media (min-width:768px){html body nav[aria-label="Main"]:not(#_):not(#__) .ph-more{display:none!important}}
 .rp-period{display:flex;justify-content:flex-end;margin-bottom:12px}
 html body main>section[hidden]:not(#_):not(#__):not(#___):not(#____):not(#_____){display:none!important}
+
+/* ── MXAi chat, after the BoardUI AI chat: one canvas, your message in a soft bubble on the right, the answer as
+   plain text at 15px, the steps as a small card with a tick list, a slim composer with a round send */
+.pc:not(#_):not(#__){--pc-bg:#0a0a0a;--pc-side:#0a0a0a;--pc-raise:#171717;--pc-line:#262626;--pc-line2:#333;--pc-ink:#fafafa;--pc-mut:#a1a1a1;--pc-dim:#737373;font-size:15px!important;line-height:1.6!important}
+:root[data-theme="light"] .pc:not(#_):not(#__){--pc-bg:#f7f7f7;--pc-side:#f7f7f7;--pc-raise:#ffffff;--pc-line:#ebebeb;--pc-line2:#d4d4d4;--pc-ink:#0a0a0a;--pc-mut:#737373;--pc-dim:#a1a1a1}
+.pc:not(#_):not(#__) .pc-side{border-right:1px solid var(--pc-line)!important}
+.pc:not(#_):not(#__) .pc-main>header{border-bottom:0!important;padding:14px 24px!important}
+.pc:not(#_):not(#__) .pc-title{font-size:13.5px!important;font-weight:500!important;color:var(--pc-mut)!important}
+.pc:not(#_):not(#__) .pc-log{max-width:760px;margin:0 auto;width:100%;padding:8px 24px 24px!important;box-sizing:border-box}
+.pc:not(#_):not(#__) .pc-m{margin:0 0 22px!important;gap:12px!important}
+/* your message */
+.pc:not(#_):not(#__) .pc-m.you{display:flex;justify-content:flex-end}
+.pc:not(#_):not(#__) .pc-m.you .pc-b{max-width:78%;padding:12px 16px!important;border-radius:18px!important;background:var(--pc-raise)!important;color:var(--pc-ink)!important;
+  font-size:15px!important;line-height:1.55!important;border:0!important;box-shadow:0 1px 2px rgba(0,0,0,.06)!important}
+/* the answer: plain text, no box */
+.pc:not(#_):not(#__) .pc-m.bot{display:flex;align-items:flex-start}
+.pc:not(#_):not(#__) .pc-mark{flex:none;margin-top:2px}
+.pc:not(#_):not(#__) .pc-m.bot .pc-body{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;border-radius:0!important;min-width:0;flex:1}
+.pc:not(#_):not(#__) .pc-a{font-size:15px!important;line-height:1.65!important;color:var(--pc-ink)!important;font-family:inherit!important}
+.pc:not(#_):not(#__) .pc-a :is(h1,h2,h3,h4){font-size:15px!important;font-weight:600!important;line-height:1.4!important;margin:18px 0 6px!important;letter-spacing:0!important}
+.pc:not(#_):not(#__) .pc-a :is(p,ul,ol){margin:0 0 10px!important}
+.pc:not(#_):not(#__) .pc-a :is(ul,ol){padding-left:20px!important}
+.pc:not(#_):not(#__) .pc-a li{margin:4px 0!important;font-size:15px!important;line-height:1.6!important}
+.pc:not(#_):not(#__) .pc-a :is(b,strong){font-weight:600!important}
+.pc:not(#_):not(#__) .pc-a em,.pc:not(#_):not(#__) .pc-a i{font-style:normal;color:var(--pc-mut)}
+/* the steps: a small card with a tick list */
+.pc:not(#_):not(#__) .pc-trail{display:block;max-width:420px;margin:0 0 14px!important;padding:10px 14px!important;border-radius:14px!important;background:var(--pc-raise)!important;
+  border:0!important;box-shadow:0 0 0 1px var(--pc-line)!important;font-size:13.5px!important}
+.pc:not(#_):not(#__) .pc-trail summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;color:var(--pc-mut);font-weight:500}
+.pc:not(#_):not(#__) .pc-trail summary::-webkit-details-marker{display:none}
+.pc:not(#_):not(#__) .pc-trail summary::before{content:"";width:14px;height:14px;border-radius:50%;border:1.5px solid var(--mx-ok,#16a34a);background:radial-gradient(circle,var(--mx-ok,#16a34a) 0 3px,transparent 3.5px)}
+.pc:not(#_):not(#__) .pc-trail ol{list-style:none;margin:10px 0 0!important;padding:0!important;display:flex;flex-direction:column;gap:6px}
+.pc:not(#_):not(#__) .pc-trail li{position:relative;padding:6px 10px 6px 30px!important;border-radius:10px;color:var(--pc-ink);font-size:13.5px!important;line-height:1.45!important}
+.pc:not(#_):not(#__) .pc-trail li::before{content:"";position:absolute;left:9px;top:9px;width:12px;height:12px;border-radius:50%;border:1.5px dashed var(--pc-dim)}
+.pc:not(#_):not(#__) .pc-trail li.step{box-shadow:0 0 0 1px var(--pc-line)}
+.pc:not(#_):not(#__) .pc-trail li.step::before{border:0;background:var(--mx-ok,#16a34a);mask:none;-webkit-mask:none}
+.pc:not(#_):not(#__) .pc-trail li.thought{color:var(--pc-mut)}
+/* the composer: a white (or #171717) rounded box, text on top, chips and a round send below */
+.pc:not(#_):not(#__) .pc-dock{max-width:760px;margin:0 auto;width:100%;padding:0 24px 16px!important;box-sizing:border-box}
+.pc:not(#_):not(#__) .pc-in{border-radius:22px!important;padding:12px 12px 10px 18px!important;background:var(--pc-raise)!important;border:0!important;
+  box-shadow:0 0 0 1px var(--pc-line),0 8px 24px -16px rgba(0,0,0,.25)!important}
+.pc:not(#_):not(#__) .pc-in textarea{font-size:15px!important;line-height:1.5!important}
+.pc:not(#_):not(#__) .pc-chip{font-size:12px!important;padding:3px 10px!important;border-radius:99px!important;background:transparent!important;box-shadow:inset 0 0 0 1px var(--pc-line)!important;border:0!important}
+.pc:not(#_):not(#__) .pc-send{width:36px!important;height:36px!important;border-radius:50%!important;font-size:16px!important}
+.pc:not(#_):not(#__) .pc-note{font-size:11.5px!important;color:var(--pc-dim)!important;text-align:center}
+/* the hello screen and the sidebar list */
+.pc:not(#_):not(#__) .pc-hello h1{font-size:28px!important}
+.pc:not(#_):not(#__) .pc-list :is(button,[data-th]){font-size:13.5px!important;border-radius:10px!important}
+.pc:not(#_):not(#__) .pc-list [data-th][aria-current="true"],.pc:not(#_):not(#__) .pc-list .on{background:var(--pc-raise)!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-in textarea{background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important;padding:4px 0!important;border-radius:0!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-in:focus-within{box-shadow:0 0 0 1.5px var(--pc-ink),0 8px 24px -16px rgba(0,0,0,.25)!important}
+/* answer tables: readable numbers, quiet headings, hairline rows, on the same surface as the steps card */
+html body .pc:not(#_):not(#__):not(#___) .pc-data{background:var(--pc-raise)!important;border:0!important;border-radius:14px!important;box-shadow:0 0 0 1px var(--pc-line)!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-data :is(td,th){color:var(--pc-ink)!important;opacity:1!important;font-size:13.5px!important;border-color:var(--pc-line)!important;background:transparent!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-data th{color:var(--pc-mut)!important;font-weight:500!important;font-size:12px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-data td.n{font-variant-numeric:tabular-nums}
