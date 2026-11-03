@@ -68,7 +68,11 @@
   // ---------- data: tables, charts, files ----------
   const head = s => String(s).replace(/_/g, ' ');
   const cell = v => v == null ? '—' : typeof v === 'number' ? v.toLocaleString() : typeof v === 'object' ? JSON.stringify(v) : String(v);
-  const hidden = c => /^(client_id|customer_id|conversation_id|service_id)$/.test(c);
+  const hidden = c => /(^|_)id$/.test(c);
+  // columns worth showing: no ids, and none that are empty in every row (they read as a wall of dashes)
+  const shown = t => Object.keys(t.rows[0]).filter(c => !hidden(c) && t.rows.some(r => r[c] != null && r[c] !== '' && r[c] !== '—' && r[c] !== false));
+  // a dropped connection (the app restarting, a blip on the line) is retried once before it counts as a failure
+  const send = (url, opt) => fetch(url, opt).catch(() => new Promise(ok => setTimeout(ok, 1200)).then(() => fetch(url, opt)));
   const isNum = (rows, c) => rows.every(r => r[c] == null || typeof r[c] === 'number');
   // the forecast timeline: past weeks solid, the forecast dashed inside its low-high band, the growth path above it
   function forecastChart(f) {
@@ -106,7 +110,7 @@
       `<div class="pcx-bar" style="width:${W}%" title="${esc(cell(r[x]))}: ${esc(cell(r[y]))}"><i style="height:${Math.max(2, vals[k] / max * 100)}%"></i><span>${esc(String(cell(r[x])).replace(/^\d{4}-/, ''))}</span></div>`).join('')}</div></figure>`;
   }
   function tableHtml(t, k, all) {
-    const cols = Object.keys(t.rows[0]).filter(c => !hidden(c)), rows = all ? t.rows : t.rows.slice(0, 6);
+    const cols = shown(t), rows = all ? t.rows : t.rows.slice(0, 6);
     return `<div class="pc-data" data-t="${k}"><div class="pc-dh"><span class="pc-dico">▦</span><div><b>${esc(head(t.title))}</b><small>${t.rows.length} row${t.rows.length === 1 ? '' : 's'} · live data</small></div>
       <button type="button" data-csv="${k}">Download CSV</button></div>${chart(t)}<div class="pc-scroll"><table><thead><tr>${cols.map(c => `<th class="${isNum(t.rows, c) ? 'n' : ''}">${esc(head(c))}</th>`).join('')}</tr></thead>
       <tbody>${rows.map(r => `<tr>${cols.map(c => `<td class="${typeof r[c] === 'number' ? 'n' : ''}">${esc(cell(r[c]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
@@ -124,7 +128,7 @@
       h1{font:600 24px/1.3 system-ui,sans-serif;margin:0 0 4px}.meta{font:12px system-ui,sans-serif;color:#777;margin-bottom:28px}h3,h4,h5{font-family:system-ui,sans-serif}
       table{border-collapse:collapse;width:100%;margin:12px 0 28px;font:12px system-ui,sans-serif}th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left}th{color:#666;font-weight:600}h2{font:600 15px system-ui,sans-serif;margin-top:32px;text-transform:capitalize}</style>
       <h1>${esc(q)}</h1><div class="meta">MXAi Assistant · ${new Date().toLocaleString()} · from your live data</div>${md(m.text)}
-      ${(m.tables || []).map(t => { const cols = Object.keys(t.rows[0]).filter(c => !hidden(c)); return `<h2>${esc(head(t.title))}</h2><table><tr>${cols.map(c => `<th>${esc(head(c))}</th>`).join('')}</tr>${t.rows.map(r => `<tr>${cols.map(c => `<td>${esc(cell(r[c]))}</td>`).join('')}</tr>`).join('')}</table>` }).join('')}
+      ${(m.tables || []).map(t => { const cols = shown(t); return `<h2>${esc(head(t.title))}</h2><table><tr>${cols.map(c => `<th>${esc(head(c))}</th>`).join('')}</tr>${t.rows.map(r => `<tr>${cols.map(c => `<td>${esc(cell(r[c]))}</td>`).join('')}</tr>`).join('')}</table>` }).join('')}
       <script>onload=()=>print()<\/script>`);
     w.document.close();
   }
@@ -187,7 +191,7 @@
     const m = { role: 'ai', pending: true, trail: [] }; cur.msgs.push(m); draw();
     const convo = cur.msgs.filter(x => !x.pending && !x.error).slice(-10).map(x => ({ role: x.role === 'owner' ? 'owner' : 'employee', text: x.text }));
     try {
-      const r = await fetch('/api/team/ask?stream=1', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: convo, employee: 'pulse', page: window.P10?.current?.() || 'pulse' }) });
+      const r = await send('/api/team/ask?stream=1', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: convo, employee: 'pulse', page: window.P10?.current?.() || 'pulse' }) });
       let done = null;
       if ((r.headers.get('content-type') || '').includes('text/event-stream')) {
         const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '';
@@ -206,7 +210,7 @@
       if (done.learned?.length) loadMemory();
       Object.assign(m, { pending: false, learned: done.learned || [], text: done.answer, actions: done.actions || [], tables: done.tables || [], sources: done.sources || [] });
       reveal(m);
-    } catch (err) { Object.assign(m, { pending: false, error: true, text: err.message || 'MXAi Assistant is not reachable right now. Try again in a minute.' }); draw(); }
+    } catch (err) { Object.assign(m, { pending: false, error: true, text: /fetch|network|load failed/i.test(err.message || '') || !err.message ? 'Lost the connection to MXAi for a moment. Press Retry to ask again.' : err.message }); draw(); }
     busy = false; $('.pc-send', root).disabled = false; save();
   }
 

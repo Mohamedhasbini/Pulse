@@ -484,3 +484,44 @@ main>section.hx-wait{visibility:hidden}
 :root:not(#_):not(#__):not(#___) body{--pv-lime:var(--mx-s1);--pv-silver:var(--mx-s2);--pv-track:var(--mx-raise);--d1:var(--mx-s1);--d2:var(--mx-s2);--d3:var(--mx-s5);--d4:var(--mx-s3)}
 :root[data-theme="light"]:not(#_):not(#__):not(#___) body{--pv-track:#fff}
 .rp-cell .pv-heat b{border-radius:6px!important}
+/* no page header: each page opens on its own tab row (tabs on the left, what needs you on the right), then content */
+:root .hx:not(#_):not(#__) .hx-greet,:root .hx:not(#_):not(#__) .hx-folders,:root .hx:not(#_):not(#__) .hx-stats{display:none!important}
+:root .hx:not(#_):not(#__){padding:0!important;margin:0 0 12px!important;min-height:0!important;background:none!important;border:0!important;box-shadow:none!important}
+:root .hx:not(#_):not(#__) .hx-in{padding:0!important;margin:0!important;gap:0!important;min-height:0!important;display:block!important}
+:root .p10-bar:not(#_):not(#__){display:flex!important;align-items:center;gap:10px;flex-wrap:wrap;margin:0!important;padding:0!important;border:0!important;background:none!important;min-height:0}
+:root .p10-bar:not(#_):not(#__) .p10-purpose{display:none!important}
+:root .p10-bar:not(#_):not(#__) .p10-need{order:3;margin-left:auto}
+:root .p10-bar:not(#_):not(#__) .pa-switch{order:1;margin:0!important}
+:root .p10-bar:not(#_):not(#__) .set-ix{order:2}
+main>section>.top{display:none!important}
+/* pages use the whole width, with one 12px rhythm between blocks */
+:root main:not(#_){padding:12px 12px 76px!important}
+:root .mx-page:not(#_),:root .rp:not(#_){max-width:none!important;gap:12px!important}
+:root .mx-grid:not(#_){gap:12px!important}
+:root .rp:not(#_)>*+*{margin-top:12px}
+:root .mx-bars:not(#_):not(#__) .mx-bar i{background:color-mix(in srgb,var(--mx-s2) 20%,transparent)!important;border:0!important}
+:root[data-theme="light"] .mx-bars:not(#_):not(#__) .mx-bar i{background:color-mix(in srgb,var(--mx-s2) 16%,#fff)!important}
+/* the tab row sits right under the top bar */
+:root .hx:not(#_):not(#__)+.top,:root main>section>.hx:first-child{margin-top:0!important}
+:root main>section.wrap:not(#_){padding-top:0!important}
+html body main .hx:not(#_):not(#__):not(#___):not(#____){height:auto!important;min-height:0!important;padding:0!important;margin:0 0 12px!important}
+html body main .hx:not(#_):not(#__):not(#___):not(#____)>*{margin-top:0!important;padding-top:0!important;min-height:0!important}
+html body main .p10-bar:not(#_):not(#__):not(#___):not(#____){margin:0!important;padding:0!important}
+html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main .hx:not(#_):not(#__):not(#___):not(#____)::after{display:none!important}
+/* ── Growth › Offers: the overview carries the numbers and charts, so this tab opens on making an offer:
+   the campaign studio, the ranked next campaigns, then sent offers, codes and agents */
+#mkRoot:not(#_)>:is(.mk-hero-band,.mk-insights,.mk-row2){display:none!important}
+#mkRoot:not(#_){display:flex!important;flex-direction:column;gap:12px}
+#mkRoot:not(#_)>.mk-bar-top{order:0}#mkRoot:not(#_)>.mk-wide{order:1}#mkRoot:not(#_)>.mk-row2b{order:2}#mkRoot:not(#_)>.mk-grid2{order:3}
+#mkRoot:not(#_)>*{margin:0!important}
+/* ── Growth › Automations: the activity log is a short scrolling box, not a 1,300px wall */
+#agents:not(#_) #agLog{max-height:340px;overflow:auto}
+#agents:not(#_)>*+*{margin-top:12px!important}
+/* ── older cards everywhere take the board card: one surface, 16px corners, no edge, no blur, no glow */
+:root main:not(#_):not(#__) :is(.card,.card.glass,.mk-card,.mk-band,.desk-c,.ag,.spane .row>*,.hx-cc,.pv-c){background:var(--mx-surf)!important;border:0!important;border-radius:16px!important;
+  box-shadow:none!important;backdrop-filter:none!important;background-image:none!important}
+:root:not([data-theme="light"]) main:not(#_):not(#__) :is(.card,.card.glass,.mk-card,.mk-band,.desk-c,.ag,.spane .row>*,.pv-c){box-shadow:0 0 0 1px var(--mx-line)!important}
+:root[data-theme="light"] main:not(#_):not(#__) :is(.card,.mk-card,.desk-c,.ag,.pv-c) :is(.card,.mk-card,.row-in,li,.ag-in){background:#fff!important}
+/* inner tiles (campaign templates, autopilot switches, next-campaign cards) sit on the card: white in light, one step up in dark */
+:root main:not(#_):not(#__) :is(.mk-sc,.ap-row,.mk-next>*,.mk-row2b .mk-card>div>div,.mk-aud li){background:var(--mx-raise)!important;border:0!important;box-shadow:none!important;border-radius:12px!important}
+:root[data-theme="light"] main:not(#_):not(#__) :is(.mk-sc,.ap-row,.mk-next>*,.mk-row2b .mk-card>div>div,.mk-aud li){background:#fff!important}

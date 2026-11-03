@@ -463,22 +463,38 @@
     root.querySelector('[data-rp-go]')?.addEventListener('click', () => window.P10?.go('growth', 1));
     countUp(root);
   };
-  // Growth overview: what offers brought back, who to invite back, and the latest campaigns
+  // Growth overview, compact and read top to bottom: four figures; what offers won back each week beside the next best
+  // moves; who can be reached beside how the recent offers did. Everything comes from one call (last 90 days)
   window.PVGrowth = async root => {
     const U = window.MXUI; if (!root || !U) return;
     root.innerHTML = `<div class="mx-grid">${[3, 3, 3, 3].map(() => U.card({ title: ' ', size: 'compact', span: 3, body: U.loading(2) })).join('')}</div>`;
-    const d = await data(), k = d.mk.kpis || {}, camps = d.mk.campaigns || [];
-    const none = !k.sent;
+    const m = await get('/api/marketing/overview?days=90') || {}, k = m.kpis || {}, camps = m.campaigns || [], seg = m.segments || {}, none = !k.sent;
+    const go = (label, tab) => U.button(label, 'g:' + tab);
     const kpis = [
-      U.kpi({ title: 'Won back, last 90 days', value: money(k.revenue || 0), ctx: `${k.won || 0} booking${k.won === 1 ? '' : 's'} from offers`, why: none ? 'No offers sent yet' : `${k.conversion || 0}% of reached clients booked`, state: none ? 'empty' : k.revenue ? 'improving' : 'neutral' }),
-      U.kpi({ title: 'Offers sent', value: String(k.sent || 0), ctx: `${k.reached || 0} clients reached`, why: none ? 'Prepared offers wait for your OK before anything is sent' : `${camps.length} campaign${camps.length === 1 ? '' : 's'} in 90 days`, state: none ? 'empty' : 'neutral', action: none ? U.button('Create an offer', 'g:2') : '' }),
-      U.kpi({ title: 'Clients who agreed to offers', value: `${k.optin_rate || 0}%`, ctx: `${k.opted_in || 0} of ${k.customers || 0} clients`, why: (k.optin_rate || 0) < 20 ? 'Ask for permission when clients book; offers can only go to them' : 'A healthy audience for offers', state: (k.optin_rate || 0) < 20 ? 'warning' : 'healthy' }),
-      U.kpi({ title: 'Revenue per $1 of discount', value: k.roi == null ? '–' : `$${(+k.roi).toFixed(2)}`, ctx: `${money(k.discounts || 0)} given in discounts`, why: k.roi == null ? 'Shows after the first offer brings a booking' : k.roi >= 3 ? 'Offers are paying for themselves' : 'Try smaller discounts or better timing', state: k.roi == null ? 'empty' : k.roi >= 3 ? 'healthy' : 'warning' })].join('');
-    const rows = camps.slice(0, 4).map(c => U.row({ dot: c.revenue ? 'healthy' : c.result === 'not sent' ? 'warning' : '', title: c.name.trim() || 'Offer', sub: `${c.date} · ${c.result}${c.sent ? ` · ${c.sent} sent` : ''}`, value: c.revenue ? money(c.revenue) : '', go: 'g:2' }));
-    const camp = U.list({ title: 'Recent campaigns', span: 4, size: 'wide', go: 'g:2', rows, emptyTitle: 'No campaigns yet', emptySub: 'Your first offer will show here with what it brought back.' });
-    let win = '', res = ''; try { win = F[24](d); } catch {} try { res = F[34](d); } catch {}
-    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${win ? `<div class="mx-c8 rp-cell">${win}</div>` : ''}${camp}</div>${res ? `<div class="mx-grid"><div class="mx-c12 rp-cell">${res}</div></div>` : ''}`;
-    root.addEventListener('click', ev => { const b = ev.target.closest('[data-go^="g:"]'); if (b) window.P10?.go('growth', +b.dataset.go.slice(2)); });
+      U.kpi({ title: 'Won back, last 90 days', value: money(k.revenue || 0), ctx: `${k.won || 0} bookings after an offer`, state: none ? 'empty' : k.revenue ? 'improving' : 'neutral' }),
+      U.kpi({ title: 'Offers sent', value: String(k.sent || 0), ctx: `${k.reached || 0} clients reached · ${k.conversion || 0}% booked`, state: none ? 'empty' : 'neutral' }),
+      U.kpi({ title: 'Clients who agreed to offers', value: `${k.optin_rate || 0}%`, ctx: `${k.opted_in || 0} of ${k.customers || 0} can be messaged`, state: (k.optin_rate || 0) < 20 ? 'warning' : 'healthy' }),
+      U.kpi({ title: 'Revenue per $1 of discount', value: k.roi == null ? '–' : `$${(+k.roi).toFixed(2)}`, ctx: `${money(k.discounts || 0)} given in discounts`, state: k.roi == null ? 'empty' : k.roi >= 3 ? 'healthy' : 'warning' })].join('');
+    // won back each week: the last 12 weeks of revenue that followed an offer
+    const wk = (m.weekly || []).slice(-12).map((w, i, a) => { const d = new Date(w.week + 'T12:00'); return { l: i === a.length - 1 ? 'This wk' : `${d.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()]}`, v: +w.revenue || 0 }; });
+    const wkTot = wk.reduce((s, x) => s + x.v, 0);
+    const weekly = U.card({ title: 'Won back each week', span: 8, size: 'wide', meta: 'last 12 weeks',
+      body: `<div class="mx-big"><b>${money(wkTot)}</b><span class="mx-ctx">from ${(m.weekly || []).slice(-12).reduce((s, w) => s + (w.sent || 0), 0)} messages · a booking counts when it comes within 14 days</span></div>${U.columns(wk, { pre: '$', h: 170 })}` });
+    // next best moves: the prepared ideas, each one button away, then what has worked so far
+    const ideas = (m.ideas || []).slice(0, 3).map(x => U.row({ dot: 'healthy', title: x.title, sub: x.why, action: go('Prepare', 2) }));
+    const lesson = (m.lessons || [])[0];
+    const moves = U.card({ title: 'Next best moves', span: 4, size: 'wide', body: `<div class="mx-list">${ideas.length ? ideas.join('') : U.empty('No ideas right now', 'They appear as clients drift away or new ones arrive.')}</div>${lesson ? `<p class="mx-why">${esc(lesson)}</p>` : ''}` });
+    // who can be reached: each group of clients, how many there are and how many agreed to offers
+    const NAMES = { vip: 'Best clients', regular: 'Regulars', occasional: 'Occasional', lapsed: 'Drifting away (45–120 days)', lost: 'Lost (120+ days)', never: 'Never booked' };
+    const groups = Object.values(seg).filter(s => s.n).sort((a, b) => b.n - a.n);
+    const reach = U.card({ title: 'Who you can reach', span: 4, size: 'wide', meta: `${k.opted_in || 0} agreed`,
+      body: groups.length ? U.barList(groups.map(s => ({ label: `${NAMES[s.seg] || s.seg} · ${s.reachable || 0} can be messaged`, value: s.n }))) : U.empty('No client groups yet') });
+    // how the recent offers did
+    const res = c => c.result === 'success' ? U.chip('Worked', 'healthy') : c.result === 'some' ? U.chip('Some bookings', 'healthy') : c.result === 'not sent' ? U.chip('Not sent', 'warning') : c.result === 'too early' ? U.chip('Too early') : U.chip('No bookings', 'critical');
+    const offers = U.card({ title: 'Recent offers', span: 8, size: 'wide', link: U.link('All offers', 'g:2'),
+      body: U.table(['Offer', 'Sent on', 'Messages', 'Booked', 'Result', 'Won back'], camps.slice(0, 6).map(c => ({ go: 'g:2', cells: [c.name.trim() || 'Offer', c.date, String(c.sent || 0), String(c.booked || 0), { html: res(c) }, money(c.revenue || 0)] })), 'No offers yet. Prepare one from Next best moves.') });
+    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${weekly}${moves}</div><div class="mx-grid">${reach}${offers}</div>`;
+    root.onclick = ev => { const b = ev.target.closest('[data-go^="g:"]'); if (b) window.P10?.go('growth', +b.dataset.go.slice(2)); };
   };
   // AI Control › Performance: is the receptionist doing a good job? Last 15 days against the 15 before
   window.PVAIPerf = async root => {
