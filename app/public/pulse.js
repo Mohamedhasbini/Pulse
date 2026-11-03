@@ -17,6 +17,7 @@
     train: '<path d="M12 3 2 8l10 5 10-5-10-5zM6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/>',
     lab: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/>',
     insights: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    growth: '<path d="M4 17l6-6 4 4 7-7"/><path d="M15 8h6v6"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/>',
   };
   // a tab: { page, tab } opens a sidebar.js page; { entry } clicks an old entry; panes = the panes of that section to show;
@@ -32,26 +33,21 @@
       ['Schedule', { own: 'calendar' }],
       ['Requests', { page: 'inbox', tab: 'conversations', panes: ['approvals'], bare: true }],
       ['Booking page', { page: 'settings', tab: 'booking', bare: true, cards: ['Online booking page'] }]]],
-    ['customers', 'Clients', 'Know every client and bring them back', [
+    ['customers', 'Customers', 'Know every client', [
       ['Clients', { page: 'people', tab: 'clients' }],
-      ['Win back', { page: 'people', tab: 'winback' }],
+      ['Win back', { own: 'growth', hidden: true }], // moved to Growth; kept so the index stays put
       ['Board', { page: 'people', tab: 'board', panes: ['board'], adv: true }],
-      ['Reviews', { page: 'support', tab: 'reviews', bare: true }],
+      ['Reviews', { page: 'support', tab: 'reviews', bare: true }]]],
+    ['growth', 'Growth', 'Bring new clients in and old ones back', [
+      ['Win back', { page: 'people', tab: 'winback' }],
       ['Offers', { own: 'growth' }],
       ['Sent offers', { page: 'people', tab: 'offers', adv: true }],
       ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'], adv: true }],
-      ['Agents', { entry: 'agents', adv: true }]]],
-    ['pulse', 'Your AI', 'Review, teach and test Nora', [
-      ['To review', { own: 'approvals' }],
-      ['Ask', { own: 'ask', hidden: true }],
-      ['Brief', { own: 'brief', hidden: true }],
-      ['Teach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach', 'tchRules', 'tchQuestions'] }],
-      ['Rules', { entry: 'training', mode: 'coach', only: ['top', 'tchRules'], hidden: true, parent: 3 }],
-      ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'], hidden: true, parent: 3 }],
-      ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'], adv: true }],
-      ['Test', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
-      ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'], adv: true }],
-      ['Versions', { entry: 'training', only: ['top', 'learn'], adv: true }]]],
+      ['Automations', { entry: 'agents' }],
+      ['Website', { entry: 'website', ws: 0 }],
+      ['Website photos', { entry: 'website', ws: 1, adv: true }],
+      ['Website design', { entry: 'website', ws: 2, adv: true }],
+      ['Website address', { entry: 'website', ws: 3, adv: true }]]],
     ['insights', 'Insights', 'How the business is doing', [
       ['Report', { own: 'report' }],
       ['Business', { page: 'analytics', tab: 'overview', panes: ['overview', 'next'], drop: ['Services'] , adv: true }],
@@ -63,6 +59,17 @@
       ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' , adv: true }],
       ['My board', { own: 'studio', adv: true }],
       ['Chart library', { own: 'studiolib', adv: true }]]],
+    ['pulse', 'AI Control', 'Review, teach and test Nora', [
+      ['To review', { own: 'approvals' }],
+      ['Ask', { own: 'ask', hidden: true }],
+      ['Brief', { own: 'brief', hidden: true }],
+      ['Teach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach', 'tchRules', 'tchQuestions'] }],
+      ['Rules', { entry: 'training', mode: 'coach', only: ['top', 'tchRules'], hidden: true, parent: 3 }],
+      ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'], hidden: true, parent: 3 }],
+      ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'], adv: true }],
+      ['Test', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
+      ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'], adv: true }],
+      ['Versions', { entry: 'training', only: ['top', 'learn'], adv: true }]]],
     ['settings', 'Settings', 'Set it up once', [
       ['All settings', { page: 'settings', tab: 'details', panes: ['details', 'channels', 'booking', 'codes', 's2fa', 'sdev', 'look', 'dash'], cls: 'set-one' }],
       ['Profile', { page: 'settings', tab: 'details', form: [0, 1, 2, 3, 4, 5, 6, 24], hidden: true, parent: 0 }],
@@ -85,7 +92,8 @@
   const BADGE = { inbox: 'apprN', pulse: 'paN' };
   // pages that were merged: [new page, tab index] for each old tab
   const MOVED = { studio: i => ['insights', 8 + i], train: i => ['pulse', 3 + i], lab: i => ['pulse', [8, 7, 9][i] ?? 7],
-    marketing: i => i >= 4 ? ['settings', 13 + i - 4] : ['customers', 4 + i] };
+    marketing: i => i >= 4 ? ['growth', 5 + i - 4] : ['growth', i + 1],
+    customers: i => i === 1 ? ['growth', 0] : i >= 4 ? ['growth', i - 3] : ['customers', i] };
   // the menu in four groups, each heading drawn before its first page
   const GROUP = {};
   const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Account & security', 's2fa'], ['Look', 'look'], ['Website', 13], ['Integrations', 12]];
@@ -234,7 +242,7 @@
       today: [[chats, `${chats} chat${chats === 1 ? '' : 's'} waiting for you`, ['inbox', 1]], [it.length, `${it.length} thing${it.length === 1 ? '' : 's'} to approve`, ['pulse', 0]]],
       inbox: [[chats, `${chats} chat${chats === 1 ? '' : 's'} need${chats === 1 ? 's' : ''} you`, ['inbox', 1]]],
       calendar: [[n('request'), `${n('request')} cancel/move request${n('request') === 1 ? '' : 's'}`, ['calendar', 1]]],
-      customers: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['marketing', 3]]],
+      growth: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['marketing', 3]]],
       pulse: [[it.length, `${it.length} waiting for your OK`, ['pulse', 0]],
        [n('question'), `${n('question')} question${n('question') === 1 ? '' : 's'} ${nora()} couldn't answer`, ['train', 1]], [n('lesson'), `${n('lesson')} suggested rule${n('lesson') === 1 ? '' : 's'}`, ['pulse', 0]]],
     }[id] || [];

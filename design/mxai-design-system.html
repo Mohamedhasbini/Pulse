@@ -1,0 +1,458 @@
+<title>MXAi Design System Proposal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+/* Layout: a long proposal read top to bottom, with a sticky index; the five theme previews are full app frames */
+:root{
+  --bg:#eceef0;--panel:#f6f7f8;--ink:#121518;--ink2:#4a5157;--mute:#6b7379;--line:#d3d8dc;--accent:#141516;--signal:#c6f432;
+  --ok:#2f7d4f;--warn:#a45f00;--crit:#b3261e;
+  --f-body:"Geist",ui-sans-serif,system-ui,sans-serif;--f-mono:"Geist Mono",ui-monospace,monospace;--f-disp:"Instrument Serif",Georgia,serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1113;--panel:#17191c;--ink:#eef0f1;--ink2:#b6bcc1;--mute:#8b9298;--line:#2a2e33;--accent:#eef0f1;--ok:#5bc48a;--warn:#e0a24a;--crit:#ef6b62;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1113;--panel:#17191c;--ink:#eef0f1;--ink2:#b6bcc1;--mute:#8b9298;--line:#2a2e33;--accent:#eef0f1;--ok:#5bc48a;--warn:#e0a24a;--crit:#ef6b62;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.page{max-width:1240px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-family:var(--f-disp);font-weight:400;font-size:clamp(40px,6vw,72px);line-height:1;letter-spacing:-.01em}
+h2{font-size:28px;font-weight:600;letter-spacing:-.025em;margin-bottom:6px}
+h3{font-size:17px;font-weight:600;letter-spacing:-.01em}
+p{margin:0}.lead{font-size:18px;color:var(--ink2);max-width:68ch;margin-top:16px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+section.part{padding-top:64px;scroll-margin-top:72px}
+.part>.sub{color:var(--ink2);max-width:70ch;margin-bottom:24px}
+nav.ix{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin:28px 0 0;display:flex;gap:4px;overflow-x:auto;padding:10px 0}
+nav.ix a{flex:none;color:var(--ink2);text-decoration:none;font-size:13.5px;padding:6px 12px;border-radius:99px}
+nav.ix a:hover,nav.ix a:focus-visible{background:var(--panel);color:var(--ink);outline:none}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:32px}
+.verdict div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.verdict b{display:block;font-size:15px;margin-bottom:6px}.verdict p{color:var(--ink2);font-size:14.5px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:760px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:11.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);background:var(--bg)}
+tr:last-child td{border-bottom:0}td.n{font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:11.5px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.tag.keep{color:var(--ok);border-color:currentColor}.tag.remove{color:var(--crit);border-color:currentColor}.tag.relocate,.tag.merge{color:var(--warn);border-color:currentColor}.tag.redesign,.tag.replace{color:var(--ink);border-color:var(--ink)}
+.ia{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.ia div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.ia i{font-style:normal;font-family:var(--f-mono);font-size:12px;color:var(--mute)}
+.ia h3{margin:4px 0 6px}.ia p{color:var(--ink2);font-size:14.5px}.ia ul{margin:10px 0 0;padding-left:18px;font-size:14px;color:var(--ink2)}
+.ia small{display:block;margin-top:10px;font-size:13px;color:var(--mute)}
+.lib-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.lib-tools input{font:inherit;font-size:14px;padding:9px 14px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--ink);min-width:0;flex:1 1 220px}
+.lib-tools button{font:inherit;font-size:13px;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:none;color:var(--ink2);cursor:pointer}
+.lib-tools button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.lib-count{font-family:var(--f-mono);font-size:13px;color:var(--mute)}
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.lib .c{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.lib .c header{display:flex;gap:8px;align-items:baseline;justify-content:space-between}
+.lib .c b{font-size:14.5px}.lib .c code{font-family:var(--f-mono);font-size:11px;color:var(--mute)}
+.lib .c p{font-size:13.5px;color:var(--ink2)}.lib .c footer{display:flex;gap:6px;flex-wrap:wrap}
+.anat{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+.anat-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;position:relative}
+.anat ol{margin:0;padding-left:20px;color:var(--ink2)}.anat li{margin-bottom:8px}.anat li b{color:var(--ink)}
+.grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:8px;margin:16px 0}
+.grid12 span{height:28px;border-radius:6px;background:var(--line);display:grid;place-items:center;font-family:var(--f-mono);font-size:11px;color:var(--mute)}
+.sizes{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.sizes div{background:var(--panel);border:1px dashed var(--mute);border-radius:12px;padding:14px;min-height:104px;display:flex;flex-direction:column;justify-content:space-between}
+.sizes b{font-size:14px}.sizes small{color:var(--mute);font-family:var(--f-mono);font-size:12px}
+.s3{grid-column:span 3}.s4{grid-column:span 4}.s6{grid-column:span 6}.s8{grid-column:span 8}.s12{grid-column:span 12}.tall{min-height:216px!important}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:20px}
+.rules div{border-top:2px solid var(--ink);padding-top:12px}.rules p{color:var(--ink2);font-size:14.5px}
+/* theme previews: each frame paints with its own tokens */
+.tpick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tpick button{font:inherit;font-size:14px;padding:9px 16px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.tpick button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.tpick button:focus-visible,.lib-tools button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.frame-wrap{overflow-x:auto;border-radius:18px}
+.app{min-width:1080px;font-family:var(--t-font,var(--f-body));background:var(--t-bg);color:var(--t-ink);border-radius:18px;display:grid;grid-template-columns:208px 1fr;min-height:720px;border:1px solid var(--t-line);overflow:hidden}
+.app aside{background:var(--t-side);border-right:1px solid var(--t-line);padding:20px 14px;display:flex;flex-direction:column;gap:2px}
+.app .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;margin:0 8px 18px}
+.app .brand i{width:28px;height:28px;border-radius:8px;background:var(--t-chip);display:grid;place-items:center;color:var(--t-chipink);font-style:normal;font-size:14px}
+.app aside a{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:9px;color:var(--t-ink2);font-size:14px;text-decoration:none}
+.app aside a.on{background:var(--t-chip);color:var(--t-chipink)}
+.app aside a em{font-style:normal;font-size:11px;font-family:var(--f-mono);padding:1px 7px;border-radius:99px;background:var(--t-crit-bg);color:var(--t-crit)}
+.app aside a.on em{background:var(--t-chipink);color:var(--t-chip)}
+.app aside .sp{flex:1}
+.app main{padding:26px 28px;display:grid;grid-template-columns:repeat(12,1fr);gap:16px;align-content:start}
+.app .hd{grid-column:span 12;display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+.app .hd small{color:var(--t-mute);font-size:13px}.app .hd h4{margin:2px 0 0;font-size:26px;font-weight:600;letter-spacing:-.02em;font-family:var(--t-disp,inherit)}
+.app .hd .acts{display:flex;gap:8px}
+.app .btn{font-size:13px;padding:8px 14px;border-radius:99px;border:1px solid var(--t-line);color:var(--t-ink);background:var(--t-surf)}
+.app .btn.p{background:var(--t-chip);color:var(--t-chipink);border-color:var(--t-chip)}
+.app .card{background:var(--t-surf);border:1px solid var(--t-line);border-radius:var(--t-r,16px);padding:16px 18px;box-shadow:var(--t-shadow);min-width:0;backdrop-filter:var(--t-blur);-webkit-backdrop-filter:var(--t-blur)}
+.app .card h5{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t-mute);display:flex;justify-content:space-between}
+.app .card h5 span{text-transform:none;letter-spacing:0;font-weight:500;color:var(--t-ink2)}
+.app .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--t-line);font-size:13.5px}.app .row:first-of-type{border-top:0}
+.app .row .tx{flex:1;min-width:0}.app .row .tx b{display:block;font-weight:500}.app .row .tx small{color:var(--t-mute);font-size:12px}
+.app .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.app .go{font-size:12px;padding:5px 11px;border-radius:99px;border:1px solid var(--t-line);color:var(--t-ink)}
+.app .kpi b{display:block;font-size:30px;font-weight:500;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.app .kpi small{color:var(--t-ink2);font-size:12.5px}.app .kpi .tr{font-family:var(--f-mono);font-size:12px}
+.app .tl{display:flex;flex-direction:column;gap:6px}
+.app .slot{display:flex;gap:10px;align-items:stretch;font-size:13px}
+.app .slot time{font-family:var(--f-mono);font-size:12px;color:var(--t-mute);width:42px;padding-top:6px}
+.app .slot div{flex:1;border-radius:10px;padding:6px 10px;background:var(--t-slot);border-left:3px solid var(--t-c1)}
+.app .slot div.gap{background:transparent;border:1px dashed var(--t-line);border-left:3px dashed var(--t-warn);color:var(--t-ink2)}
+.app .slot div small{display:block;color:var(--t-mute);font-size:11.5px}
+.app .bars{display:flex;align-items:flex-end;gap:5px;height:64px;margin-top:8px}
+.app .bars i{flex:1;border-radius:4px 4px 0 0;background:var(--t-c2)}
+.app .bars i.now{background:var(--t-c1)}
+.app .rec{background:var(--t-rec);color:var(--t-recink);border-color:transparent}
+.app .rec h5{color:var(--t-recmute)}.app .rec p{font-size:15px;line-height:1.45;margin:0 0 12px}
+.app .rec .btn{background:var(--t-recbtn);color:var(--t-recbtnink);border-color:transparent}
+.app .meter{height:6px;border-radius:99px;background:var(--t-line);overflow:hidden;margin-top:8px}.app .meter u{display:block;height:100%;background:var(--t-c1)}
+.app .hl{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.app .hl div{font-size:12px;color:var(--t-mute)}.app .hl b{display:block;font-size:20px;color:var(--t-ink);font-weight:500}
+.app .st{font-family:var(--f-mono);font-size:11px;padding:2px 8px;border-radius:99px}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c7{grid-column:span 7}.c8{grid-column:span 8}.c6{grid-column:span 6}.c12{grid-column:span 12}
+.tokens{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px;margin-top:20px}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.sw div{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.sw i{display:block;height:44px}.sw p{padding:8px 10px;font-size:12.5px}.sw code{display:block;font-family:var(--f-mono);font-size:11px;color:var(--mute)}
+.spec dl{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;margin:0;font-size:14px}.spec dt{color:var(--mute)}.spec dd{margin:0}
+.aa{font-family:var(--f-mono);font-size:12px}.aa .pass{color:var(--ok)}.aa .fail{color:var(--crit)}
+.why{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:28px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+.why ul{margin:0;padding-left:18px;color:var(--ink2)}.why li{margin-bottom:8px}
+.phases{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.phases div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.phases ul{margin:12px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}.phases li{margin-bottom:6px}
+.phases .eyebrow{display:block;margin-bottom:6px}
+@media (max-width:760px){.anat,.tokens,.why{grid-template-columns:1fr}.sizes>div{grid-column:span 12!important}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<div class="page">
+  <p class="eyebrow">MXAi · Dashboard design system · Proposal for approval · 3 Nov 2026</p>
+  <h1>A calm operating system for a service business</h1>
+  <p class="lead">The dashboard already holds everything a salon owner needs. The problem is order: the same number appears in four places, charts sit where work happens, and every card has its own size. This proposal fixes the foundation first: where things live, how big they are, what they say, and how they look in light mode. Nothing ships until you choose.</p>
+
+  <div class="verdict">
+    <div><b>Five-second test today: fails</b><p>The owner sees 10 to 20 cards before the one thing that needs them. Today has 7 blocks plus a briefing, Insights had 45 chart types.</p></div>
+    <div><b>Biggest structural issue</b><p>Data lives by "what we could draw", not by "what the owner is doing". Revenue, AI activity and forecasts each appear on 3 to 5 pages.</p></div>
+    <div><b>Biggest visual issue</b><p>Four card sizes, four corner radii and three title styles grew up separately. No grid decides widths, so small cards float and big cards hold one number.</p></div>
+    <div><b>Recommended direction</b><p><strong>Future Utility</strong> light mode: mist-grey canvas, crisp surfaces, graphite chips with the MXAi lime inside. It is the only direction that keeps the brand and dark mode as one family.</p></div>
+  </div>
+
+  <nav class="ix" aria-label="Sections">
+    <a href="#audit">1 · Audit</a><a href="#ia">2 · Structure</a><a href="#library">3 · Library</a><a href="#charts">Chart rules</a><a href="#layout">4 · Sizing &amp; grid</a><a href="#themes">5 · Light mode</a><a href="#pick">6 · Recommendation</a><a href="#plan">7 · Plan</a>
+  </nav>
+
+  <!-- 1 -->
+  <section class="part" id="audit">
+    <p class="eyebrow">Deliverable 1</p><h2>Audit of every current widget</h2>
+    <p class="sub">Every block on the dashboard today, where it sits, and what happens to it. "Relocate" means the capability stays but moves to the page where the owner would look for it.</p>
+    <div class="tw"><table id="auditT"><thead><tr><th>Widget</th><th>Where it is now</th><th>Verdict</th><th>New home and why</th></tr></thead><tbody></tbody></table></div>
+    <p class="lib-count" id="auditSum" style="margin-top:10px"></p>
+  </section>
+
+  <!-- 2 -->
+  <section class="part" id="ia">
+    <p class="eyebrow">Deliverable 2</p><h2>Information architecture</h2>
+    <p class="sub">Eight places in the order an owner's day runs. Each page answers one question. Analytics live in Insights only; work pages contain work.</p>
+    <div class="ia" id="iaGrid"></div>
+  </section>
+
+  <!-- 3 -->
+  <section class="part" id="library">
+    <p class="eyebrow">Deliverable 3</p><h2>Component library</h2>
+    <p class="sub">A design library, not a dashboard: each component has one business question, one size, the data states it can show and where it may be used. Pages pick from it; nothing is shown just because data exists.</p>
+    <div class="anat">
+      <div class="anat-card">
+        <h3>Anatomy every component follows</h3>
+        <ol style="margin-top:12px">
+          <li><b>Title as a question or plain label</b>: "Chats that became bookings", never "Conversion".</li>
+          <li><b>Primary number</b>: one figure, tabular digits, the largest text in the card.</li>
+          <li><b>Context</b>: what the number is out of or compared with ("of 42 chats this week").</li>
+          <li><b>Trend</b>: direction and size of change with a state colour, never colour alone.</li>
+          <li><b>Explanation</b>: one sentence on why it moved, from the data.</li>
+          <li><b>Action (optional)</b>: one button that fixes or follows up.</li>
+        </ol>
+      </div>
+      <div class="anat-card">
+        <h3>Six data states</h3>
+        <ol style="margin-top:12px;list-style:none;padding:0">
+          <li><span class="tag keep">healthy</span> on target, no action needed</li>
+          <li><span class="tag" style="color:var(--ok)">improving</span> moving the right way, show by how much</li>
+          <li><span class="tag">neutral</span> informational, nothing to judge</li>
+          <li><span class="tag relocate">warning</span> needs a look this week, with the reason</li>
+          <li><span class="tag remove">critical</span> act today, always with an action button</li>
+          <li><span class="tag" style="border-style:dashed">empty</span> no data yet: say what will appear and how to start</li>
+        </ol>
+        <p style="font-size:13.5px;color:var(--ink2)">Every state also has a loading skeleton, an error card ("Couldn't load bookings. Retry") and a phone variant.</p>
+      </div>
+    </div>
+    <div class="lib-tools" style="margin-top:28px">
+      <input id="libQ" type="search" placeholder="Search components, e.g. no-show, forecast, staff" aria-label="Search components">
+      <span class="lib-count" id="libN"></span>
+    </div>
+    <div class="lib-tools" id="libCats" role="group" aria-label="Filter by category"></div>
+    <div class="lib" id="libGrid"></div>
+  </section>
+
+  <!-- chart rules -->
+  <section class="part" id="charts">
+    <p class="eyebrow">Chart rules</p><h2>Every chart answers a question</h2>
+    <p class="sub">The charts that stay in the default experience, what they answer, why it matters, the right form and what the owner should do. A number or sentence wins whenever a chart adds nothing.</p>
+    <div class="tw"><table id="chartT"><thead><tr><th>Plain title</th><th>Question it answers</th><th>Why care</th><th>Best form</th><th>When poor</th><th>When improving</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <!-- 4 -->
+  <section class="part" id="layout">
+    <p class="eyebrow">Deliverable 4</p><h2>Sizing and layout system</h2>
+    <p class="sub">A 12-column grid on an 8px spacing scale. Four widget formats, three fixed heights. Content uses the full width up to 1680px, then centres, so large monitors get more breathing room, not wider cards.</p>
+    <div class="grid12" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span></div>
+    <div class="sizes">
+      <div class="s3"><b>Compact · 3 cols</b><small>one number + trend · 104px tall</small></div>
+      <div class="s3"><b>Compact</b><small>status, goal ring, single alert</small></div>
+      <div class="s6"><b>Standard · 4–6 cols</b><small>list of 3–5 rows, small chart, action card · 216px</small></div>
+      <div class="s8 tall"><b>Wide · 8 cols</b><small>time-series, timeline, table preview · 328px</small></div>
+      <div class="s4 tall"><b>Standard · 4 cols</b><small>pairs with a wide card so rows always fill 12</small></div>
+      <div class="s12"><b>Full width · 12 cols</b><small>calendar day view, heatmap, full tables, report sections · height follows content</small></div>
+    </div>
+    <div class="rules">
+      <div><h3>Spacing</h3><p>8px base: 4 for icon gaps, 8 inside rows, 16 between cards and inside card padding, 24 between groups, 40 between page sections.</p></div>
+      <div><h3>Rows always fill</h3><p>Each row's spans add to 12 (3+3+6, 4+8, 6+6). No lone compact card. If a card has no data it collapses into a one-line empty state, never a blank box.</p></div>
+      <div><h3>Heights are fixed</h3><p>104, 216 or 328px. Cards in one row share a height. Overflow scrolls inside the card with a "See all" link, so rows never stagger.</p></div>
+      <div><h3>Breakpoints</h3><p>≥1440: 12 cols, 24px gutters. 1024–1439: 12 cols, 16px. 768–1023: 6 cols (compact = 3, others = 6). &lt;768: one column; compact cards pair two per row.</p></div>
+      <div><h3>Type scale</h3><p>12 label · 13.5 body small · 15 body · 17 card title · 22 section · 28 page title · 32–40 primary number. Two weights only: 400 and 600.</p></div>
+      <div><h3>Progressive disclosure</h3><p>Summary on the card, detail in a side drawer, everything else under "Explore" in Insights. Nothing opens a new page to show one more number.</p></div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="part" id="themes">
+    <p class="eyebrow">Deliverable 5</p><h2>Five light-mode directions</h2>
+    <p class="sub">The same proposed Today screen in each direction. Switch between them; the token sheet and contrast checks under the preview update with it. Contrast is measured live against WCAG 2.2 (4.5:1 for text, 3:1 for large text and chart marks).</p>
+    <div class="tpick" id="tpick" role="group" aria-label="Choose a direction"></div>
+    <div class="frame-wrap"><div class="app" id="app"></div></div>
+    <div class="tokens">
+      <div><h3 id="tName" style="margin-bottom:4px"></h3><p id="tIdea" style="color:var(--ink2);margin-bottom:14px"></p><div class="sw" id="tSw"></div></div>
+      <div class="spec"><dl id="tSpec"></dl><p class="aa" id="tAA" style="margin-top:14px"></p></div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="part" id="pick">
+    <p class="eyebrow">Deliverable 6</p><h2>Recommendation: Future Utility</h2>
+    <div class="why">
+      <div>
+        <p style="font-size:17px;margin-bottom:14px">Future Utility is the strongest because it is the light half of the brand you already have. MXAi's dark mode is graphite with a rare lime signal; this light mode keeps graphite as the anchor and lets lime appear only inside graphite chips, where it reaches 14:1 contrast instead of failing on a pale background.</p>
+        <p style="color:var(--ink2)">Its mist-grey canvas removes the glare and the flat black-and-white look of today's light mode, while the crisp off-white surfaces keep data sharp. It reads as precise and expensive, which matches an owner who runs a business from it.</p>
+      </div>
+      <ul>
+        <li><b>Brand continuity:</b> same graphite + lime family in both modes; switching modes feels like dimming the lights, not changing products.</li>
+        <li><b>Accessibility:</b> every text pair passes 4.5:1; chart colours pass 3:1 on the surface.</li>
+        <li><b>Data clarity:</b> a cool neutral canvas lets warning amber and critical red stand out without shouting.</li>
+        <li><b>Runner-up:</b> Warm Mineral, if you want a warmer, more hospitality feel for salons and spas. It would need its own brand accent.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="part" id="plan">
+    <p class="eyebrow">Deliverable 7</p><h2>Phased implementation</h2>
+    <p class="sub">Each phase ships on its own and is checked in the running app with screenshots before the next starts.</p>
+    <div class="phases">
+      <div><span class="eyebrow">Phase 1 · Quick wins · 1–2 sessions</span><h3>Foundation and clean-up</h3><ul>
+        <li>Design tokens: one file for colour, spacing, radius, type, both modes</li>
+        <li>Future Utility light mode on the tokens</li>
+        <li>Navigation renamed and ordered: Today, Inbox, Calendar, Customers, Growth, Insights, AI Control, Settings</li>
+        <li>Plain-language pass on every title and label</li>
+        <li>Remove the widgets marked "remove" in the audit</li></ul></div>
+      <div><span class="eyebrow">Phase 2 · Core rebuild · 4–6 sessions</span><h3>Grid, library and pages</h3><ul>
+        <li>12-column grid and the four widget formats in code</li>
+        <li>First 60 library components (KPI, list, action, alert, trend, empty, loading, error)</li>
+        <li>Today rebuilt to the 7-block spec</li>
+        <li>Growth page from Clients' win-back and offers</li>
+        <li>AI Control page from Your AI's teach, test and rules</li>
+        <li>Insights report on library components; Explore drawer</li></ul></div>
+      <div><span class="eyebrow">Phase 3 · Intelligence layer · 3–4 sessions</span><h3>Recommendations and states</h3><ul>
+        <li>One recommended action per day, ranked by money, with a reason</li>
+        <li>Automatic state colouring from thresholds (healthy, warning, critical)</li>
+        <li>"Why did this change?" sentences on trend cards</li>
+        <li>Remaining library components, used page by page as data allows</li>
+        <li>Goal tracking and benchmarks against the owner's own past</li></ul></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* 1 · audit */
+const AUDIT=[
+ ["Today: greeting, value band, Go live, Needs you, Coming up","Today","keep","Today. Already action-led; becomes the 7-block layout"],
+ ["Today: Health, Notifications, Your team cards","Today","merge","One small business-health strip on Today; notifications stay in the bell; team moves to Calendar"],
+ ["Today: shortcuts row","Today","relocate","Ctrl K palette. Shortcuts are a power feature, not a Today block"],
+ ["Today's briefing (money-ranked to-dos)","Today › Needs you","merge","Feeds the single 'Recommended action' and the Needs-you list; no separate card"],
+ ["Revenue, last 30 days","Insights","keep","Insights › Money. Wide time-series"],
+ ["Forecast, next 4 weeks","Insights","redesign","Insights › Money as 'Expected revenue in the next 4 weeks' with a range sentence"],
+ ["Revenue by service","Insights","keep","Insights › Money. Ranked bars, not a pie"],
+ ["Every service (90 days)","Insights › Explore","merge","Merge into Revenue by service as its 'See all' table"],
+ ["Pivot: service × weekday","Insights › Explore","remove","Too technical for owners. Busy hours answers the same question"],
+ ["Busy hours heatmap","Insights","keep","Insights › When you're busy; also feeds Calendar's gaps"],
+ ["The day as a clock","Insights › Explore","remove","Duplicate of Busy hours in a harder form"],
+ ["When clients write vs when they book","Insights › Explore","merge","Becomes a sentence on Busy hours ('Most chats arrive at 21:00, 2 h after you close')"],
+ ["New vs returning","Insights","keep","Insights › Clients"],
+ ["Who came back (cohort)","Insights › Explore","redesign","'Clients who came back' as a simple 30/60/90-day return rate; cohort grid under Explore"],
+ ["Closest to drifting away / Worth winning back","Insights","relocate","Growth › Win back. It is an action list, not an insight"],
+ ["Client value map (scatter)","Customers › Board","replace","VIP / regular / at-risk filter chips on the client list"],
+ ["Top clients","Customers","keep","Customers list sorted by lifetime spend"],
+ ["How much the AI handles alone","Insights","relocate","AI Control › Performance and a one-line stat in Today's AI activity"],
+ ["Front-desk health (reply speed, booking rate, no-shows)","Insights","redesign","Split: reply speed and handled-alone to AI Control; no-shows to Calendar"],
+ ["From chat to booking (funnel)","Insights","redesign","'Chats that became bookings' funnel in Insights › Your AI front desk"],
+ ["What clients ask about","Insights › Explore","relocate","AI Control › Topics, linked to teaching missing answers"],
+ ["Client mood","Insights › Explore","merge","Customers › Reviews as a sentiment summary"],
+ ["Latest conversations","Insights board","remove","Duplicate of Inbox"],
+ ["Waiting for you / Why chats come to you","Inbox board","merge","Inbox › Needs you folder with the reason on each row"],
+ ["Delivery, last 24 hours","Inbox › More tools","relocate","AI Control › Health. Technical, not daily"],
+ ["Reply speed per hour","Insights › Explore","relocate","AI Control › Performance"],
+ ["Chats per channel / Where bookings come from","Insights › Explore","merge","One 'Where clients reach you' card in Growth"],
+ ["Chair time today / Today lane by lane","Calendar header","relocate","Calendar day view itself. The schedule is the chart"],
+ ["Open hours vs booked hours","Insights › Explore","redesign","'74% of your available time is booked' on Calendar with gaps listed"],
+ ["Earnings per chair hour","Insights › Explore","keep","Insights › Explore › Services (power users)"],
+ ["The week ahead","Calendar board","merge","Calendar week view"],
+ ["How bookings ended","Calendar board","redesign","Calendar › 'Cancellations and no-shows this month' with the list"],
+ ["Reminders and no-shows","Calendar board","relocate","Settings for the reminder switch; the outcome to Calendar"],
+ ["Booking page status","Calendar tab","relocate","Settings › Booking. A setting, not a calendar view"],
+ ["This month vs goal","Insights board","keep","Insights › Money as a goal tracker; one compact version on Today's health strip"],
+ ["Marketing funnel / What marketing brought back","Marketing","relocate","Growth › Campaign results"],
+ ["Every offer you sent / Discount codes","Clients › More tools","relocate","Growth › Offers and Codes"],
+ ["Who you can reach","Marketing","relocate","Growth › Audiences"],
+ ["Marketing agents","Clients › More tools","relocate","Growth › Automations, approvals still in Today › Needs you"],
+ ["Waiting on your OK (approvals)","Your AI","merge","Today › Needs you (single queue) and AI Control › To review"],
+ ["What the AI knows / Coach / Rules / Answers","Your AI","relocate","AI Control › Teach"],
+ ["Test chat, scenarios, versions","Your AI","relocate","AI Control › Test"],
+ ["Weekly brief","Your AI (hidden)","relocate","Insights › Weekly summary"],
+ ["Studio: My board + 64-design library","Insights","redesign","Becomes 'Build your own view' in Insights, built from the new library only"],
+ ["Settings: Dashboard layout pane","Settings","keep","Settings › Preferences"],
+ ["Website editor (texts, photos, design, address)","Settings","relocate","Growth › Website. It is how clients find you"],
+ ["Plan card in the sidebar","Sidebar","relocate","Settings › Billing"],
+ ["Animated background, silk headers, folder cards","Every page","remove","Already removed in this round"],
+];
+$("#auditT tbody").innerHTML=AUDIT.map(([w,n,v,h])=>`<tr><td>${esc(w)}</td><td>${esc(n)}</td><td><span class="tag ${v}">${v}</span></td><td>${esc(h)}</td></tr>`).join("");
+const cnt={};AUDIT.forEach(a=>cnt[a[2]]=(cnt[a[2]]||0)+1);
+$("#auditSum").textContent=`${AUDIT.length} widgets reviewed · `+Object.entries(cnt).map(([k,v])=>`${v} ${k}`).join(" · ");
+
+/* 2 · IA */
+const IA=[
+ ["1","Today","What needs me, and how is today going?",["Needs your attention (one queue)","Today's appointments","Gaps to fill today","Important conversations","What the AI did today","One recommended action","Business health strip (4 numbers)"],"No charts. Everything links to the page where you act."],
+ ["2","Inbox","Who is talking to us, and who needs me?",["Folders: Needs you, All, Bookings, Questions, Complaints","Conversation + client panel","Take over / hand back to AI"],"No metrics on this page."],
+ ["3","Calendar","Who is coming, and where are the gaps?",["Day / week / month","% of available time booked + gap list","Requests to move or cancel","Cancellations and no-shows","Team and shifts"],"Utilisation lives here, not in Insights."],
+ ["4","Customers","Who are my clients?",["One list with chips: All, Regulars, VIP, At risk, New","Client drawer: visits, spend, notes, chats","Reviews and sentiment"],"Win-back actions move to Growth."],
+ ["5","Growth","How do I bring more people in and back?",["Win back (who and the prepared offer)","Offers and discount codes","Campaign results","Audiences and opt-ins","Automations (marketing agents)","Website and booking page"],"Every card ends in an action."],
+ ["6","Insights","Is the business healthy, and why?",["Report: Money, Clients, When you're busy, AI front desk","Goal tracker","Weekly summary","Explore: every other chart","Build your own view"],"The only page with analytics."],
+ ["7","AI Control","Is my AI receptionist doing a good job?",["To review: approvals and unanswered questions","Teach: tone, rules, answers","Test: chat and scenarios","Performance: handled alone, reply speed, topics","Health: delivery, channels","On / off and who answers"],"AI activity summary also appears on Today."],
+ ["8","Settings","How is my account set up?",["Business profile, hours, services","Staff and permissions","Channels and notifications","Billing and plan","Security and devices","Integrations","Preferences and appearance"],"No business numbers ever appear here."],
+];
+$("#iaGrid").innerHTML=IA.map(([n,t,q,l,s])=>`<div><i>${n}</i><h3>${t}</h3><p>${esc(q)}</p><ul>${l.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><small>${esc(s)}</small></div>`).join("");
+
+/* 3 · library: [category, [name, question, size, states, pages]] */
+const S="healthy · warning · critical",T="improving · neutral · warning",N="neutral · empty",ALL="all six";
+const LIB={
+"KPI cards":[["Revenue today","How much have we earned today?","compact",T,"Today"],["Revenue this month","Are we on track this month?","compact",T,"Insights"],["Bookings today","How busy is today?","compact",N,"Today"],["Bookings this week","Is this week busier than last?","compact",T,"Insights"],["Average ticket","How much does a visit bring in?","compact",T,"Insights"],["New clients","Are new people finding us?","compact",T,"Customers"],["Returning clients share","Do clients come back?","compact",T,"Insights"],["No-show rate","How many booked chairs stay empty?",
+"compact",S,"Calendar"],["Cancellation rate","How often do clients cancel?","compact",S,"Calendar"],["Time booked","How much of our open time is sold?","compact",S,"Calendar"],["Chats answered alone","How much does the AI handle without me?","compact",T,"AI Control"],["Average reply time","How fast do clients get an answer?","compact",S,"AI Control"],["Chats that became bookings","Does chatting turn into visits?","compact",T,"Insights"],["Revenue from the AI","What did the AI book for us?","compact",T,"Today"],["Won-back revenue","What did win-back offers bring?","compact",T,"Growth"],["Review score","What do clients say about us?","compact",S,"Customers"]],
+"Trend cards":[["Revenue trend 30 days","Is revenue going up or down?","wide",T,"Insights"],["Bookings trend","Are bookings growing?","standard",T,"Insights"],["Chats per day","Is demand rising?","standard",T,"AI Control"],["Reply time trend","Is the AI getting faster?","standard",T,"AI Control"],["No-show trend","Are reminders working?","standard",T,"Calendar"],["New clients per week","Is marketing bringing people?","standard",T,"Growth"],["Average ticket trend","Are clients spending more?","standard",T,"Insights"],["Service revenue trend","Which services are growing?","wide",T,"Insights"],["Sparkline KPI","How has this moved lately?","compact",T,"any"],["Week-over-week delta","What changed since last week?","compact",T,"Insights"],["Seasonality curve","Which months are strong?","wide",N,"Insights"],["Trend with explanation","Why did this move?","standard",T,"Insights"]],
+"Comparison cards":[["This month vs last","Are we ahead of last month?","standard",T,"Insights"],["This week vs same week last year","Is the business growing?","standard",T,"Insights"],["Service vs service","Which service earns most per hour?","wide",N,"Insights"],["Staff vs staff","Who is busiest?","standard",N,"Calendar"],["Channel vs channel","Where do clients reach us?","standard",N,"Growth"],["Weekday vs weekday","Which days are quiet?","standard",N,"Insights"],["Before vs after AI","What changed since MXAi?","wide",T,"Insights"],["Offer vs no offer","Do offers pay off?","standard",T,"Growth"],["Price change impact","Did the new price hurt bookings?","standard",T,"Insights"],["Plan vs actual","Did we hit the plan?","standard",S,"Insights"]],
+"Alerts and exceptions":[["Chat waiting for a person","Who is waiting for me?","standard",S,"Today"],["AI could not answer","What doesn't the AI know?","standard",S,"Today"],["Failed message delivery","Did a client miss our reply?","compact","critical · healthy","AI Control"],["Channel disconnected","Can clients still reach us?","compact","critical · healthy","Today"],["Double-booking risk","Is a slot overbooked?","compact","critical · healthy","Calendar"],["Unusual cancellation spike","Why are people cancelling?","standard",S,"Today"],["Complaint detected","Is a client unhappy?","standard",S,"Inbox"],["Revenue below goal pace","Will we miss the month?","standard",S,"Insights"],["VIP not seen in 60 days","Is a top client drifting?","standard",S,"Growth"],["Reminder not sent","Will tomorrow's clients forget?","compact","critical · healthy","Calendar"],["Approval expiring","Will a request lapse?","compact","warning · healthy","Today"],["Setup incomplete","What stops us going live?","standard","warning · empty","Today"]],
+"Action cards":[["Approve request","Should I accept this change?","standard",N,"Today"],["Reply to client","Who should I answer now?","standard",N,"Today"],["Teach an answer","What should the AI say?","standard",N,"AI Control"],["Fill a gap","Who could take this free slot?","standard",N,"Today"],["Send win-back offer","Who should I invite back?","standard",N,"Growth"],["Confirm tomorrow's list","Is tomorrow ready?","standard",N,"Calendar"],["Mark visit outcome","Did they come?","compact",N,"Calendar"],["Connect a channel","Where else can clients reach us?","standard","empty","Settings"],["Ask for a review","Who had a great visit?","standard",N,"Growth"],["Adjust hours","Should we open longer on busy days?","standard",N,"Calendar"],["Create an offer","What should we promote?","standard",N,"Growth"],["Hand chat back to AI","Can the AI take over again?","compact",N,"Inbox"]],
+"Insight cards":[["Why revenue changed","What moved the number?","standard",T,"Insights"],["Best day to promote","When should I run an offer?","standard",N,"Growth"],["Most-asked question","What do clients ask most?","standard",N,"AI Control"],["Fastest-growing service","What is gaining?","standard",T,"Insights"],["Slowest hours","When is the chair empty?","standard","warning · neutral","Calendar"],["Client lifetime value","What is a client worth?","standard",N,"Customers"],["Repeat visit interval","How often do regulars return?","standard",N,"Customers"],["After-hours demand","How many clients write when closed?","standard",N,"Insights"],["Language mix","Which languages do clients use?","compact",N,"AI Control"],["Price sensitivity","Do clients ask about price a lot?","standard",N,"Insights"]],
+"AI recommendations":[["Recommended action today","What is the one best thing to do?","wide",ALL,"Today"],["Suggested rule","Should the AI follow this rule?","standard",N,"AI Control"],["Suggested answer","Is this answer right?","standard",N,"AI Control"],["Suggested offer","Who should get which offer?","standard",N,"Growth"],["Suggested price change","Is a service under-priced?","standard",N,"Insights"],["Suggested extra hours","Should we add capacity?","standard",N,"Calendar"],["Suggested follow-up","Who needs a check-in?","standard",N,"Customers"],["Suggested staffing","Do we need more hands on Saturday?","standard",N,"Calendar"],["AI confidence note","How sure is the AI?","compact",N,"AI Control"],["Recommendation history","What did I accept and what happened?","wide",N,"AI Control"]],
+"Calendar and capacity":[["Day schedule","Who is coming today?","full",N,"Calendar"],["Week schedule","How is the week filling?","full",N,"Calendar"],["Month overview","Which days are full?","wide",N,"Calendar"],["Gaps to fill","Where is free time today?","standard","warning · healthy","Today"],["Time booked meter","How much time is sold?","compact",S,"Calendar"],["Next appointment","Who is next?","compact",N,"Today"],["Chair or room timeline","Who uses which chair?","full",N,"Calendar"],["Busy hours heatmap","When are we busiest?","full",N,"Insights"],["Waitlist","Who wants an earlier slot?","standard",N,"Calendar"],["Blocked time","When are we closed?","compact",N,"Calendar"],["Peak warning","Is tomorrow overbooked?","compact","warning · healthy","Calendar"],["Capacity forecast","Will next week be full?","standard",T,"Calendar"]],
+"Booking widgets":[["New booking","Book a client now","standard",N,"Calendar"],["Bookings by source","Who booked: AI, staff, online?","standard",N,"Insights"],["Booking requests","Who asked to move or cancel?","standard","warning · empty","Calendar"],["Booking lead time","How far ahead do clients book?","standard",N,"Insights"],["Online booking page status","Is the booking page live?","compact","healthy · empty","Settings"],["Recent bookings stream","What was just booked?","standard",N,"Today"],["Booking outcomes","How did bookings end?","standard",N,"Calendar"],["Deposit status","Who paid a deposit?","compact",N,"Calendar"],["Rebook rate","Do clients book the next visit?","compact",T,"Customers"],["Booking conversion by channel","Which channel books best?","standard",N,"Growth"]],
+"Customers and retention":[["Client list","Who are my clients?","full",N,"Customers"],["Client profile drawer","Everything about one client","wide",N,"Customers"],["Clients who came back","What share return within 90 days?","standard",T,"Insights"],["Return cohort grid","How does each month's newcomers return?","full",N,"Insights › Explore"],["At-risk clients","Who might not return?","standard","warning · empty","Growth"],["VIP clients","Who are my best clients?","standard",N,"Customers"],["New this month","Who is new?","standard",N,"Customers"],["Birthdays this week","Whom should I greet?","compact",N,"Growth"],["Visit frequency","How often do they come?","standard",N,"Customers"],["Spend distribution","How spread is spend?","standard",N,"Insights › Explore"],["Client notes","What should I remember?","standard",N,"Customers"],["Reviews summary","What do clients say?","standard",S,"Customers"],["Lost clients","Who stopped coming?","standard","warning · empty","Growth"],["Client value segments","How many VIP, regular, at-risk?","standard",N,"Customers"]],
+"Conversations and inbox":[["Conversation list","Who wrote?","full",N,"Inbox"],["Conversation thread","What was said?","wide",N,"Inbox"],["Needs-you queue","Who needs a person?","standard",S,"Today"],["Important conversations","Which chats matter today?","standard",N,"Today"],["Live conversations","Who is chatting now?","compact",N,"Today"],["Topic chips","What is this chat about?","compact",N,"Inbox"],["Handoff reason","Why did it come to me?","compact",N,"Inbox"],["Unread count","How many are unread?","compact",N,"Inbox"],["Quick replies","What can I send fast?","standard",N,"Inbox"],["Chat outcome","Did it end in a booking?","compact",N,"Inbox"],["Search results","Find a past chat","full",N,"Inbox"],["Channel badge","Where did it come from?","compact",N,"Inbox"]],
+"Team and staff":[["Who is on shift","Who is working now?","standard",N,"Calendar"],["Staff schedule","Who works when?","full",N,"Calendar"],["Bookings per staff","Who is busiest?","standard",N,"Insights"],["Revenue per staff","Who brings in most?","standard",N,"Insights"],["Staff utilisation","How much of each person's time is booked?","standard",S,"Calendar"],["Time off","Who is away?","compact",N,"Calendar"],["Staff permissions","Who can see what?","standard",N,"Settings"],["Staff ratings","Which staff do clients rate?","standard",N,"Insights"],["Skills matrix","Who can do which service?","wide",N,"Settings"],["Staff activity log","Who changed what?","standard",N,"Settings"]],
+"Marketing and campaigns":[["Campaign results","What did the last offer bring?","standard",T,"Growth"],["Active offers","What is running now?","standard",N,"Growth"],["Discount codes","Which codes are used?","standard",N,"Growth"],["Audience sizes","How many can we reach?","compact",N,"Growth"],["Opt-in rate","How many agreed to offers?","compact",T,"Growth"],["Offer funnel","Sent, opened, booked","standard",T,"Growth"],["Automation list","What runs on its own?","standard",N,"Growth"],["Template library","What can we send?","wide",N,"Growth"],["Best send time","When do clients reply most?","compact",N,"Growth"],["Referral tracker","Who brings friends?","standard",N,"Growth"],["Website visits","Who sees our page?","standard",T,"Growth"],["Return on offers","Revenue per $1 of discount","compact",T,"Growth"]],
+"Revenue and payments":[["Revenue by service","Which services earn most?","standard",N,"Insights"],["Revenue by day","Which days earn most?","standard",N,"Insights"],["Payments received","What has been paid?","standard",N,"Insights"],["Unpaid visits","Who still owes?","standard","warning · healthy","Insights"],["Deposits held","What is prepaid?","compact",N,"Insights"],["Refunds","What was refunded and why?","standard",N,"Insights"],["Payment methods","How do clients pay?","compact",N,"Insights"],["Revenue per hour","What does an hour earn?","compact",T,"Insights"],["Tips","How much was tipped?","compact",N,"Insights"],["Monthly statement","What did the month look like?","full",N,"Insights"]],
+"Forecast and planning":[["Expected revenue next 4 weeks","What will we probably earn?","standard",T,"Insights"],["Already booked value","What is secured?","compact",N,"Insights"],["Monthly goal tracker","Will we hit the goal?","standard",S,"Insights"],["Goal setter","What should next month's goal be?","standard",N,"Insights"],["Demand forecast","How busy will next week be?","standard",T,"Calendar"],["Staffing plan","Do we have enough people?","standard","warning · healthy","Calendar"],["Scenario: price change","What if we raise prices?","wide",N,"Insights › Explore"],["Scenario: extra hours","What if we open on Sunday?","wide",N,"Insights › Explore"],["Holiday planner","Which dates need attention?","standard",N,"Calendar"],["Break-even tracker","When does the month pay off?","standard",S,"Insights"]],
+"Tables":[["Services table","Every service with price, time, bookings","full",N,"Insights › Explore"],["Clients table","Sortable client list","full",N,"Customers"],["Bookings table","Every booking with outcome","full",N,"Calendar"],["Offers table","Every offer and result","full",N,"Growth"],["Payments table","Every payment","full",N,"Insights"],["Staff table","Every staff member","full",N,"Settings"],["Audit log table","Every change","full",N,"Settings"],["Top-5 preview table","The five rows that matter","standard",N,"any"]],
+"Heatmaps, cohorts, funnels":[["Busy hours heatmap","When are we busiest?","full",N,"Insights"],["Chat-arrival heatmap","When do clients write?","wide",N,"AI Control"],["Return cohort","Who came back, by first month","full",N,"Insights › Explore"],["Chat-to-visit funnel","Where do chats drop off?","wide",T,"Insights"],["Offer funnel","Where do offers drop off?","standard",T,"Growth"],["Onboarding funnel","How far is setup?","standard","warning · healthy","Today"],["Service × weekday grid","Which service sells on which day?","full",N,"Insights › Explore"],["No-show heatmap","When do people not show?","wide",N,"Calendar"]],
+"Timelines and activity":[["AI activity today","What did the AI do today?","standard",N,"Today"],["Client timeline","Every visit and chat for a client","wide",N,"Customers"],["Day timeline","Today hour by hour","wide",N,"Today"],["Change log","What changed in settings?","standard",N,"Settings"],["Campaign timeline","When did offers go out?","wide",N,"Growth"],["Notification stream","What happened recently?","standard",N,"Bell"],["Learning timeline","What did the AI learn?","standard",N,"AI Control"],["Visit history","When did they last come?","standard",N,"Customers"]],
+"Goals, benchmarks, progress":[["Goal ring","How close to the goal?","compact",S,"Insights"],["Goal bar with pace marker","Are we ahead of pace?","standard",S,"Insights"],["Personal best","Was this a record week?","compact","improving · neutral","Insights"],["Benchmark vs own average","Is today normal?","compact",T,"Today"],["Setup progress","How much setup is done?","standard","warning · healthy","Today"],["Teaching progress","How much does the AI know?","compact",T,"AI Control"],["Streak","How many days with zero missed chats?","compact","improving · neutral","AI Control"],["Milestones","What have we reached?","standard",N,"Insights"]],
+"States and system":[["Empty: first day","Nothing yet: what to do first","standard","empty","any"],["Empty: filtered","No match for this filter","standard","empty","any"],["Loading skeleton: KPI","Shape while loading","compact","neutral","any"],["Loading skeleton: list","Shape while loading","standard","neutral","any"],["Loading skeleton: chart","Shape while loading","wide","neutral","any"],["Error: could not load","What failed and Retry","standard","critical","any"],["Error: offline","You are offline, last updated time","compact","warning","any"],["Permission denied","Ask the owner for access","standard","neutral","any"],["Stale data","Last updated 20 min ago","compact","warning","any"],["Success toast","Saved, with undo","compact","healthy","any"]],
+"Mobile variants":[["Phone KPI pair","Two numbers side by side","compact",T,"phone"],["Phone needs-you list","Swipe to act","full",S,"phone"],["Phone day agenda","Today as a list","full",N,"phone"],["Phone action sheet","One action, big buttons","full",N,"phone"],["Phone chart card","Chart with one takeaway line","full",T,"phone"],["Phone client card","Client with call and chat","full",N,"phone"],["Phone bottom summary","Health at a glance","compact",S,"phone"],["Phone empty state","Short, one button","full","empty","phone"]],
+};
+const all=Object.entries(LIB).flatMap(([cat,list])=>list.map(([n,q,s,st,pg],i)=>({cat,n,q,s,st,pg,id:cat.split(/[ ,]/)[0].slice(0,3).toUpperCase()+"-"+String(i+1).padStart(2,"0")})));
+let cat="All";
+$("#libCats").innerHTML=["All",...Object.keys(LIB)].map(c=>`<button type="button" data-c="${esc(c)}" aria-pressed="${c==="All"}">${esc(c)} <span class="lib-count">${c==="All"?all.length:LIB[c].length}</span></button>`).join("");
+function drawLib(){const q=$("#libQ").value.trim().toLowerCase();const list=all.filter(c=>(cat==="All"||c.cat===cat)&&(!q||(c.n+" "+c.q+" "+c.pg+" "+c.cat).toLowerCase().includes(q)));
+  $("#libN").textContent=`${list.length} of ${all.length} components`;
+  $("#libGrid").innerHTML=list.map(c=>`<div class="c"><header><b>${esc(c.n)}</b><code>${c.id}</code></header><p>${esc(c.q)}</p><footer><span class="tag">${c.s}</span><span class="tag">${esc(c.st)}</span><span class="tag">${esc(c.pg)}</span></footer></div>`).join("")||`<p style="color:var(--mute)">No component matches. Try "booking" or "AI".</p>`}
+$("#libCats").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;cat=b.dataset.c;document.querySelectorAll("#libCats button").forEach(x=>x.setAttribute("aria-pressed",x===b));drawLib()});
+$("#libQ").addEventListener("input",drawLib);drawLib();
+
+/* chart rules */
+const CH=[["Expected revenue in the next 4 weeks","How much will we probably earn?","Plan stock, staff and spending","Line with shaded range","Run an offer on the quietest week","Raise the monthly goal"],
+["Revenue, last 30 days","Is money coming in faster or slower?","Early warning before the month is lost","Line vs dashed previous period","Check which service dropped","Note what worked and repeat it"],
+["Revenue by service","Which services pay the bills?","Decide what to promote and price","Ranked horizontal bars","Promote or reprice the weak service","Give the winner more slots"],
+["When you're busy","When are chairs full or empty?","Fill gaps and staff peaks","Day × hour heatmap","Offer the empty hours","Add staff or hours at the peak"],
+["Clients who came back","Do new clients return?","Return visits are cheaper than new clients","Single % with 30/60/90-day steps","Send a win-back offer at day 45","Ask happy clients for reviews"],
+["Chats that became bookings","Does the AI turn chats into visits?","Shows whether the AI earns its keep","Short funnel: chats, offered times, booked","Teach the answers it lacks","Let it handle more chats alone"],
+["74% of your available time is booked","How full is the calendar?","Empty time is lost revenue","Meter plus gap list","Fill gaps from the waitlist or offers","Consider raising prices at peak"],
+["Chats answered alone","How much work does the AI save?","Time back for the owner","Number + small trend","Review handoff reasons","Turn on more automations"],
+["Monthly goal","Will we hit this month's target?","Keeps the month on track","Bar with pace marker","Push bookings on slow days","Set a higher goal next month"]];
+$("#chartT tbody").innerHTML=CH.map(r=>`<tr>${r.map((c,i)=>`<td${i===0?' style="font-weight:600"':''}>${esc(c)}</td>`).join("")}</tr>`).join("");
+
+/* 5 · themes */
+const TH={
+ utility:{name:"Future Utility",idea:"Deep mist canvas, crisp near-white surfaces, graphite chips with the MXAi lime inside. Technical precision, low glare.",
+  t:{bg:"#d9dee2",side:"#cfd5da",surf:"#f3f5f6",ink:"#0f1418",ink2:"#3c464e",mute:"#5c666e",line:"#c2c9cf",chip:"#14181b",chipink:"#c6f432",c1:"#14181b",c2:"#8fa3b1",c3:"#2f6fd6",slot:"#e6eaed",ok:"#1f7a4a",warn:"#9a5a00",crit:"#b42318",rec:"#14181b",recink:"#f1f3f4",recmute:"#9aa6af",recbtn:"#c6f432",recbtnink:"#14181b",shadow:"0 1px 0 rgba(255,255,255,.7) inset,0 1px 2px rgba(15,20,24,.06),0 8px 24px -16px rgba(15,20,24,.18)",r:"14px",blur:"none",disp:"inherit",hover:"surface lifts 1px, border to #a9b3bb"}},
+ mineral:{name:"Warm Mineral",idea:"Soft limestone, ink text, muted olive accents and one electric chart blue. Earthy and calm, made for salons and spas.",
+  t:{bg:"#e6e1d6",side:"#ddd7ca",surf:"#f1ede5",ink:"#1d211c",ink2:"#454a42",mute:"#646a61",line:"#cfc8b9",chip:"#3f4a26",chipink:"#eef0e2",c1:"#3f4a26",c2:"#b3ad97",c3:"#2b50e0",slot:"#e8e3d8",ok:"#2d6a3e",warn:"#94570a",crit:"#a3261c",rec:"#2b3020",recink:"#f0eee6",recmute:"#b4b39f",recbtn:"#d7e08a",recbtnink:"#22261a",shadow:"0 1px 2px rgba(40,36,24,.06),0 10px 24px -18px rgba(40,36,24,.25)",r:"16px",blur:"none",disp:"inherit",hover:"border darkens to #b9b19f, olive outline on focus"}},
+ ivory:{name:"Editorial Ivory",idea:"Paper ivory with deep charcoal type and a serif for titles. Restrained, with vivid signals only for states.",
+  t:{bg:"#efeae0",side:"#e7e1d4",surf:"#f8f5ee",ink:"#1b1a18",ink2:"#46433d",mute:"#66625a",line:"#d8d1c2",chip:"#1b1a18",chipink:"#f8f5ee",c1:"#1b1a18",c2:"#bdb5a4",c3:"#c2410c",slot:"#efe9dd",ok:"#2e6b3a",warn:"#8f4f00",crit:"#a11d1d",rec:"#1b1a18",recink:"#f8f5ee",recmute:"#a8a296",recbtn:"#f8f5ee",recbtnink:"#1b1a18",shadow:"none",r:"6px",blur:"none",disp:"'Instrument Serif',Georgia,serif",hover:"hairline underline on titles, no shadows"}},
+ glass:{name:"Soft Glass",idea:"Tinted translucent surfaces over a cool lilac-grey wash. Calm depth without glare.",
+  t:{bg:"linear-gradient(135deg,#d7dfe6 0%,#e2dde9 55%,#dfe6e2 100%)",side:"rgba(255,255,255,.35)",surf:"rgba(255,255,255,.58)",ink:"#141b24",ink2:"#3d4757",mute:"#5a6474",line:"rgba(20,27,36,.12)",chip:"#1f2a3a",chipink:"#e8eef6",c1:"#2f5ea8",c2:"#a8b5c7",c3:"#7c4dcc",slot:"rgba(255,255,255,.55)",ok:"#1f7046",warn:"#965700",crit:"#b02a2a",rec:"rgba(31,42,58,.92)",recink:"#eef2f8",recmute:"#a8b4c6",recbtn:"#e8eef6",recbtnink:"#1f2a3a",shadow:"0 1px 0 rgba(255,255,255,.8) inset,0 12px 32px -18px rgba(30,40,60,.35)",r:"18px",blur:"blur(14px) saturate(140%)",disp:"inherit",hover:"surface opacity rises to .75"}},
+ studio:{name:"Modern Studio",idea:"Warm neutral canvas, rich dark text, a refined green for good news and cobalt for data.",
+  t:{bg:"#e9e6e0",side:"#e0dcd4",surf:"#f6f4f0",ink:"#1e1b18",ink2:"#46413b",mute:"#67615a",line:"#d4cfc6",chip:"#1f4d3a",chipink:"#eef5f0",c1:"#2747c9",c2:"#b9c3e6",c3:"#1f4d3a",slot:"#ecebf3",ok:"#1f6b46",warn:"#93560b",crit:"#a5271f",rec:"#1f4d3a",recink:"#f1f6f2",recmute:"#a9c2b5",recbtn:"#f1f6f2",recbtnink:"#1f4d3a",shadow:"0 1px 2px rgba(30,27,24,.05),0 6px 18px -12px rgba(30,27,24,.2)",r:"12px",blur:"none",disp:"inherit",hover:"cobalt focus ring, surface lifts 1px"}},
+};
+function lum(h){if(!/^#/.test(h))return null;const n=h.slice(1);const v=[0,2,4].map(i=>parseInt(n.substr(i,2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4));return .2126*v[0]+.7152*v[1]+.0722*v[2]}
+function ratio(a,b){const x=lum(a),y=lum(b);if(x==null||y==null)return null;return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+function solid(v){return /^#/.test(v)?v:(v.match(/#[0-9a-f]{6}/i)||["#ffffff"])[0]}
+function app(t){return `
+<aside><div class="brand"><i>M</i>MXAi</div>
+ <a class="on">Today <em>3</em></a><a>Inbox <em>2</em></a><a>Calendar</a><a>Customers</a><a>Growth</a><a>Insights</a><a>AI Control</a><span class="sp"></span><a>Settings</a></aside>
+<main>
+ <div class="hd"><div><small>Tuesday 3 November · open until 20:00</small><h4>Good afternoon, Beauty S1</h4></div><div class="acts"><span class="btn">Ask MXAi</span><span class="btn p">+ New booking</span></div></div>
+ <div class="card c5"><h5>Needs your attention <span>3 open</span></h5>
+  <div class="row"><i class="dot" style="background:${t.crit}"></i><div class="tx"><b>Client asked for a person</b><small>Waiting 12 min · price for bridal package</small></div><span class="go">Reply</span></div>
+  <div class="row"><i class="dot" style="background:${t.warn}"></i><div class="tx"><b>Move request for Thursday 15:00</b><small>Client wants Friday morning</small></div><span class="go">Approve</span></div>
+  <div class="row"><i class="dot" style="background:${t.warn}"></i><div class="tx"><b>The AI didn't know the gift-card price</b><small>Answer once, it remembers</small></div><span class="go">Teach</span></div></div>
+ <div class="card c4"><h5>Today's appointments <span>6 · $410</span></h5><div class="tl">
+  <div class="slot"><time>10:00</time><div>Haircut &amp; blow-dry<small>Rana · 45 min · Sara</small></div></div>
+  <div class="slot"><time>11:00</time><div class="gap">Free 90 min<small>Gap to fill</small></div></div>
+  <div class="slot"><time>13:30</time><div>Colour<small>Maya · 2 h · Lina</small></div></div>
+  <div class="slot"><time>16:00</time><div>Nails<small>Dina · 1 h · Sara</small></div></div></div></div>
+ <div class="card c3 rec"><h5>Recommended action</h5><p>Thursday is 38% booked. Send the "midweek glow" offer to 14 regulars who usually book Thursdays.</p><span class="btn">Review offer</span></div>
+ <div class="card c3"><h5>Time booked today</h5><div class="kpi"><b>74%</b><small>of your available time is booked</small><div class="meter"><u style="width:74%"></u></div><small style="display:block;margin-top:8px">2 gaps: 11:00 and 17:30</small></div></div>
+ <div class="card c3"><h5>The AI today</h5><div class="kpi"><b>41</b><small>chats answered, 9 bookings made</small><div class="bars"><i style="height:30%"></i><i style="height:45%"></i><i style="height:38%"></i><i style="height:62%"></i><i style="height:80%"></i><i style="height:55%"></i><i class="now" style="height:70%"></i></div></div></div>
+ <div class="card c6"><h5>Important conversations <span>Inbox →</span></h5>
+  <div class="row"><i class="dot" style="background:${t.c1}"></i><div class="tx"><b>Bridal party of 5, Saturday</b><small>Asked for a group price · VIP client</small></div><span class="st" style="background:${t.slot};color:${t.ink2}">open</span></div>
+  <div class="row"><i class="dot" style="background:${t.ok}"></i><div class="tx"><b>Booked colour for Friday 14:30</b><small>Answered in Arabic at 23:10</small></div><span class="st" style="background:${t.slot};color:${t.ok}">booked</span></div></div>
+ <div class="card c12"><h5>Business health <span>this month · Insights →</span></h5><div class="hl">
+  <div>Revenue<b>$6,240</b><span style="color:${t.ok}">▲ 12% vs last month</span></div>
+  <div>Monthly goal<b>68%</b><span style="color:${t.ok}">ahead of pace</span></div>
+  <div>Clients who came back<b>55%</b><span style="color:${t.warn}">▼ 3 pts</span></div>
+  <div>No-shows<b>3.8%</b><span style="color:${t.ok}">▼ 2.1 pts</span></div></div></div>
+</main>`}
+function pickTheme(k){const T=TH[k],t=T.t,el=$("#app");
+  const vars={bg:t.bg,side:t.side,surf:t.surf,ink:t.ink,ink2:t.ink2,mute:t.mute,line:t.line,chip:t.chip,chipink:t.chipink,c1:t.c1,c2:t.c2,slot:t.slot,warn:t.warn,crit:t.crit,"crit-bg":"rgba(0,0,0,.06)",rec:t.rec,recink:t.recink,recmute:t.recmute,recbtn:t.recbtn,recbtnink:t.recbtnink,shadow:t.shadow,r:t.r,blur:t.blur,disp:t.disp};
+  Object.entries(vars).forEach(([n,v])=>el.style.setProperty("--t-"+n,v));el.style.background=t.bg;el.innerHTML=app(t);
+  $("#tName").textContent=T.name;$("#tIdea").textContent=T.idea;
+  const sw=[["Canvas",t.bg],["Surface",t.surf],["Text",t.ink],["Secondary text",t.ink2],["Muted",t.mute],["Border",t.line],["Brand chip",t.chip],["Chip text",t.chipink],["Positive",t.ok],["Warning",t.warn],["Critical",t.crit],["Neutral",t.mute],["Chart 1",t.c1],["Chart 2",t.c2],["Chart 3",t.c3]];
+  $("#tSw").innerHTML=sw.map(([n,v])=>`<div><i style="background:${v}"></i><p>${n}<code>${/^#/.test(v)?v:"gradient / translucent"}</code></p></div>`).join("");
+  const surf=solid(t.surf==="rgba(255,255,255,.58)"?"#eef0f4":t.surf);
+  $("#tSpec").innerHTML=[["Typography",`Text ${t.ink} · secondary ${t.ink2} · muted ${t.mute}${t.disp!=="inherit"?" · serif titles":""}`],["Primary accent",`${t.chip} chip with ${t.chipink} text`],["States",`positive ${t.ok} · warning ${t.warn} · critical ${t.crit} · neutral ${t.mute}`],["Chart palette",`${t.c1} (primary), ${t.c3} (second series), ${t.c2} (context)`],["Borders",`1px ${t.line}; radius ${t.r}`],["Elevation",t.shadow==="none"?"Flat: hairlines only":"Soft two-layer shadow on cards, none on rows"],["Hover",t.hover],["Dark mode",k==="utility"?"Same family: graphite canvas, lime signal (today's dark mode)":"Needs its own dark palette derived from these tokens"]].map(([a,b])=>`<dt>${a}</dt><dd>${esc(b)}</dd>`).join("");
+  const checks=[["Text on surface",t.ink,surf,4.5],["Secondary on surface",t.ink2,surf,4.5],["Muted on surface",t.mute,surf,4.5],["Chip text on chip",t.chipink,t.chip,4.5],["Warning on surface",t.warn,surf,4.5],["Critical on surface",t.crit,surf,4.5],["Chart 1 on surface",t.c1,surf,3]];
+  $("#tAA").innerHTML="Contrast (WCAG 2.2):<br>"+checks.map(([n,a,b,min])=>{const r=ratio(a,b);return `${n}: <span class="${r>=min?"pass":"fail"}">${r?r.toFixed(1):"–"}:1 ${r>=min?"pass":"fail"}</span>`}).join("<br>");
+  document.querySelectorAll("#tpick button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===k));
+  try{localStorage.setItem("mx-theme-pick",k)}catch{}}
+$("#tpick").innerHTML=Object.entries(TH).map(([k,v])=>`<button type="button" data-k="${k}">${v.name}${k==="utility"?" · recommended":""}</button>`).join("");
+$("#tpick").addEventListener("click",e=>{const b=e.target.closest("[data-k]");if(b)pickTheme(b.dataset.k)});
+let start="utility";try{start=localStorage.getItem("mx-theme-pick")||"utility"}catch{}
+pickTheme(TH[start]?start:"utility");
+</script>

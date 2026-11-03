@@ -164,3 +164,30 @@ html body .pl-t:not(#_) tbody tr:hover{background:color-mix(in srgb,var(--pv-ink
 .pl-t td{color:var(--pv-ink)}
 .cs-pl{margin-bottom:0}
 @media (max-width:1000px){.cs-sc-grid{grid-template-columns:1fr}}
+
+/* ===== Future Utility light mode (chosen 2026-11-03). Loaded last so it is the one source of truth for light.
+   Mist canvas, crisp near-white surfaces, graphite as the accent; lime only inside graphite pieces. ===== */
+:root[data-theme="light"]:not(#_),:root[data-theme="light"]:not(#_) body{
+  --fu-canvas:#d9dee2;--fu-side:#cfd5da;--fu-surf:#f3f5f6;--fu-raise:#e6eaed;--fu-line:#c2c9cf;--fu-line2:#a9b3bb;
+  --fu-ink:#0f1418;--fu-ink2:#3c464e;--fu-mute:#5c666e;--fu-chip:#14181b;--fu-lime:#c6f432;
+  --fu-ok:#1f7a4a;--fu-warn:#9a5a00;--fu-crit:#b42318;--fu-c2:#8fa3b1;--fu-c3:#2f6fd6;
+  --bg:var(--fu-canvas);--ground:var(--fu-canvas);--gp-ground:var(--fu-canvas);--gl-ground:var(--fu-canvas);--st-ground:var(--fu-canvas);
+  --glass:var(--fu-surf);--s1:var(--fu-surf);--gp-card:var(--fu-surf);--gl-card:var(--fu-surf);--gl-frame:var(--fu-surf);--glass-bg:var(--fu-surf);--st-panel:var(--fu-surf);--st-raise:var(--fu-surf);--ai:var(--fu-surf);--pv-card:var(--fu-surf);--tb-card:var(--fu-surf);
+  --glass2:var(--fu-raise);--s2:var(--fu-raise);--s3:var(--fu-raise);--chat:var(--fu-raise);--gp-nest:var(--fu-raise);--gp-nest2:#dce1e5;--gl-card2:var(--fu-raise);--glass-bg2:var(--fu-raise);--st-nest:var(--fu-raise);--tb-nest:var(--fu-raise);
+  --edge:var(--fu-line);--line:var(--fu-line);--grid:rgba(15,20,24,.10);--gp-edge:var(--fu-line);--gl-edge:var(--fu-line);--gl-edge2:var(--fu-line);--gl-rim:var(--fu-line);--gl-rim-hi:var(--fu-line);--gl-grid:rgba(15,20,24,.10);--glass-edge:var(--fu-line);--glass-line:var(--fu-line);--st-line:var(--fu-line);--st-line2:var(--fu-line2);--pv-line:var(--fu-line);--pv-track:rgba(15,20,24,.10);--line2:rgba(255,255,255,.6);
+  --ink:var(--fu-ink);--gp-text:var(--fu-ink);--gl-text:var(--fu-ink);--st-ink:var(--fu-ink);--pv-ink:var(--fu-ink);--pl-ink:var(--fu-ink);--tb-text:var(--fu-ink);
+  --ink2:var(--fu-ink2);--gp-2:var(--fu-ink2);--gl-2:var(--fu-ink2);--st-2:var(--fu-ink2);--tb-2:var(--fu-ink2);--pv-silver:var(--fu-ink2);
+  --muted:var(--fu-mute);--gp-meta:var(--fu-mute);--gl-meta:var(--fu-mute);--st-meta:var(--fu-mute);--pv-meta:var(--fu-mute);--tb-meta:var(--fu-mute);
+  --accent:var(--fu-chip);--blue:var(--fu-chip);--pg:var(--fu-chip);--x-head:var(--fu-chip);--st-acc:var(--fu-chip);--pc-acc:var(--fu-chip);--rev:var(--fu-chip);--rev-ink:var(--fu-lime);--pv-lime:var(--fu-chip);--gp-on:#fff;--accent-ink:#fff;--accent-text:var(--fu-chip);
+  --good:var(--fu-ok);--p-green:var(--fu-ok);--warn:var(--fu-warn);--need:var(--fu-warn);--p-orange:var(--fu-warn);--bad:var(--fu-crit);--d3:var(--fu-warn);
+  --d1:var(--fu-chip);--d2:var(--fu-c3);--d4:var(--fu-c2);--pg2:var(--fu-c3);--aic:var(--fu-c3);--p-violet:var(--fu-c3);
+  color-scheme:light}
+:root[data-theme="light"]:not(#_) body{background:var(--fu-canvas)!important}
+/* the side and top navigation sit one step darker than the canvas, like the preview */
+:root[data-theme="light"]:not(#_) nav[aria-label="Main"]{background:var(--fu-side)!important;border-color:var(--fu-line)!important}
+/* cards: crisp surface, hairline, soft two-layer shadow; hover lifts the border */
+:root[data-theme="light"]:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.kpi,.td-stat,.cc-card){background:var(--fu-surf)!important;border:1px solid var(--fu-line)!important;box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 1px 2px rgba(15,20,24,.06),0 8px 24px -16px rgba(15,20,24,.18)!important}
+:root[data-theme="light"]:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card):hover{border-color:var(--fu-line2)!important}
+/* "now" markers are graphite chips with the lime inside, never lime on the light canvas */
+:root[data-theme="light"]:not(#_):not(#__):not(#___) main .td-day.now{background:var(--fu-chip)!important;color:var(--fu-lime)!important;animation:none!important}
+:root[data-theme="light"]:not(#_):not(#__):not(#___) main .td-day.now b{color:#fff!important}

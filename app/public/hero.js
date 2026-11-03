@@ -55,7 +55,7 @@
     bar.before(hero); hero.append(bar);
     const c = await content(id);
     // work pages keep their purpose line; Insights and Marketing lead with their headline number
-    if (c.line && !/^(inbox|calendar|customers|pulse|settings)$/.test(id)) hero.querySelector('em').textContent = c.line;
+    if (c.line && !/^(inbox|calendar|customers|growth|pulse|settings)$/.test(id)) hero.querySelector('em').textContent = c.line;
     hero.querySelector('.hx-stats').innerHTML = c.stats || '';
     hero.querySelector('.hx-folders').innerHTML = c.folders || '';
     await extras(id, hero);
