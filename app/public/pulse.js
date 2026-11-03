@@ -320,13 +320,16 @@
   }
 
   // Ask MXAi: one chat. The server picks the skill (Front desk, Support, Growth, Analyst) for each question.
-  const ASK = `<div class="card glass ask"><div class="ask-skills" id="askSkills"></div><div class="ask-log" id="askLog" aria-live="polite"></div>
-    <div class="ask-sugg" id="askSugg"></div><form class="ask-form" id="askForm"><input id="askIn" autocomplete="off" placeholder="Ask anything: who hasn't been back in 2 months? how was last week?" aria-label="Ask MXAi"><button class="btn" type="submit">Ask</button></form></div>`;
+  // Ask MXAi lives in one place, the assistant panel; this page is a doorway to it with the same composer and suggestions
+  const ASK = `<div class="ask-door"><button type="button" class="ask-open" data-q=""><span>Ask anything, or tell me what to do…</span><b aria-hidden="true">↑</b></button>
+    <div class="ask-cards">${[['How did this week go?', 'This week'], ["Who could fill tomorrow's free slots?", 'Fill gaps'], ["Which regulars haven't been back?", 'Win back'], ["Add a shortcut to this week's revenue", 'Shortcut']]
+      .map(([q, k]) => `<button type="button" data-q="${q.replace(/"/g, '&quot;')}"><b>${k}</b>${q}</button>`).join('')}</div></div>`;
   const SUGG = ['How did this week go?', 'Who could fill tomorrow\'s free slots?', 'Add a shortcut to this week\'s revenue', 'Which regulars haven\'t been back?'];
   let convo = [], team = {}, asking = false;
   async function askInit(s) {
     if (s.dataset.on) return; s.dataset.on = 1;
-    try { (await req('/api/team')).team.forEach(t => team[t.id] = t); } catch {}
+    s.querySelector('.ask-door').addEventListener('click', ev => { const t = ev.target.closest('[data-q]'); if (t) window.PulseCommand?.open(t.dataset.q || undefined); });
+    return;
     s.querySelector('#askSkills').innerHTML = 'MXAi Assistant can: ' + ['Answer anything with your real numbers', 'Book, message and follow up', 'Teach Nora rules and answers', 'Run growth agents', 'Add shortcuts to Home', 'Find any page for you'].map(t => `<span>${e(t)}</span>`).join('');
     s.querySelector('#askSugg').innerHTML = SUGG.map(q => `<button type="button" class="chip">${e(q)}</button>`).join('');
     s.querySelector('#askSugg').addEventListener('click', ev => { const c = ev.target.closest('.chip'); if (c) ask(c.textContent) });

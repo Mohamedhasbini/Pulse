@@ -240,7 +240,7 @@
         <div class="pc-log" aria-live="polite"></div>
         <div class="pc-dock"><form class="pc-in"><textarea rows="1" placeholder="Ask anything, or tell me what to do…" aria-label="Message MXAi Assistant"></textarea>
           <div class="pc-inbar"><span class="pc-chip"><i></i>Live data</span><span class="pc-chip">Approves before acting</span><button type="submit" class="pc-send" aria-label="Send">↑</button></div></form>
-          <div class="pc-sugg">${SUGG.map(([q, k]) => `<button type="button" data-q="${esc(q)}"><b>${esc(k)}</b>${esc(q)}</button>`).join('')}</div>
+          <div class="pc-sugg">${SUGG.map(([q, k], i) => `<button type="button" data-q="${esc(q)}"><span class="pc-sic" aria-hidden="true">${['◎', '↗', '✦', '▦', '⇩', '↺'][i] || '•'}</span><b>${esc(k)}</b>${esc(q)}</button>`).join('')}</div>
           <small class="pc-note">MXAi Assistant works from your live data. Check important figures before acting on them.</small></div></main>`;
     document.body.appendChild(root);
     const ta = $('textarea', root);

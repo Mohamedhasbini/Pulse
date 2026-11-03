@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MXUI Library</title>
+<style>/* MXAi component foundation: one grid, four widget formats, six data states, one card anatomy.
+   Spacing is on an 8px scale; every page builds from these instead of styling its own cards. */
+:root{
+  --mx-1:8px;--mx-2:16px;--mx-3:24px;--mx-5:40px;
+  --mx-h-compact:120px;--mx-h-standard:232px;--mx-h-wide:328px;
+  --mx-r:14px;
+  --mx-surf:var(--gp-card,#1b1c1e);--mx-raise:var(--gp-nest,#232528);--mx-line:var(--gl-grid,rgba(255,255,255,.08));
+  --mx-ink:var(--gp-text,#f1f2f2);--mx-ink2:var(--gp-2,#b9bcbf);--mx-mute:var(--gp-meta,#8d9094);
+  --mx-chip:#14181b;--mx-lime:#c6f432;
+  --mx-ok:#5bc48a;--mx-warn:#e0a24a;--mx-crit:#ef6b62;--mx-up:#5bc48a;
+}
+:root[data-theme="light"]{--mx-ok:#1f7a4a;--mx-warn:#9a5a00;--mx-crit:#b42318;--mx-up:#1f7a4a}
+
+/* grid: 12 columns at full width, capped so large monitors get room, not stretched cards */
+.mx-page{display:flex;flex-direction:column;gap:var(--mx-3);max-width:1680px;color:var(--mx-ink);padding-bottom:var(--mx-5)}
+.mx-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--mx-2);align-items:stretch}
+.mx-c3{grid-column:span 3}.mx-c4{grid-column:span 4}.mx-c5{grid-column:span 5}.mx-c6{grid-column:span 6}.mx-c7{grid-column:span 7}.mx-c8{grid-column:span 8}.mx-c9{grid-column:span 9}.mx-c12{grid-column:span 12}
+@media (max-width:1279px){.mx-c3{grid-column:span 6}.mx-c4,.mx-c5,.mx-c7,.mx-c8,.mx-c9{grid-column:span 12}.mx-c6{grid-column:span 6}}
+@media (max-width:767px){.mx-grid{gap:12px}.mx-c6,.mx-c4,.mx-c5,.mx-c7,.mx-c8,.mx-c9,.mx-c12{grid-column:span 12}.mx-c3{grid-column:span 6}}
+
+/* the card: title row, primary number, context, trend, explanation, optional action */
+.mx-card{background:var(--mx-surf);border:1px solid var(--mx-line);border-radius:var(--mx-r);padding:var(--mx-2) 20px;min-width:0;display:flex;flex-direction:column;gap:var(--mx-1);position:relative}
+.mx-card.compact{min-height:var(--mx-h-compact)}.mx-card.standard{min-height:var(--mx-h-standard)}.mx-card.wide{min-height:var(--mx-h-wide)}
+.mx-hd{display:flex;align-items:center;gap:var(--mx-1);min-height:24px}
+.mx-hd h3{margin:0;font-size:13px;font-weight:600;letter-spacing:.01em;color:var(--mx-ink2);flex:1;min-width:0}
+.mx-hd .mx-meta{font-size:12.5px;color:var(--mx-mute);white-space:nowrap}
+.mx-hd a,.mx-hd button.mx-link{all:unset;cursor:pointer;font-size:12.5px;color:var(--mx-ink2);white-space:nowrap}
+.mx-hd a:hover,.mx-hd button.mx-link:hover{color:var(--mx-ink)}
+.mx-num{font-size:32px;font-weight:500;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--mx-ink)}
+.mx-ctx{font-size:13px;color:var(--mx-ink2)}
+.mx-why{font-size:13px;color:var(--mx-mute);line-height:1.45}
+.mx-trend{font-size:12px;font-variant-numeric:tabular-nums;font-weight:500}
+.mx-trend.up{color:var(--mx-up)}.mx-trend.down{color:var(--mx-crit)}.mx-trend.flat{color:var(--mx-mute)}
+.mx-foot{margin-top:auto;display:flex;gap:var(--mx-1);flex-wrap:wrap}
+
+/* states: a chip in the title row and a left rule, so state never relies on colour alone */
+.mx-state{font-size:11px;font-weight:600;letter-spacing:.02em;padding:2px 8px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.mx-card[data-state="critical"]{box-shadow:inset 3px 0 0 var(--mx-crit)}.mx-card[data-state="critical"] .mx-state{color:var(--mx-crit)}
+.mx-card[data-state="warning"]{box-shadow:inset 3px 0 0 var(--mx-warn)}.mx-card[data-state="warning"] .mx-state{color:var(--mx-warn)}
+.mx-card[data-state="healthy"] .mx-state,.mx-card[data-state="improving"] .mx-state{color:var(--mx-ok)}
+.mx-card[data-state="neutral"] .mx-state{color:var(--mx-mute)}
+
+/* buttons */
+.mx-btn{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 14px;border-radius:99px;font-size:13px;font-weight:500;color:var(--mx-ink);border:1px solid var(--mx-line);background:transparent}
+.mx-btn:hover{background:var(--mx-raise)}.mx-btn:focus-visible,.mx-row:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+.mx-btn.pri{background:var(--mx-ink);color:var(--mx-surf);border-color:transparent}
+.mx-btn.sig{background:var(--mx-lime);color:#14181b;border-color:transparent}
+
+/* rows: the list used by needs-you, conversations and appointments */
+.mx-list{display:flex;flex-direction:column;overflow:auto;min-height:0;flex:1}
+.mx-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--mx-line);min-width:0}
+.mx-row:first-child{border-top:0;padding-top:4px}
+.mx-row .mx-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--mx-mute)}
+.mx-row .mx-dot.critical{background:var(--mx-crit)}.mx-row .mx-dot.warning{background:var(--mx-warn)}.mx-row .mx-dot.healthy{background:var(--mx-ok)}
+.mx-row .mx-tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.mx-row .mx-tx b{font-size:13.5px;font-weight:500;color:var(--mx-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx-row .mx-tx small{font-size:12px;color:var(--mx-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx-row .mx-time{width:48px;flex:none;font-family:'Geist Mono',ui-monospace,monospace;font-size:12.5px;color:var(--mx-ink2)}
+.mx-row .mx-val{font-size:13px;font-variant-numeric:tabular-nums;color:var(--mx-ink);white-space:nowrap}
+.mx-row.gap .mx-tx b{color:var(--mx-warn)}.mx-row.gap{border-top-style:dashed}
+.mx-more{font-size:12.5px;color:var(--mx-mute);padding-top:6px}
+
+/* meter: share of something, with the number beside it */
+.mx-meter{height:6px;border-radius:99px;background:var(--mx-raise);overflow:hidden}.mx-meter u{display:block;height:100%;border-radius:99px;background:var(--mx-ink)}
+
+/* the recommended action: the one graphite card on a page, lime only inside it */
+.mx-card.mx-rec{background:#14181b;border-color:#14181b;color:#f1f3f4}
+:root:not([data-theme="light"]) .mx-card.mx-rec{background:#23272b;border-color:rgba(198,244,50,.25)}
+.mx-rec .mx-hd h3{color:#9aa6af}.mx-rec .mx-rec-t{font-size:16px;line-height:1.4;font-weight:500;color:#f1f3f4;margin:0}
+.mx-rec .mx-why{color:#9aa6af}
+
+/* the health strip: four figures in one row, read left to right */
+.mx-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.mx-strip>div{padding:0 20px;border-left:1px solid var(--mx-line);display:flex;flex-direction:column;gap:4px;min-width:0}
+.mx-strip>div:first-child{border-left:0;padding-left:0}
+.mx-strip span{font-size:12.5px;color:var(--mx-mute)}.mx-strip b{font-size:24px;font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--mx-ink)}
+@media (max-width:767px){.mx-strip{grid-template-columns:1fr 1fr;gap:16px 0}.mx-strip>div:nth-child(3){border-left:0;padding-left:0}}
+
+/* empty, loading and error states */
+.mx-empty{display:flex;flex-direction:column;gap:6px;padding:8px 0;color:var(--mx-mute);font-size:13px}.mx-empty b{color:var(--mx-ink2);font-weight:500}
+.mx-skel{border-radius:8px;background:linear-gradient(90deg,var(--mx-raise),var(--mx-line),var(--mx-raise));background-size:200% 100%;animation:mxSk 1.2s linear infinite}
+@keyframes mxSk{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.mx-skel{animation:none}}
+.mx-err{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--mx-crit)}
+
+/* ── Board layer (Nov 2026): clearer cards learnt from calm admin dashboards. An icon chip opens every card, the
+   label sits under it, the figure is large with its change in a tinted pill beside it, and cards lift off the
+   canvas with a soft shadow instead of heavy borders. Graphite and silver stay; lime stays for the one action. */
+:root{--mx-r:18px;--mx-canvas:#0f1113;--mx-shadow:0 1px 2px rgba(0,0,0,.25),0 8px 24px -16px rgba(0,0,0,.5)}
+:root[data-theme="light"]{--mx-canvas:#e4e7ea;--mx-shadow:0 1px 2px rgba(16,24,32,.05),0 10px 30px -18px rgba(16,24,32,.25)}
+.mx-card{padding:20px;gap:10px;box-shadow:var(--mx-shadow);transition:box-shadow .2s,transform .2s}
+.mx-card:hover{box-shadow:var(--mx-shadow),0 0 0 1px var(--mx-line)}
+.mx-hd{flex-wrap:wrap;row-gap:12px}
+.mx-ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;margin-right:auto;color:var(--mx-ink);
+  background:var(--mx-raise);border:1px solid var(--mx-line)}
+.mx-ic svg{width:18px;height:18px}
+.mx-hd h3{order:9;flex:1 0 100%;font-size:13.5px;font-weight:500;color:var(--mx-ink2);letter-spacing:0}
+.mx-numrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mx-num{font-size:30px;font-weight:600;letter-spacing:-.025em}
+.mx-trend{display:inline-flex;align-items:center;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:600}
+.mx-trend.up{background:color-mix(in srgb,var(--mx-ok) 16%,transparent)}
+.mx-trend.down{background:color-mix(in srgb,var(--mx-crit) 14%,transparent)}
+.mx-trend.flat{background:var(--mx-raise)}
+.mx-ctx{color:var(--mx-mute);font-size:12.5px}
+.mx-why{color:var(--mx-ink2);font-size:13px;padding-top:10px;border-top:1px solid var(--mx-line);margin-top:auto}
+.mx-foot{margin-top:4px}
+.mx-meter{height:8px}
+.mx-state{border:0;background:var(--mx-raise);padding:3px 9px}
+.mx-card[data-state="critical"] .mx-state{background:color-mix(in srgb,var(--mx-crit) 14%,transparent)}
+.mx-card[data-state="warning"] .mx-state{background:color-mix(in srgb,var(--mx-warn) 16%,transparent)}
+.mx-card[data-state="healthy"] .mx-state,.mx-card[data-state="improving"] .mx-state{background:color-mix(in srgb,var(--mx-ok) 14%,transparent)}
+.mx-card[data-state="critical"],.mx-card[data-state="warning"]{box-shadow:var(--mx-shadow)}
+.mx-hd .mx-meta{background:var(--mx-raise);border-radius:8px;padding:3px 9px;font-size:12px}
+.mx-hd button.mx-link{border:1px solid var(--mx-line);border-radius:10px;padding:5px 11px;font-size:12px}
+.mx-hd button.mx-link:hover{background:var(--mx-raise)}
+/* rows: a little air and a hover, like a list you can click */
+.mx-row{padding:11px 10px;margin:0 -10px;border-radius:12px;border-top:0}
+.mx-row+.mx-row{box-shadow:0 -1px 0 var(--mx-line)}
+.mx-row[role="button"]:hover{background:var(--mx-raise);box-shadow:none}
+.mx-row[role="button"]:hover+.mx-row{box-shadow:none}
+.mx-row .mx-time{font-weight:600;color:var(--mx-ink)}
+.mx-row .mx-val{font-weight:600}
+.mx-row .mx-btn{min-height:32px;padding:0 12px;font-size:12.5px;border-radius:10px}
+.mx-row.gap{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--mx-raise) 6px 7px)}
+/* the strip becomes four small tiles, each with its own label, figure and change */
+.mx-strip{gap:12px}
+.mx-strip>div{background:var(--mx-raise);border:1px solid var(--mx-line);border-radius:14px;padding:14px 16px!important;gap:6px}
+.mx-strip>div span{font-weight:500;color:var(--mx-ink2)}
+.mx-strip b{font-size:22px;font-weight:600}
+@media (max-width:767px){.mx-strip{gap:10px}}
+.mx-card.mx-rec .mx-ic{background:#ffffff12;border-color:#ffffff1f;color:var(--mx-lime)}
+.mx-btn{border-radius:12px}
+.mx-btn.pri,.mx-btn.sig{box-shadow:0 1px 2px rgba(0,0,0,.2)}
+
+/* ── MXAi chat on the same system: solid surface, one font, a roomy composer and suggestion cards with icons */
+.pc:not(#_){--pc-serif:var(--pc-sans);--pc-acc:var(--mx-lime);--pc-acc-ink:#14181b;background:var(--pc-bg)!important;opacity:1!important;backdrop-filter:none!important}
+.pc:not(#_){--pc-bg:#121416;--pc-side:#0d0f10;--pc-raise:#1b1e21;--pc-line:#ffffff10;--pc-line2:#ffffff1e;--pc-ink:#f1f3f4;--pc-mut:#a2a8ad;--pc-dim:#71787e}
+:root[data-theme="light"] .pc:not(#_){--pc-bg:#eef0f2;--pc-side:#e4e7ea;--pc-raise:#ffffff;--pc-line:#0f141814;--pc-line2:#0f141826;--pc-ink:#0f1418;--pc-mut:#545c63;--pc-dim:#7d858c}
+.pc-side{padding:16px 12px!important;gap:6px!important}
+.pc-new{border-radius:12px!important}
+.pc-search{border-radius:12px!important}
+.pc-hello h1{font:600 32px/1.15 var(--pc-sans)!important;letter-spacing:-.025em!important}
+.pc-hello p{font-size:15px;line-height:1.55}
+.pc-in{border-radius:22px!important;padding:16px 16px 12px 20px!important;box-shadow:0 1px 2px #0000001a,0 18px 40px -22px #00000066!important}
+.pc-in textarea{font-size:15px!important;min-height:28px}
+.pc-chip{border-radius:10px!important;background:var(--pc-bg)}
+.pc-send{width:38px!important;height:38px!important;border-radius:50%!important;box-shadow:0 2px 8px -2px #c6f43280}
+.pc-sugg{gap:10px!important;margin-top:18px!important}
+.pc-sugg button{display:grid!important;grid-template-columns:auto 1fr;column-gap:12px;align-items:start;padding:14px!important;border-radius:16px!important;
+  background:var(--pc-raise);border-color:var(--pc-line)!important;box-shadow:0 1px 2px #0000000f}
+.pc-sugg button b{grid-column:2;margin:0 0 2px!important}
+.pc-sugg button:hover{border-color:var(--pc-line2)!important;transform:translateY(-1px)}
+.pc-sic{grid-row:span 2;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--pc-bg);border:1px solid var(--pc-line);color:var(--pc-ink);font-size:14px}
+.pc-main>header{border-bottom:1px solid var(--pc-line)}
+.pc-m.you .pc-b{border-radius:18px 18px 6px 18px!important}
+.mx-list{padding:0 10px;margin:0 -10px;overflow-x:hidden}
+.mx-card[data-state="warning"].mx-c12.compact .mx-why{border-top:0;padding-top:0}
+/* the chat inside light mode: older light rules reached into it, so these win explicitly */
+:root .pc:not(#_):not(#__) .pc-side{background:var(--pc-side)!important;border-right:1px solid var(--pc-line)!important}
+:root .pc:not(#_):not(#__) .pc-in textarea{background:transparent!important;border:0!important;box-shadow:none!important;outline:0;padding:4px 0!important;color:var(--pc-ink)!important}
+:root .pc:not(#_):not(#__) .pc-chip{color:var(--pc-mut)!important;background:var(--pc-bg)!important;border:1px solid var(--pc-line)!important;font-size:12px!important}
+:root .pc:not(#_):not(#__) .pc-chip i{background:#1f9a5a!important}
+:root .pc:not(#_):not(#__) .pc-send{background:var(--mx-lime)!important;color:#14181b!important;font-size:17px!important}
+:root .pc:not(#_):not(#__) .pc-search{background:var(--pc-raise)!important;border:1px solid var(--pc-line)!important;color:var(--pc-ink)!important}
+:root .pc:not(#_):not(#__) .pc-new{color:var(--pc-ink)!important}
+/* AI Control › Ask: the doorway to the assistant, drawn like its composer */
+.ask-door{max-width:760px;margin:24px auto;display:flex;flex-direction:column;gap:12px}
+.ask-open{all:unset;box-sizing:border-box;cursor:text;display:flex;align-items:center;gap:12px;padding:18px 14px 18px 22px;border-radius:22px;background:var(--mx-surf);border:1px solid var(--mx-line);box-shadow:var(--mx-shadow);color:var(--mx-mute);font-size:15px}
+.ask-open span{flex:1}.ask-open b{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--mx-lime);color:#14181b}
+.ask-open:hover{border-color:var(--mx-ink2)}
+.ask-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ask-cards button{all:unset;box-sizing:border-box;cursor:pointer;padding:14px;border-radius:16px;background:var(--mx-surf);border:1px solid var(--mx-line);font-size:13px;color:var(--mx-mute);line-height:1.4}
+.ask-cards button b{display:block;color:var(--mx-ink);font-weight:600;margin-bottom:2px}
+.ask-cards button:hover{border-color:var(--mx-ink2)}
+@media (max-width:767px){.ask-cards{grid-template-columns:1fr 1fr}}
+/* Insights › the ask bar: one composer row, the suggestions as small chips under it */
+:root .hx-ask:not(#_):not(#__){display:flex!important;flex-wrap:wrap;align-items:center;gap:8px!important;padding:12px!important;border-radius:20px!important;background:var(--mx-surf)!important;border:1px solid var(--mx-line)!important;box-shadow:var(--mx-shadow)!important;max-width:760px}
+:root .hx-ask:not(#_):not(#__) i{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--mx-raise)!important;color:var(--mx-ink)!important;font-style:normal;flex:none}
+:root .hx-ask:not(#_):not(#__) input{flex:1 1 200px!important;min-width:0;width:auto!important;background:transparent!important;border:0!important;box-shadow:none!important;font-size:15px!important;color:var(--mx-ink)!important;padding:8px 4px!important}
+:root .hx-ask:not(#_):not(#__) button{flex:none;border-radius:10px!important;padding:6px 11px!important;font-size:12.5px!important;background:var(--mx-raise)!important;border:1px solid var(--mx-line)!important;color:var(--mx-ink2)!important;min-height:0!important}
+:root .hx-ask:not(#_):not(#__) input+button{margin-left:0}
+@media (max-width:767px){:root .hx-ask:not(#_):not(#__) input{flex-basis:calc(100% - 50px)!important}}
+/* page stylesheets (report, growth) reach into cards; the card anatomy wins everywhere */
+.mx-card:not(#_):not(#__) .mx-num{font-size:30px!important;font-weight:600!important;letter-spacing:-.025em!important;line-height:1.05!important}
+.mx-card:not(#_):not(#__) .mx-trend{border:0!important;font-size:12px!important;line-height:1.4!important}
+.mx-card:not(#_):not(#__) .mx-why{font-size:13px!important;line-height:1.45!important;margin-bottom:0!important}
+.mx-card:not(#_):not(#__) .mx-ctx{font-size:12.5px!important;line-height:1.4!important}
+.mx-card:not(#_):not(#__) .mx-hd h3{font-size:13.5px!important}
+
+/* components read the one neutral scale in both themes */
+:root:not(#_){--mx-surf:var(--fu-surf,#171717);--mx-raise:var(--fu-raise,#262626);--mx-line:var(--fu-line,#262626);--mx-ink:var(--fu-ink,#fafafa);--mx-ink2:var(--fu-ink2,#d4d4d4);--mx-mute:var(--fu-mute,#a1a1a1);--mx-canvas:var(--fu-canvas,#0a0a0a)}
+:root:not([data-theme="light"]) .pc:not(#_){--pc-bg:#0a0a0a;--pc-side:#0a0a0a;--pc-raise:#171717;--pc-line:#262626;--pc-line2:#404040;--pc-ink:#fafafa;--pc-mut:#a1a1a1;--pc-dim:#737373}
+:root[data-theme="light"] .pc:not(#_){--pc-bg:#f5f5f5;--pc-side:#f5f5f5;--pc-raise:#ffffff;--pc-line:#e8e8e8;--pc-line2:#d4d4d4;--pc-ink:#0a0a0a;--pc-mut:#737373;--pc-dim:#a1a1a1}
+
+/* ── library additions: segmented, chip, usage, bar list, funnel, radial, spark bars, stages, toast, thinking */
+.mx-seg{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:var(--mx-raise)}
+.mx-seg button{all:unset;cursor:pointer;padding:6px 12px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mx-mute);transition:color .15s,background-color .15s}
+.mx-seg button:hover{color:var(--mx-ink)}
+.mx-seg button[aria-selected="true"]{background:var(--mx-surf);color:var(--mx-ink);box-shadow:0 0 0 1px var(--mx-line),0 1px 2px rgba(0,0,0,.08)}
+.mx-seg button:focus-visible{outline:2px solid var(--mx-ink);outline-offset:1px}
+.mx-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:500;background:var(--mx-raise);color:var(--mx-ink2);white-space:nowrap}
+.mx-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.9}
+.mx-chip.healthy{color:var(--mx-ok);background:color-mix(in srgb,var(--mx-ok) 13%,transparent)}
+.mx-chip.warning{color:var(--mx-warn);background:color-mix(in srgb,var(--mx-warn) 14%,transparent)}
+.mx-chip.critical{color:var(--mx-crit);background:color-mix(in srgb,var(--mx-crit) 13%,transparent)}
+.mx-use{display:flex;flex-direction:column;gap:6px}
+.mx-use-hd{display:flex;justify-content:space-between;font-size:13px;color:var(--mx-ink2)}.mx-use-hd b{font-weight:600;color:var(--mx-ink);font-variant-numeric:tabular-nums}
+.mx-use small{font-size:12px;color:var(--mx-mute)}
+.mx-use.healthy .mx-meter u{background:var(--mx-ink)}.mx-use.warning .mx-meter u{background:var(--mx-warn)}.mx-use.critical .mx-meter u{background:var(--mx-crit)}
+.mx-bars{display:flex;flex-direction:column;gap:6px}
+.mx-bar{position:relative;display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;font-size:13px}
+.mx-bar i{position:absolute;inset:0 auto 0 0;border-radius:9px;background:var(--mx-raise)}
+.mx-bar span,.mx-bar b{position:relative}.mx-bar span{flex:1;color:var(--mx-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx-bar b{font-weight:600;font-variant-numeric:tabular-nums}
+.mx-fun{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px;align-items:end}
+.mx-fun-s{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mx-fun-col{height:96px;display:flex;align-items:flex-end;border-radius:10px;background:var(--mx-raise);overflow:hidden;margin-bottom:8px}
+.mx-fun-col i{display:block;width:100%;background:var(--mx-ink);border-radius:10px 10px 0 0}
+.mx-fun-s:not(:first-child) .mx-fun-col i{opacity:.72}.mx-fun-s:nth-child(n+3) .mx-fun-col i{opacity:.5}
+.mx-fun-s b{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}.mx-fun-s span{font-size:12.5px;color:var(--mx-ink2)}.mx-fun-s small{font-size:11.5px;color:var(--mx-mute)}
+.mx-rad{position:relative;display:grid;place-items:center;flex:none}
+.mx-rad svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.mx-rad circle{fill:none;stroke-width:10}.mx-rad .tr{stroke:var(--mx-raise)}.mx-rad .fg{stroke:var(--mx-ink);stroke-linecap:round;transition:stroke-dasharray .6s cubic-bezier(.23,1,.32,1)}
+.mx-rad span{display:flex;flex-direction:column;align-items:center;line-height:1.1}.mx-rad b{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}.mx-rad small{font-size:11px;color:var(--mx-mute)}
+.mx-spark{display:flex;align-items:flex-end;gap:3px}
+.mx-spark i{flex:1;border-radius:3px;background:var(--mx-raise);min-width:3px}.mx-spark i.now{background:var(--mx-ink)}
+.mx-stg{display:flex;flex-direction:column;gap:10px}
+.mx-stg-bar{display:flex;gap:3px;height:10px}.mx-stg-bar i{border-radius:4px}
+.mx-stg .s0{background:var(--mx-ink)}.mx-stg .s1{background:var(--mx-ink2);opacity:.75}.mx-stg .s2{background:var(--mx-mute);opacity:.6}.mx-stg .s3{background:var(--mx-line)}
+.mx-stg-key{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--mx-ink2)}
+.mx-stg-key i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}.mx-stg-key b{color:var(--mx-ink);font-weight:600}.mx-stg-key small{color:var(--mx-mute)}
+.mx-toast{position:fixed;right:20px;bottom:20px;z-index:1000;max-width:360px;padding:12px 16px;border-radius:14px;background:var(--mx-ink);color:var(--mx-surf);font-size:13.5px;box-shadow:0 10px 30px -10px rgba(0,0,0,.4);
+  opacity:0;transform:translateY(8px) scale(.98);transition:opacity .2s cubic-bezier(.23,1,.32,1),transform .2s cubic-bezier(.23,1,.32,1)}
+.mx-toast.on{opacity:1;transform:none}
+@media (max-width:767px){.mx-toast{left:16px;right:16px;bottom:84px;max-width:none}}
+.mx-think{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--mx-mute)}
+.mx-think i{width:6px;height:6px;border-radius:50%;background:currentColor;animation:mxTh 1.2s infinite ease-in-out}
+.mx-think i:nth-child(2){animation-delay:.15s}.mx-think i:nth-child(3){animation-delay:.3s}.mx-think span{margin-left:6px}
+@keyframes mxTh{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
+@media (prefers-reduced-motion:reduce){.mx-think i{animation:none;opacity:.6}.mx-toast,.mx-rad .fg{transition:opacity .2s}}
+</style>
+<style>
+:root{--fu-canvas:#f5f5f5;--fu-surf:#fff;--fu-raise:#f5f5f5;--fu-line:#e8e8e8;--fu-line2:#d4d4d4;--fu-ink:#0a0a0a;--fu-ink2:#404040;--fu-mute:#737373}
+:root[data-theme="dark"]{--fu-canvas:#0a0a0a;--fu-surf:#171717;--fu-raise:#262626;--fu-line:#262626;--fu-line2:#404040;--fu-ink:#fafafa;--fu-ink2:#d4d4d4;--fu-mute:#a1a1a1}
+body{margin:0;background:var(--fu-canvas);color:var(--fu-ink);font:14px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mx-card{box-shadow:0 0 0 1px var(--fu-line),0 1px 2px rgba(0,0,0,.05)}
+body>header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:24px 24px 0;max-width:1280px;margin:0 auto}
+body>header h1{margin:0;font-size:22px;letter-spacing:-.02em}body>header p{margin:2px 0 0;color:var(--fu-mute)}
+main{padding:24px;max-width:1280px;margin:0 auto}
+</style></head><body>
+<header><div><h1>MXUI component library</h1><p>Every piece the dashboard builds from, in light and dark.</p></div><div id="th"></div></header>
+<main class="mx-page" id="lib"></main>
+<script>// MXAi components: small functions that return one card's HTML in the shared anatomy
+// (title, primary number, context, trend, explanation, optional action) and one of six states.
+// Pages compose these on the 12-column grid in mx-ui.css instead of drawing their own cards.
+(() => {
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // line icons (24px grid, 1.6 stroke): every card gets one, picked from its title, so cards scan like a toolbar
+  const P = {
+    alert: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>',
+    cal: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+    spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+    chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    bot: '<rect x="4" y="8" width="16" height="12" rx="4"/><path d="M12 4v4M9 13h.01M15 13h.01"/>',
+    money: '<path d="M12 2v20M17 6.5C17 4.6 14.8 4 12 4S7 5 7 7.5 9.5 10.5 12 11s5 1.5 5 4-2.2 3.5-5 3.5-5-.9-5-3"/>',
+    users: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+    chart: '<path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/>',
+    book: '<path d="M4 19V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2Z"/><path d="M8 7h8"/>',
+    rocket: '<path d="M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2M14 4c3-1 6-1 6-1s0 3-1 6l-7 7-5-5Z"/>',
+    heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>' };
+  const PICK = [[/attention|teach|question/i, 'alert'], [/appointment|booked ahead|calendar/i, 'cal'], [/recommend/i, 'spark'], [/conversation|chat/i, 'chat'],
+    [/time booked|reply|hours/i, 'clock'], [/goal|month/i, 'target'], [/offer|sent|campaign/i, 'send'], [/revenue|value|won|discount|\$/i, 'money'],
+    [/client|customer|came back|agreed/i, 'users'], [/booking/i, 'book'], [/go live|setup/i, 'rocket'], [/health/i, 'heart'], [/today|nora|ai|oracle/i, 'bot']];
+  const icon = (title, name) => { const k = name || (PICK.find(([re]) => re.test(title)) || [, 'chart'])[1];
+    return `<span class="mx-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${P[k]}</svg></span>`; };
+  const STATE = { healthy: 'Healthy', improving: 'Improving', neutral: '', warning: 'Needs a look', critical: 'Act today', empty: '' };
+  // size: compact | standard | wide (min heights); span: grid columns
+  const card = ({ title, meta = '', link = '', state = 'neutral', size = 'standard', span = 4, cls = '', body = '', label = '' }) =>
+    `<section class="mx-card ${size} mx-c${span} ${cls}" data-state="${state}" aria-label="${esc(label || title)}">
+      <header class="mx-hd">${title.trim() ? icon(title) : ''}<h3>${esc(title)}</h3>${STATE[state] ? `<span class="mx-state">${STATE[state]}</span>` : ''}${meta ? `<span class="mx-meta">${meta}</span>` : ''}${link}</header>${body}</section>`;
+  const trend = (pct, { lowerIsBetter = false, suffix = '%', vs = '' } = {}) => {
+    if (pct == null || !isFinite(pct)) return '';
+    const good = lowerIsBetter ? pct < 0 : pct > 0, cls = pct === 0 ? 'flat' : good ? 'up' : 'down';
+    return `<span class="mx-trend ${cls}"${vs ? ` title="${esc(vs)}"` : ''}>${pct > 0 ? '+' : pct < 0 ? '−' : ''}${Math.abs(Math.round(pct))}${suffix}</span>`;
+  };
+  const button = (label, go, kind = '') => `<button type="button" class="mx-btn ${kind}" data-go="${esc(go)}">${esc(label)}</button>`;
+  const link = (label, go) => `<button type="button" class="mx-link" data-go="${esc(go)}">${esc(label)} →</button>`;
+  // a row: dot state, title, sub line, and a value or button on the right
+  const row = ({ dot = '', time = '', title, sub = '', value = '', action = '', go = '', cls = '' }) =>
+    `<div class="mx-row ${cls}"${go && !action ? ` role="button" tabindex="0" data-go="${esc(go)}" style="cursor:pointer"` : ''}>${dot ? `<i class="mx-dot ${dot}"></i>` : ''}${time ? `<span class="mx-time">${esc(time)}</span>` : ''}
+      <span class="mx-tx"><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span>${value ? `<span class="mx-val">${esc(value)}</span>` : ''}${action}</div>`;
+  const empty = (title, sub = '', action = '') => `<div class="mx-empty"><b>${esc(title)}</b>${sub ? `<span>${esc(sub)}</span>` : ''}${action}</div>`;
+  const loading = (lines = 3) => `<div class="mx-list" aria-busy="true">${Array.from({ length: lines }, () => '<div class="mx-skel" style="height:18px;margin:8px 0"></div>').join('')}</div>`;
+  const error = (what, retry = '') => `<div class="mx-err" role="alert"><span>Couldn't load ${esc(what)}.</span>${retry ? button('Retry', retry) : ''}</div>`;
+
+  const MXUI = {
+    esc, card, trend, button, link, row, empty, loading, error,
+    // KPI: one figure with what it is out of, its trend and why it moved
+    kpi: ({ title, value, ctx = '', change = null, lowerIsBetter = false, vs = 'vs last period', why = '', state = 'neutral', span = 3, action = '' }) =>
+      card({ title, state, size: 'compact', span, body: `<div class="mx-numrow"><span class="mx-num">${esc(value)}</span>${trend(change, { lowerIsBetter, vs })}</div><div class="mx-ctx">${esc(ctx)}${change != null && isFinite(change) && vs ? ` · ${esc(vs)}` : ''}</div>${why ? `<p class="mx-why">${esc(why)}</p>` : ''}${action ? `<div class="mx-foot">${action}</div>` : ''}` }),
+    // meter: a share with its explanation, e.g. "74% of your available time is booked"
+    meter: ({ title, pct, ctx, why = '', state = 'neutral', span = 3, action = '' }) =>
+      card({ title, state, size: 'compact', span, body: `<div class="mx-numrow"><span class="mx-num">${Math.round(pct)}%</span></div><div class="mx-meter"><u style="width:${Math.max(0, Math.min(100, pct))}%"></u></div><div class="mx-ctx">${esc(ctx)}</div>${why ? `<p class="mx-why">${esc(why)}</p>` : ''}${action ? `<div class="mx-foot">${action}</div>` : ''}` }),
+    // list: rows with an optional "See all" link; the empty text says what will appear
+    list: ({ title, rows, meta = '', more = '', go = '', state = 'neutral', span = 6, size = 'standard', emptyTitle = 'Nothing here yet', emptySub = '' }) =>
+      card({ title, meta, state, size, span, link: go ? link('See all', go) : '', body: `<div class="mx-list">${rows.length ? rows.join('') : empty(emptyTitle, emptySub)}</div>${more ? `<p class="mx-more">${esc(more)}</p>` : ''}` }),
+    // the one recommended action: what to do, why, and the button that does it
+    rec: ({ text, why = '', label = 'Do it', go = '', span = 3 }) =>
+      card({ title: 'Recommended action', size: 'standard', span, cls: 'mx-rec', body: `<p class="mx-rec-t">${esc(text)}</p>${why ? `<p class="mx-why">${esc(why)}</p>` : ''}${go ? `<div class="mx-foot">${button(label, go, 'sig')}</div>` : ''}` }),
+    // strip: four figures in one full-width row
+    strip: ({ title, items, meta = '', go = '' }) =>
+      card({ title, meta, size: 'compact', span: 12, link: go ? link('Insights', go) : '', body: `<div class="mx-strip">${items.map(([l, v, t]) => `<div><span>${esc(l)}</span><b>${esc(v)}</b>${t || ''}</div>`).join('')}</div>` }),
+  };
+  // ── library additions (Nov 2026): the patterns calm admin dashboards use, drawn in our own tokens
+  const tone = pct => pct >= 90 ? 'critical' : pct >= 75 ? 'warning' : 'healthy';
+  Object.assign(MXUI, {
+    // segmented control: a fused row of choices, e.g. Day / Week / Month; the chosen one is a raised tile
+    segmented: (items, active, name = '') => `<div class="mx-seg" role="tablist"${name ? ` aria-label="${esc(name)}"` : ''}>${items.map(([v, l]) =>
+      `<button type="button" role="tab" aria-selected="${v === active}" data-seg="${esc(v)}">${esc(l)}</button>`).join('')}</div>`,
+    // chip: a small status word; the tone carries meaning and the word says it, so colour is never the only signal
+    chip: (label, kind = 'neutral') => `<span class="mx-chip ${kind}">${esc(label)}</span>`,
+    // usage meter toned as it fills: calm under 75%, amber to 90%, red beyond
+    usage: ({ label, value, max, unit = '' }) => { const pct = max ? Math.min(100, value / max * 100) : 0;
+      return `<div class="mx-use ${tone(pct)}"><div class="mx-use-hd"><span>${esc(label)}</span><b>${Math.round(pct)}%</b></div><div class="mx-meter"><u style="width:${pct}%"></u></div><small>${esc(value)}${unit} of ${esc(max)}${unit}</small></div>`; },
+    // bar list: ranked rows with a bar behind the label, the value on the right
+    barList: (rows, fmt = v => v) => { const top = Math.max(1, ...rows.map(r => r.value));
+      return `<div class="mx-bars">${rows.map(r => `<div class="mx-bar"><i style="width:${Math.max(4, r.value / top * 100)}%"></i><span>${esc(r.label)}</span><b>${esc(fmt(r.value))}</b></div>`).join('')}</div>`; },
+    // funnel: each step's share of the first, with the drop between steps written out
+    funnel: steps => { const first = Math.max(1, steps[0]?.value || 1);
+      return `<div class="mx-fun">${steps.map((st, i) => { const pct = st.value / first * 100, prev = steps[i - 1];
+        return `<div class="mx-fun-s"><div class="mx-fun-col"><i style="height:${Math.max(6, pct)}%"></i></div><b>${esc(st.value)}</b><span>${esc(st.label)}</span>${prev && prev.value ? `<small>${Math.round(st.value / prev.value * 100)}% of previous</small>` : '<small>start</small>'}</div>`; }).join('')}</div>`; },
+    // radial gauge: one share as a ring, the figure in the middle
+    radial: ({ pct, label = '', size = 120 }) => { const r = 52, c = 2 * Math.PI * r, v = Math.max(0, Math.min(100, pct));
+      return `<div class="mx-rad" style="width:${size}px;height:${size}px" role="img" aria-label="${Math.round(v)}% ${esc(label)}"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="${r}" class="tr"/><circle cx="60" cy="60" r="${r}" class="fg" stroke-dasharray="${c * v / 100} ${c}"/></svg><span><b>${Math.round(v)}%</b>${label ? `<small>${esc(label)}</small>` : ''}</span></div>`; },
+    // spark bars: a small row of bars for a trend inside a card, the last bar is today
+    sparkBars: (vals, h = 40) => { const top = Math.max(1, ...vals);
+      return `<div class="mx-spark" style="height:${h}px" aria-hidden="true">${vals.map((v, i) => `<i class="${i === vals.length - 1 ? 'now' : ''}" style="height:${Math.max(6, v / top * 100)}%"></i>`).join('')}</div>`; },
+    // stage bars: one bar split into stages, with a legend that names each stage and its count
+    stages: parts => { const tot = Math.max(1, parts.reduce((s, p) => s + p.value, 0));
+      return `<div class="mx-stg"><div class="mx-stg-bar">${parts.map((p, i) => `<i class="s${i}" style="flex:${p.value || 0.0001}"></i>`).join('')}</div><div class="mx-stg-key">${parts.map((p, i) => `<span><i class="s${i}"></i>${esc(p.label)} <b>${esc(p.value)}</b> <small>${Math.round(p.value / tot * 100)}%</small></span>`).join('')}</div></div>`; },
+    // toast: a short message at the bottom corner that leaves by itself
+    toast: (text, kind = 'neutral') => { const t = document.createElement('div'); t.className = `mx-toast ${kind}`; t.setAttribute('role', 'status'); t.textContent = text;
+      document.body.appendChild(t); requestAnimationFrame(() => t.classList.add('on')); setTimeout(() => { t.classList.remove('on'); setTimeout(() => t.remove(), 250); }, 3200); },
+    // thinking: three dots for an answer on its way
+    thinking: (label = 'Thinking') => `<span class="mx-think" role="status"><i></i><i></i><i></i><span>${esc(label)}</span></span>`,
+  });
+  window.MXUI = MXUI;
+})();
+</script>
+<script>
+const U = MXUI, L = document.getElementById('lib');
+const th = () => { document.getElementById('th').innerHTML = U.segmented([['light', 'Light'], ['dark', 'Dark']], document.documentElement.dataset.theme, 'Theme'); };
+document.getElementById('th').addEventListener('click', e => { const b = e.target.closest('[data-seg]'); if (!b) return; const set = () => { document.documentElement.dataset.theme = b.dataset.seg; th(); };
+  document.startViewTransition ? document.startViewTransition(set) : set(); });
+th();
+L.innerHTML = `
+<div class="mx-grid">
+ ${U.kpi({ title: 'Revenue, last 30 days', value: '$3,300', ctx: '75 visits', change: 108, vs: 'vs 30 days before', why: 'Mostly from Hair colour (+$771)', state: 'improving' })}
+ ${U.kpi({ title: 'Bookings', value: '75', ctx: 'visits', change: 97, vs: 'vs 30 days before', why: 'Wednesday is your busiest day', state: 'healthy' })}
+ ${U.kpi({ title: 'Average reply', value: '2.4s', ctx: 'from message to answer', change: 12, lowerIsBetter: true, vs: 'vs 15 days before', why: 'Slower than usual', state: 'warning' })}
+ ${U.kpi({ title: 'Questions to teach', value: '3', ctx: "Nora couldn't answer these", why: 'Answer once and it remembers', state: 'critical', action: U.button('Teach now', 'x') })}
+</div>
+<div class="mx-grid">
+ ${U.card({ title: 'Period and status', span: 4, size: 'compact', body: U.segmented([['d', 'Day'], ['w', 'Week'], ['m', 'Month']], 'w') + `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">${U.chip('Confirmed', 'healthy')}${U.chip('Waiting', 'warning')}${U.chip('Cancelled', 'critical')}${U.chip('Draft')}</div>` })}
+ ${U.card({ title: 'Time booked today', span: 4, size: 'compact', body: `<div style="display:flex;gap:20px;align-items:center">${U.radial({ pct: 40, label: 'booked' })}<div style="flex:1">${U.sparkBars([3, 5, 2, 6, 4, 7, 4])}</div></div>` })}
+ ${U.card({ title: 'Plan usage', span: 4, size: 'compact', body: U.usage({ label: 'AI messages', value: 820, max: 1000 }) + U.usage({ label: 'Staff seats', value: 3, max: 3 }) + U.usage({ label: 'Offers this month', value: 2, max: 10 }) })}
+</div>
+<div class="mx-grid">
+ ${U.card({ title: 'Revenue by service', span: 6, body: U.barList([{ label: 'Hair colour', value: 1260 }, { label: 'Facial', value: 880 }, { label: 'Haircut & blow-dry', value: 540 }, { label: 'Manicure', value: 300 }], v => '$' + v) })}
+ ${U.card({ title: 'Chats that became bookings', span: 6, body: U.funnel([{ label: 'Chats', value: 120 }, { label: 'Asked for a time', value: 64 }, { label: 'Booked', value: 41 }, { label: 'Came', value: 37 }]) })}
+</div>
+<div class="mx-grid">
+ ${U.list({ title: "Today's appointments", span: 4, meta: '4 · $200', go: 'x', rows: [U.row({ time: '10:00', title: 'Hair colour', sub: 'Fadi · 60 min', value: '$90' }), U.row({ time: '11:00', title: 'Haircut', sub: 'Aya · 60 min', value: '$35' }), U.row({ time: '12:00', title: '2 free hours', sub: 'Fill with a waitlist client', cls: 'gap' }), U.row({ time: '14:00', title: 'Facial', sub: 'Rita · 60 min', value: '$55' })] })}
+ ${U.rec({ text: '3 chats waiting for a reply', why: 'Clients are waiting for a person', label: 'Open', go: 'x', span: 4 })}
+ ${U.card({ title: 'Bookings by stage', span: 4, body: U.stages([{ label: 'Completed', value: 37 }, { label: 'Confirmed', value: 16 }, { label: 'Waiting', value: 4 }, { label: 'Cancelled', value: 3 }]) + `<div style="margin-top:auto">${U.thinking('Nora is typing')}</div>` })}
+</div>
+${U.strip({ title: 'Business health · last 30 days', go: 'x', items: [['Booked by MXAi', '$3,984', U.trend(145)], ['Chats answered alone', '100%', ''], ['Monthly goal', '6%', ''], ['Booked ahead', '$834', U.trend(-4)]] })}
+<div class="mx-grid">${U.card({ title: 'Empty state', span: 4, size: 'compact', body: U.empty('No offers sent yet', 'Your first offer will show here.') })}${U.card({ title: 'Loading', span: 4, size: 'compact', body: U.loading(3) })}${U.card({ title: 'Error', span: 4, size: 'compact', body: U.error('your numbers', 'x') })}</div>`;
+L.addEventListener('click', e => { if (e.target.closest('[data-go]')) U.toast('Buttons work here; on the dashboard they open the page'); });
+</script>
+</body></html>

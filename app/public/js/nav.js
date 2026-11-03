@@ -10,6 +10,6 @@ function setPeriod(d){days=d;inDays=d;try{localStorage.setItem("rb-days",d)}catc
   document.querySelectorAll(".plabel").forEach(x=>x.textContent=PLABEL(d));
   lastStats=null;refresh();if(typeof loadLive==="function")loadLive();if(!$("#analytics").hidden)loadInsights()}
 document.querySelectorAll("button[data-d]").forEach(b=>b.onclick=()=>setPeriod(+b.dataset.d));
-$("#themeBtn").onclick=()=>{const r=document.documentElement,c=r.dataset.theme==="dark"?"light":"dark";r.dataset.theme=c;try{localStorage.setItem("rb-theme",c)}catch{}};
+$("#themeBtn").onclick=()=>{const r=document.documentElement,c=r.dataset.theme==="dark"?"light":"dark",set=()=>{r.classList.add("theme-switching");r.dataset.theme=c;requestAnimationFrame(()=>requestAnimationFrame(()=>r.classList.remove("theme-switching")))};try{localStorage.setItem("rb-theme",c)}catch{}document.startViewTransition&&!matchMedia("(prefers-reduced-motion:reduce)").matches?document.startViewTransition(set):set()};
 $("#logoutBtn").onclick=async()=>{await fetch("/api/logout",{method:"POST"});location.href="/login"};
 
