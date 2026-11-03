@@ -39,12 +39,13 @@
       ['Board', { page: 'people', tab: 'board', panes: ['board'], adv: true }],
       ['Reviews', { page: 'support', tab: 'reviews', bare: true }]]],
     ['growth', 'Growth', 'Bring new clients in and old ones back', [
+      ['Overview', { own: 'growthhome' }],
       ['Win back', { page: 'people', tab: 'winback' }],
       ['Offers', { own: 'growth' }],
       ['Sent offers', { page: 'people', tab: 'offers', adv: true }],
       ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'], adv: true }],
       ['Automations', { entry: 'agents' }],
-      ['Website', { entry: 'website', ws: 0 }],
+      ['Website', { entry: 'website', ws: 0, adv: true }],
       ['Website photos', { entry: 'website', ws: 1, adv: true }],
       ['Website design', { entry: 'website', ws: 2, adv: true }],
       ['Website address', { entry: 'website', ws: 3, adv: true }]]],
@@ -92,8 +93,8 @@
   const BADGE = { inbox: 'apprN', pulse: 'paN' };
   // pages that were merged: [new page, tab index] for each old tab
   const MOVED = { studio: i => ['insights', 8 + i], train: i => ['pulse', 3 + i], lab: i => ['pulse', [8, 7, 9][i] ?? 7],
-    marketing: i => i >= 4 ? ['growth', 5 + i - 4] : ['growth', i + 1],
-    customers: i => i === 1 ? ['growth', 0] : i >= 4 ? ['growth', i - 3] : ['customers', i] };
+    marketing: i => i >= 4 ? ['growth', 6 + i - 4] : ['growth', i + 2],
+    customers: i => i === 1 ? ['growth', 1] : i >= 4 ? ['growth', i - 2] : ['customers', i] };
   // the menu in four groups, each heading drawn before its first page
   const GROUP = {};
   const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Account & security', 's2fa'], ['Look', 'look'], ['Website', 13], ['Integrations', 12]];
@@ -269,6 +270,7 @@
     if (key === 'aictl') { const s = page('aictl', 'AI control', 'Decide who answers your clients: MXAi or your team.', '<div id="aiRoot"></div>'); s.hidden = false; window.MXAiMode?.mount(s); }
     if (key === 'integrations') { const s = page('integrations', 'Integrations', '', '<div id="igRoot"></div>'); s.hidden = false; window.PulseIntegrations?.mount(s); }
     if (key === 'report') { const s = page('report', 'Insights', '', '<div id="rpRoot" class="rp"></div>'); s.hidden = false; window.PVReport?.(s.querySelector('#rpRoot')); }
+    if (key === 'growthhome') { const s = page('growthhome', 'Growth', '', '<div id="grRoot" class="rp"></div>'); s.hidden = false; window.PVGrowth?.(s.querySelector('#grRoot')); }
     if (key === 'growth') { const s = page('growth', 'Marketing', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }
     if (key === 'brief') { const s = page('brief', 'Weekly brief', 'This week against last week, and the agents\' results. Worked out from your own numbers.', '<div id="paBrief"></div>'); s.hidden = false; loadBrief(); }
     if (key === 'ask') { const s = page('ask', 'Ask MXAi', 'Ask anything about your business. MXAi looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); window.PulseCommand?.open(); }

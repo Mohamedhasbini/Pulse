@@ -78,7 +78,7 @@ function draw({biz,live,ch,wait,brief,cal,kpis}){
   const failed=(live.h24||[]).reduce((a,x)=>a+(x.failed||0),0);if(failed)need.push(["critical",`${failed} repl${failed>1?"ies":"y"} failed to send today`,"Clients may not have seen the answer","Check","p:inbox:0"]);
   if(n("request"))need.push(["warning",`${n("request")} request${n("request")>1?"s":""} to move or cancel`,"Waiting for your OK","Review","p:calendar:1"]);
   if(n("question")||now.unsure){const q=n("question")||now.unsure;need.push(["warning",`${q} question${q>1?"s":""} ${nora()} couldn't answer`,"Answer once and it remembers","Teach","p:pulse:0"])}
-  if(n("agent"))need.push(["warning",`${n("agent")} offer${n("agent")>1?"s":""} ready to send`,"Prepared by your growth automations","Review","p:growth:4"]);
+  if(n("agent"))need.push(["warning",`${n("agent")} offer${n("agent")>1?"s":""} ready to send`,"Prepared by your growth automations","Review","p:growth:5"]);
   if(n("lesson"))need.push(["neutral",`${n("lesson")} suggested rule${n("lesson")>1?"s":""}`,`${nora()} learned something from a chat`,"Review","p:pulse:0"]);
   const wa=ch?.whatsapp?.configured&&biz.wa_phone_number_id;if(!wa)need.push(["warning","WhatsApp is not connected","Clients can't reach you there yet","Connect","p:settings:0"]);
   const pending=(live.setup||[]).filter(s=>!s.done);
@@ -98,9 +98,9 @@ function draw({biz,live,ch,wait,brief,cal,kpis}){
   // 3 · one recommended action: the briefing's most valuable item, else the emptiest day ahead, else teaching
   let rec=null;const b0=(brief.items||[])[0];
   const OPEN={inbox:"p:inbox:1",requests:"p:calendar:1"};
-  if(b0)rec={text:b0.text,why:b0.why+(b0.value?` · ${money(b0.value)} ${b0.money||""}`:""),label:/^(mark|teach)$/.test(b0.fix)?"Fix it":"Open",go:b0.fix.startsWith("open:")?(OPEN[b0.fix.slice(5)]||"p:inbox:0"):b0.fix==="teach"?"p:pulse:3":b0.fix.startsWith("agent:")?"p:growth:4":"p:calendar:0"};
+  if(b0)rec={text:b0.text,why:b0.why+(b0.value?` · ${money(b0.value)} ${b0.money||""}`:""),label:/^(mark|teach)$/.test(b0.fix)?"Fix it":"Open",go:b0.fix.startsWith("open:")?(OPEN[b0.fix.slice(5)]||"p:inbox:0"):b0.fix==="teach"?"p:pulse:3":b0.fix.startsWith("agent:")?"p:growth:5":"p:calendar:0"};
   if(!rec){const ahead=(live.week||[]).filter(w=>!w.today&&w.pct!=null&&new Date(w.d+"T12:00")>d).sort((a,b)=>a.pct-b.pct)[0];
-    if(ahead&&ahead.pct<50)rec={text:`${DOW[new Date(ahead.d+"T12:00").getDay()]} ${ahead.pct?`is only ${ahead.pct}% booked`:"has no bookings yet"}. Invite clients who haven't been in for a while.`,why:"An empty hour can't be sold later.",label:"Open Win back",go:"p:growth:0"}}
+    if(ahead&&ahead.pct<50)rec={text:`${DOW[new Date(ahead.d+"T12:00").getDay()]} ${ahead.pct?`is only ${ahead.pct}% booked`:"has no bookings yet"}. Invite clients who haven't been in for a while.`,why:"An empty hour can't be sold later.",label:"Open Win back",go:"p:growth:1"}}
   if(!rec&&pending.length)rec={text:`Finish setup: ${pending[0].label}.`,why:`${pending.length} step${pending.length>1?"s":""} left before ${nora()} works at full strength.`,label:"Open Settings",go:"p:settings:0"};
   if(!rec)rec={text:"All clear. Nothing needs changing today.",why:`${nora()} is answering and the calendar is in order.`,label:"",go:""};
   $("#tdA").innerHTML=needCard+apptCard+U.rec({...rec,span:3});

@@ -460,8 +460,25 @@
     root.innerHTML = top + named(REPORT.map(([t, sub, list]) => `<section class="rp-g"><header class="rp-h"><h2>${esc(t)}</h2><p>${esc(sub)}</p></header>
       <div class="mx-grid rp-board">${list.map(([n, span]) => { try { const h = F[n](d); return h ? `<div class="mx-c${span} rp-cell">${h}</div>` : ''; } catch (e) { console.warn('chart', n, e); return ''; } }).join('')}</div></section>`).join(''));
     root.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i));
-    root.querySelector('[data-rp-go]')?.addEventListener('click', () => window.P10?.go('growth', 0));
+    root.querySelector('[data-rp-go]')?.addEventListener('click', () => window.P10?.go('growth', 1));
     countUp(root);
+  };
+  // Growth overview: what offers brought back, who to invite back, and the latest campaigns
+  window.PVGrowth = async root => {
+    const U = window.MXUI; if (!root || !U) return;
+    root.innerHTML = `<div class="mx-grid">${[3, 3, 3, 3].map(() => U.card({ title: ' ', size: 'compact', span: 3, body: U.loading(2) })).join('')}</div>`;
+    const d = await data(), k = d.mk.kpis || {}, camps = d.mk.campaigns || [];
+    const none = !k.sent;
+    const kpis = [
+      U.kpi({ title: 'Won back, last 90 days', value: money(k.revenue || 0), ctx: `${k.won || 0} booking${k.won === 1 ? '' : 's'} from offers`, why: none ? 'No offers sent yet' : `${k.conversion || 0}% of reached clients booked`, state: none ? 'empty' : k.revenue ? 'improving' : 'neutral' }),
+      U.kpi({ title: 'Offers sent', value: String(k.sent || 0), ctx: `${k.reached || 0} clients reached`, why: none ? 'Prepared offers wait for your OK before anything is sent' : `${camps.length} campaign${camps.length === 1 ? '' : 's'} in 90 days`, state: none ? 'empty' : 'neutral', action: none ? U.button('Create an offer', 'g:2') : '' }),
+      U.kpi({ title: 'Clients who agreed to offers', value: `${k.optin_rate || 0}%`, ctx: `${k.opted_in || 0} of ${k.customers || 0} clients`, why: (k.optin_rate || 0) < 20 ? 'Ask for permission when clients book; offers can only go to them' : 'A healthy audience for offers', state: (k.optin_rate || 0) < 20 ? 'warning' : 'healthy' }),
+      U.kpi({ title: 'Revenue per $1 of discount', value: k.roi == null ? '–' : `$${(+k.roi).toFixed(2)}`, ctx: `${money(k.discounts || 0)} given in discounts`, why: k.roi == null ? 'Shows after the first offer brings a booking' : k.roi >= 3 ? 'Offers are paying for themselves' : 'Try smaller discounts or better timing', state: k.roi == null ? 'empty' : k.roi >= 3 ? 'healthy' : 'warning' })].join('');
+    const rows = camps.slice(0, 4).map(c => U.row({ dot: c.revenue ? 'healthy' : c.result === 'not sent' ? 'warning' : '', title: c.name.trim() || 'Offer', sub: `${c.date} · ${c.result}${c.sent ? ` · ${c.sent} sent` : ''}`, value: c.revenue ? money(c.revenue) : '', go: 'g:2' }));
+    const camp = U.list({ title: 'Recent campaigns', span: 4, size: 'wide', go: 'g:2', rows, emptyTitle: 'No campaigns yet', emptySub: 'Your first offer will show here with what it brought back.' });
+    let win = '', res = ''; try { win = F[24](d); } catch {} try { res = F[34](d); } catch {}
+    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${win ? `<div class="mx-c8 rp-cell">${win}</div>` : ''}${camp}</div>${res ? `<div class="mx-grid"><div class="mx-c12 rp-cell">${res}</div></div>` : ''}`;
+    root.addEventListener('click', ev => { const b = ev.target.closest('[data-go^="g:"]'); if (b) window.P10?.go('growth', +b.dataset.go.slice(2)); });
   };
   window.PVData = data; // Studio builds its widgets from the same live data
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44, 45: c45 };
