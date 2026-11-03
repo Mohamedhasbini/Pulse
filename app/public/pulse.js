@@ -32,20 +32,24 @@
       ['Schedule', { own: 'calendar' }],
       ['Requests', { page: 'inbox', tab: 'conversations', panes: ['approvals'], bare: true }],
       ['Booking page', { page: 'settings', tab: 'booking', bare: true, cards: ['Online booking page'] }]]],
-    ['customers', 'Customers', 'Know every client', [
+    ['customers', 'Clients', 'Know every client and bring them back', [
       ['Clients', { page: 'people', tab: 'clients' }],
       ['Win back', { page: 'people', tab: 'winback' }],
-      ['Board', { page: 'people', tab: 'board', panes: ['board'] }],
-      ['Reviews', { page: 'support', tab: 'reviews', bare: true }]]],
-    ['pulse', 'Your AI', 'Ask, teach and test Nora', [
-      ['Approvals', { own: 'approvals' }],
-      ['Ask', { own: 'ask' }],
-      ['Brief', { own: 'brief', adv: true }],
-      ['Coach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach'] }],
-      ['Rules', { entry: 'training', mode: 'coach', only: ['top', 'tchRules'] }],
-      ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'] }],
+      ['Board', { page: 'people', tab: 'board', panes: ['board'], adv: true }],
+      ['Reviews', { page: 'support', tab: 'reviews', bare: true }],
+      ['Offers', { own: 'growth' }],
+      ['Sent offers', { page: 'people', tab: 'offers', adv: true }],
+      ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'], adv: true }],
+      ['Agents', { entry: 'agents', adv: true }]]],
+    ['pulse', 'Your AI', 'Review, teach and test Nora', [
+      ['To review', { own: 'approvals' }],
+      ['Ask', { own: 'ask', hidden: true }],
+      ['Brief', { own: 'brief', hidden: true }],
+      ['Teach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach', 'tchRules', 'tchQuestions'] }],
+      ['Rules', { entry: 'training', mode: 'coach', only: ['top', 'tchRules'], hidden: true, parent: 3 }],
+      ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'], hidden: true, parent: 3 }],
       ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'], adv: true }],
-      ['Test chat', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
+      ['Test', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
       ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'], adv: true }],
       ['Versions', { entry: 'training', only: ['top', 'learn'], adv: true }]]],
     ['insights', 'Insights', 'How the business is doing', [
@@ -59,11 +63,6 @@
       ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' , adv: true }],
       ['My board', { own: 'studio', adv: true }],
       ['Chart library', { own: 'studiolib', adv: true }]]],
-    ['marketing', 'Marketing', 'Bring customers in', [
-      ['Overview', { own: 'growth' }],
-      ['Offers', { page: 'people', tab: 'offers' }],
-      ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'] }],
-      ['Agents', { entry: 'agents' , adv: true }]]],
     ['settings', 'Settings', 'Set it up once', [
       ['Profile', { page: 'settings', tab: 'details', form: [0, 1, 2, 3, 4, 5, 6, 24] }],
       ['Assistant', { page: 'settings', tab: 'details', form: [7, 8, 9, 17, 18], keep: ['Business type'] , adv: true }],
@@ -85,9 +84,9 @@
   const BADGE = { inbox: 'apprN', pulse: 'paN' };
   // pages that were merged: [new page, tab index] for each old tab
   const MOVED = { studio: i => ['insights', 8 + i], train: i => ['pulse', 3 + i], lab: i => ['pulse', [8, 7, 9][i] ?? 7],
-    marketing: i => i >= 4 ? ['settings', 12 + i - 4] : ['marketing', i] };
+    marketing: i => i >= 4 ? ['settings', 12 + i - 4] : ['customers', 4 + i] };
   // the menu in four groups, each heading drawn before its first page
-  const GROUP = { today: 'Daily', insights: 'Grow', settings: 'Setup' };
+  const GROUP = {};
   // tabs marked adv show once the owner asks for more detail on that page (remembered), or while one is open
   const detailOn = id => { try { return localStorage.getItem('mx-detail-' + id) === '1' } catch { return false } };
   const shown = (id, tabs) => tabs.map((t, k) => [t, k]).filter(([t, k]) => t[1].hidden ? false : !t[1].adv || detailOn(id) || (current?.[0] === id && tabs[current[1]]?.[1].adv && k >= 0));
@@ -207,9 +206,9 @@
     const b = document.createElement('div'); b.className = 'p10-bar';
     const title = named(PAGES.find(p => p[0] === id)[1]), tab = tabs.length > 1 ? tabs[i][0] : '';
     // tabs marked adv stay out of the way until the owner asks for detail (or is already on one)
-    const sel = tabs[i][1].hidden ? 0 : i, hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || detailOn(id));
+    const sel = tabs[i][1].hidden ? (tabs[i][1].parent ?? 0) : i, hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || detailOn(id));
     b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.hidden || (o.adv && !detail) ? '' :
-      `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" aria-pressed="${k === sel}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${id === 'insights' ? (detail ? 'Back to the report' : 'Explore all charts') : detail ? 'Simple view' : 'More detail'}</button>` : ''}</div>` : '');
+      `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" aria-pressed="${k === sel}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${id === 'insights' ? (detail ? 'Back to the report' : 'Explore all charts') : detail ? 'Fewer tools' : 'More tools'}</button>` : ''}</div>` : '');
     b.addEventListener('click', ev => {
       const d = ev.target.closest('[data-detail]');
       if (d) { try { localStorage.setItem('mx-detail-' + id, d.dataset.detail) } catch {} return go(id, tabs[i][1].adv && d.dataset.detail === '0' ? 0 : i) }
@@ -226,7 +225,7 @@
       today: [[chats, `${chats} chat${chats === 1 ? '' : 's'} waiting for you`, ['inbox', 1]], [it.length, `${it.length} thing${it.length === 1 ? '' : 's'} to approve`, ['pulse', 0]]],
       inbox: [[chats, `${chats} chat${chats === 1 ? '' : 's'} need${chats === 1 ? 's' : ''} you`, ['inbox', 1]]],
       calendar: [[n('request'), `${n('request')} cancel/move request${n('request') === 1 ? '' : 's'}`, ['calendar', 1]]],
-      marketing: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['marketing', 3]]],
+      customers: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['marketing', 3]]],
       pulse: [[it.length, `${it.length} waiting for your OK`, ['pulse', 0]],
        [n('question'), `${n('question')} question${n('question') === 1 ? '' : 's'} ${nora()} couldn't answer`, ['train', 1]], [n('lesson'), `${n('lesson')} suggested rule${n('lesson') === 1 ? '' : 's'}`, ['pulse', 0]]],
     }[id] || [];
@@ -273,7 +272,7 @@
     box.innerHTML = d.items.length ? d.items.map((x, i) => `<div class="pa-item" data-i="${i}"><span class="pa-k pa-${x.kind}">${KIND[x.kind]}</span>
       <div class="pa-t"><b>${e(x.title)}</b><small>${e(x.why || '')}</small></div><div class="pa-a">${ACT[x.kind](x)}</div></div>`).join('')
       : `<p class="empty">Nothing waiting. MXAi Assistant is handling everything.</p>`;
-    const n = $('.p10-bar [data-t="0"]'); if (current?.[0] === 'pulse' && n) n.innerHTML = 'Approvals' + (count ? ` <b class="pa-n">${count}</b>` : '');
+    const n = $('.p10-bar [data-t="0"]'); if (current?.[0] === 'pulse' && n) n.innerHTML = 'To review' + (count ? ` <b class="pa-n">${count}</b>` : '');
   }
   async function act(ev) {
     const b = ev.target.closest('[data-a]'); if (!b) return;
