@@ -49,6 +49,15 @@ export const TEMPLATES = [
 
 export const NAV = { salon: null, gym: null, clinic: null, receptionist: ['today', 'inbox', 'calendar', 'pulse', 'settings'] };
 
+// The dashboard library: what each business type's Today shows, in order, from the one widget kit
+// (app/public/today-widgets.js draws each id). null = the standard Today (salon, clinic, receptionist).
+// Set per business by its template (businesses.template, chosen in the Lab); the website gallery and the
+// live demos (/demo/<template>) show the same layout, so what a prospect sees is what they get.
+export const TODAY = {
+  gym: ['team', 'earned', 'members', 'renewals', 'at_risk', 'classes_today', 'appointments'],
+};
+for (const t of TEMPLATES) t.today = TODAY[t.id] || null;
+
 export function mountConnectors(app, BIZ) {
   // per business: each connector with whether its provider is set up here
   app.get('/api/connectors', async (_req, res, next) => {

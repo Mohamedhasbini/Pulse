@@ -135,6 +135,14 @@ try {
   const tk = signTicket(tfa.id); let last = 0;
   for (let i = 0; i < 7; i++) last = (await fetch(BASE + '/api/login/code', { method: 'POST', headers: { 'Content-Type': 'application/json', origin: BASE, 'cf-connecting-ip': `203.0.113.${i + 1}` }, body: JSON.stringify({ ticket: tk, code: '000000' }) })).status;
   say('2FA guesses from changing addresses are locked out after 6', last === 429, String(last));
+  // Dashboard library: a business's template decides its Today; the public gallery lists the same layout
+  await q(`UPDATE businesses SET template='gym' WHERE id=$1`, [r.id]);
+  const gymBiz = await fetch(BASE + '/api/business', { headers: as(owner) }).then(r => r.json());
+  const pubT = await fetch(BASE + '/api/public/templates').then(r => r.json());
+  await q(`UPDATE businesses SET template=NULL WHERE id=$1`, [r.id]);
+  const plain = await fetch(BASE + '/api/business', { headers: as(owner) }).then(r => r.json());
+  say('A gym business gets the gym Today; others the standard one; the gallery shows the same layout',
+    Array.isArray(gymBiz.today) && gymBiz.today.includes('renewals') && plain.today === null && pubT.templates?.find(t => t.id === 'gym')?.today?.includes('members'));
   // Incoming messages are written down before WhatsApp is told "received": a restart mid-answer loses nothing
   const msg = { phoneNumberId: 'smoke-none', from: '+34600000001', text: 'Hola', id: 'wamid.smoke' + Date.now() };
   const [inId] = await receive('whatsapp', [msg]);

@@ -202,6 +202,16 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team}=
     body:`<p class="mx-ctx">Finish these so clients can reach ${e(nora())}.</p><div class="td-steps">${pending.map(s=>U.button(s.label,"p:settings:0")).join("")}</div>`}):"";
   const todays=(cal.bookings||[]).filter(b=>!/cancel/.test(b.status||"")),tasks=need.filter(x=>x[0]!=="neutral").length;
   $("#tdSub").textContent=`${todays.length} appointment${todays.length===1?"":"s"} today · ${tasks?`${tasks} thing${tasks>1?"s":""} need${tasks===1?"s":""} you`:"nothing waiting for you"}.`;
+  // the business type's own Today (the dashboard library, connectors.js TODAY): its widgets replace the standard
+  // bands under "Your team today" and "Earned"; the header line comes from the template when it knows better
+  const lay=Array.isArray(biz.today)?biz.today:null,TW=window.MXTodayW;
+  if(lay&&TW){
+    if(!x.mem&&!x.memAsked){x.memAsked=true;const done=m=>{x.mem=m||{items:[],summary:{}};if(last===x)draw(x)};req("/api/memberships").then(done).catch(()=>done(null))}
+    const dd={biz,live,hist,mem:x.mem};
+    $("#tdB").innerHTML=lay.filter(k=>k!=="team"&&k!=="earned").map(k=>k==="appointments"?apptTable(hist.all||[]):TW.W[k]?TW.W[k](dd):"").join("");
+    $("#tdC").innerHTML="";$("#tdD").innerHTML="";
+    if(TW.SUB[biz.template])$("#tdSub").textContent=TW.SUB[biz.template](dd,tasks);
+  }
   since()}
 // since you last checked: one calm line, each part opens where it is handled; nothing new says so
 async function since(){const el=$("#tdSince");if(!el)return;let c;try{c=await req("/api/changes")}catch{c=null}if(!c||!c.since){el.textContent="";return}
@@ -213,7 +223,7 @@ async function since(){const el=$("#tdSince");if(!el)return;let c;try{c=await re
 
 // every button goes to the right place: p:page:tab, c:conversation, or a named action
 function go(where){
-  if(where.startsWith("p:")){const [,id,i]=where.split(":");return window.P10?.go(id,+i)}
+  if(where.startsWith("p:")){const [,id,i]=where.split(":");return window.P10?.go(id,isNaN(+i)?i:+i)} // a tab by number or by name
   if(where.startsWith("c:")){window.P10?.go("inbox",0);setTimeout(()=>window.PulseInbox?.openChat(where.slice(2)),500);return}
   if(where==="ask")return window.P10?window.P10.go("pulse",1):document.getElementById("hxAsk")?.click();
   if(where==="settings")return window.P10?.go("settings",0);
