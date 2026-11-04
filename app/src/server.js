@@ -111,7 +111,8 @@ app.use((req, res, next) => {
   // Requests that change something must come from our own pages, so another website can't act with a signed-in owner's cookie.
   if (req.method !== 'GET' && req.path.startsWith('/api/') && !req.path.startsWith('/api/public/') && !req.path.startsWith('/api/webook/')) {
     const origin = req.get('origin');
-    if (origin && new URL(origin).host !== req.get('host')) return res.status(403).json({ error: 'Blocked: request from another website.' });
+    let host = null; try { host = origin && new URL(origin).host; } catch { /* 'null' or malformed origin */ }
+    if (origin && host !== req.get('host')) return res.status(403).json({ error: 'Blocked: request from another website.' });
   }
   next();
 });
@@ -119,6 +120,8 @@ app.use((req, res, next) => {
 // ---------- Login: each user has their own account; everything below needs it ----------
 const PUBLIC = fileURLToPath(new URL('../public', import.meta.url));
 const attempts = new Map(); // ip -> { n, until }
+// forget old entries every 10 minutes so a flood of addresses can't grow this map without limit
+setInterval(() => { const now = Date.now(); for (const [k, v] of attempts) if (v.until < now && !(v.n > 0 && now - (v.at || 0) < 15 * 60000)) attempts.delete(k); }, 10 * 60000).unref();
 const secureCookie = req => req.get('x-forwarded-proto') === 'https' || !!req.get('cf-ray') ? '; Secure' : '';
 const ipOf = req => req.get('cf-connecting-ip') || req.ip;
 async function audit(req, action, detail = null, bizId = null, who = req.user) {
@@ -158,7 +161,7 @@ app.post('/api/login', wrap(async (req, res) => {
   if (u?.locked_until && new Date(u.locked_until) > new Date())
     return res.status(423).json({ error: 'This account is locked for 15 minutes after too many wrong passwords. Ask your administrator if you need help.' });
   if (!u || u.disabled || !checkPassword(req.body.password, u.password_hash)) {
-    a.n++; if (a.n >= 10) { a.n = 0; a.until = Date.now() + 15 * 60000; }
+    a.n++; a.at = Date.now(); if (a.n >= 10) { a.n = 0; a.until = Date.now() + 15 * 60000; }
     attempts.set(ip, a);
     if (u) {
       const n = u.failed_logins + 1;
@@ -188,7 +191,7 @@ app.post('/api/login/code', wrap(async (req, res) => {
   const ip = ipOf(req), a = attempts.get('code' + ip) || { n: 0, until: 0 };
   if (a.until > Date.now()) return res.status(429).json({ error: 'Too many wrong codes. Wait 15 minutes and sign in again.' });
   if (!u || !((u.totp_enabled && checkTotp(u.totp_secret, req.body.code)) || (u.email_2fa && await emailCodeOk(u, req.body.code)))) {
-    a.n++; if (a.n >= 6) { a.n = 0; a.until = Date.now() + 15 * 60000; }
+    a.n++; a.at = Date.now(); if (a.n >= 6) { a.n = 0; a.until = Date.now() + 15 * 60000; }
     attempts.set('code' + ip, a);
     if (u) await audit(req, 'code_failed', null, u.business_id, u);
     return res.status(401).json({ error: 'Wrong code. Use the newest 6-digit code from your authenticator app.' });

@@ -9,6 +9,14 @@ const r = await createBusiness({ name: 'Smoke test restaurant', vertical: 'resta
 const owner = await one('SELECT id, session_version FROM users WHERE business_id=$1', [r.id]), admin = await one(`SELECT id, session_version FROM users WHERE role='admin' LIMIT 1`);
 const as = u => ({ cookie: `rb_session=${signSession(u.id, u.session_version)}`, origin: BASE });
 try {
+  // a write with Origin: null (sandboxed frames) is refused cleanly, not a server error
+  let o = await fetch(BASE + '/api/business', { method: 'PUT', headers: { ...as(owner), origin: 'null', 'Content-Type': 'application/json' }, body: '{}' });
+  say('Origin "null" write gets 403, not 500', o.status === 403, String(o.status));
+  // a client named "Test ..." stays out of the list unless test customers are asked for
+  await q(`INSERT INTO customers (business_id, phone, name) VALUES ($1, '+10000000999', 'Test Deposit')`, [r.id]);
+  const cl0 = await fetch(BASE + '/api/customers?test=0', { headers: as(owner) }).then(r => r.json()), cl1 = await fetch(BASE + '/api/customers?test=1', { headers: as(owner) }).then(r => r.json());
+  const has = l => (Array.isArray(l) ? l : l.rows || []).some(c => c.name === 'Test Deposit');
+  say('Test clients hidden by default, shown on request', !has(cl0) && has(cl1));
   // upload a 1x1 PNG as the logo
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
   let x = await fetch(BASE + '/api/business/upload/logo', { method: 'POST', headers: { ...as(owner), 'Content-Type': 'image/png' }, body: png }).then(r => r.json());
