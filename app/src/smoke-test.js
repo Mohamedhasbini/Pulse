@@ -4,6 +4,7 @@ import { q, one, pool } from './db.js';
 import { createBusiness, signSession } from './accounts.js';
 import { isFree } from './slots.js';
 import { loadBusiness } from './brain.js';
+import { unify } from './customers.js';
 const BASE = 'http://localhost:3100', ok = [], say = (n, c, d = '') => { ok.push(c); console.log(`${c ? 'PASS' : 'FAIL'}  ${n}${d ? '  (' + d + ')' : ''}`); };
 const r = await createBusiness({ name: 'Smoke test restaurant', vertical: 'restaurant', owner_email: `smoke-${Date.now()}@example.test`, timezone: 'Asia/Beirut', currency: 'USD' });
 const owner = await one('SELECT id, session_version FROM users WHERE business_id=$1', [r.id]), admin = await one(`SELECT id, session_version FROM users WHERE role='admin' LIMIT 1`);
@@ -17,6 +18,11 @@ try {
   const cl0 = await fetch(BASE + '/api/customers?test=0', { headers: as(owner) }).then(r => r.json()), cl1 = await fetch(BASE + '/api/customers?test=1', { headers: as(owner) }).then(r => r.json());
   const has = l => (Array.isArray(l) ? l : l.rows || []).some(c => c.name === 'Test Deposit');
   say('Test clients hidden by default, shown on request', !has(cl0) && has(cl1));
+  // merging a Test lab rehearsal into a real, unnamed client keeps the test name off the real client
+  const realC = await one(`INSERT INTO customers (business_id, phone) VALUES ($1, '+34600111222') RETURNING id`, [r.id]);
+  await q(`INSERT INTO customers (business_id, phone, name, contact_phone) VALUES ($1, 'test-lab-9-x', 'Test lab', '+34600111222')`, [r.id]);
+  const merged = await unify(r.id, realC.id);
+  say('Merge never names a real client "Test lab"', merged && merged.name == null, String(merged?.name));
   // upload a 1x1 PNG as the logo
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
   let x = await fetch(BASE + '/api/business/upload/logo', { method: 'POST', headers: { ...as(owner), 'Content-Type': 'image/png' }, body: png }).then(r => r.json());
@@ -62,6 +68,8 @@ try {
   say('Close deletes the business and its logins', x.status === 200 && gone);
   await new Promise(s => setTimeout(s, 300));
   say('Closing removes its photos', (await fetch(BASE + `/media/${r.id}/` + String(ex.business.logo_url).split('/').pop())).status === 404);
+} catch (e) {
+  say("Smoke test crashed", false, e.message); // a crash is a failure, never a silent pass
 } finally {
   await q('DELETE FROM businesses WHERE id=$1', [r.id]).catch(() => {});
   console.log(`\n${ok.filter(Boolean).length} passed, ${ok.filter(c => !c).length} failed`); await pool.end(); process.exit(ok.every(Boolean) ? 0 : 1);

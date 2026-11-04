@@ -30,12 +30,13 @@ export async function unify(bizId, customerId) {
   for (const d of dups) {
     for (const t of ['conversations', 'bookings', 'reviews']) await q(`UPDATE ${t} SET customer_id=$1 WHERE customer_id=$2`, [main.id, d.id]);
     await q('UPDATE campaign_sends SET customer_id=$1 WHERE customer_id=$2', [main.id, d.id]);
+    // a rehearsal's "Test lab" name never becomes a real client's name
     await q(`UPDATE customers SET
         name = COALESCE(name, $2::text), email = COALESCE(email, $3::text), contact_phone = COALESCE(contact_phone, $4::text),
         telegram_chat_id = COALESCE(telegram_chat_id, $5::text), reminder_channel = COALESCE(reminder_channel, $6::text),
         staff_notes = NULLIF(concat_ws(E'\\n', staff_notes, $7::text), ''), marketing_ok = marketing_ok OR $8::boolean,
         language = COALESCE(language, $9::text) WHERE id=$1`,
-      [main.id, d.name, d.email, PLACEHOLDER.test(d.phone) ? d.contact_phone : d.contact_phone || d.phone, d.telegram_chat_id, d.reminder_channel,
+      [main.id, PLACEHOLDER.test(d.phone) && /^test\b/i.test(d.name || '') ? null : d.name, d.email, PLACEHOLDER.test(d.phone) ? d.contact_phone : d.contact_phone || d.phone, d.telegram_chat_id, d.reminder_channel,
        d.staff_notes, !!d.marketing_ok, d.language]);
     await q('DELETE FROM customers WHERE id=$1', [d.id]);
     console.log(`Merged client ${d.id} into ${main.id} (same phone or email)`);
