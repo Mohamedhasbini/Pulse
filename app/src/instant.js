@@ -6,6 +6,7 @@
 import { q, one } from './db.js';
 import { createBusiness } from './accounts.js';
 import { TEMPLATES } from './connectors.js';
+import { FEATURES } from './features.js';
 
 // what each template needs beyond its vertical: services, team, hours, costs, and the kinds of messages clients send
 const PACKS = {
@@ -59,9 +60,10 @@ export async function instantDashboard({ template, name, city = 'Beirut', countr
   const sub = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-demo';
   let b = await one('SELECT id FROM businesses WHERE subdomain=$1', [sub]);
   if (!b) b = { id: (await createBusiness({ name, vertical: p.vertical, owner_email: `owner@${sub}.example`, owner_name: 'Owner', country, city, currency: 'USD', timezone: 'Asia/Beirut', plan_key: 'pro' })).id };
-  await q(`UPDATE businesses SET name=$2, subdomain=$3, template=$4, is_demo=true, feature_overrides='{"marketing":true,"coupons":true}', hours=$5, capacity=$6, tone=$7, assistant_name=$8, team=$9, faqs=$10, costs=$11, city=$12 WHERE id=$1`,
+  await q(`UPDATE businesses SET name=$2, subdomain=$3, template=$4, is_demo=true, feature_overrides=$13, hours=$5, capacity=$6, tone=$7, assistant_name=$8, team=$9, faqs=$10, costs=$11, city=$12 WHERE id=$1`,
     [b.id, name, sub, template, JSON.stringify(p.hours), p.capacity, p.tone, p.assistant, p.team, JSON.stringify(p.faqs.map(([q, a]) => ({ q, a }))),
-      JSON.stringify(p.costs.map(([n, category, basis, amount]) => ({ name: n, category, basis, amount, kind: basis === 'month' ? 'fixed' : 'variable', channel: '' }))), city]);
+      JSON.stringify(p.costs.map(([n, category, basis, amount]) => ({ name: n, category, basis, amount, kind: basis === 'month' ? 'fixed' : 'variable', channel: '' }))), city,
+      JSON.stringify(Object.fromEntries(Object.keys(FEATURES).map(k => [k, true])))]); // a demo shows everything, nothing locked
   // services: the pack's list replaces the starter ones
   await q('UPDATE services SET active=false WHERE business_id=$1', [b.id]);
   const svc = [];

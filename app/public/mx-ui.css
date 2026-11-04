@@ -1165,3 +1165,45 @@ html body main:not(#_):not(#__) .mx-page{padding:0!important;margin:0!important}
 html body main:not(#_):not(#__) .spane{gap:8px!important}
 html body main:not(#_):not(#__)>section.wrap{padding-bottom:0!important}
 @media (max-width:700px){html body main:not(#_):not(#__):not(#___):not(#____){padding:6px 6px 84px!important}}
+
+/* Today › Earned: figures and the service mix under the chart, so the card is full of information, not space */
+.er-k{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.er-k div{background:var(--mx-raise);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:1px;min-width:0}
+:root[data-theme="light"] .er-k div,:root[data-theme="light"] .er-mix{background:#fff}
+.er-k small,.er-mix>small{font-size:11.5px;color:var(--mx-mute)}.er-k b{font-size:18px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.er-k span{font-size:11.5px;color:var(--mx-mute)}
+.er-mix{margin-top:8px;background:var(--mx-raise);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.er-bar{display:flex;height:10px;border-radius:99px;overflow:hidden;gap:2px}.er-bar>span{display:block;height:100%}
+.er-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--mx-mute)}.er-leg span{display:inline-flex;align-items:center;gap:6px}.er-leg i{width:8px;height:8px;border-radius:3px}.er-leg b{color:var(--mx-ink);font-weight:600}
+@media (max-width:700px){.er-k{grid-template-columns:1fr 1fr}}
+.tm-next-up{margin-top:8px;background:var(--mx-raise);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+:root[data-theme="light"] .tm-next-up{background:#fff}
+.tm-next-up small{font-size:11.5px;color:var(--mx-mute)}
+.tm-next-up div{display:grid;grid-template-columns:48px 1fr auto;gap:8px;font-size:13px;align-items:center}.tm-next-up b{font-variant-numeric:tabular-nums}
+.tm-next-up em{font-style:normal;color:var(--mx-mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.er-tb{margin-top:10px}.er-tb .mx-tbl td,.er-tb .mx-tbl th{padding-top:7px!important;padding-bottom:7px!important}
+html body main:not(#_) .learn{grid-template-columns:1fr!important}
+
+/* older side-by-side cards: long lists scroll inside the card instead of stretching the whole row */
+html body main:not(#_) .row>.card .list{max-height:300px;overflow:auto;scrollbar-width:thin}
+/* Win back: best customers on the left, the two short lists stacked on the right, so the columns end together */
+html body main:not(#_) .row.r3:has(#inNoShow){display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+html body main:not(#_) .row.r3:has(#inNoShow)>.card:first-child{grid-row:span 2}
+html body main:not(#_) .row.r3:has(#inNoShow) #inTop{max-height:none}
+.er-wd{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:64px;align-items:end}
+.er-wd div{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.er-wd i{display:block!important;width:100%;flex:none;max-height:calc(100% - 18px);border-radius:5px 5px 2px 2px;background:color-mix(in srgb,var(--mx-s1) 45%,transparent)}.er-wd i.best{background:var(--mx-s1)}
+.er-wd span{font-size:11px;color:var(--mx-mute)}
+html body main:not(#_) table :is(td,th){text-align:left!important}html body main:not(#_) table td{font-variant-numeric:tabular-nums}
+.gw-steps{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;counter-reset:s}
+.gw-steps li{counter-increment:s;background:var(--mx-raise);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--mx-mute)}
+:root[data-theme="light"] .gw-steps li{background:#fff}
+.gw-steps li::before{content:counter(s);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--mx-s1);color:#111;font-weight:700;font-size:12px}
+.gw-steps b{color:var(--mx-ink);font-size:13.5px;font-weight:600}
+.gw-empty .mx-btn{margin-top:12px}
+@media (max-width:700px){.gw-steps{grid-template-columns:1fr}}
+.gw-msg{display:flex;flex-direction:column;gap:6px;margin:8px 0 10px;padding:12px;border-radius:14px;background:var(--mx-raise)}
+:root[data-theme="light"] .gw-msg{background:#fff}
+.gw-msg span{max-width:78%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.45}
+.gw-msg .c{align-self:flex-start;background:#e9f9d0;color:#1a1a1a;border-bottom-left-radius:4px}
+.gw-msg .a{align-self:flex-end;background:var(--mx-ink);color:var(--mx-bg,#fff);border-bottom-right-radius:4px}
+:root[data-theme="dark"] .gw-msg .c{background:#24301a;color:#e8f5d0}

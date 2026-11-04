@@ -65,6 +65,7 @@ function gaps(biz,cal){const d=new Date(),open=(biz.hours?.[d.getDay()]||[]).map
   const closed=open.length>0&&now>=Math.max(...open.map(o=>o[1]));
   return {list:out,openMin,booked,closed}}
 
+const strip=xs=>`<div class="er-k" style="grid-template-columns:repeat(${xs.length},1fr)">${xs.map(([l,v,n])=>`<div><small>${e(l)}</small><b>${v}</b>${n?`<span>${e(n)}</span>`:""}</div>`).join("")}</div>`;
 const sumP=l=>l.reduce((a,b)=>a+(+b.price||0),0),pctCh=(a,b)=>b?(a-b)/b*100:null;
 // what was earned, by day (14), week (12) or month (6), from bookings that happened and were not cancelled
 function earned(past,by){const d0=new Date(new Date().toDateString()),out=[],inR=(a,z)=>sumP(past.filter(b=>{const t=new Date(b.start);return t>=a&&t<z}));
@@ -77,7 +78,21 @@ function earned(past,by){const d0=new Date(new Date().toDateString()),out=[],inR
 function earnCard(past){const pts=earned(past,earnBy),full=pts.at(-2)?.v||0,prev=pts.at(-3)?.v,ch=pctCh(full,prev),tot=pts.reduce((a,p)=>a+p.v,0);
   const per={d:"yesterday",w:"last full week",m:"last full month"}[earnBy],span={d:"last 14 days",w:"last 12 weeks",m:"last 6 months"}[earnBy];
   return U.card({title:"Earned",span:7,size:"wide",link:U.segmented([["d","Days"],["w","Weeks"],["m","Months"]],earnBy,"Period"),
-    body:`<div class="mx-big"><b>${money(tot)}</b><span class="mx-ctx">${span} · ${per} ${money(full)}</span>${U.trend(ch,{vs:"vs the one before"})}</div>${U.columns(pts,{pre:"$",h:190})}`})}
+    body:`<div class="mx-big"><b>${money(tot)}</b><span class="mx-ctx">${span} · ${per} ${money(full)}</span>${U.trend(ch,{vs:"vs the one before"})}</div>${U.columns(pts,{pre:"$",h:250})}${earnMore(past,pts)}`})}
+// under the chart: the figures an owner asks next, then which services the money came from
+function earnMore(past,pts){const done=pts.slice(0,-1),best=done.reduce((m,p)=>p.v>m.v?p:m,{v:0,l:"–"}),avg=done.length?done.reduce((a,p)=>a+p.v,0)/done.length:0;
+  const unit={d:"day",w:"week",m:"month"}[earnBy],cur=pts.at(-1)?.v||0,el=earnBy==="d"?1:earnBy==="w"?(((new Date().getDay()+6)%7)+1)/7:new Date().getDate()/new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
+  const n=past.length,perVisit=n?sumP(past)/n:0,proj=el>0?cur/el:0;
+  const by={};past.forEach(b=>{const k=b.service||"Other";by[k]=(by[k]||0)+(+b.price||0)});const tot=Object.values(by).reduce((a,v)=>a+v,0)||1;
+  const top=Object.entries(by).sort((a,b)=>b[1]-a[1]),list=top.slice(0,4).concat(top.length>4?[["Other",top.slice(4).reduce((a,[,v])=>a+v,0)]]:[]);
+  const col=i=>`var(--mx-s${i%5+1})`;
+  return `<div class="er-k"><div><small>Best ${unit}</small><b>${money(best.v)}</b><span>${e(best.l)}</span></div><div><small>Average ${unit}</small><b>${money(avg)}</b><span>${done.length} ${unit}s</span></div>
+    <div><small>Per visit</small><b>${money(perVisit)}</b><span>${n} visits</span></div><div><small>This ${unit} on pace for</small><b>${money(proj)}</b><span>${proj>=avg?"above":"below"} average</span></div></div>
+    <div class="er-mix"><small>Where it came from</small><div class="er-bar">${list.map(([k,v],i)=>`<span style="width:${v/tot*100}%;background:${col(i)}" title="${e(k)}: ${money(v)}"></span>`).join("")}</div>
+    <div class="er-leg">${list.map(([k,v],i)=>`<span><i style="background:${col(i)}"></i>${e(k)} <b>${Math.round(v/tot*100)}%</b></span>`).join("")}</div></div>`+weekdays(past)}
+// revenue by weekday: which days earn the most, for staffing and offers
+function weekdays(past){const w=[0,0,0,0,0,0,0];past.forEach(b=>{w[new Date(b.start).getDay()]+=(+b.price||0)});const o=[1,2,3,4,5,6,0],mx=Math.max(1,...w),top=w.indexOf(Math.max(...w));
+  return `<div class="er-mix"><small>Revenue by weekday · best ${DOW[top]}</small><div class="er-wd">${o.map(d=>`<div><i style="height:${Math.max(4,w[d]/mx*100)}%"${d===top?' class="best"':""}></i><span>${DOW[d].slice(0,2)}</span></div>`).join("")}</div></div>`}
 // the appointments ahead, as a table: today, or the next 7 days
 function apptTable(all){const now=new Date(),d0=new Date(now.toDateString()),end=new Date(+d0+(tblBy==="today"?1:7)*864e5);
   const rows=all.filter(b=>{const t=new Date(b.start);return t>=d0&&t<end}).sort((a,b)=>new Date(a.start)-new Date(b.start));
@@ -90,13 +105,17 @@ function apptTable(all){const now=new Date(),d0=new Date(now.toDateString()),end
 // revenue by service over the chosen days, as rings with their shares
 function svcCard(past){const from=Date.now()-svDays*864e5,by={};past.filter(b=>+new Date(b.start)>=from).forEach(b=>{const k=b.service||"Other";by[k]=(by[k]||0)+(+b.price||0)});
   const items=Object.entries(by).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value);
-  return U.card({title:"Revenue by service",span:5,size:"wide",cls:"td-sv",link:U.segmented([["7","7 days"],["30","30 days"],["90","90 days"]],String(svDays),"Period"),body:items.length?U.rings(items,money):U.empty(`No visits in the last ${svDays} days`)})}
+  return U.card({title:"Revenue by service",span:5,size:"wide",cls:"td-sv",link:U.segmented([["7","7 days"],["30","30 days"],["90","90 days"]],String(svDays),"Period"),body:items.length?U.rings(items,money)+svcTable(past,from,items):U.empty(`No visits in the last ${svDays} days`)})}
+function svcTable(past,from,items){const tot=items.reduce((a,x)=>a+x.value,0)||1,n={};past.filter(b=>+new Date(b.start)>=from).forEach(b=>{const k=b.service||"Other";n[k]=(n[k]||0)+1});
+  return `<div class="er-tb">${U.table(["Service","Visits","Avg","Share"],items.slice(0,6).map(x=>({cells:[x.label,String(n[x.label]||0),money(x.value/(n[x.label]||1)),`${Math.round(x.value/tot*100)}%`]})))}</div>`}
 // bookings per day over the chosen days, against the same length of time before
 function bookingsCard(hist){const d0=new Date(new Date().toDateString()),n=bkDays,per=[],lab=[],inD=(a,z)=>(hist.all||[]).filter(b=>{const t=new Date(b.start);return t>=a&&t<z}).length;
   for(let i=n-1;i>=0;i--){const a=new Date(+d0-i*864e5);per.push(inD(a,new Date(+a+864e5)));lab.push(`${a.getDate()} ${MON[a.getMonth()]}`)}
   const prev=inD(new Date(+d0-(2*n-1)*864e5),new Date(+d0-(n-1)*864e5)),tot=per.reduce((a,b)=>a+b,0);
   return U.card({title:"Bookings",span:6,size:"wide",cls:"td-bk",link:U.segmented([["7","7 days"],["30","30 days"],["90","90 days"]],String(n),"Period"),
-    body:`<div class="mx-big"><b>${tot}</b>${U.trend(pctCh(tot,prev),{vs:`vs the ${n} days before`})}<span class="mx-ctx">visits, last ${n} days</span></div>${U.area(per,lab,{h:180})}`})}
+    body:`<div class="mx-big"><b>${tot}</b>${U.trend(pctCh(tot,prev),{vs:`vs the ${n} days before`})}<span class="mx-ctx">visits, last ${n} days</span></div>${U.area(per,lab,{h:180})}${bkStrip(hist,per,lab,n)}`})}
+function bkStrip(hist,per,lab,n){const mx=Math.max(...per),wd=[0,0,0,0,0,0,0],d0=Date.now()-n*864e5;(hist.all||[]).forEach(b=>{const t=new Date(b.start);if(+t>=d0&&+t<=Date.now())wd[t.getDay()]++});
+  const top=wd.indexOf(Math.max(...wd));return strip([["Busiest day",String(mx),lab[per.indexOf(mx)]],["Average per day",(per.reduce((a,b)=>a+b,0)/n).toFixed(1),`over ${n} days`],["Busiest weekday",DOW[top].slice(0,3),`${wd[top]} visits`]])}
 // busy hours: weekdays × opening hours, counted from the last 180 days of visits
 function busy(past){const H=[10,11,12,13,14,15,16,17,18,19],D=[1,2,3,4,5,6,0],g=D.map(()=>H.map(()=>0));
   past.forEach(b=>{const t=new Date(b.start),r=D.indexOf(t.getDay()),c=H.indexOf(t.getHours());if(r>=0&&c>=0)g[r][c]++});
@@ -138,7 +157,9 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team}=
       <p class="tm-say">${e(m.advice||"")}</p>${t?`<span class="tm-next">Next: ${e(t.title)}</span>`:""}</button>`}).join("");
   const needCard=U.card({title:"Your team today",span:5,size:"wide",state:open?worst:"healthy",meta:open?`${open} open`:"all clear",link:U.link("Board","p:growth:5"),
     body:sys.map(([,t,sub,btn,go])=>`<div class="tm-alert"><b>${e(t)}</b>${U.button(btn,go)}</div>`).join("")+(tiles?`<div class="tm-grid">${tiles}</div>`:`<div class="mx-list">${need.slice(0,5).map(([s,t,sub,btn,go])=>U.row({dot:s,title:t,sub,action:U.button(btn,go)})).join("")}</div>`)});
-  $("#tdA").innerHTML=needCard+earnCard(hist.past||[]);
+  const nowT=Date.now(),next=(hist.all||[]).filter(b=>+new Date(b.start)>nowT&&!/cancel/.test(b.status||"")).sort((a,b)=>new Date(a.start)-new Date(b.start)).slice(0,3);
+  const upNext=next.length?`<div class="tm-next-up"><small>Coming up next</small>${next.map(b=>`<div><b>${hm(b.start)}</b><span>${e(b.customer||"Client")}</span><em>${e(b.service||"")}</em></div>`).join("")}</div>`:"";
+  $("#tdA").innerHTML=needCard.replace(/<\/section>\s*$/,upNext+"</section>")+earnCard(hist.past||[]);
 
   // band 2 · bookings over 30 days beside the AI front desk and the busy hours
   const d0=new Date(d.toDateString());
