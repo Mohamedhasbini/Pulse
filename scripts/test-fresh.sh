@@ -41,7 +41,7 @@ fi
 mkdir -p backups
 
 DC="docker compose -p $P --env-file .env.ci -f docker-compose.yml -f docker-compose.ci.yml"
-cleanup() { [ "${KEEP:-0}" = 1 ] && echo "Stack '$P' left running (KEEP=1). Remove it with: $DC down -v" || $DC down -v --remove-orphans >/dev/null 2>&1; }
+cleanup() { [ "${KEEP:-0}" = 1 ] && echo "Stack '$P' left running (KEEP=1). Remove it with: $DC down -v" || $DC down -v --remove-orphans --rmi local >/dev/null 2>&1; }
 trap cleanup EXIT
 
 echo "Starting throwaway stack '$P' (fresh database)..."
