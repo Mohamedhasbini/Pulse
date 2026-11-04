@@ -1010,3 +1010,21 @@ html body main #setup:not(#_):not(#__):not(#___) label.switch{display:inline-fle
 html body main #setup:not(#_):not(#__):not(#___) :is(#efBody,#tfBody){display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
 html body main #setup:not(#_):not(#__):not(#___) :is(#efBody,#tfBody)>.more-link{position:static!important;order:2;font-size:12.5px;color:var(--mx-mute);background:none!important;border:0;padding:0}
 html body main #setup:not(#_):not(#__):not(#___) :is(#efBody,#tfBody)>p{flex:1 0 100%;order:3}
+
+/* ── Settings > Look: one row per option (name and one line on the left, a segmented switch on the right) */
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-grid{display:flex!important;flex-direction:column;gap:0!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name ctl" "help ctl";column-gap:24px;row-gap:2px;align-items:center;
+  padding:14px 0!important;margin:0!important;background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row+.cu-row{border-top:1px solid var(--mx-line)!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>b{grid-area:name;font-size:14px!important;font-weight:600;color:var(--mx-ink)!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>small{grid-area:help;font-size:12.5px!important;color:var(--mx-mute)!important;max-width:60ch}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>.cu-seg{grid-area:ctl;display:inline-flex!important;flex-wrap:nowrap;gap:2px!important;padding:3px;border-radius:12px;background:#ebebeb}
+:root:not([data-theme="light"]) main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>.cu-seg{background:#262626}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button{border:0!important;background:transparent!important;color:var(--mx-mute)!important;border-radius:9px!important;padding:6px 14px!important;
+  font-size:13px!important;font-weight:500!important;box-shadow:none!important;min-height:0!important;cursor:pointer;transition:color .15s,background-color .15s}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button:hover{color:var(--mx-ink)!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button[aria-pressed="true"]{background:#fff!important;color:#0a0a0a!important;box-shadow:0 1px 2px rgba(0,0,0,.12)!important}
+:root:not([data-theme="light"]) main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button[aria-pressed="true"]{background:#404040!important;color:#fafafa!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button:focus-visible{outline:2px solid var(--mx-ink);outline-offset:1px}
+@media (max-width:767px){html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row{grid-template-columns:1fr;grid-template-areas:"name" "help" "ctl";row-gap:8px}
+  html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>.cu-seg{flex-wrap:wrap;justify-self:start}}

@@ -234,6 +234,11 @@ function drawCustom(){const look=$("#cuLook .cu-body"),dash=$("#cuDash .cu-body"
    <div class="cu-row"><b>Saved layouts</b><small>${saved.length?"You've customised these tabs:":"All tabs use the standard layout."}</small>
      <div class="cu-seg">${saved.map(([v,k,l])=>`<button type="button" data-reset="${v}|${k}">Reset ${v==="overview"?"Home":"Insights"} · ${esc(l)}</button>`).join("")}${saved.length>1?`<button type="button" data-reset="all">Reset all</button>`:""}</div></div>
    <div class="cu-row"><b>Details on every card</b><small>Click any chart, or the <span style="display:inline-grid;vertical-align:-4px">${ICON.replace("<svg","<svg width='14' height='14' fill='none' stroke='currentColor' stroke-width='2'")}</span> button on a card, to open it full size with every number behind it. Sort, filter, and download it as a spreadsheet.</small></div></div>`}
+// Look keeps only what applies to the current design: theme, text size, spacing, animations and the first page.
+// The blurred room background, accent swatches, the heartbeat wave and the old movable widget boards are gone.
+const LOOK_GONE=/^(Background|Highlight colour|MXAi heartbeat|Arrange your cards|Saved layouts|Details on every card)$/;
+const drawLook=drawCustom;drawCustom=function(){drawLook();document.querySelectorAll("#cuLook .cu-row,#cuDash .cu-row").forEach(r=>{if(LOOK_GONE.test(r.querySelector("b")?.textContent.trim()||""))r.remove()});
+  const t=document.querySelector("#cuLook [data-theme-seg]");if(t){t.querySelector('[data-v="light"]')&&(t.querySelector('[data-v="light"]').textContent="Light");t.querySelector('[data-v="dark"]')&&(t.querySelector('[data-v="dark"]').textContent="Dark");t.parentElement.querySelector("small").textContent="Light is easiest to read in daylight; dark is calmer at night.";t.prepend(t.querySelector('[data-v="light"]'))}};
 document.addEventListener("click",e=>{const b=e.target.closest("#cuLook button,#cuDash button");if(!b)return;
   const s=b.closest(".cu-seg");
   if(s&&s.hasAttribute("data-theme-seg")){const r=document.documentElement;r.dataset.theme=b.dataset.v;try{localStorage.setItem("rb-theme",b.dataset.v)}catch{}}
