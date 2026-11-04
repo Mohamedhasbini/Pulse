@@ -1207,3 +1207,4 @@ html body main:not(#_) table :is(td,th){text-align:left!important}html body main
 .gw-msg .c{align-self:flex-start;background:#e9f9d0;color:#1a1a1a;border-bottom-left-radius:4px}
 .gw-msg .a{align-self:flex-end;background:var(--mx-ink);color:var(--mx-bg,#fff);border-bottom-right-radius:4px}
 :root[data-theme="dark"] .gw-msg .c{background:#24301a;color:#e8f5d0}
+.mx-sk-l .sk-lab,.mx-sk-r .sk-lab{min-height:0;line-height:1.15}

@@ -128,7 +128,14 @@
   // the area fill gradient is defined once per page
   if (typeof document !== 'undefined' && document.body && !document.getElementById('mxDefs')) document.body.insertAdjacentHTML('beforeend', '<svg id="mxDefs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="mxAreaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--mx-s1)" stop-opacity=".35"/><stop offset="1" stop-color="var(--mx-s1)" stop-opacity="0"/></linearGradient></defs></svg>');
   // ── finance charts (after the BoardUI finance and marketing templates)
-  const SERIES = ['var(--mx-s1)', 'var(--mx-s2)', 'var(--mx-s3)', 'var(--mx-s4)', 'var(--mx-s5)'];
+  // sankey labels: each centred on its band, then moved apart (34px apart at least) and kept inside the chart
+function spread(nodes, h, lh = 34) {
+  const out = nodes.map(n => [n, Math.min(Math.max(0, n.y + n.hgt / 2 - lh / 2), h - lh)]);
+  for (let i = 1; i < out.length; i++) out[i][1] = Math.max(out[i][1], out[i - 1][1] + lh);
+  for (let i = out.length - 1; i >= 0; i--) { const max = i === out.length - 1 ? h - lh : out[i + 1][1] - lh; out[i][1] = Math.max(0, Math.min(out[i][1], max)); }
+  return out;
+}
+const SERIES = ['var(--mx-s1)', 'var(--mx-s2)', 'var(--mx-s3)', 'var(--mx-s4)', 'var(--mx-s5)'];
   const cash = v => '$' + Math.round(v || 0).toLocaleString();
   Object.assign(MXUI, {
     // sankey: sources on the left, destinations on the right, each link as wide as its money
@@ -142,8 +149,8 @@
         return `<path d="M 160 ${y0} C 500 ${y0}, 500 ${y1}, 840 ${y1}" stroke="${a.c}" stroke-width="${Math.max(1, (ha + hb) / 2)}" fill="none" opacity=".32"><title>${esc(l.from)} → ${esc(l.to)}: ${fmt(l.value)}</title></path>`; }).join('');
       return `<div class="mx-sankey"><svg viewBox="0 0 ${W} ${h}" preserveAspectRatio="none" role="img" aria-label="Where the money goes">${paths}
         ${L.map(n => `<rect x="152" y="${n.y}" width="8" height="${n.hgt}" rx="3" fill="${n.c}"/>`).join('')}${R.map(n => `<rect x="840" y="${n.y}" width="8" height="${n.hgt}" rx="3" fill="${n.label === 'Profit' ? 'var(--mx-s1)' : 'var(--mx-mute)'}"/>`).join('')}</svg>
-        <div class="mx-sk-l">${L.map(n => `<span style="top:${n.y / h * 100}%;height:${n.hgt / h * 100}%"><b>${esc(n.label)}</b><small>${fmt(n.value)}</small></span>`).join('')}</div>
-        <div class="mx-sk-r">${R.map(n => `<span style="top:${n.y / h * 100}%;height:${n.hgt / h * 100}%"><b>${esc(n.label)}</b><small>${Math.round(n.value / tout * 100)}%</small></span>`).join('')}</div>
+        <div class="mx-sk-l">${spread(L, h).map(([n, t]) => `<span class="sk-lab" style="top:${t / h * 100}%;height:${34 / h * 100}%"><b>${esc(n.label)}</b><small>${fmt(n.value)}</small></span>`).join('')}</div>
+        <div class="mx-sk-r">${spread(R, h).map(([n, t]) => `<span class="sk-lab" style="top:${t / h * 100}%;height:${34 / h * 100}%"><b>${esc(n.label)}</b><small>${Math.round(n.value / tout * 100)}%</small></span>`).join('')}</div>
         <div class="mx-sk-ax"><span>Income</span><span>Spending</span></div></div>`; },
     // gauge: a half ring split into segments, the lead share in the middle, a legend with amounts under it
     gauge: (items, { fmt = cash, center = '' } = {}) => {
