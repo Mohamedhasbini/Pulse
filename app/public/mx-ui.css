@@ -1146,3 +1146,22 @@ html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log button:not(.pc-more)
 .demo-bar a:focus-visible{outline:2px solid #c6f432;outline-offset:2px}
 body.has-demo{padding-bottom:52px}
 @media (max-width:700px){.demo-bar{bottom:64px;font-size:12px;gap:8px}.demo-bar span{width:100%;text-align:center}}
+
+/* tighter dashboard: cards sit close together so the page reads as one surface, not cards floating on a background */
+html body main:not(#_){padding:8px 8px 72px!important}
+html body main:not(#_) :is(.mx-page,.rp){display:flex!important;flex-direction:column;gap:8px!important}
+html body main:not(#_) .mx-grid{gap:8px!important;margin:0!important}
+html body main:not(#_) .mx-grid:empty{display:none!important}
+html body main:not(#_) .tdh{margin:2px 4px 0!important}
+html body main:not(#_) .p10-sub:not([hidden]),html body main:not(#_)>section>.set-ix{margin-bottom:6px!important}
+@media (max-width:700px){html body main:not(#_){padding:6px 6px 84px!important}html body main:not(#_) :is(.mx-page,.rp),html body main:not(#_) .mx-grid{gap:6px!important}}
+html body main:not(#_) .rp-period{margin:0!important}
+html body main:not(#_) .rp-g{margin-top:6px!important}
+html body main:not(#_) .rp-h{margin:0 4px 6px!important}
+html body main:not(#_) section:has(.pa-switch) .rp-period{position:absolute!important;top:2px;right:4px;z-index:2}
+html body main:not(#_)>section>.top{margin:0!important}html body main:not(#_)>section>.rp{margin-top:0!important}
+html body main:not(#_):not(#__):not(#___):not(#____){padding:8px 8px 72px!important}
+html body main:not(#_):not(#__) .mx-page{padding:0!important;margin:0!important}
+html body main:not(#_):not(#__) .spane{gap:8px!important}
+html body main:not(#_):not(#__)>section.wrap{padding-bottom:0!important}
+@media (max-width:700px){html body main:not(#_):not(#__):not(#___):not(#____){padding:6px 6px 84px!important}}
