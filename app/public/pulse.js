@@ -99,7 +99,7 @@
     customers: i => i === 1 ? ['growth', 1] : i >= 4 ? ['growth', i - 2] : ['customers', i] };
   // the menu in four groups, each heading drawn before its first page
   const GROUP = {};
-  const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Costs', 'costs'], ['Account & security', 's2fa'], ['Look', 'look'], ['Website', 13], ['Integrations', 12]];
+  const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Costs', 'costs'], ['Account & security', 's2fa'], ['Look', 'look'], ['Integrations', 12]];
   // tabs marked adv show once the owner asks for more detail on that page (remembered), or while one is open
   const detailOn = id => { try { return localStorage.getItem('mx-detail-' + id) === '1' } catch { return false } };
   const shown = (id, tabs) => tabs.map((t, k) => [t, k]).filter(([t, k]) => t[1].hidden ? false : !t[1].adv || detailOn(id) || (current?.[0] === id && tabs[current[1]]?.[1].adv && k >= 0));
@@ -226,6 +226,9 @@
     if (st && !st.dataset.ixOn) { st.dataset.ixOn = 1; st.addEventListener('click', ev => { const j = ev.target.closest('.set-ix [data-jump]'); if (j) return setPart(j.dataset.jump); const t = ev.target.closest('.set-ix [data-t]'); if (t) go('settings', +t.dataset.t); }); }
     if (st && !st.querySelector('.spane[data-pane="costs"]')) { const c = document.createElement('div'); c.className = 'spane'; c.dataset.pane = 'costs'; c.innerHTML = '<h2>Costs</h2><div id="cstRoot"></div>'; st.append(c); }
     if (k === 'costs') window.PVCosts?.($('#cstRoot'));
+    const PARTS = { details: ['details'], channels: ['channels', 'reminders'], booking: ['booking', 'codes'], s2fa: ['s2fa', 'spw', 'sdev'], look: ['look', 'dash'] };
+    (PARTS[k] || []).forEach(t => { try { dispatchEvent(new CustomEvent('tabshown', { detail: { view: 'setup', tab: t } })); } catch {} });
+    if (k === 's2fa') { try { if (typeof me !== 'undefined' && me && typeof loadSecurity === 'function') loadSecurity(); } catch {} }
     $$('.set-ix [data-jump]').forEach(x => x.setAttribute('aria-current', x.dataset.jump === k));
     $('main')?.scrollTo?.(0, 0);
   }
@@ -240,8 +243,11 @@
     b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.filter(t => !t[1].hidden).length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.hidden || (o.adv && !detail) ? '' :
       `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" aria-pressed="${k === sel}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${false ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${id === 'insights' ? (detail ? 'Back to the report' : 'Explore all charts') : detail ? 'Fewer tools' : 'More tools'}</button>` : ''}</div>` : '');
     // Settings is one page: a row of chips jumps to each part; Website and Integrations open their own screens
-    if (id === 'settings' && i === 0) { b.insertAdjacentHTML('beforeend', `<div class="set-ix" role="navigation" aria-label="Settings sections">${SET_IX.map(([l, k]) =>
-      `<button type="button" ${typeof k === 'number' ? `data-t="${k}"` : `data-jump="${k}"`}>${e(l)}</button>`).join('')}</div>`); setTimeout(() => setPart(setPartNow)); }
+    if (id === 'settings' && (i === 0 || i === 12)) { b.insertAdjacentHTML('beforeend', `<div class="set-ix" role="navigation" aria-label="Settings sections">${SET_IX.map(([l, k]) =>
+      `<button type="button" ${typeof k === 'number' ? `data-t="${k}"` : `data-jump="${k}"`}>${e(l)}</button>`).join('')}</div>`); setTimeout(() => { if (i === 0) return setPart(setPartNow);
+      const host = $('#p10-integrations'), ix = $('.p10-bar .set-ix'); if (!host || !ix) return; $$('#p10-integrations > .set-ix').forEach(x => x.remove()); host.prepend(ix); host.classList.add('set-host');
+      ix.querySelectorAll('button').forEach(x => x.setAttribute('aria-current', String(x.dataset.t === '12')));
+      if (!host.dataset.ixOn) { host.dataset.ixOn = 1; host.addEventListener('click', ev => { const j = ev.target.closest('.set-ix [data-jump]'); if (j) { go('settings', 0); setTimeout(() => setPart(j.dataset.jump), 120); } }); } }); }
     b.addEventListener('click', ev => {
       const jmp = ev.target.closest('[data-jump]'); if (jmp) return setPart(jmp.dataset.jump);
       const d = ev.target.closest('[data-detail]');

@@ -956,3 +956,57 @@ html body .pc:not(#_):not(#__):not(#___) .pc-dh button{color:#0a0a0a!important;b
   html body .pc:not(#_):not(#__):not(#___) .pc-log{padding:8px 12px 12px!important}
 }
 @media (max-width:767px){html body .pc:not(.pc-sideopen):not(#_):not(#__):not(#___) .pc-side{box-shadow:none!important;visibility:hidden}}
+/* ── one typeface: Geist everywhere (headings, figures, tables, buttons, forms, the chat), Geist Mono only for times
+   and codes; figures line up (tabular numbers); slight negative tracking on big numbers, optical smoothing */
+:root{--mx-font:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mx-mono:"Geist Mono",ui-monospace,Menlo,monospace}
+html body,html body :is(main,nav,.pc,.ph-sheet,dialog) :is(*,input,button,select,textarea):not(svg):not(svg *):not(code):not(kbd):not(.mx-time):not(.gc-times):not(.gc-times *){font-family:var(--mx-font)!important}
+html body :is(code,kbd,.mx-time,.gc-times,.gc-times *){font-family:var(--mx-mono)!important}
+html body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+html body :is(.mx-num,.mx-big b,.mx-strip b,.ib-in b,.tb-val,.mx-tbl td,.mx-bar b,.pv-big,.mx-tiles b,.mx-rad b,.mx-gauge-c b){font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+html body :is(.mx-num,.mx-big b,.ib-in b,.pv-big){letter-spacing:-.025em}
+
+/* ── Settings as a settings app: a group title and one line above each card, no repeated title inside the card,
+   full-strength text, rows with hairlines, switches for on/off, no stray decorations */
+html body #setup:not(#_):not(#__) .spane>h2{font-size:22px!important;font-weight:600!important;letter-spacing:-.02em;margin:2px 0 14px!important}
+html body #setup:not(#_):not(#__) .sethead{display:flex;flex-direction:column;gap:2px;margin:18px 2px 8px!important;padding:0!important;border:0!important}
+html body #setup:not(#_):not(#__) .sethead b{font-size:15px!important;font-weight:600!important;color:var(--mx-ink)!important}
+html body #setup:not(#_):not(#__) .sethead span{font-size:13px!important;color:var(--mx-mute)!important}
+html body #setup:not(#_):not(#__) .spane .card{opacity:1!important;filter:none!important;color:var(--mx-ink)!important;padding:6px 18px!important;border-radius:16px!important;resize:none!important;overflow:visible}
+:root[data-theme="light"] #setup:not(#_):not(#__) .spane .card{background:#fff!important;box-shadow:0 0 0 1px #ebebeb!important}
+html body #setup:not(#_):not(#__) .spane .card::after,html body #setup:not(#_):not(#__) .spane .card::before{display:none!important}
+html body #setup:not(#_):not(#__) .spane .card>.ch{display:flex;justify-content:flex-end;align-items:center;gap:8px;min-height:0;margin:8px 0 0!important;padding:0!important;border:0!important}
+html body #setup:not(#_):not(#__) .spane .card>.ch>h2{display:none!important}
+html body #setup:not(#_):not(#__) .spane .card>.ch>small{font-size:12px;color:var(--mx-mute)}
+html body #setup:not(#_):not(#__) .spane .card :is(p,span,small,li,div,label,b,strong,a){opacity:1!important}
+html body #setup:not(#_):not(#__) .spane .card :is(.sub,small){color:var(--mx-mute)!important}
+html body #setup:not(#_):not(#__) .spane .card :is(label,.row,.form>*):not(:last-child){border-color:var(--mx-line)!important}
+html body #setup:not(#_):not(#__) .spane .card h3{font-size:14px!important;font-weight:600!important;margin:14px 0 6px!important;color:var(--mx-ink)!important}
+/* switches instead of tick boxes */
+html body #setup:not(#_):not(#__) input[type=checkbox]{appearance:none;-webkit-appearance:none;width:38px;height:22px;flex:none;border-radius:99px;background:#d4d4d4;position:relative;cursor:pointer;transition:background-color .2s;vertical-align:middle;margin:0 8px 0 0;border:0!important}
+html body #setup:not(#_):not(#__) input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.23,1,.32,1)}
+html body #setup:not(#_):not(#__) input[type=checkbox]:checked{background:#16a34a}
+html body #setup:not(#_):not(#__) input[type=checkbox]:checked::after{transform:translateX(16px)}
+html body #setup:not(#_):not(#__) input[type=checkbox]:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+:root:not([data-theme="light"]) #setup:not(#_):not(#__) input[type=checkbox]:not(:checked){background:#404040}
+/* buttons inside settings: one quiet style, the primary action in ink */
+html body #setup:not(#_):not(#__) .spane .btn{border-radius:10px!important;min-height:36px;padding:0 14px!important;font-size:13px!important;font-weight:500!important}
+html body #setup:not(#_):not(#__) .spane .btn:not(.ghost){background:var(--mx-ink)!important;color:var(--mx-surf)!important;border:0!important}
+:root[data-theme="light"] #setup:not(#_):not(#__) .spane .btn:not(.ghost){color:#fff!important}
+html body #setup:not(#_):not(#__) .spane .btn.ghost{background:transparent!important;color:var(--mx-ink)!important;box-shadow:inset 0 0 0 1px var(--mx-line)!important;border:0!important}
+html body #setup:not(#_):not(#__) .spane .tag{font-size:11.5px;border-radius:7px;padding:2px 8px}
+/* Integrations shares the settings layout */
+@media (min-width:900px){
+  html body main #p10-integrations.set-host:not([hidden]):not(#_):not(#__){display:grid!important;grid-template-columns:230px minmax(0,1fr);column-gap:16px;align-items:start}
+  html body main #p10-integrations.set-host:not(#_):not(#__)>*{grid-column:2}
+  html body main #p10-integrations.set-host:not(#_):not(#__)>.set-ix{grid-column:1;grid-row:1/span 40;position:sticky;top:0;display:flex!important;flex-direction:column;align-items:stretch;gap:2px;padding:10px;border-radius:16px;background:var(--mx-surf)!important}
+}
+html body #p10-integrations:not(#_):not(#__)>.set-ix button{display:flex;align-items:center;padding:9px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--mx-ink2)}
+html body #p10-integrations:not(#_):not(#__)>.set-ix button[aria-current="true"]{background:#fff!important;color:var(--mx-ink)}
+html body #p10-integrations:not(#_):not(#__)>.set-ix::before{content:"Settings";display:block;padding:4px 12px 8px;font-size:12px;font-weight:600;color:var(--mx-mute)}
+html body main #setup:not(#_):not(#__):not(#___) input[type=checkbox]{background:#d4d4d4!important;border:0!important;box-shadow:none!important;opacity:1!important}
+html body main #setup:not(#_):not(#__):not(#___) input[type=checkbox]:checked{background:#16a34a!important}
+:root:not([data-theme="light"]) main #setup:not(#_):not(#__):not(#___) input[type=checkbox]:not(:checked){background:#404040!important}
+html body main #setup:not(#_):not(#__):not(#___) label.switch{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--mx-ink)}
+html body main #setup:not(#_):not(#__):not(#___) :is(#efBody,#tfBody){display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+html body main #setup:not(#_):not(#__):not(#___) :is(#efBody,#tfBody)>.more-link{position:static!important;order:2;font-size:12.5px;color:var(--mx-mute);background:none!important;border:0;padding:0}
+html body main #setup:not(#_):not(#__):not(#___) :is(#efBody,#tfBody)>p{flex:1 0 100%;order:3}
