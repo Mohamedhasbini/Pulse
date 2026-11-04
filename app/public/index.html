@@ -23,7 +23,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="/pulse-logo.svg">
 <style>body{margin:0}[hidden]{display:none!important}</style>
-<script>try{if(!localStorage.getItem("rb-glass")){localStorage.setItem("rb-stone","1");localStorage.setItem("rb-glass","1")}if(!localStorage.getItem("rb-light-default")){localStorage.setItem("rb-theme","light");localStorage.setItem("rb-light-default","1")}document.documentElement.dataset.theme=localStorage.getItem("rb-theme")||"light"}catch{document.documentElement.dataset.theme="light"}</script>
+<script>try{if(!localStorage.getItem("rb-glass")){localStorage.setItem("rb-stone","1");localStorage.setItem("rb-glass","1")}if(!localStorage.getItem("rb-light-default")){localStorage.setItem("rb-theme","light");localStorage.setItem("rb-light-default","1")}document.documentElement.dataset.theme=localStorage.getItem("rb-theme")||"light"}catch{document.documentElement.dataset.theme="light"}
+/* design preview skins: ?skin=name&mode=light|dark shows the dashboard in a candidate design. Nothing is saved: your own theme is untouched */
+try{var q=new URLSearchParams(location.search),k=q.get("skin"),m=q.get("mode");if(m==="light"||m==="dark")document.documentElement.dataset.theme=m;if(/^(stone|champagne|atelier|console|mist)$/.test(k||"")){document.documentElement.dataset.skin=k;var l=document.createElement("link");l.rel="stylesheet";l.href="/skins/"+k+".css";document.head.appendChild(l)}}catch{}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>

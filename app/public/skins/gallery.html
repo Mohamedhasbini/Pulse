@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Skins</title>
+<link rel="stylesheet" href="/fonts.css">
+<style>
+:root{--pg:#e9e9e7;--ink:#141414;--mute:#5d5d5d;--line:rgba(0,0,0,.1);--card:#f6f6f4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg:#0f0f0f;--ink:#eeeeee;--mute:#9a9a9a;--line:rgba(255,255,255,.1);--card:#171717}}
+:root[data-theme="dark"]{--pg:#0f0f0f;--ink:#eeeeee;--mute:#9a9a9a;--line:rgba(255,255,255,.1);--card:#171717}
+*{box-sizing:border-box}
+body{margin:0;background:var(--pg);color:var(--ink);font:15px/1.5 Geist,system-ui,sans-serif}
+.pg{max-width:1500px;margin:0 auto;padding:36px 16px 80px}
+h1{font:600 26px/1.2 Geist,sans-serif;letter-spacing:-.02em;margin:0 0 6px}
+.lead{margin:0 0 28px;color:var(--mute);max-width:78ch}
+.row{margin:0 0 44px}
+.row h2{font:600 18px/1.3 Geist,sans-serif;margin:0 0 2px;display:flex;gap:10px;align-items:baseline}
+.row h2 small{font:500 12px/1 Geist,sans-serif;color:var(--mute)}
+.row p{margin:0 0 14px;color:var(--mute);max-width:90ch}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:900px){.pair{grid-template-columns:1fr}}
+.cap{display:flex;justify-content:space-between;font:600 11px/1 Geist,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:0 0 8px}
+.cap a{color:var(--mute);text-decoration:underline;text-underline-offset:3px;letter-spacing:0;text-transform:none;font-weight:500;font-size:12px}
+.view{position:relative;width:100%;aspect-ratio:1440/900;overflow:hidden;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.view iframe{position:absolute;top:0;left:0;width:1440px;height:900px;border:0;transform-origin:0 0;pointer-events:none}
+.view .wait{position:absolute;inset:0;display:grid;place-items:center;color:var(--mute);font-size:13px}
+</style>
+</head>
+<body>
+<div class="pg">
+  <h1>Your dashboard, five ways</h1>
+  <p class="lead">These are not drawings: each preview is your real, live dashboard with your real data, restyled. The first row is how it looks today, for comparison. Open any one full size to click around in it. Nothing here changes your own settings.</p>
+  <div id="rows"></div>
+</div>
+<script>
+const S=[
+ ["","Today's look","Current","The Future Utility system you have now: white and near-black, graphite accents, lime as the rare signal."],
+ ["mist","Mist","Calm, cool","Cool mist canvas with crisp tiles and graphite; lime stays the signal. The palette you picked before, with softer depth and rounder tiles."],
+ ["stone","Stone","Warm, soft","The same calm system made warmer: stone and paper tones, ink-black buttons, gentle shadows. Feels less like software, more like a studio."],
+ ["champagne","Champagne","Luxury","For salons and spas that sell premium: olive-black or stone, gold as the only accent, serif headline and figures, spaced capital card titles."],
+ ["atelier","Atelier","Beauty, friendly","Cream and clay with a terracotta accent and a book-like serif. Welcoming and personal, made for beauty businesses."],
+ ["console","Console","Operator","Sage greys, mono figures and tighter corners; calm green as the signal. For owners who keep it open all day and want density."]];
+const rows=document.getElementById("rows");
+rows.innerHTML=S.map(([k,name,tag,why])=>`<section class="row"><h2>${name}<small>${tag}</small></h2><p>${why}</p><div class="pair">${["light","dark"].map(m=>{
+  const url=`/?${k?`skin=${k}&`:""}mode=${m}`;
+  return `<div><div class="cap"><span>${m}</span><a href="${url}" target="_blank" rel="noopener">Open full size</a></div><div class="view"><span class="wait">Loading…</span><iframe title="${name}, ${m}" data-src="${url}" loading="lazy" tabindex="-1"></iframe></div></div>`}).join("")}</div></section>`).join("");
+const fit=()=>document.querySelectorAll(".view iframe").forEach(f=>f.style.transform=`scale(${f.parentElement.clientWidth/1440})`);
+addEventListener("resize",fit);fit();
+// load a few at a time so twelve live dashboards don't all start at once
+const queue=[...document.querySelectorAll("iframe[data-src]")];
+const next=()=>{const f=queue.shift();if(!f)return;f.onload=()=>{f.previousElementSibling?.remove();setTimeout(next,300)};f.src=f.dataset.src};
+next();next();
+</script>
+</body>
+</html>
