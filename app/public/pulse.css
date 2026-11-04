@@ -2672,9 +2672,8 @@ section.p10-on:not([hidden]){row-gap:6px!important}
 .p10-on .spane[data-pane="overview"],.p10-on .spane[data-pane="next"]{overflow:visible!important}
 .p10-on #inTrend{height:300px!important}
 .p10-on .spane table{width:100%!important;min-width:0!important;table-layout:auto}
-.p10-on .spane :is(.tbl,.table-wrap,.tw):has(table){overflow-x:hidden!important}
+.p10-on .spane :is(.tbl,.table-wrap,.tw):has(table){overflow-x:hidden!important} /* the table itself scrolls sideways */
 .p10-on .spane table :is(th,td){padding-left:6px!important;padding-right:6px!important;white-space:nowrap}
-.p10-on .spane table td:has(.bar),.p10-on .spane table th:nth-child(4):has(+th){}
 
 .p10-on #demo .phone{max-width:100%;max-height:100%}
 /* Train › Coach on its own tab: the chat fills the screen and its messages scroll inside, like any chat */
@@ -3046,3 +3045,6 @@ html body #setup.set-one > .spane:not([hidden]):not(#_){display:block!important;
 @media (min-width:768px){html body nav[aria-label="Main"] .p10[data-p10="settings"]:not(#_){display:none!important}}
 @media (max-width:767px){#setBtn{display:none!important}}
 .rp-cell .pv-heat b{aspect-ratio:auto!important;height:26px!important;min-height:0!important;border-radius:5px}
+
+/* touch screens: table checkboxes meet the 24px minimum target */
+@media (pointer:coarse){.p10-on .spane table input[type=checkbox]{width:20px;height:20px;margin:2px}}
