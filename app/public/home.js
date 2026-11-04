@@ -11,7 +11,7 @@ let timer=null,last=null,earnBy="w",tblBy="today",bkDays=30,svDays=30;
 const sec=document.createElement("section");sec.className="wrap today";sec.id="today";sec.hidden=true;
 sec.innerHTML=`<div class="mx-page">
  <header class="tdh"><div class="tdh-id"><div class="tdh-logo" id="tdLogo" role="button" tabindex="0" data-go="settings" title="Change your logo in Settings"></div>
-   <div style="min-width:0"><p class="tdh-date" id="tdDate"></p><h1 id="tdHello"></h1><p class="tdh-sub" id="tdSub"></p></div></div>
+   <div style="min-width:0"><p class="tdh-date" id="tdDate"></p><h1 id="tdHello"></h1><p class="tdh-sub" id="tdSub"></p><p class="tdh-since" id="tdSince" aria-live="polite"></p></div></div>
   <div class="tdh-acts"><button class="mx-btn" type="button" data-go="ask">Ask MXAi</button><button class="mx-btn pri" type="button" data-go="newbooking">+ New booking</button></div></header>
  <div class="mx-grid" id="tdLive"></div>
  <div class="mx-grid" id="tdA">${U.card({title:"Needs your attention",span:5,body:U.loading(3)})}${U.card({title:"Earned",span:7,size:"wide",body:U.loading(5)})}</div>
@@ -29,6 +29,8 @@ main>section.today:not([hidden]){overflow:auto}
 .today .tdh h1{margin:2px 0 2px;font-size:28px!important;font-weight:600;letter-spacing:-.025em;line-height:1.15;color:var(--mx-ink)}
 .today .tdh h1 em{font-style:normal;color:var(--mx-ink2);font-weight:500}
 .tdh-sub{margin:0;font-size:14px;color:var(--mx-ink2)}
+.tdh-since{margin:4px 0 0;font-size:13px;color:var(--mx-mute)}.tdh-since:empty{display:none}.tdh-since b{font-weight:600;color:var(--mx-ink2)}
+.tdh-chg{all:unset;cursor:pointer;color:var(--mx-ink2);text-decoration:underline;text-decoration-color:var(--mx-line);text-underline-offset:3px}.tdh-chg:hover{color:var(--mx-ink);text-decoration-color:currentColor}
 .tdh-acts{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:767px){.tdh-acts{width:100%}.tdh-acts .mx-btn{flex:1}.today .tdh h1{font-size:22px!important}}
 .td-steps{display:flex;gap:8px;flex-wrap:wrap}
@@ -192,7 +194,15 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team}=
   $("#tdLive").innerHTML=false?U.card({title:"Go live",span:12,state:"warning",size:"compact",meta:`${(live.setup||[]).length-pending.length} of ${(live.setup||[]).length} done`,
     body:`<p class="mx-ctx">Finish these so clients can reach ${e(nora())}.</p><div class="td-steps">${pending.map(s=>U.button(s.label,"p:settings:0")).join("")}</div>`}):"";
   const todays=(cal.bookings||[]).filter(b=>!/cancel/.test(b.status||"")),tasks=need.filter(x=>x[0]!=="neutral").length;
-  $("#tdSub").textContent=`${todays.length} appointment${todays.length===1?"":"s"} today · ${tasks?`${tasks} thing${tasks>1?"s":""} need${tasks===1?"s":""} you`:"nothing waiting for you"}.`}
+  $("#tdSub").textContent=`${todays.length} appointment${todays.length===1?"":"s"} today · ${tasks?`${tasks} thing${tasks>1?"s":""} need${tasks===1?"s":""} you`:"nothing waiting for you"}.`;
+  since()}
+// since you last checked: one calm line, each part opens where it is handled; nothing new says so
+async function since(){const el=$("#tdSince");if(!el)return;let c;try{c=await req("/api/changes")}catch{c=null}if(!c||!c.since){el.textContent="";return}
+  const pl=(n,w)=>`${n} ${w}${n===1?"":"s"}`,when=new Date(c.since),ago=Date.now()-when,hrs=Math.round(ago/36e5);
+  const label=ago<36e5*20?`Since ${String(when.getHours()).padStart(2,"0")}:${String(when.getMinutes()).padStart(2,"0")}`:hrs<48?"Since yesterday":`Since ${when.getDate()}/${when.getMonth()+1}`;
+  const parts=[c.bookings&&[`${pl(c.bookings,"new booking")}${c.by_ai?` (${c.by_ai} by ${e(nora())})`:""}`,"p:calendar:0"],c.messages&&[pl(c.messages,"client message"),"p:inbox:0"],
+    c.clients&&[pl(c.clients,"new client"),"p:customers:0"],c.reviews&&[pl(c.reviews,"new review"),"p:customers:3"]].filter(Boolean);
+  el.innerHTML=`<b>${label}:</b> `+(parts.length?parts.map(([t,g])=>`<button type="button" class="tdh-chg" data-go="${g}">${t}</button>`).join(" · "):"nothing new.")}
 
 // every button goes to the right place: p:page:tab, c:conversation, or a named action
 function go(where){

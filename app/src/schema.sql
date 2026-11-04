@@ -478,3 +478,6 @@ CREATE TABLE IF NOT EXISTS memberships (id SERIAL PRIMARY KEY, business_id INT R
 CREATE TABLE IF NOT EXISTS membership_payments (id SERIAL PRIMARY KEY, membership_id INT REFERENCES memberships(id) ON DELETE CASCADE,
   business_id INT REFERENCES businesses(id) ON DELETE CASCADE, amount NUMERIC NOT NULL, paid_at TIMESTAMPTZ NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS membership_payments_biz ON membership_payments (business_id, paid_at);
+-- "Since you last checked" on Today: when the owner last looked, and the start of the window being shown
+ALTER TABLE users ADD COLUMN IF NOT EXISTS today_seen_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS today_from TIMESTAMPTZ;

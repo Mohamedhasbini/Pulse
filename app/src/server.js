@@ -392,6 +392,22 @@ app.post('/api/me/2fa/disable', wrap(async (req, res) => {
   await audit(req, '2fa_off');
   res.json({ ok: true });
 }));
+// Today › since you last checked. A visit more than 30 minutes after the last one starts a new window, so a reload
+// doesn't wipe what the owner hasn't read yet. First visit: the last 24 hours. Counts only, from this business
+app.get('/api/changes', wrap(async (req, res) => {
+  const u = await one(`UPDATE users SET
+      today_from = CASE WHEN today_seen_at IS NULL THEN now() - interval '24 hours' WHEN today_seen_at < now() - interval '30 minutes' THEN today_seen_at ELSE COALESCE(today_from, today_seen_at) END,
+      today_seen_at = CASE WHEN today_seen_at IS NULL OR today_seen_at < now() - interval '30 minutes' THEN now() ELSE today_seen_at END
+    WHERE id=$1 RETURNING today_from`, [req.user.id]);
+  const from = u.today_from, B = BIZ();
+  const c = await one(`SELECT
+      (SELECT count(*) FROM bookings WHERE business_id=$1 AND created_at > $2)::int AS bookings,
+      (SELECT count(*) FROM bookings WHERE business_id=$1 AND created_at > $2 AND source='ai')::int AS by_ai,
+      (SELECT count(*) FROM customers WHERE business_id=$1 AND created_at > $2 AND phone !~ '^(test|e2e)' AND COALESCE(name,'') !~* '^test ')::int AS clients,
+      (SELECT count(*) FROM messages m JOIN conversations cv ON cv.id=m.conversation_id WHERE cv.business_id=$1 AND cv.channel<>'test' AND m.role='customer' AND m.created_at > $2)::int AS messages,
+      (SELECT count(*) FROM reviews WHERE business_id=$1 AND created_at > $2)::int AS reviews`, [B, from]);
+  res.set('Cache-Control', 'no-store').json({ since: from, ...c });
+}));
 app.get('/api/me/activity', wrap(async (req, res) => res.json(await q(`SELECT action, detail, ip, ${"to_char(at,'YYYY-MM-DD HH24:MI')"} AS at FROM audit_log WHERE user_id=$1 ORDER BY id DESC LIMIT 30`, [req.user.id]))));
 
 // ---------- Command center (admin only): businesses, plans, add-ons, logins, audit ----------

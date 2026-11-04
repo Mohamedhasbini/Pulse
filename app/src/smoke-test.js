@@ -12,6 +12,9 @@ const as = u => ({ cookie: `rb_session=${signSession(u.id, u.session_version)}`,
 try {
   const hz = await fetch(BASE + '/health'); const hj = await hz.json();
   say('Health check confirms the database answers', hz.status === 200 && hj.db === true);
+  // Today › since you last checked: counts this business only, and a reload within 30 minutes keeps the same window
+  const ch1 = await fetch(BASE + '/api/changes', { headers: as(owner) }).then(r => r.json()), ch2 = await fetch(BASE + '/api/changes', { headers: as(owner) }).then(r => r.json());
+  say('Since-you-last-checked answers and survives a reload', typeof ch1.bookings === 'number' && ch1.since && ch1.since === ch2.since, `${ch1.since} / ${ch2.since}`);
   // a write with Origin: null (sandboxed frames) is refused cleanly, not a server error
   let o = await fetch(BASE + '/api/business', { method: 'PUT', headers: { ...as(owner), origin: 'null', 'Content-Type': 'application/json' }, body: '{}' });
   say('Origin "null" write gets 403, not 500', o.status === 403, String(o.status));
