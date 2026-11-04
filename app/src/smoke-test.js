@@ -4,6 +4,7 @@ import { q, one, pool } from './db.js';
 import { createBusiness, signSession } from './accounts.js';
 import { isFree, freeSlots, parseLocal, availability } from './slots.js';
 import { inZone } from './clock.js';
+import { receive, work, resume } from './inbound.js';
 import { loadBusiness } from './brain.js';
 import { unify } from './customers.js';
 const BASE = 'http://localhost:3100', ok = [], say = (n, c, d = '') => { ok.push(c); console.log(`${c ? 'PASS' : 'FAIL'}  ${n}${d ? '  (' + d + ')' : ''}`); };
@@ -108,6 +109,19 @@ try {
   // SQL on a business's clock: dates come out in that business's zone
   const sqlDay = await inZone('Europe/Madrid', () => one(`SELECT to_char('2026-12-01T23:30:00Z'::timestamptz, 'YYYY-MM-DD HH24:MI') AS t`));
   say('Database dates follow the business\'s zone', sqlDay.t === '2026-12-02 00:30', sqlDay.t);
+  // Incoming messages are written down before WhatsApp is told "received": a restart mid-answer loses nothing
+  const msg = { phoneNumberId: 'smoke-none', from: '+34600000001', text: 'Hola', id: 'wamid.smoke' + Date.now() };
+  const [inId] = await receive('whatsapp', [msg]);
+  await q(`UPDATE inbound SET status='working' WHERE id=$1`, [inId]); // the app stopped while answering it
+  const seen = [];
+  await resume({ whatsapp: async p => { if (p.id === msg.id) seen.push(p); } });
+  const after = await one('SELECT status FROM inbound WHERE id=$1', [inId]);
+  say('A message interrupted by a restart is answered on start-up', seen.length === 1 && after.status === 'done', `${seen.length} ${after.status}`);
+  const [failId] = await receive('whatsapp', [{ ...msg, id: msg.id + 'b' }]);
+  await work(failId, async () => { throw new Error('AI down'); });
+  const failed = await one('SELECT status, attempts, error FROM inbound WHERE id=$1', [failId]);
+  say('A message whose answer failed is kept for another try', failed.status === 'new' && failed.attempts === 1 && /AI down/.test(failed.error), JSON.stringify(failed));
+  await q(`DELETE FROM inbound WHERE id = ANY($1)`, [[inId, failId]]);
   // tap-to-answer choices: 1-3 short ones become WhatsApp buttons, up to 10 a list, otherwise plain text
   const { waBody } = await import('./whatsapp.js'), { cleanOptions } = await import('./brain.js');
   say('3 short choices become WhatsApp buttons', waBody('Pick a time', ['Tomorrow 10:00', 'Tomorrow 12:30', 'Another day']).interactive?.type === 'button');

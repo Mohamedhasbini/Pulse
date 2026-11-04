@@ -1,7 +1,13 @@
+# Container logs are capped (3 files of 10 MB per service) so they never fill the disk
+x-logging: &logs
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *logs
     environment:
       POSTGRES_DB: ringback
       POSTGRES_USER: ringback
@@ -30,11 +36,23 @@ services:
       - ./backups:/backups:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # node gets SIGTERM properly (init) and 20 s to finish messages being answered before Docker stops it
+    init: true
+    stop_grace_period: 20s
+    # "healthy" only when the app and its database answer; tests and `--wait` wait for this, not just "running"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3100/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    logging: *logs
 
   # Daily database backup into ./backups (kept 14 days). Restore: scripts/restore.sh <file>
   backup:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *logs
     depends_on:
       db:
         condition: service_healthy
@@ -62,7 +80,8 @@ services:
           else
             rm -f /backups/ringback-$$ts.sql.part /backups/ringback-$$ts.sql.gz.part; echo "backup FAILED $$ts"
           fi
-          find /backups -name '*.gz' -mtime +$$KEEP_DAYS -delete
+          # old copies are removed only on a day the new backup worked: failing days never eat the good ones
+          if [ $$ok = 1 ] && [ -s /backups/ringback-$$ts.sql.gz ]; then find /backups -name '*.gz' -mtime +$$KEEP_DAYS -delete; fi
           sleep 86400
         done
 

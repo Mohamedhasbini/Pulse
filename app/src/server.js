@@ -7,7 +7,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 const ctx = new AsyncLocalStorage();
 import { hashPassword, checkPassword, newPassword, signSession, readSession, signTicket, readTicket, newTotpSecret, checkTotp, totpUrl, newEmailCode, hashCode, weakPassword, ensureAdmin, createBusiness } from './accounts.js';
 import { MODULES, FEATURES, MODULE_FEATURE, featuresOf, hasFeature, canOpen, moduleOf, seedPlans } from './features.js';
-import { q, one, migrate, withBusinessLock } from './db.js';
+import { q, one, pool, migrate, withBusinessLock } from './db.js';
 import { mountLab } from './lab.js';
 import { mountAgents } from './agents.js';
 import { mountTeam } from './team.js';
@@ -23,6 +23,7 @@ import { mountInbox } from './inbox.js';
 import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
 import { mountLive, emit } from './live.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
+import { receive, work, resume as resumeInbound, inFlight } from './inbound.js';
 import { inZone, currentTz, wall, dayStart, fmtStamp, fmtDate } from './clock.js';
 import { sendWhatsApp, validSignature, parseIncoming, validKapsoSignature, parseKapso, whatsappReady } from './whatsapp.js';
 import { mountPublic } from './public.js';
@@ -58,17 +59,20 @@ app.get('/webhook/whatsapp', (req, res) => {
 app.post('/webhook/whatsapp', async (req, res) => {
   if (!process.env.WA_APP_SECRET) return res.status(503).send('Set WA_APP_SECRET in .env first');
   if (!validSignature(req.rawBody, req.get('x-hub-signature-256'))) return res.sendStatus(401);
+  let ids;
+  try { ids = await receive('whatsapp', parseIncoming(req.body)); } // written down first (inbound.js)
+  catch (e) { console.error('Could not store incoming WhatsApp messages:', e.message); return res.sendStatus(500); } // Meta retries
   res.sendStatus(200); // answer Meta fast, then work
-  for (const m of parseIncoming(req.body)) {
-    try {
-      const biz = await one('SELECT id FROM businesses WHERE wa_phone_number_id=$1', [m.phoneNumberId]);
-      if (!biz) { console.warn('No business for phone number id', m.phoneNumberId); continue; }
-      const text = m.text || '(The customer sent a ' + m.type + ' message that cannot be read.)';
-      const r = await handleMessage({ businessId: biz.id, phone: m.from, name: m.name, text, waId: m.id });
-      if (!r.duplicate && r.reply) await sendWhatsApp(m.phoneNumberId, m.from, r.reply, r.options);
-    } catch (e) { console.error('Failed to handle WhatsApp message', e); }
-  }
+  for (const id of ids) await work(id, answerWhatsApp);
 });
+// One stored WhatsApp message (Meta or Kapso): the receptionist answers on the number it came to.
+async function answerWhatsApp(m) {
+  const biz = await one('SELECT id FROM businesses WHERE wa_phone_number_id=$1', [m.phoneNumberId]);
+  if (!biz) { console.warn('No business for phone number id', m.phoneNumberId); return; }
+  const text = m.text || '(The customer sent a ' + m.type + ' message that cannot be read.)';
+  const r = await handleMessage({ businessId: biz.id, phone: m.from, name: m.name, text, waId: m.id });
+  if (!r.duplicate && r.reply) await sendWhatsApp(m.phoneNumberId, m.from, r.reply, r.options);
+}
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 
@@ -78,17 +82,12 @@ mountInstagram(app, handleMessage);
 // ---------- WhatsApp through Kapso (public, protected by Kapso's signature) ----------
 app.post('/webhook/kapso', async (req, res) => {
   if (!validKapsoSignature(req.rawBody, req.get('x-webhook-signature'))) return res.sendStatus(401);
+  if (!/message\.received/.test(req.get('x-webhook-event') || 'whatsapp.message.received')) return res.sendStatus(200);
+  let ids;
+  try { ids = await receive('kapso', parseKapso(req.body)); } // written down first (inbound.js)
+  catch (e) { console.error('Could not store incoming Kapso messages:', e.message); return res.sendStatus(500); }
   res.sendStatus(200); // Kapso expects 200 within 10 seconds; the AI answers after
-  if (!/message\.received/.test(req.get('x-webhook-event') || 'whatsapp.message.received')) return;
-  for (const m of parseKapso(req.body)) {
-    try {
-      const biz = await one('SELECT id FROM businesses WHERE wa_phone_number_id=$1', [m.phoneNumberId]);
-      if (!biz) { console.warn('Kapso: no business for phone number id', m.phoneNumberId); continue; }
-      const text = m.text || '(The customer sent a ' + m.type + ' message that cannot be read.)';
-      const r = await handleMessage({ businessId: biz.id, phone: m.from, name: m.name, text, waId: m.id });
-      if (!r.duplicate && r.reply) await sendWhatsApp(m.phoneNumberId, m.from, r.reply, r.options);
-    } catch (e) { console.error('Failed to handle Kapso message', e); }
-  }
+  for (const id of ids) await work(id, answerWhatsApp);
 });
 
 // for uptime monitors: 200 only when the database answers too (within 3 s); 503 otherwise. No details leak out
@@ -699,7 +698,8 @@ mountLive(app, () => BIZ());
 mountLab(app, () => BIZ());
 mountHQ(app, adminOnly, wrap, audit, aiHealth);
 mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
-setSenders({ sendWhatsApp, sendTelegram }); startAutopilot();
+// a PREVIEW_ONLY copy on the real data must never send: Autopilot only runs in the live app
+setSenders({ sendWhatsApp, sendTelegram }); if (!process.env.PREVIEW_ONLY) startAutopilot();
 mountTeam(app, () => BIZ(), { sendWhatsApp, sendTelegram, audit });
 mountPulse(app, () => BIZ());
 mountFinance(app, () => BIZ());
@@ -1383,9 +1383,24 @@ unifyAll().catch(e => console.error('Client merge:', e.message));
 backfillMedia().catch(e => console.error('Media backfill:', e.message));
 if (process.env.WEBOOK_DEMO !== '0') seedDemo().then(n => n && console.log(`Added ${n} demo businesses to WeBook`)).catch(e => console.error('Demo seed:', e.message));
 const PORT = process.env.PORT || 3100;
-app.listen(PORT, () => console.log(`Ringback running on http://localhost:${PORT}`));
+const server = app.listen(PORT, () => console.log(`MXAi running on http://localhost:${PORT}`));
 // PREVIEW_ONLY: a second copy for checking changes against the real data; it sends nothing and runs no background jobs
 const LIVE = !process.env.PREVIEW_ONLY;
+// A clean stop (docker compose restart / rebuild sends SIGTERM): take no new requests, let messages being answered
+// finish (up to 15 s, inside Docker's 20 s grace), close the database, exit. Anything still unfinished is picked up
+// again on start-up from the inbound table.
+let stopping = false;
+const stop = sig => {
+  if (stopping) return; stopping = true;
+  console.log(`${sig}: finishing ${inFlight()} message(s) in progress, then stopping`);
+  server.close();
+  const t0 = Date.now();
+  const wait = () => inFlight() && Date.now() - t0 < 15000 ? setTimeout(wait, 200) : pool.end().catch(() => {}).finally(() => process.exit(0));
+  wait();
+};
+process.on('SIGTERM', () => stop('SIGTERM'));
+process.on('SIGINT', () => stop('SIGINT'));
+if (LIVE) resumeInbound({ whatsapp: answerWhatsApp, kapso: answerWhatsApp }).catch(e => console.error('Resume incoming messages:', e.message));
 if (LIVE) startReminders();
 if (LIVE) startAiQueue(async ({ channel, businessId, phone, reply, options }) => {
   if (channel === 'whatsapp') {

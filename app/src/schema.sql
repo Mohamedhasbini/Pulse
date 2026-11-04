@@ -481,3 +481,8 @@ CREATE INDEX IF NOT EXISTS membership_payments_biz ON membership_payments (busin
 -- "Since you last checked" on Today: when the owner last looked, and the start of the window being shown
 ALTER TABLE users ADD COLUMN IF NOT EXISTS today_seen_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS today_from TIMESTAMPTZ;
+
+-- Incoming channel messages, written down before the channel is told "received" (inbound.js): nothing is lost on a restart
+CREATE TABLE IF NOT EXISTS inbound (id bigserial PRIMARY KEY, source text NOT NULL, payload jsonb NOT NULL, status text NOT NULL DEFAULT 'new',
+  attempts int NOT NULL DEFAULT 0, error text, created_at timestamptz NOT NULL DEFAULT now(), done_at timestamptz);
+CREATE INDEX IF NOT EXISTS inbound_open ON inbound (status, id) WHERE status <> 'done';
