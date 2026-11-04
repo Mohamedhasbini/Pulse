@@ -24,3 +24,13 @@ html body main:not(#_):not(#__) .mxh .mxh-tabs{margin-bottom:-6px}
 
 /* phones: smaller banner padding, same look */
 @media (max-width:1000px){html body main:not(#_):not(#__) :is(.tdh,.mxh){padding:16px!important;border-radius:14px!important}}
+
+/* 3 · dark mode: one still lime light stream behind the whole dashboard (stream.js), faint, cards stay solid */
+.mx-bgstream{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.mx-bgstream canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+:root[data-theme="light"] .mx-bgstream{display:none}
+
+/* the canvas colour lives on <html>, the body is see-through, so the dot grid and the stream behind the page show
+   (a body background paints above anything placed behind it) */
+html:not(#_):not(#__):not(#___):not(#____):not(#_____){background:var(--fu-canvas)!important}
+html body:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){background:transparent!important;background-image:none!important}

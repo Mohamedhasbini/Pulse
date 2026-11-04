@@ -708,6 +708,18 @@ html[data-theme="light"] .vz-chat .c,html[data-theme="light"] .vz-rules span,htm
 .tl-img{height:230px}
 @media (max-width:600px){.tp-crop{height:200px}.tl-img{height:200px}}
 </style>
+<link rel="stylesheet" href="/fonts.css">
+<style>
+/* hero light stream (Nov 2026): acid-lime strands over a fading dot grid, behind the hero; serif italic accent */
+.hero{isolation:isolate}
+.hero-fx{position:absolute;left:0;right:0;top:0;height:min(100%,1040px);z-index:-2;pointer-events:none}
+.hero-fx canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero-fx::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.09) 1px,transparent 1.3px);background-size:24px 24px;
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 0,transparent 75%);mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 0,transparent 75%)}
+html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;font-style:italic!important;font-weight:400!important;letter-spacing:-.01em;
+  background:none!important;-webkit-text-fill-color:currentColor!important;color:#f4f6ef!important}
+.hero .screen{box-shadow:0 0 0 1px rgba(200,247,81,.10),0 40px 120px -40px rgba(200,247,81,.25)}
+</style>
 </head>
 <body>
 <header><div class="wrap">
@@ -733,6 +745,7 @@ html[data-theme="light"] .vz-chat .c,html[data-theme="light"] .vz-rules span,htm
 <main>
 <div class="page-h wrap" id="pageH"></div>
 <div class="hero">
+  <div class="hero-fx" aria-hidden="true"></div>
   <div class="ghost" aria-hidden="true">MXAi</div>
   <div class="wrap">
     <span class="pill"><b>24/7</b>Your AI front desk on WhatsApp</span>
@@ -1291,5 +1304,7 @@ document.querySelector(".tp-filter")?.addEventListener("click",e=>{const b=e.tar
   document.querySelectorAll(".tp-filter button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));
   document.querySelectorAll(".tp").forEach(t=>t.hidden=b.dataset.f!=="all"&&t.dataset.st!==b.dataset.f)});
 </script>
+<script src="/stream.js"></script>
+<script>window.MXStream&&MXStream.mount(document.querySelector(".hero-fx"),{strength:1,origin:[-0.1,0.78],tip:[1.1,0.06]})</script>
 </body>
 </html>
