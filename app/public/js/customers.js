@@ -19,9 +19,17 @@ async function openCustomer(id){const c=await req("/api/customers/"+id);pplOpen=
   const ST={confirmed:["t-faq","Confirmed"],completed:["t-book","Came"],no_show:["t-attn","No-show"],cancelled:["t-test","Cancelled"]};
   $("#pBook").innerHTML=c.bookings.map(b=>`<div class="item"><span class="time">${nice(L(b.start),{day:"numeric",month:"short"})}</span><div class="grow"><b>${esc(b.service)} · ${hm(L(b.start))}</b><span>${fmt(b.price)}${b.coupon_code?" · code "+esc(b.coupon_code):""} · ${b.source==="web"?"online":b.source==="ai"?"by chat":"by staff"}</span></div><span class="tag ${(ST[b.status]||ST.confirmed)[0]}">${(ST[b.status]||ST.confirmed)[1]}</span></div>`).join("")||`<div class="empty">No bookings yet.</div>`;
   $("#pConv").innerHTML=c.conversations.map(v=>`<div class="item click" data-open="${v.id}" style="cursor:pointer"><div class="grow"><b>${CH[v.channel]||v.channel} · ${ago(v.at)}</b><span>${esc(v.last||"")}</span></div><span class="mini">Read</span></div>`).join("")||`<div class="empty">No conversations.</div>`;
+  // the client's own data: a download, and erasure (owners only, typed confirmation)
+  $("#pExport").href=`/api/customers/${c.id}/export`;$("#pErase").hidden=true;$("#pEraseIn").value="";$("#pEraseMsg").textContent="";
+  $("#pEraseOpen").hidden=typeof me!=="undefined"&&me?.user?.role==="staff";
   $("#pModal").hidden=false}
+$("#pEraseOpen").onclick=()=>{$("#pErase").hidden=false;$("#pEraseIn").focus()};
+$("#pEraseGo").onclick=async()=>{const msg=$("#pEraseMsg");
+  if($("#pEraseIn").value.trim()!=="ERASE"){msg.textContent="Type ERASE in capitals to confirm.";return}
+  try{await req(`/api/customers/${pplOpen.id}/erase`,"POST",{confirm:"ERASE"});toast("Client erased. Their bookings stay in your records without their name.");$("#pModal").hidden=true;loadPeople()}
+  catch(err){msg.textContent=err.message||"That did not work. Try again."}};
 document.addEventListener("click",e=>{const r=e.target.closest("[data-cust]");if(r)openCustomer(r.dataset.cust)});
 $("#pClose").onclick=()=>$("#pModal").hidden=true;
 $("#pForm").onsubmit=async e=>{e.preventDefault();try{await req("/api/customers/"+pplOpen.id,"PUT",{name:$("#pName").value,email:$("#pEmail").value,reminder_channel:$("#pRemind").value,birthday:$("#pBday").value,staff_notes:$("#pNotes").value});
-  toast("Profile saved. The AI will use it from the next message.");$("#pModal").hidden=true;loadPeople()}catch(err){$("#pErr").textContent=err.message;$("#pErr").hidden=false}};
+  toast("Profile saved.");$("#pModal").hidden=true;loadPeople()}catch(err){$("#pErr").textContent=err.message;$("#pErr").hidden=false}};
 

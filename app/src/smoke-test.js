@@ -1,7 +1,7 @@
 // Quick end-to-end check of uploads, admin platform pages, export/close and restaurant table counts.
 // docker compose exec app node src/smoke-test.js   (creates one temporary business and removes it)
 import { q, one, pool } from './db.js';
-import { createBusiness, signSession } from './accounts.js';
+import { createBusiness, signSession, signTicket, newTotpSecret } from './accounts.js';
 import { isFree, freeSlots, parseLocal, availability } from './slots.js';
 import { inZone } from './clock.js';
 import { receive, work, resume } from './inbound.js';
@@ -116,6 +116,25 @@ try {
   say('Client language: Spanish, French, Arabic, English', langOf('Hola, quiero una cita mañana') === 'es' && langOf('Bonjour, je voudrais un rendez-vous') === 'fr' && langOf('مرحبا') === 'ar' && langOf('hi there') === 'en');
   const svcs = { services: [{ id: 1, name: 'Hair Cut' }, { id: 2, name: 'Hair Colouring' }] };
   say('Service names never match on the first word alone', findService(svcs, 'hair coloring') === null && findService(svcs, 'hair') === null && findService(svcs, 'colouring')?.id === 2 && findService(svcs, 'hair cut')?.id === 1);
+  // GDPR: a client's data can be downloaded and erased on request; erasure keeps the business's accounts
+  const gc = await one(`INSERT INTO customers (business_id, phone, name, email, staff_notes) VALUES ($1,'+34600777888','Gdpr Client','g@example.test','vip') RETURNING id`, [r.id]);
+  const gconv = await one(`INSERT INTO conversations (business_id, customer_id, channel) VALUES ($1,$2,'whatsapp') RETURNING id`, [r.id, gc.id]);
+  await q(`INSERT INTO messages (conversation_id, role, text) VALUES ($1,'customer','Hola, quiero una cita')`, [gconv.id]);
+  const gb = await one(`INSERT INTO bookings (business_id, customer_id, service_id, conversation_id, starts_at, ends_at, price, status)
+      SELECT $1, $2, id, $3, now() - interval '3 days', now() - interval '3 days' + interval '1 hour', 40, 'completed' FROM services WHERE business_id=$1 LIMIT 1 RETURNING id`, [r.id, gc.id, gconv.id]);
+  const gex = await fetch(BASE + `/api/customers/${gc.id}/export`, { headers: as(owner) }).then(r => r.json());
+  say('A client\'s data downloads with their chats and bookings', gex.client?.email === 'g@example.test' && gex.conversations?.[0]?.messages?.[0]?.text === 'Hola, quiero una cita' && gex.bookings?.length === 1);
+  const noWord = await fetch(BASE + `/api/customers/${gc.id}/erase`, { method: 'POST', headers: { ...as(owner), 'Content-Type': 'application/json' }, body: '{}' });
+  const er = await fetch(BASE + `/api/customers/${gc.id}/erase`, { method: 'POST', headers: { ...as(owner), 'Content-Type': 'application/json' }, body: '{"confirm":"ERASE"}' });
+  const erased = await one(`SELECT name, email, staff_notes, (SELECT count(*)::int FROM conversations WHERE customer_id=$1) AS convs,
+      (SELECT customer_id FROM bookings WHERE id=$2) AS booking_owner FROM customers WHERE id=$1`, [gc.id, gb.id]);
+  say('Erasing a client needs the typed word, deletes their details and chats, keeps the booking', noWord.status === 400 && er.status === 200
+    && erased.name === 'Erased client' && !erased.email && !erased.staff_notes && erased.convs === 0 && erased.booking_owner === gc.id, JSON.stringify({ s: [noWord.status, er.status], ...erased }));
+  // 2FA: wrong codes lock the login after 6 tries even when each try claims a different address
+  const tfa = await one(`INSERT INTO users (email, name, password_hash, business_id, role, totp_enabled, totp_secret) VALUES ($1,'2FA','x',$2,'owner',true,$3) RETURNING id`, [`tfa-${Date.now()}@example.test`, r.id, newTotpSecret()]);
+  const tk = signTicket(tfa.id); let last = 0;
+  for (let i = 0; i < 7; i++) last = (await fetch(BASE + '/api/login/code', { method: 'POST', headers: { 'Content-Type': 'application/json', origin: BASE, 'cf-connecting-ip': `203.0.113.${i + 1}` }, body: JSON.stringify({ ticket: tk, code: '000000' }) })).status;
+  say('2FA guesses from changing addresses are locked out after 6', last === 429, String(last));
   // Incoming messages are written down before WhatsApp is told "received": a restart mid-answer loses nothing
   const msg = { phoneNumberId: 'smoke-none', from: '+34600000001', text: 'Hola', id: 'wamid.smoke' + Date.now() };
   const [inId] = await receive('whatsapp', [msg]);

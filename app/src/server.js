@@ -193,15 +193,17 @@ app.post('/api/login/code', wrap(async (req, res) => {
   const uid = readTicket(req.body.ticket);
   if (!uid) return res.status(401).json({ error: 'That took too long. Sign in again.' });
   const u = await one('SELECT * FROM users WHERE id=$1 AND NOT disabled', [uid]);
-  const ip = ipOf(req), a = attempts.get('code' + ip) || { n: 0, until: 0 };
-  if (a.until > Date.now()) return res.status(429).json({ error: 'Too many wrong codes. Wait 15 minutes and sign in again.' });
+  // wrong codes count per address AND per login: the address can be faked (a forwarded-for header), the login can't,
+  // so someone holding a stolen password can't keep guessing codes by changing their apparent address
+  const ip = ipOf(req), a = attempts.get('code' + ip) || { n: 0, until: 0 }, au = attempts.get('codeu' + uid) || { n: 0, until: 0 };
+  if (a.until > Date.now() || au.until > Date.now()) return res.status(429).json({ error: 'Too many wrong codes. Wait 15 minutes and sign in again.' });
   if (!u || !((u.totp_enabled && checkTotp(u.totp_secret, req.body.code)) || (u.email_2fa && await emailCodeOk(u, req.body.code)))) {
-    a.n++; a.at = Date.now(); if (a.n >= 6) { a.n = 0; a.until = Date.now() + 15 * 60000; }
-    attempts.set('code' + ip, a);
+    for (const x of [a, au]) { x.n++; x.at = Date.now(); if (x.n >= 6) { x.n = 0; x.until = Date.now() + 15 * 60000; } }
+    attempts.set('code' + ip, a); attempts.set('codeu' + uid, au);
     if (u) await audit(req, 'code_failed', null, u.business_id, u);
     return res.status(401).json({ error: 'Wrong code. Use the newest 6-digit code from your authenticator app.' });
   }
-  attempts.delete('code' + ip);
+  attempts.delete('code' + ip); attempts.delete('codeu' + uid);
   await q('UPDATE users SET last_login_at=now() WHERE id=$1', [u.id]);
   await audit(req, 'login', '2FA', u.business_id, u);
   startSession(req, res, u);
@@ -1334,6 +1336,45 @@ app.post('/api/customers/:id/offers', wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// ---------- A client's own data (GDPR: access and erasure on request) ----------
+// Export: everything this business holds about one client, as a file the owner can send them.
+app.get('/api/customers/:id/export', wrap(async (req, res) => {
+  const c = await one('SELECT * FROM customers WHERE id=$1 AND business_id=$2', [req.params.id, BIZ()]);
+  if (!c) return res.sendStatus(404);
+  const [bookings, conversations, reviews, memberships] = await Promise.all([
+    q(`SELECT b.id, b.starts_at, b.ends_at, b.status, b.price::float, b.source, b.notes, s.name AS service FROM bookings b LEFT JOIN services s ON s.id=b.service_id WHERE b.customer_id=$1 ORDER BY b.starts_at`, [c.id]),
+    q(`SELECT c.id, c.channel, c.created_at, (SELECT json_agg(json_build_object('at', m.created_at, 'from', m.role, 'text', m.text) ORDER BY m.id) FROM messages m WHERE m.conversation_id=c.id) AS messages
+       FROM conversations c WHERE c.customer_id=$1 ORDER BY c.created_at`, [c.id]),
+    q(`SELECT stars, text, author, created_at FROM reviews WHERE customer_id=$1`, [c.id]),
+    q(`SELECT plan, price::float, status, started_at, renews_at FROM memberships WHERE customer_id=$1`, [c.id])]);
+  const { staff_notes, ...client } = c; // the team's private notes are included: the client is entitled to them under GDPR
+  await audit(req, 'client_export', `client ${c.id}`);
+  res.set('Content-Disposition', `attachment; filename="client-${c.id}-data.json"`)
+    .json({ exported_at: new Date().toISOString(), client: { ...client, staff_notes }, bookings, conversations, reviews, memberships });
+}));
+// Erase: the client's personal details and chats are deleted; bookings and payments stay (the business must keep
+// its accounts) but no longer say who they were. Owners only, with the word ERASE typed as confirmation.
+app.post('/api/customers/:id/erase', wrap(async (req, res) => {
+  if (req.user.role === 'staff') return res.status(403).json({ error: 'Only the account owner can erase a client.' });
+  if (req.body?.confirm !== 'ERASE') return res.status(400).json({ error: 'Type ERASE to confirm. This cannot be undone.' });
+  const c = await one('SELECT id FROM customers WHERE id=$1 AND business_id=$2', [req.params.id, BIZ()]);
+  if (!c) return res.sendStatus(404);
+  const cl = await pool.connect();
+  try {
+    await cl.query('BEGIN');
+    await cl.query('UPDATE bookings SET conversation_id=NULL, notes=NULL WHERE customer_id=$1', [c.id]);
+    await cl.query('UPDATE bookings SET conversation_id=NULL WHERE conversation_id IN (SELECT id FROM conversations WHERE customer_id=$1)', [c.id]);
+    await cl.query('DELETE FROM ai_queue WHERE conversation_id IN (SELECT id FROM conversations WHERE customer_id=$1)', [c.id]);
+    await cl.query('DELETE FROM conversations WHERE customer_id=$1', [c.id]); // messages go with them
+    await cl.query(`UPDATE reviews SET text=NULL, author=NULL WHERE customer_id=$1`, [c.id]); // stars stay (the rating average), words and name go
+    await cl.query('DELETE FROM waitlist WHERE customer_id=$1', [c.id]);
+    await cl.query(`UPDATE customers SET name='Erased client', phone='erased-'||id, email=NULL, contact_phone=NULL, telegram_chat_id=NULL,
+        staff_notes=NULL, birthday=NULL, marketing_ok=false, language=NULL WHERE id=$1`, [c.id]);
+    await cl.query('COMMIT');
+  } catch (e) { await cl.query('ROLLBACK').catch(() => {}); throw e; } finally { cl.release(); }
+  await audit(req, 'client_erase', `client ${c.id}`);
+  res.json({ ok: true });
+}));
 app.put('/api/customers/:id', wrap(async (req, res) => {
   const b = req.body, email = String(b.email || '').trim().toLowerCase();
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Check the email address.' });

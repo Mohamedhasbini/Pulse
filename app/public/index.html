@@ -513,10 +513,15 @@
   <form class="form" id="pForm"><label>Name<input id="pName" required></label><label>Phone<input id="pPhone" readonly></label>
   <label>Email<input id="pEmail" type="email"></label><label>Remind by<select id="pRemind"><option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="email">Email</option></select></label>
   <label>Birthday<input id="pBday" type="date"></label>
-  <label class="full">Private staff notes (the AI uses them but never shows them, e.g. "allergic to ammonia", "prefers Layla")<textarea id="pNotes" rows="3"></textarea></label>
+  <label class="full">Private staff notes (only your team sees them, never the AI or the client; e.g. "allergic to ammonia", "prefers Layla")<textarea id="pNotes" rows="3"></textarea></label>
   <p class="full" id="pErr" style="color:var(--bad);margin:0" hidden></p><div class="full"><button class="btn">Save profile</button></div></form>
   <div class="ch" style="margin:18px 0 8px"><h2>Bookings</h2></div><div class="list" id="pBook"></div>
-  <div class="ch" style="margin:18px 0 8px"><h2>Conversations</h2></div><div class="list" id="pConv"></div></div></div>
+  <div class="ch" style="margin:18px 0 8px"><h2>Conversations</h2></div><div class="list" id="pConv"></div>
+  <div class="ch" style="margin:18px 0 8px"><h2>Client's data</h2></div>
+  <p class="sub" style="margin:0 0 10px">If this client asks for a copy of their data, or for it to be deleted (their right under GDPR).</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn ghost" id="pExport" href="#" download>Download their data</a><button class="btn ghost" id="pEraseOpen" type="button">Erase this client…</button></div>
+  <div id="pErase" hidden style="margin-top:12px"><p style="margin:0 0 8px">Their name, contact details, notes and chats are deleted for good. Bookings and payments stay in your records without their name.</p>
+  <label>Type ERASE to confirm <input id="pEraseIn" autocomplete="off" spellcheck="false"></label> <button class="btn" id="pEraseGo" type="button">Erase for good</button><p id="pEraseMsg" role="status" style="margin:8px 0 0"></p></div></div></div>
 <div class="modal" id="modal" hidden><div class="glass"><div class="ch"><h2 id="mTitle">Conversation</h2><div style="display:flex;gap:6px"><button class="btn ghost" id="mResolve" type="button" hidden>Mark handled</button><button class="btn ghost" id="mClose" type="button">Close</button></div></div><div class="msgs" id="mMsgs" style="padding:0;max-height:52vh;overflow-y:auto"></div>
   <div id="mBar" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--edge)">
     <span id="mAiState" class="tag t-faq"></span><button class="btn ghost" type="button" id="mAiToggle"></button></div>

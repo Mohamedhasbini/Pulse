@@ -9,6 +9,7 @@ import { q, one, withBusinessLock } from './db.js';
 import { loadBusiness, checkCoupon } from './brain.js';
 import { dayRanges, isFree, bufferOf, parseLocal, localStamp, localDate, label, localDays } from './slots.js';
 import { inZone, tzOf } from './clock.js';
+import { offerWaitlist } from './autopilot.js';
 import { termsOf } from './verticals.js';
 
 const PUBLIC = fileURLToPath(new URL('../public', import.meta.url));
@@ -165,7 +166,9 @@ export function mountPublic(app, DEFAULT_BIZ) {
     res.json({ ...b, ref: REF(b.id), can_cancel: b.status === 'confirmed' && hoursLeft >= (biz.cancel_hours ?? 24), past: hoursLeft < 0 });
   }));
 
-  app.post('/api/public/booking/:token/cancel', wrap(async (req, res) => withBusinessLock('cancel', async () => {
+  // the same per-business lock as every other booking change (it was one shared 'cancel' lock that did not
+  // guard against a chat or the owner changing the same booking at the same moment)
+  app.post('/api/public/booking/:token/cancel', wrap(async (req, res) => withBusinessLock((await one('SELECT business_id FROM bookings WHERE manage_token=$1', [req.params.token]))?.business_id ?? 'none', async () => {
     const b = await one(`SELECT b.*, s.name service FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.manage_token=$1`, [req.params.token]);
     if (!b) return res.status(404).json({ error: 'We could not find this booking.' });
     if (b.status !== 'confirmed') return res.status(409).json({ error: 'This booking is not active any more.' });
@@ -174,6 +177,7 @@ export function mountPublic(app, DEFAULT_BIZ) {
     if ((new Date(b.starts_at) - Date.now()) / 3600000 >= h) {
       await q("UPDATE bookings SET status='cancelled', cancelled_by='customer' WHERE id=$1", [b.id]);
       await notify(BIZ, 'cancel', 'A customer cancelled online', `${b.service}, ${label(new Date(b.starts_at))}`, { bookingId: b.id });
+      offerWaitlist(b.id).catch(e => console.error('Waitlist:', e.message)); // the freed slot goes to whoever waits for it, as on chat
       return res.json({ result: 'cancelled' });
     }
     const pending = await one(`SELECT id FROM requests WHERE booking_id=$1 AND type='cancel' AND status='pending'`, [b.id]);
