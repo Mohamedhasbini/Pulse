@@ -995,7 +995,7 @@ app.post('/api/conversations/:id/resolve', wrap(async (req, res) => {
 }));
 
 // ---------- Customers ----------
-const realPhone = "cu.phone NOT LIKE 'test-%' AND cu.phone NOT LIKE 'e2e-%'";
+const realPhone = "cu.phone NOT LIKE 'test-%' AND cu.phone NOT LIKE 'e2e-%' AND COALESCE(cu.name,'') !~* '^test '"; // same rule as the Clients summary
 app.get('/api/customers', wrap(async (req, res) => {
   const s = String(req.query.q || '').trim(), test = req.query.test === '1';
   res.json(await q(`SELECT cu.id, cu.name, cu.marketing_ok, CASE WHEN cu.phone ~ '^(test|e2e|walk-in|tg-)' THEN cu.contact_phone ELSE cu.phone END AS phone, cu.email, cu.reminder_channel, cu.staff_notes,

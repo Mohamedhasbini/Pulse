@@ -506,7 +506,7 @@
     const res = c => c.result === 'success' ? U.chip('Worked', 'healthy') : c.result === 'some' ? U.chip('Some bookings', 'healthy') : c.result === 'not sent' ? U.chip('Not sent', 'warning') : c.result === 'too early' ? U.chip('Too early') : U.chip('No bookings', 'critical');
     const offers = U.card({ title: 'Recent offers', span: 8, size: 'wide', link: U.link('All offers', 'g:2'),
       body: U.table(['Offer', 'Sent on', 'Messages', 'Booked', 'Result', 'Won back'], camps.slice(0, 6).map(c => ({ go: 'g:2', cells: [c.name.trim() || 'Offer', c.date, String(c.sent || 0), String(c.booked || 0), { html: res(c) }, money(c.revenue || 0)] })), 'No offers yet.') + (camps.length ? '' : `<div class="gw-empty"><p class="mx-ctx">What a client receives (example):</p><div class="gw-msg"><span class="c">Hi Sara! We haven't seen you in a while. Here's 15% off your next visit with code BACK15, until Sunday. Reply BOOK and we'll find you a time.</span><span class="a">BOOK 🙌</span><span class="c">Booked for Friday 17:00. See you then!</span></div><p class="mx-ctx">You pick the audience and approve the text. Nothing is sent without you.</p>${go('Prepare your first offer', 2)}</div>`) });
-    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${weekly}${moves}</div><div class="mx-grid">${reach}${offers}</div>`;
+    root.innerHTML = `<div class="mx-grid">${moves}${offers}</div><div class="mx-grid">${kpis}</div><div class="mx-grid">${weekly}${reach}</div>`;
     root.onclick = ev => { const b = ev.target.closest('[data-go^="g:"]'); if (b) window.P10?.go('growth', +b.dataset.go.slice(2)); };
   };
   // AI Control › Performance: is the receptionist doing a good job? Last 15 days against the 15 before
@@ -543,8 +543,7 @@
     root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${perDay}${howEnd}</div><div class="mx-grid">${speed}${deliv}${funnel}</div>`;
     root.onclick = ev => { const t = ev.target.closest('[data-go^="a:"]'); if (t) window.P10?.go('pulse', +t.dataset.go.slice(2)); };
   };
-  // Customers › Clients: who the clients are, read before the full list — four figures, then the groups, the top
-  // spenders and new clients per month. Test entries are left out, as in the list's default
+  // Customers › Clients: the list is the job, so the summary is one line; figures and charts open on demand. Test entries are left out, as in the list's default
   window.PVCustomers = async sec => {
     const U = window.MXUI, spane = sec?.querySelector('.spane'); if (!U || !spane) return;
     let box = spane.querySelector('#cuSum'); if (!box) { box = document.createElement('div'); box.id = 'cuSum'; box.className = 'mx-page'; spane.prepend(box); }
@@ -572,7 +571,8 @@
     const bestM = months.reduce((m, x) => x.v > m.v ? x : m, { v: 0, l: '–' }), thisM = months.at(-1)?.v || 0, lastM = months.at(-2)?.v || 0;
     const joined = U.card({ title: 'New clients per month', span: 3, size: 'wide', body: U.columns(months, { h: 170 }) +
       `<div class="er-k" style="grid-template-columns:1fr 1fr"><div><small>This month</small><b>${thisM}</b><span>${thisM >= lastM ? '+' : ''}${thisM - lastM} vs last</span></div><div><small>Best month</small><b>${bestM.v}</b><span>${esc(bestM.l)}</span></div></div>` });
-    box.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${groups}${best}${joined}</div>`;
+    box.innerHTML = `<p class="cu-strip"><b>${all.length}</b> clients · <b>${regulars.length}</b> regulars · <b>${money(spent)}</b> lifetime · <b>${opted}</b> can receive offers${g['Drifting away (45–120 days)'] ? ` · <b>${g['Drifting away (45–120 days)']}</b> drifting away` : ''}</p>
+      <details class="cu-more"><summary>Client breakdown</summary><div class="mx-grid">${kpis}</div><div class="mx-grid">${groups}${best}${joined}</div></details>`;
   };
   // ── the agent team: each specialist's read of their area and their tasks, from /api/team/status, with Lina's
   // prepared growth ideas and Sam's briefing added as tasks. Every task knows where it is done

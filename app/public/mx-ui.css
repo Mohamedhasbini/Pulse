@@ -1208,3 +1208,13 @@ html body main:not(#_) table :is(td,th){text-align:left!important}html body main
 .gw-msg .a{align-self:flex-end;background:var(--mx-ink);color:var(--mx-bg,#fff);border-bottom-right-radius:4px}
 :root[data-theme="dark"] .gw-msg .c{background:#24301a;color:#e8f5d0}
 .mx-sk-l .sk-lab,.mx-sk-r .sk-lab{min-height:0;line-height:1.15}
+/* Clients: one-line summary above the list; the breakdown opens on demand */
+.cu-strip{margin:0;font-size:13px;color:var(--mx-ink2,var(--mx-ink));opacity:.85}
+.cu-strip b{color:var(--mx-ink);font-variant-numeric:tabular-nums;opacity:1}
+.cu-more>summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--mx-ink);padding:6px 0;list-style:none;display:inline-flex;gap:6px;align-items:center;border-radius:6px}
+.cu-more>summary::-webkit-details-marker{display:none}
+.cu-more>summary::before{content:'›';display:inline-block;transition:transform .15s}
+.cu-more[open]>summary::before{transform:rotate(90deg)}
+.cu-more>summary:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+.cu-more[open]{display:flex;flex-direction:column;gap:var(--mx-3)}
+@media (prefers-reduced-motion:reduce){.cu-more>summary::before{transition:none}}
