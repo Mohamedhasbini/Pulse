@@ -20,11 +20,34 @@ const PACKS = {
     costs: [['Rent', 'Premises', 'month', 1400], ['Coach salaries', 'Team', 'month', 2600], ['Equipment lease', 'Equipment', 'month', 350], ['Utilities', 'Premises', 'month', 250],
       ['Card fees', 'Payments', 'percent', 2.5], ['Towels and cleaning', 'Supplies', 'booking', 0.6], ['Instagram ads', 'Marketing', 'month', 200]],
     asks: ['Is there a spin class tonight?', 'How much is the monthly membership?', 'Can I book a free trial?', 'I want personal training 3 times a week', 'Do you have yoga on Sunday?', 'Can I freeze my membership for 2 weeks?'],
-    peak: [7, 8, 18, 19, 20],
+    peak: [7, 8, 18, 19, 20], done: `Done! You're booked. See you then 💪`,
     timetable: { 'HIIT class': [7, 18], 'Spin class': [8, 19], 'Yoga flow': [9, 20] },
     plans: [['Monthly membership', 60, 30, 0.7], ['3-month membership', 160, 90, 0.2], ['Student monthly', 45, 30, 0.1]],
   },
+  salon: {
+    vertical: 'salon', assistant: 'Nora', capacity: 3, tone: 'warm',
+    hours: { 0: [], 1: [['10:00', '19:00']], 2: [['10:00', '20:00']], 3: [['10:00', '20:00']], 4: [['10:00', '21:00']], 5: [['10:00', '21:00']], 6: [['09:00', '18:00']] },
+    team: 'Layla – colour specialist\nRami – cuts and beard\nSara – nails and facials\nNour – bridal hair and make-up',
+    services: [['Haircut & blow-dry', 35, 45, 'Wash, cut and blow-dry', 30], ['Full colour', 90, 120, 'Includes toner and gloss', 14], ['Balayage', 160, 180, 'Hand-painted, natural blend', 6],
+      ['Gel manicure', 25, 40, 'Shape, cuticles and gel colour', 22], ['Pedicure', 30, 50, '', 10], ['Hydrating facial', 55, 60, 'Deep cleanse, mask and massage', 10], ['Keratin treatment', 140, 150, 'Smooth for up to 4 months', 5]],
+    faqs: [['Do you take walk-ins?', 'Yes, when a chair is free. Booking guarantees your time.'], ['Which products do you use?', 'Kérastase and Olaplex for hair, OPI for nails.'], ['Is there parking?', 'Free parking behind the building.']],
+    costs: [['Rent', 'Premises', 'month', 1800], ['Salaries', 'Team', 'month', 3200], ['Products', 'Supplies', 'percent', 9], ['Card fees', 'Payments', 'percent', 2.5], ['Instagram ads', 'Marketing', 'month', 250]],
+    asks: ['Do you have a slot tomorrow for a haircut?', 'How much is balayage?', 'Can I move my nails appointment to Friday?', 'Do you do bridal makeup?', 'Is Layla free on Saturday?', 'Can I book a facial tonight?'],
+    peak: [11, 14, 16, 17, 18],
+  },
+  clinic: {
+    vertical: 'clinic', assistant: 'Lina', capacity: 2, tone: 'calm',
+    hours: { 0: [], 1: [['09:00', '18:00']], 2: [['09:00', '18:00']], 3: [['09:00', '18:00']], 4: [['09:00', '19:00']], 5: [['09:00', '17:00']], 6: [['10:00', '14:00']] },
+    team: 'Dr. Rami Saad – dermatology\nDr. Maya Khoury – aesthetics\nNour – laser specialist',
+    services: [['Consultation', 50, 30, 'First visit with a doctor', 26], ['Botox', 250, 30, 'Includes 2-week check', 10], ['Filler', 350, 45, '', 6], ['Laser hair removal', 80, 45, 'Per area', 18],
+      ['Skin check', 60, 30, 'Full-body mole check', 10], ['Chemical peel', 120, 45, '', 8], ['Follow-up', 0, 20, 'Free review after treatment', 14]],
+    faqs: [['Is the consultation paid?', 'Yes, $50, deducted from your treatment if you go ahead the same month.'], ['How long does Botox last?', 'Usually 3 to 4 months.'], ['Do you accept insurance?', 'Medical skin checks yes; aesthetic treatments are private.']],
+    costs: [['Rent', 'Premises', 'month', 2600], ['Doctors and staff', 'Team', 'month', 7800], ['Medical supplies', 'Supplies', 'percent', 14], ['Laser lease', 'Equipment', 'month', 900], ['Card fees', 'Payments', 'percent', 2.5]],
+    asks: ['How much is Botox?', 'Can I book a consultation this week?', 'I need to move my laser session', 'Do you do mole checks?', 'Is Dr. Maya available Thursday?', 'Can I come for my follow-up tomorrow?'],
+    peak: [10, 11, 15, 16],
+  },
 };
+PACKS.receptionist = { ...PACKS.salon };
 const FIRST = ['Ali', 'Sara', 'Omar', 'Lina', 'Hadi', 'Nour', 'Rami', 'Yara', 'Karim', 'Dana', 'Fadi', 'Rita', 'Tarek', 'Maya', 'Ziad', 'Jana', 'Elie', 'Hiba', 'Samir', 'Lea', 'Rawan', 'Bilal', 'Mira', 'Joe'];
 const LAST = ['Haddad', 'Khoury', 'Saad', 'Nassar', 'Awad', 'Fares', 'Daher', 'Rizk', 'Salem', 'Hajj', 'Aoun', 'Mansour'];
 const pick = (a, r) => a[Math.floor(r() * a.length)];
@@ -36,7 +59,7 @@ export async function instantDashboard({ template, name, city = 'Beirut', countr
   const sub = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-demo';
   let b = await one('SELECT id FROM businesses WHERE subdomain=$1', [sub]);
   if (!b) b = { id: (await createBusiness({ name, vertical: p.vertical, owner_email: `owner@${sub}.example`, owner_name: 'Owner', country, city, currency: 'USD', timezone: 'Asia/Beirut', plan_key: 'pro' })).id };
-  await q(`UPDATE businesses SET name=$2, subdomain=$3, template=$4, is_demo=true, hours=$5, capacity=$6, tone=$7, assistant_name=$8, team=$9, faqs=$10, costs=$11, city=$12 WHERE id=$1`,
+  await q(`UPDATE businesses SET name=$2, subdomain=$3, template=$4, is_demo=true, feature_overrides='{"marketing":true,"coupons":true}', hours=$5, capacity=$6, tone=$7, assistant_name=$8, team=$9, faqs=$10, costs=$11, city=$12 WHERE id=$1`,
     [b.id, name, sub, template, JSON.stringify(p.hours), p.capacity, p.tone, p.assistant, p.team, JSON.stringify(p.faqs.map(([q, a]) => ({ q, a }))),
       JSON.stringify(p.costs.map(([n, category, basis, amount]) => ({ name: n, category, basis, amount, kind: basis === 'month' ? 'fixed' : 'variable', channel: '' }))), city]);
   // services: the pack's list replaces the starter ones
@@ -75,7 +98,7 @@ export async function instantDashboard({ template, name, city = 'Beirut', countr
         const ch = pick(channels, r), when = new Date(at - (1 + r() * 48) * 3600e3);
         conv = (await one(`INSERT INTO conversations (business_id, customer_id, channel, outcome, value, created_at, updated_at) VALUES ($1,$2,$3,'booked',$4,$5,$5) RETURNING id`, [b.id, m.id, ch, s.price, when])).id;
         await q(`INSERT INTO messages (conversation_id, role, text, created_at) VALUES ($1,'customer',$2,$3), ($1,'assistant',$4,$3)`,
-          [conv, pick(p.asks, r), when, `Done! You're booked. See you then 💪`]);
+          [conv, pick(p.asks, r), when, p.done || `Done! You're booked. See you then.`]);
       }
       await q(`INSERT INTO bookings (business_id, customer_id, service_id, conversation_id, starts_at, ends_at, price, status, source) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
         [b.id, m.id, s.id, conv, at, new Date(+at + s.minutes * 6e4), s.price, status, conv ? 'ai' : 'manual']);

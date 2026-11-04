@@ -119,6 +119,9 @@
     if (window.MXBIZ === undefined) { window.MXBIZ = null; fetch('/api/business').then(r => r.ok ? r.json() : {}).then(b => { window.MXBIZ = b || {}; }).catch(() => { window.MXBIZ = {}; }); return false; }
     if (window.MXBIZ === null) return false;
     pills.dataset.p10 = '1';
+    // live demo from the website: say so, and offer the way out and the way in
+    if (me.user?.role === 'demo' && !document.getElementById('demoBar')) { const d = document.createElement('div'); d.id = 'demoBar'; d.className = 'demo-bar';
+      d.innerHTML = '<span><b>Live demo</b> · sample data, look around freely. Changes are switched off.</span><a href="/demo/exit">Back to templates</a><a class="go" href="/pricing#start">Start your own</a>'; document.body.prepend(d); document.body.classList.add('has-demo'); }
     const keep = window.MXBIZ.nav, cust = window.MXBIZ.terms?.customers;
     if (cust) { const row = PAGES.find(p => p[0] === 'customers'); if (row) row[1] = cust[0].toUpperCase() + cust.slice(1); }
     $$('nav .navpills > button, nav .navpills > .ns').forEach(x => { if (x.id !== 'adminNav') x.classList.add('nav-gone') });

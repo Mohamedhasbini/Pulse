@@ -13,6 +13,7 @@ import { mountTeam } from './team.js';
 import { mountPulse } from './pulse.js';
 import { mountFinance } from './finance.js';
 import { mountMemberships } from './memberships.js';
+import { mountLiveDemo, demoGuard } from './livedemo.js';
 import { mountConnectors, mountPublicCatalog, NAV } from './connectors.js';
 import { mountMarketing } from './marketing.js';
 import { mountIntegrations, mountPublicApi } from './integrations.js';
@@ -213,6 +214,7 @@ app.post('/api/logout', (_req, res) => { res.set('Set-Cookie', 'rb_session=; Pat
 // The public API authenticates with a business API key, so it sits before the session check.
 mountPublicApi(app);
 mountPublicCatalog(app);
+mountLiveDemo(app); // /demo/<template>: read-only live dashboards for website visitors
 
 // Who is signed in, and which business this request is about. Owners and staff only ever get their own business;
 // the admin works on whichever business they switched to (rb_biz cookie).
@@ -234,6 +236,7 @@ app.use(wrap(async (req, res, next) => {
       return res.status(409).json({ error: 'Open a business first.', lab: true });
   }
   req.user = user;
+  if (demoGuard(req, res)) return;
   // Plan / add-on and permission checks for the section this request belongs to.
   const mod = moduleOf(req.method, req.path);
   if (mod && user.role !== 'admin') {

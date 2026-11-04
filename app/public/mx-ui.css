@@ -1138,3 +1138,11 @@ html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log button:not(.pc-more)
 .gc-class .gc-spots{display:block;height:4px;border-radius:99px;background:color-mix(in srgb,var(--c) 22%,transparent);margin:3px 0 2px;overflow:hidden}
 .gc-class .gc-spots i{display:block;height:100%;background:var(--c);border-radius:99px}
 .gc-class.full small{font-weight:600}
+
+/* live demo bar: a slim strip above the dashboard */
+.demo-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding:9px 16px;background:#141414;color:#e8e8e8;font-size:13px;box-shadow:0 -6px 20px rgba(0,0,0,.18)}
+.demo-bar b{color:#c6f432}.demo-bar a{color:#e8e8e8;text-decoration:none;padding:5px 12px;border-radius:999px;border:1px solid #3a3a3a}
+.demo-bar a.go{background:#c6f432;color:#111;border-color:#c6f432;font-weight:600}
+.demo-bar a:focus-visible{outline:2px solid #c6f432;outline-offset:2px}
+body.has-demo{padding-bottom:52px}
+@media (max-width:700px){.demo-bar{bottom:64px;font-size:12px;gap:8px}.demo-bar span{width:100%;text-align:center}}
