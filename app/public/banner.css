@@ -1,0 +1,26 @@
+/* Page banners and canvas (Nov 2026). Ideas from efferd.com's hero blocks (soft radial glow + dot grid that fades
+   out) in MXAi's graphite/silver: no lime here, lime stays the rare signal. Built from the theme tokens, so light,
+   dark and every preview skin follow. Static: no motion is added here. */
+
+/* 1 · canvas: a faint dot grid behind the cards, fading towards the bottom so long pages stay calm */
+:root{--bn-dot:rgba(15,20,24,.07);--bn-glow:rgba(15,20,24,.06);--bn-rim:rgba(255,255,255,.7)}
+:root:not([data-theme="light"]){--bn-dot:rgba(255,255,255,.05);--bn-glow:rgba(255,255,255,.07);--bn-rim:rgba(255,255,255,.06)}
+html body:not(#_):not(#__):not(#___):not(#____):not(#_____)::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:radial-gradient(var(--bn-dot) 1px,transparent 1.2px);background-size:22px 22px;
+  -webkit-mask-image:linear-gradient(180deg,#000 0,rgba(0,0,0,.55) 45%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,rgba(0,0,0,.55) 45%,transparent 100%)}
+
+/* 2 · banners: Today's greeting and every page's heading sit on one quiet surface with a soft glow top-right
+   and a dot grid that fades out to the left */
+html body main:not(#_):not(#__) :is(.tdh,.mxh){position:relative;isolation:isolate;overflow:hidden;
+  background:var(--fu-surf)!important;border-radius:16px!important;padding:20px 22px!important;
+  box-shadow:0 0 0 1px var(--fu-line),inset 0 1px 0 var(--bn-rim)!important}
+html body main:not(#_):not(#__) :is(.tdh,.mxh)::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(520px 220px at 88% -30%,var(--bn-glow),transparent 70%),radial-gradient(var(--bn-dot) 1px,transparent 1.2px);
+  background-size:auto,18px 18px;
+  -webkit-mask-image:linear-gradient(270deg,#000 0,rgba(0,0,0,.8) 40%,transparent 85%);mask-image:linear-gradient(270deg,#000 0,rgba(0,0,0,.8) 40%,transparent 85%)}
+html body main:not(#_):not(#__) .tdh{margin:0 0 0!important}
+/* the tab row inside a page banner sits on its bottom edge */
+html body main:not(#_):not(#__) .mxh .mxh-tabs{margin-bottom:-6px}
+
+/* phones: smaller banner padding, same look */
+@media (max-width:1000px){html body main:not(#_):not(#__) :is(.tdh,.mxh){padding:16px!important;border-radius:14px!important}}
