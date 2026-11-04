@@ -1,0 +1,8 @@
+# Test-only override: no host ports (so it can run beside the real stack), throwaway volumes per project name.
+# docker compose -p mxci -f docker-compose.yml -f docker-compose.ci.yml up -d --build db app
+services:
+  app:
+    ports: !reset []
+    restart: "no"
+  db:
+    restart: "no"

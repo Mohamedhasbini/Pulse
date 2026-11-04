@@ -1,0 +1,20 @@
+# Runs every platform test on each push and pull request, against a fresh database. Nothing is released unless it passes.
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test settings (no real keys; AI calls fall back or are skipped)
+        run: cp .env.example .env && mkdir -p backups
+      - name: Syntax check every script
+        run: for f in app/src/*.js app/public/*.js app/public/js/*.js; do node --check "$f"; done
+      - name: Start a throwaway stack
+        run: docker compose -p ci -f docker-compose.yml -f docker-compose.ci.yml up -d --build --wait db app
+      - name: Run the test suites
+        run: docker compose -p ci -f docker-compose.yml -f docker-compose.ci.yml exec -T app npm test
+      - name: App log on failure
+        if: failure()
+        run: docker compose -p ci -f docker-compose.yml -f docker-compose.ci.yml logs app --tail 200
