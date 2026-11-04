@@ -140,22 +140,7 @@
     window.PVBoard?.('today', h);
   }
 
-  // ---------- sub-tabs: a glass dropdown under each top-bar tab ----------
-  let dd = null, ddFor = null, ddT = 0;
-  function dropdown(btn) {
-    const id = btn.dataset.p10, page = (window.P10?.pages || []).find(p => p[0] === id), tabs = page?.[3] || [];
-    if (tabs.length < 2 || !matchMedia('(min-width:1001px)').matches) return hideDD();
-    if (!dd) { dd = document.createElement('div'); dd.id = 'hxDD'; document.body.append(dd);
-      dd.addEventListener('mouseenter', () => clearTimeout(ddT)); dd.addEventListener('mouseleave', () => { ddT = setTimeout(hideDD, 180); });
-      dd.addEventListener('click', ev => { const t = ev.target.closest('[data-k]'); if (t) { hideDD(); window.P10.go(t.dataset.id, +t.dataset.k); } }); }
-    const r = btn.getBoundingClientRect(), cur = window.P10.current?.() === id;
-    dd.innerHTML = `<b>${esc(page[1])}</b>` + tabs.map(([l], k) => `<button type="button" data-id="${id}" data-k="${k}">${esc(l)}</button>`).join('');
-    dd.style.left = Math.max(8, r.left) + 'px'; dd.style.top = r.bottom + 8 + 'px'; dd.hidden = false; dd.classList.add('on'); ddFor = id;
-  }
-  function hideDD() { if (dd) { dd.classList.remove('on'); dd.hidden = true; ddFor = null; } }
-  document.addEventListener('mouseover', ev => { const b = ev.target.closest('nav[aria-label="Main"] button.p10'); if (!b) return; clearTimeout(ddT); if (ddFor !== b.dataset.p10) dropdown(b); });
-  document.addEventListener('mouseout', ev => { if (ev.target.closest('nav[aria-label="Main"] button.p10') && !ev.relatedTarget?.closest?.('#hxDD,nav button.p10')) ddT = setTimeout(hideDD, 220); });
-  addEventListener('scroll', hideDD, { passive: true });
+  // sub-pages are the tab row at the top of each page; the hover dropdown from the old top bar is gone
 
   // ---------- KPI cards open in place ----------
   document.addEventListener('click', ev => {

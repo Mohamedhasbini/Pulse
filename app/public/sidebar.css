@@ -54,3 +54,8 @@
   html body main:not(#_):not(#__){max-width:none!important;width:auto!important;margin:0!important;padding:16px 20px 72px!important;min-width:0}
   html body main .mx-page:not(#_){max-width:none!important}
 }
+
+/* page switching: hidden while a section is assembled, then a short fade in (no flash of the page it borrows) */
+html body main:not(#_) > section{transition:opacity .14s ease-out}
+html body main.p10-sw:not(#_) > section{opacity:0!important;transition:none}
+@media (prefers-reduced-motion:reduce){html body main:not(#_) > section{transition:none}}

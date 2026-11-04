@@ -166,7 +166,12 @@
     const page = PAGES.find(p => p[0] === id); if (!page) return;
     i = tabIndex(page[3], i);
     const [, , purpose, tabs] = page, t = tabs[i] || tabs[0], spec = t[1];
-    current = [id, i]; hideOwn();
+    current = [id, i];
+    // switching: the page area stays invisible while the section is assembled (an old page can show for ~0.3s while
+    // it is borrowed and trimmed), then the finished page fades in. The sidebar marks the new place at once.
+    const mainEl = $('main'); mainEl?.classList.add('p10-sw'); clearTimeout(go.veil); go.veil = setTimeout(() => mainEl?.classList.remove('p10-sw'), 1200);
+    mark(id);
+    hideOwn();
     $$('[data-p10hide]').forEach(c => delete c.dataset.p10hide); // the last tab's hiding never leaks into this one
     if (spec.own) { showOwn(spec.own, spec); }
     else {
@@ -215,6 +220,7 @@
     }
     bar(id, i, purpose, tabs);
     mark(id);
+    setTimeout(() => { if (current[0] === id && current[1] === i) { clearTimeout(go.veil); mainEl?.classList.remove('p10-sw'); } }, 30); // a timer, not animation frames: those pause in background tabs
     fitTab(); setTimeout(fitTab, 400); setTimeout(fitTab, 1300); setTimeout(fitTab, 2600); // again once the tab's data has loaded
   }
   // a tab never scrolls: if its content is taller than the screen, it is scaled down to fit (not below 85%, so text stays readable)
