@@ -125,7 +125,7 @@ export function mountPublic(app, DEFAULT_BIZ) {
         price = Math.max(0, Math.round((price - off) * 100) / 100);
       }
       const cust = await one(`INSERT INTO customers (business_id, phone, name, email, reminder_channel) VALUES ($1,$2,$3,$4,$5)
-          ON CONFLICT (business_id, phone) DO UPDATE SET name = EXCLUDED.name, email = COALESCE(EXCLUDED.email, customers.email), reminder_channel = EXCLUDED.reminder_channel RETURNING id`,
+          ON CONFLICT (business_id, phone) DO UPDATE SET name = COALESCE(customers.name, EXCLUDED.name), email = COALESCE(customers.email, EXCLUDED.email), reminder_channel = COALESCE(customers.reminder_channel, EXCLUDED.reminder_channel) RETURNING id`, // a typed phone may be anyone's: fill blanks, never overwrite
         [BIZ, ph, nm, email || null, channel]);
       Object.assign(cust, await unify(BIZ, cust.id) || {});
       const token = crypto.randomBytes(18).toString('base64url');

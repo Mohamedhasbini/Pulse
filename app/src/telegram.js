@@ -48,8 +48,10 @@ async function onMessage(bizId, m) {
   await q(`INSERT INTO customers (business_id, phone, name, telegram_chat_id) VALUES ($1,$2,$3,$4)
       ON CONFLICT (business_id, phone) DO UPDATE SET telegram_chat_id=EXCLUDED.telegram_chat_id, name=COALESCE(customers.name, EXCLUDED.name)`, [bizId, phoneKey, name, chatId]);
   if (m.contact?.phone_number) {
-    const c = await one(`UPDATE customers SET contact_phone=$1 WHERE business_id=$2 AND phone=$3 RETURNING id`, [m.contact.phone_number.replace(/[^\d+]/g, ''), bizId, phoneKey]);
-    if (c) await unify(bizId, c.id);
+    const shared = m.contact.phone_number.replace(/[^\d+]/g, '');
+    const c = await one(`UPDATE customers SET contact_phone=$1 WHERE business_id=$2 AND phone=$3 RETURNING id`, [shared, bizId, phoneKey]);
+    // Telegram vouches for the number only when the card is the sender's own; anyone else's card is just a note
+    if (c && m.contact.user_id && m.contact.user_id === m.from?.id) await unify(bizId, c.id, { phones: [shared] });
   }
   call(bots.get(bizId).token, 'sendChatAction', { chat_id: chatId, action: 'typing' }).catch(() => {});
   const r = await handleMessage({ businessId: bizId, phone: phoneKey, name, text, channel: 'telegram' });

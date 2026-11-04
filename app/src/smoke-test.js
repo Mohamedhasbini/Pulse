@@ -28,6 +28,27 @@ try {
   await q(`INSERT INTO customers (business_id, phone, name, contact_phone) VALUES ($1, 'test-lab-9-x', 'Test lab', '+34600111222')`, [r.id]);
   const merged = await unify(r.id, realC.id);
   say('Merge never names a real client "Test lab"', merged && merged.name == null, String(merged?.name));
+  // Identity: typing another client's email in a chat must not join their record (it would show and cancel their bookings)
+  const victim = await one(`INSERT INTO customers (business_id, phone, name, email) VALUES ($1, '+34600333444', 'Victim', 'victim@example.test') RETURNING id`, [r.id]);
+  const intruder = await one(`INSERT INTO customers (business_id, phone, email) VALUES ($1, '+34600999888', 'victim@example.test') RETURNING id`, [r.id]);
+  const autoU = await unify(r.id, intruder.id);
+  say('A typed email never merges two clients automatically', autoU?.id === intruder.id && !!(await one('SELECT 1 FROM customers WHERE id=$1', [victim.id])));
+  const tgI = await one(`INSERT INTO customers (business_id, phone, contact_phone) VALUES ($1, 'tg-555', '+34600333444') RETURNING id`, [r.id]);
+  say('A typed phone (Telegram, WeBook) never merges automatically', (await unify(r.id, tgI.id))?.id === tgI.id);
+  // The owner's merge button still joins them, and nothing linked to the merged record is lost (memberships, payments, waitlist)
+  const ms = await one(`INSERT INTO memberships (business_id, customer_id, plan, price) VALUES ($1,$2,'Monthly',30) RETURNING id`, [r.id, intruder.id]);
+  await q(`INSERT INTO membership_payments (membership_id, business_id, amount) VALUES ($1,$2,30)`, [ms.id, r.id]);
+  await q(`INSERT INTO waitlist (business_id, customer_id) VALUES ($1,$2)`, [r.id, intruder.id]);
+  const manU = await unify(r.id, intruder.id, { manual: true });
+  const kept = await one(`SELECT (SELECT count(*)::int FROM memberships WHERE customer_id=$1) AS m, (SELECT count(*)::int FROM membership_payments WHERE membership_id=$2) AS p,
+      (SELECT count(*)::int FROM waitlist WHERE customer_id=$1) AS w`, [manU?.id, ms.id]);
+  say('Owner merge joins by email and keeps memberships, payments and waitlist', manU?.id === victim.id && kept.m === 1 && kept.p === 1 && kept.w === 1, JSON.stringify(kept));
+  // WeBook: a phone number typed into the app opens a new record, never the existing client's bookings or chat
+  const wb = await fetch(BASE + '/api/webook/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ business_id: r.id, name: 'Someone', phone: '+34600333444' }) }).then(r => r.json());
+  const wbMine = await fetch(BASE + '/api/webook/my-bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: [wb.token] }) }).then(r => r.json());
+  await q(`INSERT INTO bookings (business_id, customer_id, service_id, starts_at, ends_at) SELECT $1, $2, id, now() + interval '2 days', now() + interval '2 days 1 hour' FROM services WHERE business_id=$1 LIMIT 1`, [r.id, victim.id]);
+  const wbAfter = await fetch(BASE + '/api/webook/my-bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: [wb.token] }) }).then(r => r.json());
+  say('WeBook: typing a client\'s phone shows none of their bookings', !!wb.token && wb.name === 'Someone' && Array.isArray(wbMine) && wbAfter.length === 0, `${wbAfter.length} shown`);
   // upload a 1x1 PNG as the logo
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
   let x = await fetch(BASE + '/api/business/upload/logo', { method: 'POST', headers: { ...as(owner), 'Content-Type': 'image/png' }, body: png }).then(r => r.json());

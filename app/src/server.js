@@ -1329,7 +1329,7 @@ app.put('/api/customers/:id', wrap(async (req, res) => {
   const bday = /^\d{4}-\d{2}-\d{2}$/.test(b.birthday || '') ? b.birthday.slice(5) : null;
   await q(`UPDATE customers SET name=$1, email=NULLIF($2,''), reminder_channel=$3, staff_notes=NULLIF($4,''), birthday=$7 WHERE id=$5 AND business_id=$6`,
     [String(b.name).trim(), email, ['whatsapp', 'sms', 'email'].includes(b.reminder_channel) ? b.reminder_channel : 'whatsapp', String(b.staff_notes || '').trim(), req.params.id, BIZ(), bday]);
-  const u = await unify(BIZ(), +req.params.id);
+  const u = await unify(BIZ(), +req.params.id, { manual: true }); // the owner chose to merge: email and typed numbers count too
   res.json({ ok: true, merged_into: u && u.id !== +req.params.id ? u.id : null });
 }));
 

@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { q, one } from './db.js';
 import { handleMessage, loadBusiness } from './brain.js';
-import { unify } from './customers.js';
+
 import { VERTICALS } from './verticals.js';
 import { hasFeature } from './features.js';
 
@@ -86,14 +86,14 @@ export function mountWeBook(app) {
     for (const t of (Array.isArray(req.body.tokens) ? req.body.tokens : []).slice(0, 30)) {
       const s = verify(t); if (!s) continue;
       const c = await one('SELECT * FROM customers WHERE id=$1 AND business_id=$2', [s.customerId, s.businessId]); if (!c) continue;
-      // Every booking with this phone at this business (chat, WeBook or website) belongs to this person.
+      // Only this session's own client record: a phone number typed into another record is no proof it is the same person.
       const rows = await q(`SELECT k.id, k.business_id, b.name AS business, b.vertical, k.status, k.price::float, k.manage_token,
           to_char(k.starts_at,'YYYY-MM-DD"T"HH24:MI') AS start, to_char(k.ends_at,'YYYY-MM-DD"T"HH24:MI') AS "end", s.name AS service,
           (k.starts_at - now() >= make_interval(hours => b.cancel_hours)) AS can_cancel, k.starts_at < now() AS past,
           (SELECT stars FROM reviews r WHERE r.booking_id=k.id) AS my_stars,
           (SELECT status FROM requests r WHERE r.booking_id=k.id AND r.type='cancel' ORDER BY id DESC LIMIT 1) AS cancel_request
           FROM bookings k JOIN services s ON s.id=k.service_id JOIN businesses b ON b.id=k.business_id JOIN customers cu ON cu.id=k.customer_id
-          WHERE k.business_id=$1 AND (cu.id=$2 OR cu.phone=$3) ORDER BY k.starts_at DESC LIMIT 50`, [s.businessId, c.id, c.phone]);
+          WHERE k.business_id=$1 AND cu.id=$2 ORDER BY k.starts_at DESC LIMIT 50`, [s.businessId, c.id]);
       for (const r of rows) {
         if (!r.manage_token) { r.manage_token = crypto.randomBytes(18).toString('base64url'); await q('UPDATE bookings SET manage_token=$1 WHERE id=$2', [r.manage_token, r.id]); }
         out.push({ ...r, token: t, emoji: (VERTICALS[r.vertical] || VERTICALS.salon).emoji });
@@ -128,10 +128,11 @@ export function mountWeBook(app) {
     const name = String(req.body.name || '').trim().slice(0, 60), phone = String(req.body.phone || '').replace(/[^\d+]/g, '');
     if (name.length < 2) return res.status(400).json({ error: 'Please enter your name.' });
     if (phone.replace(/\D/g, '').length < 7) return res.status(400).json({ error: 'Please enter a valid phone number.' });
-    const c = await one(`INSERT INTO customers (business_id, phone, name) VALUES ($1,$2,$3)
-        ON CONFLICT (business_id, phone) DO UPDATE SET name = COALESCE(customers.name, EXCLUDED.name) RETURNING id, name`, [biz.id, phone, name]);
-    // Same number used on WhatsApp, Telegram or the booking page: same client.
-    Object.assign(c, await unify(biz.id, c.id) || {});
+    // A typed phone number proves nothing (anyone can type anyone's), so a new session never opens an existing client's
+    // record, bookings or chat. The app keeps its token, so the same device keeps one record; the number is kept as the
+    // contact for reminders, and the owner can merge it with the client's other records from the Clients page.
+    const c = await one(`INSERT INTO customers (business_id, phone, name, contact_phone) VALUES ($1,$2,$3,$4) RETURNING id, name`,
+      [biz.id, 'wb-' + crypto.randomBytes(9).toString('base64url'), name, phone]);
     res.json({ token: sign(c.id, biz.id), name: c.name, business: { id: biz.id, name: biz.name } });
   }));
 
