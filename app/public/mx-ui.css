@@ -1042,3 +1042,33 @@ html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg bu
 html body main .ap-bar:not(#_):not(#__) i{background:var(--mx-s2)!important;border:0!important}
 html body main .ap-bar:not(#_):not(#__) u{background:var(--mx-s1)!important}
 html body main .pv-key:not(#_) .ap-k.a{background:var(--mx-s2)!important}html body main .pv-key:not(#_) .ap-k.b{background:var(--mx-s1)!important}
+/* ── Calendar details, as in Google Calendar: soft tonal events with a solid edge (name, time range, service),
+   hour labels on the lines with fainter half-hour lines, a "My calendars" list of services with tick boxes */
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b{background:color-mix(in srgb,var(--c,#5f6368) 18%,var(--mx-surf))!important;color:var(--mx-ink)!important;
+  border:0!important;box-shadow:inset 4px 0 0 var(--c,#5f6368)!important;border-radius:6px!important;padding:3px 8px 3px 10px!important;display:flex;flex-direction:column;align-items:flex-start;gap:0;overflow:hidden;text-align:left}
+:root[data-theme="light"] main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b{background:color-mix(in srgb,var(--c,#5f6368) 16%,#fff)!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b *{color:inherit!important;opacity:1}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b b{font-size:12.5px!important;font-weight:600!important;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b b small{font-weight:400;color:var(--mx-ink2)!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b>small{font-size:11.5px!important;color:var(--mx-ink2)!important;line-height:1.3;font-variant-numeric:tabular-nums}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b>span{font-size:11.5px!important;color:var(--mx-mute)!important;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b:hover{background:color-mix(in srgb,var(--c,#5f6368) 28%,var(--mx-surf))!important;filter:none}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b.faded{opacity:.5;text-decoration:line-through}
+/* hour and half-hour lines */
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-col{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--row) - 1px),var(--mx-line) calc(var(--row) - 1px),var(--mx-line) var(--row)),
+  repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--row) / 2 - 1px),color-mix(in srgb,var(--mx-line) 55%,transparent) calc(var(--row) / 2 - 1px),color-mix(in srgb,var(--mx-line) 55%,transparent) calc(var(--row) / 2))!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-times span{transform:translateY(-50%);padding-right:8px;font-size:11px!important;color:var(--mx-mute)!important}
+/* My calendars */
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-legend{display:flex;flex-direction:column;gap:2px}
+.gc-lh{font-size:13px;font-weight:600;color:var(--mx-ink);padding:4px 6px 6px}
+.gc-cal{display:flex;align-items:center;gap:10px;padding:6px;border-radius:8px;font-size:13px;color:var(--mx-ink2);cursor:pointer}
+.gc-cal:hover{background:var(--mx-raise)}
+.gc-cal input{appearance:none;-webkit-appearance:none;width:16px;height:16px;border-radius:4px;border:2px solid var(--c);margin:0;display:grid;place-items:center;flex:none;cursor:pointer}
+.gc-cal input:checked{background:var(--c)}
+.gc-cal input:checked::after{content:"";width:8px;height:4px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.gc-cal input:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]{appearance:none!important;-webkit-appearance:none!important;width:16px!important;height:16px!important;border-radius:4px!important;border:2px solid var(--c)!important;background:transparent!important;box-shadow:none!important;margin:0!important;display:grid!important;place-items:center}
+html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]:checked{background:var(--c)!important}
+html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]::before{display:none!important}
+html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]:checked::after{content:"";display:block;width:8px;height:4px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px);background:none;position:static}
+html body main .gc:not(#_):not(#__):not(#___) .gc-side .gc-new::after,html body main .gc:not(#_):not(#__):not(#___) .gc-side .gc-new::before{display:none!important;content:none!important}
