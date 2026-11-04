@@ -1105,3 +1105,21 @@ html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-chip{background:#faf9f6!
 html body .pc:not(#_):not(#__):not(#___):not(#____) ::selection{background:#e8e3d3}
 /* action buttons under an answer: quiet text buttons */
 html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log button:not(.pc-more){color:#4a4943!important}
+
+/* Integrations › Connectors catalog: filter pills, then tiles (live ones open their setup, the rest marked Soon) */
+.cn{margin:0 0 22px}.cn-h{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}.cn-h b{font-size:15px;font-weight:600;color:var(--mx-ink)}.cn-h small{font-size:12.5px;color:var(--mx-mute)}
+.cn-f{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.cn-f button{all:unset;cursor:pointer;padding:6px 12px;border-radius:999px;font-size:12.5px;color:var(--mx-mute);background:var(--mx-raise)}
+.cn-f button[aria-selected="true"]{background:var(--mx-ink);color:var(--mx-bg,#fff)}
+.cn-f button:focus-visible,.cn-c:focus-visible{outline:2px solid var(--mx-s2);outline-offset:2px}
+.cn-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.cn-c{all:unset;box-sizing:border-box;display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--mx-raise);cursor:pointer;min-width:0}
+:root[data-theme="light"] .cn-c{background:#fff}
+.cn-c.soon{cursor:default;opacity:.7}
+.cn-c i{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-style:normal;font-weight:600;font-size:14px;background:var(--mx-line,#e5e5e5);color:var(--mx-ink)}
+.cn-c.live i{background:color-mix(in srgb,var(--mx-s2) 22%,transparent)}.cn-c.on i{background:color-mix(in srgb,var(--mx-ok,#22c55e) 25%,transparent)}
+.cn-c span{display:flex;flex-direction:column;min-width:0}.cn-c b{font-size:13.5px;font-weight:600;color:var(--mx-ink)}
+.cn-c small{font-size:12px;line-height:1.35;color:var(--mx-mute);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cn-c em{font-style:normal;font-size:11.5px;padding:3px 8px;border-radius:999px;color:var(--mx-mute);background:var(--mx-line,#eee)}
+.cn-c.live em{color:var(--mx-ink)}.cn-c.on em{color:var(--mx-ok,#16a34a)}
+@media (max-width:700px){.cn-f{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.cn-f button{flex:none;min-height:0;white-space:nowrap}}

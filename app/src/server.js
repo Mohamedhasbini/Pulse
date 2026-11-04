@@ -12,6 +12,7 @@ import { mountAgents } from './agents.js';
 import { mountTeam } from './team.js';
 import { mountPulse } from './pulse.js';
 import { mountFinance } from './finance.js';
+import { mountConnectors, mountPublicCatalog } from './connectors.js';
 import { mountMarketing } from './marketing.js';
 import { mountIntegrations, mountPublicApi } from './integrations.js';
 import { mountShortcuts } from './shortcuts.js';
@@ -206,6 +207,7 @@ app.post('/api/logout', (_req, res) => { res.set('Set-Cookie', 'rb_session=; Pat
 
 // The public API authenticates with a business API key, so it sits before the session check.
 mountPublicApi(app);
+mountPublicCatalog(app);
 
 // Who is signed in, and which business this request is about. Owners and staff only ever get their own business;
 // the admin works on whichever business they switched to (rb_biz cookie).
@@ -657,6 +659,7 @@ setSenders({ sendWhatsApp, sendTelegram }); startAutopilot();
 mountTeam(app, () => BIZ(), { sendWhatsApp, sendTelegram, audit });
 mountPulse(app, () => BIZ());
 mountFinance(app, () => BIZ());
+mountConnectors(app, () => BIZ());
 mountMarketing(app, () => BIZ());
 mountIntegrations(app, () => BIZ());
 mountShortcuts(app, () => BIZ());

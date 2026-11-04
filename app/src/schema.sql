@@ -462,3 +462,8 @@ ALTER TABLE messages ADD COLUMN IF NOT EXISTS trail JSONB;
 
 -- Running costs the owner enters in Settings › Costs: fixed per month, or variable (share of revenue / per booking)
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS costs JSONB DEFAULT '[]'::jsonb;
+
+-- real owner quotes for the website, shown only when published (never invented)
+CREATE TABLE IF NOT EXISTS testimonials (id SERIAL PRIMARY KEY, quote TEXT NOT NULL, name TEXT NOT NULL, role TEXT, business TEXT, city TEXT,
+  consent BOOLEAN NOT NULL DEFAULT false, published BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (NOT published OR consent));

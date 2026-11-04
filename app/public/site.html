@@ -585,7 +585,7 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 
 /* ── pages: one file, each address shows its own sections (the sections themselves are unchanged) */
 body[data-page] main>section{display:none}
-body[data-page="home"] main>:is(#see,#does,#core,#industries,#faq,#start),
+body[data-page="home"] main>:is(#see,#does,#core,#industries,#reviews:not([hidden]),#faq,#start),
 body[data-page="product"] main>:is(#dashboard,#value,#agents,#features,#inside,#start),
 body[data-page="how"] main>:is(#problem,#how,#architecture,#demo,#start),
 body[data-page="pricing"] main>:is(#pricing,#faq,#start),
@@ -595,9 +595,9 @@ body[data-page]:not([data-page="home"]) main{padding-top:110px}
 body[data-page="templates"] main{display:flex;flex-direction:column}body[data-page="templates"] #pageH{order:-2}body[data-page="templates"] #templates{order:-1}
 .page-h{text-align:center;max-width:760px;margin:0 auto 10px;padding-top:10px}.page-h h1{font-size:clamp(36px,5vw,64px);margin:12px 0}.page-h p{color:var(--ink2);font-size:18px;margin:0 auto;max-width:600px}
 body[data-page="home"] .page-h{display:none}
-.inds{grid-template-columns:repeat(4,1fr)}.tpls{grid-template-columns:repeat(3,1fr)}
+.inds{grid-template-columns:repeat(4,1fr)}.revs{grid-template-columns:repeat(3,1fr)}.revs blockquote{margin:0;padding:24px}.revs p{font-size:17px;line-height:1.55;color:var(--ink)}.revs footer{margin-top:14px;color:var(--muted);font-size:14px}.revs footer b{color:var(--ink2);font-weight:600}.tpls{grid-template-columns:repeat(3,1fr)}
 .tpls .soon{opacity:.78}.tpls .soon i{color:var(--muted)}
-@media (max-width:900px){.inds,.tpls{grid-template-columns:1fr 1fr}}@media (max-width:560px){.inds,.tpls{grid-template-columns:1fr}}
+@media (max-width:900px){.inds,.tpls,.revs{grid-template-columns:1fr 1fr}}@media (max-width:560px){.inds,.tpls,.revs{grid-template-columns:1fr}}
 /* ── the menu: dropdown panels with a title and one line each */
 header nav.mn{display:flex;align-items:center;gap:2px}
 .mn-i{position:relative}
@@ -944,6 +944,11 @@ header .wrap{position:relative}
   <div class="addons glass" id="addons" hidden></div>
 </div></section>
 
+<section id="reviews" hidden><div class="wrap">
+  <div class="sh rv"><span class="k">From owners</span><h2>What owners say.</h2></div>
+  <div class="does revs" id="revList"></div>
+</div></section>
+
 <section id="faq" class="faq"><div class="wrap" style="max-width:840px">
   <div class="sh rv"><span class="k">Questions</span><h2>Good to know</h2></div>
   <details class="glass"><summary>Do my customers need to download anything?</summary><p>No. They message your WhatsApp or Telegram like they always do. MXAi answers there.</p></details>
@@ -1061,7 +1066,7 @@ function run(i){if(!document.getElementById("b"+i))wires();const j=JOURNEYS[i],b
   tick(f)}
 // runs while the diagram is on screen; checks its position instead of relying on an observer
 function cycle(){const el=document.querySelector(".arch");if(!el)return;const r=el.getBoundingClientRect();
-  if(document.hidden||r.bottom<0||r.top>innerHeight)return setTimeout(cycle,800);
+  if(!el.offsetParent||document.hidden||r.bottom<0||r.top>innerHeight)return setTimeout(cycle,800);
   wires();W.C[0]?.classList.add("pulse");JOURNEYS.forEach((_,i)=>setTimeout(()=>run(i),i*2400));setTimeout(cycle,JOURNEYS.length*2400+6000)}
 setTimeout(cycle,600);
 addEventListener("resize",()=>{clearTimeout(wires.t);wires.t=setTimeout(wires,150)});
@@ -1136,6 +1141,12 @@ $("#lead").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new 
   // links to a section of this same page scroll instead of reloading
   document.querySelectorAll('a[href^="/"][href*="#"]').forEach(a=>{const u=new URL(a.href);if(u.pathname===location.pathname||(u.pathname==="/"&&document.body.dataset.page==="home"&&location.pathname.match(/^\/(pulse)?$/)))a.setAttribute("href",u.hash)});
 })();
+</script>
+<script>
+// owner quotes: only real, consented, published ones from /api/public/testimonials; the section stays hidden without them
+fetch("/api/public/testimonials").then(r=>r.json()).then(({items})=>{if(!items||!items.length)return;const e=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  document.getElementById("revList").innerHTML=items.map(t=>`<blockquote class="glass"><p>“${e(t.quote)}”</p><footer><b>${e(t.name)}</b>${[t.role,t.business,t.city].filter(Boolean).map(x=>" · "+e(x)).join("")}</footer></blockquote>`).join("");
+  document.getElementById("reviews").hidden=false}).catch(()=>{});
 </script>
 </body>
 </html>
