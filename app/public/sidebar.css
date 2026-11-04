@@ -1,0 +1,56 @@
+/* Sidebar layout (Nov 2026): the main menu sits on the left and pages fill the rest of the screen, at any width.
+   Desktop and laptop only (over 1000px); phones keep the bottom bar from mobile.css. Loaded last: it replaces the
+   top bar from layout.css and the 1680px page cap. Colours come from the theme tokens, so light, dark and any
+   preview skin all apply. */
+@media (min-width:1001px){
+  :root{--sb-w:228px}
+  html body .shell:not(#_):not(#__){display:grid!important;grid-template-columns:var(--sb-w) minmax(0,1fr)!important;align-items:start;min-height:100vh}
+
+  /* the bar itself: full height, sticky, scrolls on its own if the window is short */
+  html body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______){
+    position:sticky!important;top:0!important;height:100vh!important;width:var(--sb-w)!important;z-index:40;
+    display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:4px!important;
+    padding:18px 12px 14px!important;margin:0!important;overflow:hidden auto!important;
+    background:var(--fu-side)!important;border:0!important;border-right:1px solid var(--fu-line)!important;border-bottom:0!important;box-shadow:none!important}
+  html body nav[aria-label="Main"] .brand:not(#_):not(#__){margin:2px 8px 14px!important;padding:0!important}
+  html body nav[aria-label="Main"] .brand *:not(#_):not(#__){color:var(--fu-ink)!important}
+  html body nav[aria-label="Main"] #labBtn:not(#_):not(#__){margin:0 0 10px!important;width:100%!important;justify-content:center}
+
+  /* the sections: icon + label, full-width rows; the open one is a soft pill */
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___){display:flex!important;flex-direction:column!important;align-items:stretch!important;
+    gap:2px!important;flex:1 1 auto!important;min-height:0;overflow:visible!important;margin:0!important;padding:0!important;background:none!important;box-shadow:none!important}
+  html body nav[aria-label="Main"] button.p10:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______){
+    display:flex!important;align-items:center!important;gap:11px!important;width:100%!important;height:auto!important;box-sizing:border-box;
+    padding:9px 12px!important;border-radius:10px!important;font-size:14px!important;line-height:20px!important;color:var(--fu-ink2)!important;background:transparent!important;border:0!important}
+  html body nav[aria-label="Main"] button.p10 svg:not(#_):not(#__){display:block!important;width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+  html body nav[aria-label="Main"] button.p10 span:not(#_):not(#__){display:inline!important;color:inherit!important;flex:1;text-align:left}
+  html body nav[aria-label="Main"] button.p10:hover:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______){background:var(--fu-raise)!important;color:var(--fu-ink)!important}
+  html body nav[aria-label="Main"] button.p10[aria-current="true"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______){background:var(--fu-raise)!important;color:var(--fu-ink)!important;font-weight:600!important;box-shadow:inset 0 0 0 1px var(--fu-line)!important}
+  html body nav[aria-label="Main"] button.p10[aria-current="true"] svg:not(#_):not(#__){opacity:1}
+  html body nav[aria-label="Main"] button.p10 .p10-n:not(#_):not(#__){margin-left:auto!important;position:static!important}
+  /* items marked nav-gone (old entries, the phone-only More) stay hidden here too */
+  html body nav[aria-label="Main"] .navpills>.nav-gone:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){display:none!important}
+  /* sub-pages live in each page's own tab row, so the bar lists sections only */
+  html body nav[aria-label="Main"] :is(.p10-sub,.p10-grp,.plancard,.sp):not(#_):not(#__){display:none!important}
+
+  /* bottom: the Ask box, then the small controls */
+  html body #hxAsk:not(#_):not(#__){margin:10px 0 0!important;width:100%!important;box-sizing:border-box;background:var(--fu-raise)!important;border:1px solid var(--fu-line)!important;color:var(--fu-mute)!important;border-radius:12px!important;padding:9px 10px 9px 12px!important}
+  html body nav[aria-label="Main"] .navfoot:not(#_):not(#__):not(#___){display:flex!important;flex-direction:row!important;flex-wrap:wrap;justify-content:space-between!important;align-items:center;gap:6px!important;
+    margin:10px 0 0!important;padding:12px 2px 0!important;border:0!important;border-top:1px solid var(--fu-line)!important}
+  html body nav[aria-label="Main"] .navfoot button:not(#_):not(#__):not(#___){width:36px!important;height:36px!important;border-radius:10px!important;background:var(--fu-raise)!important;color:var(--fu-ink2)!important;border:0!important}
+  html body nav[aria-label="Main"] .navfoot #aiChip:not(#_):not(#__):not(#___){width:auto!important;padding:0 12px!important}
+
+  /* the sidebar always has room for the logo word and the Ask label (older rules hid them under 1200px) */
+  html body nav[aria-label="Main"] .brand .pl-word:not(#_):not(#__):not(#___){display:inline!important}
+  html body #hxAsk span:not(#_):not(#__){display:inline!important;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Settings: the form shrinks to the space left beside the sidebar and its own index instead of being cut off */
+  html body #setup:not(#_):not(#__){grid-template-columns:minmax(180px,230px) minmax(0,1fr)!important}
+  html body #setupForm:not(#_):not(#__){grid-template-columns:minmax(0,1fr)!important;min-width:0}
+  html body #setupForm :is(input,select,textarea):not(#_){max-width:100%;min-width:0}
+  /* services rows: name and description share what's left, the number fields and the remove button keep their size */
+  html body #setupForm .svc:not(#_):not(#__){grid-template-columns:minmax(0,1.3fr) minmax(0,1.7fr) 64px 64px 72px 26px!important}
+
+  /* pages use the whole width beside the bar */
+  html body main:not(#_):not(#__){max-width:none!important;width:auto!important;margin:0!important;padding:16px 20px 72px!important;min-width:0}
+  html body main .mx-page:not(#_){max-width:none!important}
+}
