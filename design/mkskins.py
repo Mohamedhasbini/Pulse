@@ -1,5 +1,6 @@
 import os
-OUT = r'C:\Users\Mohamad\Ai receptionist\app\public\skins'
+# Builds app/public/skins/*.css (the preview skins). Run: python design/mkskins.py
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'app', 'public', 'skins')
 os.makedirs(OUT, exist_ok=True)
 N = ':not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______)'
 
