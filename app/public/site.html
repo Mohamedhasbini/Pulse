@@ -618,12 +618,13 @@ header nav.mn>a:hover,header nav.mn>a[aria-current="page"]{color:var(--ink);back
 @media (max-width:1100px){.demo-b{display:none}}
 @media (max-width:900px){header nav.mn{display:none}}
 @media (prefers-reduced-motion:reduce){.mn-p{transition:none}}
-.mn-burger{display:none;all:unset;cursor:pointer;width:42px;height:42px;border-radius:50%;place-items:center;align-content:center;gap:5px;margin-left:auto}
+.mn-burger{all:unset;display:none;cursor:pointer;width:42px;height:42px;border-radius:50%;place-items:center;align-content:center;gap:5px;margin-left:auto}
 .mn-burger i{display:block;width:18px;height:2px;border-radius:2px;background:var(--ink);transition:transform .2s}
 .mn-burger{position:relative}.mn-burger i{position:absolute;left:12px;top:20px}.mn-burger i:first-child{transform:translateY(-4px)}.mn-burger i:last-child{transform:translateY(4px)}.mn-burger[aria-expanded="true"] i:first-child{transform:rotate(45deg)}.mn-burger[aria-expanded="true"] i:last-child{transform:rotate(-45deg)}
 .mn-sheet{position:absolute;top:calc(100% + 10px);left:0;right:0;display:grid;gap:2px;padding:8px;border-radius:20px;background:rgba(18,20,22,.97);border:1px solid var(--line);box-shadow:0 20px 50px -20px rgba(0,0,0,.6)}
 .mn-sheet a{padding:14px 16px;border-radius:12px;text-decoration:none;color:var(--ink);font-size:16px}.mn-sheet a:hover{background:rgba(255,255,255,.06)}
 header .wrap{position:relative}
+.mn-sheet[hidden]{display:none}@media (min-width:901px){.mn-sheet{display:none!important}}
 @media (max-width:900px){.mn-burger{display:grid}header .signin{display:none}}
 </style>
 </head>
