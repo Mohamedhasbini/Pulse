@@ -74,11 +74,11 @@ export async function overview(B, days) {
   const t = k.ticket || 0, ideas = [];
   // value = reachable clients x expected reply rate x average ticket; potential = the same if every client in the segment agreed to offers
   const add = (id, title, why, s, rate, go) => { const all = seg[s]?.n || 0, n = seg[s]?.reachable || 0; if (all) ideas.push({ id, title, why, audience: s, total: all, reachable: n, rate: Math.round(rate * 100), value: Math.round(n * rate * t), potential: Math.round(all * rate * t), go }); };
-  add('winback', `Win back ${seg.lapsed?.n || 0} lapsed clients`, "Not seen in 45–120 days but agreed to offers. A short 'we miss you' with a small perk.", 'lapsed', 0.15, ['marketing', 3]);
-  add('lost', `Re-activate ${seg.lost?.n || 0} lost clients`, 'Gone for 4+ months. Only a real offer moves them; expect a low reply rate.', 'lost', 0.05, ['marketing', 1]);
-  add('vip', `Thank your ${seg.vip?.n || 0} VIPs`, 'Your top 10% by spend. Early access or a gift beats a discount here.', 'vip', 0.25, ['marketing', 1]);
-  add('new', `Turn ${seg.new?.n || 0} new clients into regulars`, 'First visit in the last 30 days. A second visit within 6 weeks makes a regular.', 'new', 0.2, ['marketing', 1]);
-  add('never', `Convert ${seg.never?.n || 0} who chatted but never booked`, 'They asked and left. A clear price and a first-visit code.', 'never', 0.08, ['marketing', 2]);
+  add('winback', `Win back ${seg.lapsed?.n || 0} lapsed clients`, "Not seen in 45–120 days but agreed to offers. A short 'we miss you' with a small perk.", 'lapsed', 0.15, ['growth', 'Offers']);
+  add('lost', `Re-activate ${seg.lost?.n || 0} lost clients`, 'Gone for 4+ months. Only a real offer moves them; expect a low reply rate.', 'lost', 0.05, ['growth', 'Offers']);
+  add('vip', `Thank your ${seg.vip?.n || 0} VIPs`, 'Your top 10% by spend. Early access or a gift beats a discount here.', 'vip', 0.25, ['growth', 'Offers']);
+  add('new', `Turn ${seg.new?.n || 0} new clients into regulars`, 'First visit in the last 30 days. A second visit within 6 weeks makes a regular.', 'new', 0.2, ['growth', 'Offers']);
+  add('never', `Convert ${seg.never?.n || 0} who chatted but never booked`, 'They asked and left. A clear price and a first-visit code.', 'never', 0.08, ['growth', 'Offers']);
   ideas.sort((a, b) => b.potential - a.potential);
   const lessons = [];
   const best = [...campaigns].filter(c => c.sent >= 3).sort((a, b) => b.rate - a.rate)[0];

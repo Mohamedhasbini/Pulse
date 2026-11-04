@@ -13,13 +13,15 @@
   function askPill() {
     const nav = $('nav[aria-label="Main"]'); if (!nav || $('#hxAsk')) return;
     const b = document.createElement('button'); b.type = 'button'; b.id = 'hxAsk';
-    b.innerHTML = '<i></i><span>Ask Nora or jump to…</span><kbd>Ctrl K</kbd>';
+    b.innerHTML = `<i></i><span>Ask ${esc(window.P10 ? window.P10.named('Nora') : 'MXAi')} or jump to…</span><kbd>Ctrl K</kbd>`;
     b.addEventListener('click', () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })));
     $('.navfoot', nav)?.before(b);
   }
 
   // ---------- hero content per page ----------
-  const fd = (cls, tab, title, sub, chips = []) => `<div class="hx-fd ${cls}" data-tab="${esc(tab)}"><b>${esc(title)}</b><small>${esc(sub)}</small>${chips.length ? `<div class="hx-row">${chips.map((c, i) => `<span class="${i ? '' : 'k'}">${esc(c)}</span>`).join('')}</div>` : ''}</div>`;
+  // a chip is a fact (text) or a way somewhere: [label, page, tab] renders a real button that opens that tab
+  const fd = (cls, tab, title, sub, chips = []) => `<div class="hx-fd ${cls}" data-tab="${esc(tab)}"><b>${esc(title)}</b><small>${esc(sub)}</small>${chips.length ? `<div class="hx-row">${chips.map((c, i) => Array.isArray(c) ? `<button type="button" class="hx-go" data-hxgo="${esc(c[1] + '|' + c[2])}">${esc(c[0])} →</button>` : `<span class="${i ? '' : 'k'}">${esc(c)}</span>`).join('')}</div>` : ''}</div>`;
+  document.addEventListener('click', ev => { const b = ev.target.closest('.hx [data-hxgo]'); if (b) { const [p, t] = b.dataset.hxgo.split('|'); window.P10?.go(p, t); } });
   const stat = (l, v, rev) => `<div><span>${esc(l)}</span><b class="${rev ? 'rev' : ''}">${v}</b></div>`;
   async function content(id) {
     const live = await get('/api/live?days=30'), n = live?.now || {}, up = live?.upcoming || [];
@@ -27,20 +29,20 @@
     const nextCard = next ? fd('a', 'Next up', `${next.name || 'Client'} · ${next.service}`, `${next.start.startsWith(today) ? 'Today' : next.start.slice(5, 10)} ${hm(next.start)} · ${next.minutes} min · ${money(next.price)}`) : fd('a', 'Next up', 'Nothing booked next', 'Your AI keeps the calendar open');
     if (id === 'today') return { folders: nextCard + fd('b', 'Today', "Today's schedule", `${n.visits_today || 0} visits · ${money(n.revenue_today)} today · ${n.upcoming_count || 0} coming up`, [`${n.waiting || 0} waiting`, `${n.replies_today || 0} replies today`]) };
     if (id === 'inbox') return { line: `${n.replies_today || 0} replies today`, stats: stat('Waiting for you', n.waiting || 0) + stat('Active now', n.active_now || 0) + stat('Avg reply', n.avg_ms ? (n.avg_ms / 1000).toFixed(1) + 's' : '—'),
-      folders: fd('a', 'Unsure', `${n.unsure || 0} replies to check`, 'Teach the right answer once') + fd('b', 'To learn', `${n.to_learn || 0} questions`, 'Answers the AI did not know', ['Open Train'] ) };
+      folders: fd('a', 'Unsure', `${n.unsure || 0} replies to check`, 'Teach the right answer once') + fd('b', 'To learn', `${n.to_learn || 0} questions`, 'Answers the AI did not know') };
     if (id === 'calendar') return { line: `${money(n.upcoming_value)} coming up`, stats: stat('Upcoming', n.upcoming_count || 0) + stat('Booked value', money(n.upcoming_value), 1) + stat('Approvals', n.approvals || 0),
       folders: nextCard + fd('b', 'Today', `${todays.length} still to come today`, todays.slice(0, 3).map(b => hm(b.start)).join(' · ') || 'Free day', [`${n.approvals || 0} to approve`]) };
-    if (id === 'marketing' || id === 'customers') {
+    if (id === 'growth' || id === 'customers') { // the Growth page was called marketing once
       const m = await get('/api/marketing/overview?days=30'), k = m?.kpis || {}, s = m?.segments || {};
-      if (id === 'marketing') return { line: `${money(k.revenue)} back`, stats: stat('Revenue won', money(k.revenue), 1) + stat('Conversion', k.reached ? k.conversion + '%' : '—') + stat('Agreed to offers', (k.optin_rate || 0) + '%'),
-        folders: fd('a', 'Last campaign', m?.campaigns?.[0]?.name || 'No campaign yet', m?.campaigns?.[0] ? `${m.campaigns[0].sent} sent · ${m.campaigns[0].booked} booked` : 'Open the studio to start') + fd('b', 'Audience', `${k.opted_in || 0} of ${k.customers || 0} can get offers`, 'Every booking confirmation asks once', ['Campaign studio']) };
+      if (id === 'growth') return { line: `${money(k.revenue)} back`, stats: stat('Revenue won', money(k.revenue), 1) + stat('Conversion', k.reached ? k.conversion + '%' : '—') + stat('Agreed to offers', (k.optin_rate || 0) + '%'),
+        folders: fd('a', 'Last campaign', m?.campaigns?.[0]?.name || 'No campaign yet', m?.campaigns?.[0] ? `${m.campaigns[0].sent} sent · ${m.campaigns[0].booked} booked` : 'Open the studio to start') + fd('b', 'Audience', `${k.opted_in || 0} of ${k.customers || 0} can get offers`, 'Every booking confirmation asks once', [['Campaign studio', 'growth', 'Offers']]) };
       return { line: 'your business', stats: stat('Clients', (k.customers || 0).toLocaleString()) + stat('Regulars', s.regular?.n || 0) + stat('VIP spend', money(s.vip?.spent), 1),
-        folders: fd('a', 'At risk', `${(s.lapsed?.n || 0) + (s.lost?.n || 0)} lapsed clients`, `${money((s.lapsed?.spent || 0) + (s.lost?.spent || 0))} spent with you before`) + fd('b', 'New', `${s.new?.n || 0} new this month`, 'A second visit makes them regulars', ['Win back']) };
+        folders: fd('a', 'At risk', `${(s.lapsed?.n || 0) + (s.lost?.n || 0)} lapsed clients`, `${money((s.lapsed?.spent || 0) + (s.lost?.spent || 0))} spent with you before`) + fd('b', 'New', `${s.new?.n || 0} new this month`, 'A second visit makes them regulars', [['Win back', 'growth', 'Win back']]) };
     }
     if (id === 'insights') return { line: `${money(n.earned)} earned`, stats: stat('Earned', money(n.earned), 1) + stat('Before', money(n.earned_prev)) + stat('AI bookings', n.ai_count || 0) };
     return {};
   }
-  const LINES = { inbox: 'every conversation', calendar: 'your week', marketing: 'what came back', customers: 'your regulars', insights: 'the numbers', pulse: 'your partner', train: 'what Nora knows', lab: 'try it safely', settings: 'set it up once' };
+  const LINES = { inbox: 'every conversation', calendar: 'your week', growth: 'what came back', customers: 'your regulars', insights: 'the numbers', pulse: 'your partner', train: 'what Nora knows', lab: 'try it safely', settings: 'set it up once' };
 
   async function decorate(bar) {
     if (bar.dataset.hx) return; bar.dataset.hx = '1';

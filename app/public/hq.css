@@ -169,7 +169,7 @@ html body .pl-t:not(#_) tbody tr:hover{background:color-mix(in srgb,var(--pv-ink
    Mist canvas, crisp near-white surfaces, graphite as the accent; lime only inside graphite pieces. ===== */
 :root[data-theme="light"]:not(#_),:root[data-theme="light"]:not(#_) body{
   --fu-canvas:#ffffff;--fu-side:#ffffff;--fu-surf:#f7f7f7;--fu-raise:#ffffff;--fu-line:#ebebeb;--fu-line2:#d4d4d4;
-  --fu-ink:#0a0a0a;--fu-ink2:#404040;--fu-mute:#737373;--fu-chip:#0a0a0a;--fu-lime:#c6f432;
+  --fu-ink:#0a0a0a;--fu-ink2:#404040;--fu-mute:#6b6b6b; /* 5:1 on light cards (was #737373, 4.4:1, below WCAG AA for small text) */--fu-chip:#0a0a0a;--fu-lime:#c6f432;
   --fu-ok:#15803d;--fu-warn:#b45309;--fu-crit:#dc2626;--fu-c2:#a1a1a1;--fu-c3:#525252;
   --bg:var(--fu-canvas);--ground:var(--fu-canvas);--gp-ground:var(--fu-canvas);--gl-ground:var(--fu-canvas);--st-ground:var(--fu-canvas);
   --glass:var(--fu-surf);--s1:var(--fu-surf);--gp-card:var(--fu-surf);--gl-card:var(--fu-surf);--gl-frame:var(--fu-surf);--glass-bg:var(--fu-surf);--st-panel:var(--fu-surf);--st-raise:var(--fu-surf);--ai:var(--fu-surf);--pv-card:var(--fu-surf);--tb-card:var(--fu-surf);

@@ -65,7 +65,7 @@ export async function credentials(B, provider) { const r = await load(B, provide
 
 function post(c, payload) {
   const body = JSON.stringify(payload), sig = crypto.createHmac('sha256', c.secret || '').update(body).digest('hex');
-  return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Pulse-Event': payload.event, 'X-Pulse-Signature': `sha256=${sig}` }, body, signal: AbortSignal.timeout(T) });
+  return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-MXAi-Event': payload.event, 'X-MXAi-Signature': `sha256=${sig}`, 'X-Pulse-Event': payload.event, 'X-Pulse-Signature': `sha256=${sig}` } /* old names kept for receivers set up before the rename */, body, signal: AbortSignal.timeout(T) });
 }
 // fire-and-forget: a slow or broken webhook never delays a customer reply; the last error shows in Integrations
 export function emitWebhook(B, event, data) {

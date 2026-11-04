@@ -27,40 +27,40 @@
     ['inbox', 'Inbox', 'Talk to your customers', [
       ['Conversations', { own: 'inbox', folder: 'all' }],
       ['Needs you', { own: 'inbox', folder: 'needs', hidden: true }], // the inbox has its own Needs you folder; kept so links to it still work
-      ['Delivery queue', { page: 'inbox', tab: 'queue' , adv: true }],
-      ['AI control', { own: 'aictl' , adv: true }]]],
+      ['Delivery queue', { page: 'inbox', tab: 'queue', hidden: true }], // shown from Today / the search box when something failed
+      ['AI on/off', { own: 'aictl' }]]],
     ['calendar', 'Calendar', 'Run your schedule', [
       ['Schedule', { own: 'calendar' }],
       ['Requests', { page: 'inbox', tab: 'conversations', panes: ['approvals'], bare: true }],
-      ['Booking page', { page: 'settings', tab: 'booking', bare: true, cards: ['Online booking page'] }]]],
+      ['Booking page', { page: 'settings', tab: 'booking', bare: true, cards: ['Online booking page'], hidden: true }]]],
     ['customers', 'Customers', 'Know every client', [
       ['Clients', { page: 'people', tab: 'clients' }],
       ['Win back', { own: 'growth', hidden: true }], // moved to Growth; kept so the index stays put
-      ['Board', { page: 'people', tab: 'board', panes: ['board'], adv: true }],
+      ['Board', { page: 'people', tab: 'board', panes: ['board'], hidden: true }],
       ['Reviews', { page: 'support', tab: 'reviews', bare: true }],
       ['Memberships', { own: 'members', tpl: ['gym'] }]]], // only for businesses that sell memberships
     ['growth', 'Growth', 'Bring new clients in and old ones back', [
       ['Overview', { own: 'growthhome' }],
       ['Win back', { page: 'people', tab: 'winback' }],
       ['Offers', { own: 'growth' }],
-      ['Sent offers', { page: 'people', tab: 'offers', adv: true }],
-      ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'], adv: true }],
+      ['Sent offers', { page: 'people', tab: 'offers', hidden: true }],
+      ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'], hidden: true }],
       ['Automations', { entry: 'agents' }],
-      ['Website', { entry: 'website', ws: 0, adv: true }],
-      ['Website photos', { entry: 'website', ws: 1, adv: true }],
-      ['Website design', { entry: 'website', ws: 2, adv: true }],
-      ['Website address', { entry: 'website', ws: 3, adv: true }]]],
+      ['Website', { entry: 'website', ws: 0, hidden: true }],
+      ['Website photos', { entry: 'website', ws: 1, hidden: true }],
+      ['Website design', { entry: 'website', ws: 2, hidden: true }],
+      ['Website address', { entry: 'website', ws: 3, hidden: true }]]],
     ['insights', 'Insights', 'How the business is doing', [
       ['Report', { own: 'report' }],
       ['Business', { own: 'report', hidden: true, parent: 0 }],
       ['Services', { own: 'report', hidden: true, parent: 0 }],
-      ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true , adv: true }],
+      ['AI performance', { own: 'aiperf' }],
       ['Timing', { own: 'report', hidden: true, parent: 0 }],
       ['Channels', { own: 'report', hidden: true, parent: 0 }],
-      ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true , adv: true }],
-      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' , adv: true }],
-      ['My board', { own: 'studio', adv: true }],
-      ['Chart library', { own: 'studiolib', adv: true }],
+      ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true, hidden: true }],
+      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow', hidden: true }],
+      ['My board', { own: 'studio', hidden: true }],
+      ['Chart library', { own: 'studiolib', hidden: true }],
       ['Finance', { own: 'finance' }]]],
     ['pulse', 'AI Control', 'Review, teach and test Nora', [
       ['To review', { own: 'approvals' }],
@@ -69,11 +69,11 @@
       ['Teach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach', 'tchRules', 'tchQuestions'] }],
       ['Rules', { entry: 'training', mode: 'coach', only: ['top', 'tchRules'], hidden: true, parent: 3 }],
       ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'], hidden: true, parent: 3 }],
-      ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'], adv: true }],
+      ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'], hidden: true }],
       ['Test', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
-      ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'], adv: true }],
-      ['Versions', { entry: 'training', only: ['top', 'learn'], adv: true }],
-      ['Performance', { own: 'aiperf' }]]],
+      ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'], hidden: true }],
+      ['Versions', { entry: 'training', only: ['top', 'learn'], hidden: true }],
+      ['Performance', { own: 'aiperf', hidden: true }]]], // moved to Insights › AI performance
     ['settings', 'Settings', 'Set it up once', [
       ['All settings', { page: 'settings', tab: 'details', panes: ['details', 'channels', 'booking', 'codes', 's2fa', 'sdev', 'look', 'dash'], cls: 'set-one' }],
       ['Profile', { page: 'settings', tab: 'details', form: [0, 1, 2, 3, 4, 5, 6, 24], hidden: true, parent: 0 }],
@@ -95,12 +95,20 @@
   ];
   const BADGE = { inbox: 'apprN', pulse: 'paN' };
   // pages that were merged: [new page, tab index] for each old tab
-  const MOVED = { studio: i => ['insights', 8 + i], train: i => ['pulse', 3 + i], lab: i => ['pulse', [8, 7, 9][i] ?? 7],
-    marketing: i => i >= 4 ? ['growth', 6 + i - 4] : ['growth', i + 2],
-    customers: i => i === 1 ? ['growth', 1] : i >= 5 ? ['growth', i - 2] : ['customers', i] }; // 4 = Memberships
+  // Tabs are named, not numbered: a number shifts whenever a tab is added or merged (that sent "Answer" to Rules,
+  // "agents ready" to Website...). go(page, 'Tab name') is the way to link; numbers still work for saved shortcuts.
+  const MOVED = { studio: i => ['insights', ['My board', 'Chart library'][i] || 'My board'], train: i => ['pulse', ['Teach', 'Answers', 'Review replies', 'Versions'][i] || 'Teach'],
+    lab: i => ['pulse', ['Scenarios', 'Test', 'Versions'][i] || 'Test'],
+    marketing: i => ['growth', ['Offers', 'Sent offers', 'Discount codes', 'Automations'][i] || 'Automations'],
+    customers: i => typeof i === 'string' ? ['customers', i] : i === 1 ? ['growth', 'Win back'] : i >= 5 ? ['growth', i - 2] : ['customers', i] }; // 4 = Memberships
+  const tabIndex = (tabs, t) => {
+    if (typeof t === 'number' || /^\d+$/.test(String(t ?? ''))) return +t || 0;
+    const k = tabs.findIndex(([l]) => l.toLowerCase() === String(t).toLowerCase());
+    return k < 0 ? 0 : k;
+  };
   // the menu in four groups, each heading drawn before its first page
   const GROUP = {};
-  const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Costs', 'costs'], ['Account & security', 's2fa'], ['Look', 'look'], ['Integrations', 12]];
+  const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Costs', 'costs'], ['Account & security', 's2fa'], ['Look', 'look'], ['Website', 13], ['Integrations', 12]];
   // tabs marked adv show once the owner asks for more detail on that page (remembered), or while one is open
   const detailOn = id => { try { return localStorage.getItem('mx-detail-' + id) === '1' } catch { return false } };
   const shown = (id, tabs) => tabs.map((t, k) => [t, k]).filter(([t, k]) => t[1].hidden ? false : !t[1].adv || detailOn(id) || (current?.[0] === id && tabs[current[1]]?.[1].adv && k >= 0));
@@ -154,8 +162,9 @@
 
   // ---------- opening a page and tab ----------
   async function go(id, i) {
-    if (MOVED[id]) [id, i] = MOVED[id](+i || 0);
+    if (MOVED[id]) [id, i] = MOVED[id](typeof i === 'string' && !/^\d+$/.test(i) ? i : +i || 0);
     const page = PAGES.find(p => p[0] === id); if (!page) return;
+    i = tabIndex(page[3], i);
     const [, , purpose, tabs] = page, t = tabs[i] || tabs[0], spec = t[1];
     current = [id, i]; hideOwn();
     $$('[data-p10hide]').forEach(c => delete c.dataset.p10hide); // the last tab's hiding never leaks into this one
@@ -274,14 +283,14 @@
     const L = {
       today: [[chats, `${chats} chat${chats === 1 ? '' : 's'} waiting for you`, ['inbox', 1]], [it.length, `${it.length} thing${it.length === 1 ? '' : 's'} to approve`, ['pulse', 0]]],
       inbox: [[chats, `${chats} chat${chats === 1 ? '' : 's'} need${chats === 1 ? 's' : ''} you`, ['inbox', 1]]],
-      calendar: [[n('request'), `${n('request')} cancel/move request${n('request') === 1 ? '' : 's'}`, ['calendar', 1]]],
-      growth: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['marketing', 3]]],
+      calendar: [[n('request'), `${n('request')} cancel/move request${n('request') === 1 ? '' : 's'}`, ['calendar', 'Requests']]],
+      growth: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['growth', 'Automations']]],
       pulse: [[it.length, `${it.length} waiting for your OK`, ['pulse', 0]],
-       [n('question'), `${n('question')} question${n('question') === 1 ? '' : 's'} ${nora()} couldn't answer`, ['train', 1]], [n('lesson'), `${n('lesson')} suggested rule${n('lesson') === 1 ? '' : 's'}`, ['pulse', 0]]],
+       [n('question'), `${n('question')} question${n('question') === 1 ? '' : 's'} ${nora()} couldn't answer`, ['pulse', 'Answers']], [n('lesson'), `${n('lesson')} suggested rule${n('lesson') === 1 ? '' : 's'}`, ['pulse', 0]]],
     }[id] || [];
     const todo = L.filter(x => x[0] > 0).slice(0, 3);
     box.innerHTML = todo.map(([, t, to], k) => `<button type="button" class="need" data-to="${to}">${e(t)} →</button>`).join('');
-    box.onclick = ev => { const t = ev.target.closest('[data-to]'); if (t) { const [p, k] = t.dataset.to.split(','); go(p, +k) } };
+    box.onclick = ev => { const t = ev.target.closest('[data-to]'); if (t) { const [p, k] = t.dataset.to.split(','); go(p, k) } };
   }
 
   // ---------- MXAi Assistant's own pages ----------
@@ -298,15 +307,15 @@
     if (key === 'calendar') { const s = page('calendar', 'Calendar', '', '<div id="gcRoot"></div>'); s.hidden = false; window.PulseCal?.mount(s); }
     if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }
     if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything MXAi Assistant prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
-    if (key === 'studio' || key === 'studiolib') { const s = page(key, key === 'studio' ? 'Studio' : 'Widget library', key === 'studio' ? 'Your own board: any data, any design, placed anywhere.' : 'Every chart and table design, drawn from your live data.', '<div id="stRoot"></div>'); s.hidden = false; key === 'studio' ? window.MXStudio?.mountBoard(s) : window.MXStudio?.mountLib(s); }
+    if (key === 'studio' || key === 'studiolib') { const s = page(key, key === 'studio' ? 'My board' : 'Chart library', key === 'studio' ? 'Your own board: any data, any design, placed anywhere.' : 'Every chart and table design, drawn from your live data.', '<div id="stRoot"></div>'); s.hidden = false; key === 'studio' ? window.MXStudio?.mountBoard(s) : window.MXStudio?.mountLib(s); }
     if (key === 'aictl') { const s = page('aictl', 'AI control', 'Decide who answers your clients: MXAi or your team.', '<div id="aiRoot"></div>'); s.hidden = false; window.MXAiMode?.mount(s); }
     if (key === 'integrations') { const s = page('integrations', 'Integrations', '', '<div id="igRoot"></div>'); s.hidden = false; window.PulseIntegrations?.mount(s); }
     if (key === 'report') { const s = page('report', 'Insights', '', '<div id="rpRoot" class="rp"></div>'); s.hidden = false; window.PVReport?.(s.querySelector('#rpRoot')); }
     if (key === 'members') { const s = page('members', 'Customers', '', '<div id="mbRoot" class="rp"></div>'); s.hidden = false; window.PVMembers?.(s.querySelector('#mbRoot')); }
-    if (key === 'finance') { const s = page('finance', 'Insights', '', '<div id="fnRoot" class="rp"></div>'); s.hidden = false; window.PVFinance?.(s.querySelector('#fnRoot')); }
-    if (key === 'aiperf') { const s = page('aiperf', 'AI Control', '', '<div id="apRoot" class="rp"></div>'); s.hidden = false; window.PVAIPerf?.(s.querySelector('#apRoot')); }
+    if (key === 'finance') { const s = page('finance', 'Finance', '', '<div id="fnRoot" class="rp"></div>'); s.hidden = false; window.PVFinance?.(s.querySelector('#fnRoot')); }
+    if (key === 'aiperf') { const s = page('aiperf', 'AI performance', '', '<div id="apRoot" class="rp"></div>'); s.hidden = false; window.PVAIPerf?.(s.querySelector('#apRoot')); }
     if (key === 'growthhome') { const s = page('growthhome', 'Growth', '', '<div id="grRoot" class="rp"></div>'); s.hidden = false; window.PVGrowth?.(s.querySelector('#grRoot')); }
-    if (key === 'growth') { const s = page('growth', 'Marketing', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }
+    if (key === 'growth') { const s = page('growth', 'Offers', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }
     if (key === 'brief') { const s = page('brief', 'Weekly brief', 'This week against last week, and the agents\' results. Worked out from your own numbers.', '<div id="paBrief"></div>'); s.hidden = false; loadBrief(); }
     if (key === 'ask') { const s = page('ask', 'Ask MXAi', 'Ask anything about your business. MXAi looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); window.PulseCommand?.open(); }
   }
@@ -332,8 +341,8 @@
     const b = ev.target.closest('[data-a]'); if (!b) return;
     const a = b.dataset.a, x = own.approvals._items?.[+b.closest('.pa-item')?.dataset.i];
     if (a === 'retry') return loadApprovals();
-    if (a === 'teach') return go('train', 1);
-    if (a === 'agents') return go('marketing', 3);
+    if (a === 'teach') return go('pulse', 'Answers');
+    if (a === 'agents') return go('growth', 'Automations');
     b.disabled = true;
     try {
       if (a === 'approve' || a === 'reject') await req(`/api/requests/${x.id}/${a}`, 'POST', {});

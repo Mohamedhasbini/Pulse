@@ -1223,3 +1223,13 @@ html body main:not(#_) table :is(td,th){text-align:left!important}html body main
 #setup .spane:has(#setupForm){overflow:visible!important} /* let the page scroll the form, so Save can stick */
 /* Keyboard focus is always visible (WCAG 2.4.7). Several older rules set outline:none; this one ring wins, for keyboard only */
 :where(a[href],button,input,select,textarea,summary,[tabindex]:not([tabindex="-1"]),[role=button],[role=tab]):focus-visible{outline:2px solid var(--mx-ink,currentColor)!important;outline-offset:2px!important}
+/* ---- Accessibility fixes (2026-11-04 audit) ---- */
+/* Pop-up windows sit above the phone's bottom menu (z 50/60), so their buttons are never hidden behind it */
+.modal:not(#_){z-index:100}
+/* The keyboard ring beats the older outline:none!important rules on inputs and buttons inside main */
+main :is(input,select,textarea,button,a[href],[tabindex]:not([tabindex="-1"])):focus-visible:not(#_){outline:2px solid var(--mx-ink,currentColor)!important;outline-offset:2px!important}
+/* the Inbox reply box drew no ring at all: show it on the whole bar */
+.ib-reply:focus-within:not(#_){box-shadow:0 0 0 2px var(--mx-ink,currentColor)!important;border-radius:12px}
+/* small close buttons keep their look but get a 24px target (WCAG 2.5.8) */
+.nudge-x:not(#_),.sc-x:not(#_){min-width:24px;min-height:24px;display:inline-grid;place-items:center}
+.sc-x:focus-visible{opacity:1}

@@ -583,9 +583,9 @@
   const TEAM_COL = { maya: 'var(--mx-s2)', omar: 'var(--mx-s3)', lina: 'var(--mx-s1)', sam: 'var(--mx-s5)' };
   // older links name pages from before the redesign; each lands on the page that does that job now
   const route = g => { if (!g) return ['today', 0]; const p = g.page || g.view, t = g.tab || '';
-    if (p === 'calendar') return ['calendar', t === 'requests' ? 1 : 0];
+    if (p === 'calendar') return ['calendar', t === 'requests' ? 'Requests' : 'Schedule'];
     if (p === 'inbox') return ['inbox', 0];
-    if (p === 'support') return t === 'gaps' ? ['pulse', 0] : ['pulse', 9];
+    if (p === 'support') return t === 'gaps' ? ['pulse', 'Answers'] : ['insights', 'AI performance'];
     if (p === 'people' || p === 'customers') return ['customers', 0];
     if (p === 'growth' || p === 'marketing') return ['growth', 0];
     if (p === 'analytics' || p === 'performance') return ['insights', 0];

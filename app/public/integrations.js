@@ -34,7 +34,7 @@ window.PulseIntegrations = (() => {
         <table class="ig-keys"><thead><tr><th>Name</th><th>Key</th><th>Created</th><th>Last used</th><th></th></tr></thead><tbody>
         ${data.keys.map(k => `<tr><td>${esc(k.name)}</td><td><code>${esc(k.prefix)}…</code></td><td>${esc(String(k.created_at).slice(0, 10))}</td><td>${k.last_used_at ? ago(k.last_used_at) : 'never'}</td><td><button type="button" class="ig-rev" data-k="${k.id}">Revoke</button></td></tr>`).join('') || '<tr><td colspan="5" class="ig-none">No keys yet.</td></tr>'}</tbody></table>
         <div class="ig-b"><input id="igKeyName" placeholder="Key name, e.g. My CRM"><button type="button" class="ig-new">Create key</button></div><p class="ig-msg" id="igKeyMsg"></p></div>
-      <p class="ig-intro">Webhook events: <code>booking.created</code> <code>booking.cancelled</code> <code>approval.needed</code> <code>chat.handoff</code> <code>ai.unsure</code> <code>review.received</code>. Each is a JSON POST signed with <code>X-Pulse-Signature: sha256=HMAC(secret, body)</code>.</p>`;
+      <p class="ig-intro">Webhook events: <code>booking.created</code> <code>booking.cancelled</code> <code>approval.needed</code> <code>chat.handoff</code> <code>ai.unsure</code> <code>review.received</code>. Each is a JSON POST signed with <code>X-MXAi-Signature: sha256=HMAC(secret, body)</code>.</p>`;
   }
   async function load() { try { [data, cat] = await Promise.all([req('/api/integrations'), req('/api/connectors').catch(() => null)]); draw(); } catch (e) { root.innerHTML = `<p class="ig-intro">${esc(e.message)}</p>`; } }
   async function test(id, msgEl) {
