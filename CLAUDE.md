@@ -39,13 +39,14 @@ Roles: `admin` (platform), `owner`, `staff` (permissions per section). Plans and
 | Channels | `telegram.js`, `instagram.js`, WhatsApp in `server.js`, WeBook in `webook.js` |
 | Client websites | `site.js`, `sitegen.js` |
 | Delivery (compression, hashed assets, CSP) | `app/src/web.js` |
-| Dashboard shell + navigation (all tabs and sub-tabs) | `app/public/index.html`, `app/public/pulse.js` (`PAGES` list) |
+| Dashboard shell + navigation (all tabs and sub-tabs) | `app/public/index.html`, `app/public/pulse.js` (`PAGES` list; link to tabs by name: `P10.go('pulse', 'Answers')`) |
+| Business clock (each business's time zone) | `app/src/clock.js` (`inZone`, `wall`, `at`); never use `setHours`/`getDay` on the server |
 | Today tab | `app/public/home.js` |
 | Charts / tab pages (Clients, Growth, Insights, AI performance) | `app/public/charts.js`, component kit `mx-ui.js` + `mx-ui.css` |
 | Inbox UI | `app/public/inbox.js` |
 | Public site, booking page, privacy | `app/public/site.html`, `book.html`, `privacy.html` |
 | Design references | `design/` (design system, plans), `.interface-design/` |
-| Plans and audits | `docs/improvement-plan-2026-10-30.md` |
+| Plans and audits | `docs/launch-audit-2026-11-04.md` (latest: fixed + open), `docs/improvement-plan-2026-10-30.md` |
 | New client onboarding | `.claude/skills/new-client/` |
 | Server setup / restore | `scripts/` (`restore.sh <backup>`) |
 | CI | `.github/workflows/test.yml` |
