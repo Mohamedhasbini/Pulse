@@ -27,7 +27,7 @@ export async function sendTelegram(chatId, text, bizId, options = []) {
   } catch (e) { return { ok: false, reason: 'Telegram: ' + e.message }; }
 }
 
-async function onMessage(bizId, m) {
+async function onMessage(bizId, m, updateId = null) {
   const chatId = String(m.chat.id);
   const name = [m.from?.first_name, m.from?.last_name].filter(Boolean).join(' ') || null;
   let text = m.text || (m.contact ? `My phone number is ${m.contact.phone_number}` : null);
@@ -54,7 +54,9 @@ async function onMessage(bizId, m) {
     if (c && m.contact.user_id && m.contact.user_id === m.from?.id) await unify(bizId, c.id, { phones: [shared] });
   }
   call(bots.get(bizId).token, 'sendChatAction', { chat_id: chatId, action: 'typing' }).catch(() => {});
-  const r = await handleMessage({ businessId: bizId, phone: phoneKey, name, text, channel: 'telegram' });
+  // Telegram resends updates not yet confirmed when the app restarts: its update id makes a repeat a no-op
+  const r = await handleMessage({ businessId: bizId, phone: phoneKey, name, text, channel: 'telegram', waId: updateId == null ? null : `tg${bizId}:${updateId}` });
+  if (r.duplicate) return;
   if (r.reply) await sendTelegram(chatId, r.reply, bizId, r.options);
 }
 
@@ -80,7 +82,7 @@ async function runBot(bizId, token) {
         if (!r.ok && r.error_code === 409) throw new Error('This bot is being used by another program. Give each business its own bot.');
         for (const u of r.result || []) {
           offset = u.update_id + 1;
-          if (u.message && !s.stopped) onMessage(bizId, u.message).catch(e => console.error('Telegram message failed:', e.message));
+          if (u.message && !s.stopped) onMessage(bizId, u.message, u.update_id).catch(e => console.error('Telegram message failed:', e.message));
         }
         s.last = new Date(); s.error = null;
       } catch (e) { s.error = e.message; await new Promise(z => setTimeout(z, 5000)); }

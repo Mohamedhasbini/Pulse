@@ -113,8 +113,8 @@ async function handle({ businessId, phone, name, text, channel = 'whatsapp', waI
   const kw = text.trim().toLowerCase().replace(/[.!]+$/, '');
   const lastBot = (await q("SELECT text FROM messages WHERE conversation_id=$1 AND role='assistant' ORDER BY id DESC LIMIT 1", [conv.id]))[0]?.text || '';
   const yesToOffers = /Reply OFFERS|"العروض"/.test(lastBot) && /^(yes|yes please|yeah|sure|ok|okay|sí|si|claro|oui|نعم|اي|إي|أكيد|ايه)[.! ]*$/.test(kw);
-  if (yesToOffers || /^(stop|unsubscribe|stop offers|no more offers|ستوب|الغاء العروض|إلغاء العروض)$/.test(kw) || /^(offers|yes offers|subscribe|العروض|اشترك)$/.test(kw)) {
-    const on = !/^(stop|unsubscribe|stop offers|no more offers|ستوب|الغاء العروض|إلغاء العروض)$/.test(kw), ar = AR.test(text);
+  if (yesToOffers || STOP_WORDS.test(kw) || /^(offers|yes offers|subscribe|ofertas|offres|العروض|اشترك)$/.test(kw)) {
+    const on = !STOP_WORDS.test(kw), ar = AR.test(text);
     await q('UPDATE customers SET marketing_ok=$1, marketing_at=now() WHERE id=$2', [on, customer.id]);
     const reply = on ? (ar ? 'تم! سنرسل لك عروضنا الخاصة. أرسل STOP في أي وقت لإيقافها.' : "Done! You'll get our special offers. Send STOP anytime to stop them.")
       : (ar ? 'تم إيقاف العروض. لن نرسل لك رسائل تسويقية بعد الآن. ستبقى تذكيرات مواعيدك كما هي.' : "You won't get offers from us anymore. Appointment reminders still arrive as usual.");
@@ -170,7 +170,7 @@ async function handle({ businessId, phone, name, text, channel = 'whatsapp', waI
       channels_used: (await q('SELECT DISTINCT channel FROM conversations WHERE customer_id=$1', [customer.id])).map(r => r.channel),
       returning: hist.visits > 0, visits: hist.visits, last_visit: hist.last_visit, favourite_service: hist.favourite_service,
       name: customer.name, phone_known: phoneKnown, email: customer.email || (emailAsked && !/@/.test(text) ? 'SKIPPED: the client did not give one; never ask for an email again, go on to confirm the booking' : null), reminder_channel_set: !!customer.reminder_channel && hist.visits + theirs.length > 0,
-      reminder_channel: customer.reminder_channel, staff_notes: customer.staff_notes || undefined,
+      reminder_channel: customer.reminder_channel, // staff_notes are the owner's private notes: never given to the AI
       reminder_options: options,
       missing_for_booking: [!customer.name && 'name', !phoneKnown && 'phone',
         needEmail ? 'email (REQUIRED: they chose email reminders; ask for it now)' : biz.ask_email && emailEnabled() && !customer.email && !emailAsked && 'email (optional, they may skip)',
@@ -279,7 +279,7 @@ async function handle({ businessId, phone, name, text, channel = 'whatsapp', waI
     const r = await withBusinessLock(biz.id, () => changeBooking(biz, customer, conv, theirs, decision, timeOff));
     reply = r.message;
     if (r.booking) { outcome = 'booked'; bookedNow = true; }
-  } else if (/cancel|الغ|إلغاء|بلغي/i.test(text) && theirs.length
+  } else if (asksToCancel(text) && theirs.length
       && theirs.every(b => hoursUntil(b.starts_at) < (biz.cancel_hours ?? 24)) && decision.action !== 'book') {
     // Policy is enforced by the app, not left to the AI: a late cancellation always becomes an approval request.
     const r = await changeBooking(biz, customer, conv, theirs, { ...decision, action: 'cancel' }, timeOff);
@@ -397,10 +397,14 @@ function parseJson(text) {
   try { return JSON.parse(m ? m[0] : text); } catch { return { reply: text.trim(), action: 'none' }; }
 }
 
-function findService(biz, name) {
+export function findService(biz, name) {
   const n = String(name || '').toLowerCase().trim();
-  return biz.services.find(s => s.name.toLowerCase() === n)
-    || biz.services.find(s => n && (s.name.toLowerCase().includes(n) || n.includes(s.name.toLowerCase().split(/[ &]/)[0])));
+  // exact name, else the one service whose name contains (or is contained in) what was asked; two candidates =
+  // ask which (never book "hair colouring" as "Hair cut" because both start with "hair")
+  const exact = biz.services.find(s => s.name.toLowerCase() === n);
+  if (exact || !n) return exact || null;
+  const near = biz.services.filter(s => { const m = s.name.toLowerCase(); return m.includes(n) || n.includes(m); });
+  return near.length === 1 ? near[0] : null;
 }
 
 async function createBooking(biz, customer, conv, req, bookings, timeOff) {
@@ -446,6 +450,25 @@ export async function checkCoupon(bizId, code) {
 }
 
 const AR = /[\u0600-\u06FF]/;
+// Opt-out words for offers, in every language a client may write (Spain: baja; France: désabonner)
+const STOP_WORDS = /^(stop|unsubscribe|stop offers|no more offers|baja|darme de baja|parar|no más ofertas|désabonner|desabonner|arrêter|ستوب|الغاء العروض|إلغاء العروض)$/;
+// The client asks to cancel: English cancel (not "don't cancel"), or an Arabic cancel word (إلغاء، الغي، ألغيه، بلغي...).
+// Arabic is matched as whole words: الغداء (lunch) or بالغ (adult) contain the same letters and are not a cancellation.
+export function asksToCancel(text) {
+  const t = String(text || '');
+  // whole English words only: "cancelar" is Spanish and has its own check (with "no quiero cancelar")
+  if (/\bcancel(l?ing|l?ed|s|lation)?\b/i.test(t) && !/\b(don'?t|do not|not|never|no need to|won'?t)\s+(to\s+)?cancel/i.test(t)) return true;
+  if (/\b(anular|cancelar|annuler)\b/i.test(t) && !/\bno\s+(quiero\s+)?(anular|cancelar)|\bne\s+pas\s+annuler/i.test(t)) return true;
+  return t.split(/[\s،,.!?؟]+/).some(w => /^[وف]?(ب|ل)?[اأإ]?لغ(ي|ى|يه|يها|يلي|ا|اء|و|وا)$/.test(w));
+}
+// The client's language from what they wrote: Arabic script, else Spanish or French by their words, else English.
+export function langOf(text) {
+  const t = String(text || '');
+  if (AR.test(t)) return 'ar';
+  if (/[ñ¿¡]|\b(hola|gracias|cita|quiero|quisiera|por favor|mañana|buenas|reservar|cuánto|cuesta|vale)\b/i.test(t)) return 'es';
+  if (/\b(bonjour|bonsoir|merci|rendez-vous|je voudrais|s'il vous pla[iî]t|demain|réserver|combien)\b|[çœ]/i.test(t)) return 'fr';
+  return 'en';
+}
 const ref = id => 'RB-' + String(id).padStart(4, '0');
 const hoursUntil = t => (new Date(t) - Date.now()) / 3600000;
 function policyText(biz) {
@@ -612,7 +635,9 @@ async function saveProfile(customer, decision, text, conversationChannel) {
   if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) && email !== customer.email) set('email', email);
   if (phone.replace(/\D/g, '').length >= 7 && /^(test|e2e|walk-in|tg-)/.test(customer.phone)) set('contact_phone', phone);
   if (channel && channel !== customer.reminder_channel) set('reminder_channel', channel);
-  set('language', AR.test(text) ? 'ar' : 'en');
+  // a short "ok" or a number says nothing about the language: keep what we knew
+  const lg = langOf(text);
+  if (lg !== 'en' || /[a-z]{3,}\s+[a-z]{3,}/i.test(text)) set('language', lg);
   vals.push(customer.id);
   await q(`UPDATE customers SET ${sets.join(', ')} WHERE id=$${vals.length}`, vals);
   Object.assign(customer, await one('SELECT * FROM customers WHERE id=$1', [customer.id]));
@@ -620,16 +645,19 @@ async function saveProfile(customer, decision, text, conversationChannel) {
 
 const SITE = (process.env.PUBLIC_URL || 'https://app.nexfoyz.dev').replace(/\/$/, '');
 function confirmation(biz, b, aiReply, moved = false) {
-  const ar = AR.test(aiReply || '');
-  const lang = ar ? 'ar' : 'en-GB';
+  // in the language the receptionist is answering in: Arabic, Spanish, French or English
+  const lg = langOf(aiReply), ar = lg === 'ar', es = lg === 'es', fr = lg === 'fr';
+  const lang = { ar: 'ar', es: 'es-ES', fr: 'fr-FR' }[lg] || 'en-GB';
   const date = fmtDate(b.start, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }, lang);
   const t = d => fmtTime(d);
   const cur = biz.currency || 'USD';
   const money = b.coupon && b.listPrice !== b.price
-    ? `${b.price} ${cur} (${ar ? 'بدلاً من' : 'was'} ${b.listPrice}, ${ar ? 'كود' : 'code'} ${b.coupon})` : `${b.price} ${cur}`;
+    ? `${b.price} ${cur} (${ar ? 'بدلاً من' : es ? 'antes' : fr ? 'au lieu de' : 'was'} ${b.listPrice}, ${ar ? 'كود' : es ? 'código' : 'code'} ${b.coupon})` : `${b.price} ${cur}`;
   const ref = 'RB-' + String(b.id).padStart(4, '0');
   const L = ar
     ? [moved ? '🔄 تم تغيير موعدك' : '✅ تم تأكيد حجزك', 'التاريخ', 'الوقت', 'الاسم', 'الخدمة', 'المدة', 'السعر', 'الدفع', 'العنوان', 'رقم الحجز', 'طلب إضافي', 'بانتظار موافقة المدير', 'دقيقة']
+    : es ? [moved ? '🔄 Tu cita ha cambiado' : '✅ Tu cita está confirmada', 'Fecha', 'Hora', 'Nombre', 'Servicio', 'Duración', 'Precio', 'Pago', 'Dirección', 'Referencia', 'Petición', 'pendiente de aprobación', 'min']
+    : fr ? [moved ? '🔄 Votre rendez-vous a été déplacé' : '✅ Votre rendez-vous est confirmé', 'Date', 'Heure', 'Nom', 'Prestation', 'Durée', 'Prix', 'Paiement', 'Adresse', 'Référence', 'Demande', 'en attente de validation', 'min']
     : [moved ? '🔄 Your booking has been moved' : '✅ Your booking is confirmed', 'Date', 'Time', 'Name', 'Service', 'Duration', 'Price', 'Payment', 'Address', 'Booking ref', 'Extra request', 'waiting for manager approval', 'min'];
   const lines = [
     `*${L[0]}*`, '',
@@ -647,10 +675,13 @@ function confirmation(biz, b, aiReply, moved = false) {
     b.deposit && (ar ? `• عربون لتثبيت الحجز: ${b.deposit} ${cur} عبر ${biz.payment_link}` : `• Reservation fee: ${b.deposit} ${cur} to hold your booking, pay here: ${biz.payment_link}`),
     ...contactLines(biz, b.contact, ar),
     '', ar ? `يمكنك الإلغاء أو التغيير هنا حتى ${biz.cancel_hours ?? 24} ساعة قبل الموعد. بعد ذلك يحتاج أي تغيير إلى موافقة الإدارة.`
+      : es ? `Puedes cancelar o cambiar esta cita aquí hasta ${biz.cancel_hours ?? 24} horas antes. Después, los cambios necesitan la aprobación del responsable.`
+      : fr ? `Vous pouvez annuler ou modifier ce rendez-vous ici jusqu'à ${biz.cancel_hours ?? 24} heures avant. Ensuite, tout changement doit être validé par le responsable.`
       : `You can cancel or change this booking here up to ${biz.cancel_hours ?? 24} hours before. After that, changes need the manager's approval.`,
     biz.booking_note,
-    b.askOffers && (ar ? 'هل تريد عروضنا الخاصة أحياناً؟ أرسل كلمة "العروض".' : 'Want our occasional special offers? Reply OFFERS.'),
-    biz.show_branding !== false && '', biz.show_branding !== false && `_Powered by Pulse_ · ${SITE}/go?b=${biz.id}&s=confirm`,
+    b.askOffers && (ar ? 'هل تريد عروضنا الخاصة أحياناً؟ أرسل كلمة "العروض".' : es ? '¿Quieres nuestras ofertas especiales de vez en cuando? Responde OFERTAS.'
+      : fr ? 'Envie de nos offres spéciales de temps en temps ? Répondez OFFRES.' : 'Want our occasional special offers? Reply OFFERS.'),
+    biz.show_branding !== false && '', biz.show_branding !== false && `_Powered by MXAi_ · ${SITE}/go?b=${biz.id}&s=confirm`,
   ].filter(x => x !== null && x !== undefined && x !== false);
   return lines.join('\n');
 }
@@ -730,6 +761,11 @@ export function startAiQueue(deliver) {
             await q(`UPDATE ai_queue SET status='failed', error=$2 WHERE id=$1`, [job.id, e.message.slice(0, 300)]);
             await q(`UPDATE conversations SET needs_attention=true, attention_reason='The AI could not answer this customer. Please reply yourself.' WHERE id=$1`, [job.conversation_id]);
             await notify(job.business_id, 'handoff', 'A customer is waiting for a reply', job.text.slice(0, 200), { conversationId: job.conversation_id }).catch(() => {});
+            // the client was told "one moment": tell them a person will answer, in their language, instead of silence
+            const wait = { ar: 'شكراً لصبرك. سيرد عليك أحد أعضاء فريقنا قريباً.', es: 'Gracias por tu paciencia. Una persona del equipo te responderá en breve.',
+              fr: 'Merci de votre patience. Un membre de l\'équipe vous répondra très bientôt.' }[langOf(job.text)] || 'Thank you for waiting. A member of our team will reply to you shortly.';
+            await q(`INSERT INTO messages (conversation_id, role, text, source) VALUES ($1,'assistant',$2,'quick')`, [job.conversation_id, wait]).catch(() => {});
+            await deliver({ channel: job.channel, businessId: job.business_id, phone: job.phone, reply: wait, options: [] }).catch(e => console.error('Queue delivery:', e.message));
             emit(job.business_id, 'queue');
           } else {
             // not answered: wait 20 s, 40 s, 80 s... (rate limits clear within a minute)

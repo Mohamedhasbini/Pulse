@@ -49,7 +49,9 @@ export async function runReminders() {
         const r = await sendTelegram(b.telegram_chat_id, text, b.business_id);
         if (!r.ok) status = 'not_sent: ' + r.reason;
       } else if (!['test', 'webook'].includes(conv.channel) && !isTest) {
-        if (channel === 'whatsapp') {
+        // an Instagram client has no phone number (ig-<id>): a WhatsApp send could never arrive, so say so honestly
+        if (/^ig-/.test(b.phone)) status = 'not_sent: Instagram clients get no reminders yet (Meta allows replies within 24 hours only)';
+        else if (channel === 'whatsapp') {
           const r = await sendWhatsApp(b.wa_phone_number_id, b.phone, text);
           if (!r?.ok) status = 'not_sent: ' + (r?.reason || 'unknown');
         } else status = `not_sent: ${channel === 'sms' ? 'SMS' : 'email'} sending is not connected yet`;

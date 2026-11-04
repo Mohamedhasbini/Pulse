@@ -5,7 +5,7 @@ import { createBusiness, signSession } from './accounts.js';
 import { isFree, freeSlots, parseLocal, availability } from './slots.js';
 import { inZone } from './clock.js';
 import { receive, work, resume } from './inbound.js';
-import { loadBusiness } from './brain.js';
+import { loadBusiness, asksToCancel, langOf, findService } from './brain.js';
 import { unify } from './customers.js';
 const BASE = 'http://localhost:3100', ok = [], say = (n, c, d = '') => { ok.push(c); console.log(`${c ? 'PASS' : 'FAIL'}  ${n}${d ? '  (' + d + ')' : ''}`); };
 const r = await createBusiness({ name: 'Smoke test restaurant', vertical: 'restaurant', owner_email: `smoke-${Date.now()}@example.test`, timezone: 'Asia/Beirut', currency: 'USD' });
@@ -109,6 +109,13 @@ try {
   // SQL on a business's clock: dates come out in that business's zone
   const sqlDay = await inZone('Europe/Madrid', () => one(`SELECT to_char('2026-12-01T23:30:00Z'::timestamptz, 'YYYY-MM-DD HH24:MI') AS t`));
   say('Database dates follow the business\'s zone', sqlDay.t === '2026-12-02 00:30', sqlDay.t);
+  // Receptionist: only real cancel words start a cancellation (Arabic words that merely contain the letters don't)
+  const notCancel = ['بدي احجز بعد الغداء', 'هل عندكم خدمة للبالغ', "don't cancel it please", 'no quiero cancelar'], isCancel = ['بدي ألغي موعدي', 'الغي الحجز', 'Please cancel my booking', 'quiero cancelar mi cita', 'إلغاء'];
+  const wrongC = [...notCancel.filter(asksToCancel), ...isCancel.filter(t => !asksToCancel(t))];
+  say('Cancel intent only from real cancel words (Arabic, English, Spanish)', !wrongC.length, wrongC.join(' | '));
+  say('Client language: Spanish, French, Arabic, English', langOf('Hola, quiero una cita mañana') === 'es' && langOf('Bonjour, je voudrais un rendez-vous') === 'fr' && langOf('مرحبا') === 'ar' && langOf('hi there') === 'en');
+  const svcs = { services: [{ id: 1, name: 'Hair Cut' }, { id: 2, name: 'Hair Colouring' }] };
+  say('Service names never match on the first word alone', findService(svcs, 'hair coloring') === null && findService(svcs, 'hair') === null && findService(svcs, 'colouring')?.id === 2 && findService(svcs, 'hair cut')?.id === 1);
   // Incoming messages are written down before WhatsApp is told "received": a restart mid-answer loses nothing
   const msg = { phoneNumberId: 'smoke-none', from: '+34600000001', text: 'Hola', id: 'wamid.smoke' + Date.now() };
   const [inId] = await receive('whatsapp', [msg]);
