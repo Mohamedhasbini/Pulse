@@ -462,10 +462,11 @@
     const d = await data();
     const named = window.P10?.named || (x => x); // charts say Nora; the owner may have renamed the assistant
     // the period switch leads the report; changing it redraws the figures and the charts that follow it
-    let top = `<div class="rp-period">${window.MXUI.segmented([['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days']], String(RP), 'Period')}</div>`, g2 = ''; try { top += `<div class="mx-grid">${headline(d)}</div>`; g2 = goal(d); } catch (e) { console.warn('report headline', e); }
+    let top = `<div class="rp-period">${window.MXUI.segmented([['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days']], String(RP), 'Period')}</div>`, g2 = '', head = ''; try { head = `<div class="mx-grid">${headline(d)}</div>`; g2 = goal(d); } catch (e) { console.warn('report headline', e); }
     // what to do next: the three most valuable moves, one line each, each with where to act
     try { const br = await get('/api/briefing'), items = (br?.items || []).slice(0, 3), U = window.MXUI;
       top += `<div class="mx-grid">${g2}${items.length && U ? U.card({ title: 'What to do next', span: g2 ? 6 : 12, size: 'compact', body: `<div class="mx-list rp-next">${items.map(x => U.row({ dot: x.value ? 'healthy' : 'warning', title: x.text, sub: x.why, value: x.value ? money(x.value) : '' })).join('')}</div>` }) : ''}</div>`; } catch { top += `<div class="mx-grid">${g2}</div>`; }
+    top += head; // actions and the month's goal first, then the period's figures
     root.innerHTML = top + named(REPORT.map(([t, sub, list]) => `<section class="rp-g"><header class="rp-h"><h2>${esc(t)}</h2><p>${esc(sub)}</p></header>
       <div class="mx-grid rp-board">${list.map(([n, span]) => { try { const h = F[n](d); return h ? `<div class="mx-c${span} rp-cell">${h}</div>` : ''; } catch (e) { console.warn('chart', n, e); return ''; } }).join('')}</div></section>`).join(''));
     root.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i));
@@ -523,7 +524,8 @@
       U.kpi({ title: 'Answered alone', value: `${pct(alone, conv)}%`, ctx: `${alone} of ${conv} chats, last 30 days`, state: pct(alone, conv) >= 80 ? 'healthy' : 'warning' }),
       U.kpi({ title: 'Average reply', value: avg ? `${(avg / 1000).toFixed(1)}s` : '–', ctx: 'from message to answer', state: !avg ? 'empty' : avg <= 5000 ? 'healthy' : 'warning' }),
       U.kpi({ title: 'Booked by ' + nm, value: money(st.ai_value || 0), ctx: `${st.ai_bookings || 0} bookings from chats`, state: st.ai_value ? 'improving' : 'neutral' }),
-      U.kpi({ title: 'Questions to teach', value: String(q), ctx: q ? `${nm} couldn't answer these` : 'nothing waiting', state: q ? 'warning' : 'healthy', action: q ? U.button('Teach now', 'a:3') : '' })].join('');
+      q ? U.kpi({ title: 'Handed to you', value: `${pct(hand, conv)}%`, ctx: `${hand} of ${conv} chats`, state: pct(hand, conv) > 20 ? 'warning' : 'neutral' }) // the questions have their own card above
+        : U.kpi({ title: 'Questions to teach', value: '0', ctx: 'nothing waiting', state: 'healthy' })].join('');
     // 2 · chats and bookings per day: one bar per day, the booked part in green inside it
     const daily = (st.daily || []).slice(-21), top = Math.max(1, ...daily.map(d => d.conv || 0));
     const bars = daily.length ? `<div class="ap-pair">${daily.map((d, i) => { const dt = new Date(d.day + 'T12:00');
@@ -540,7 +542,8 @@
       body: delivered == null ? U.empty('No replies yet') : `<div class="ap-big"><b>${delivered}%</b><span>of ${ai.replies} replies reached the client · ${ai.failures || 0} failed</span></div><div class="mx-meter"><u style="width:${delivered}%;background:${delivered >= 95 ? 'var(--mx-ok)' : 'var(--mx-warn)'}"></u></div><div class="er-k" style="grid-template-columns:repeat(3,1fr)"><div><small>Sent</small><b>${ai.replies}</b></div><div><small>Delivered</small><b>${ai.replies - (ai.failures || 0)}</b></div><div><small>Failed</small><b>${ai.failures || 0}</b></div></div>` });
     const steps = [{ label: 'Chats', value: conv }, { label: 'Answered', value: answered }, { label: 'Booked', value: booked }];
     const funnel = U.card({ title: 'From chat to booking', span: 4, size: 'compact', body: conv ? U.flowFunnel(steps) : U.empty('No chats yet') });
-    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${perDay}${howEnd}</div><div class="mx-grid">${speed}${deliv}${funnel}</div>`;
+    const teach = q ? U.card({ title: `${q} question${q > 1 ? 's' : ''} ${nm} couldn't answer`, span: 12, size: 'compact', body: U.row({ dot: 'warning', title: 'Teach the answers once', sub: `${nm} uses them in every future chat`, action: U.button('Teach now', 'a:3') }) }) : '';
+    root.innerHTML = `${teach ? `<div class="mx-grid">${teach}</div>` : ''}<div class="mx-grid">${kpis}</div><div class="mx-grid">${perDay}${howEnd}</div><div class="mx-grid">${speed}${deliv}${funnel}</div>`;
     root.onclick = ev => { const t = ev.target.closest('[data-go^="a:"]'); if (t) window.P10?.go('pulse', +t.dataset.go.slice(2)); };
   };
   // Customers › Clients: the list is the job, so the summary is one line; figures and charts open on demand. Test entries are left out, as in the list's default
