@@ -509,24 +509,35 @@
   window.PVAIPerf = async root => {
     const U = window.MXUI; if (!root || !U) return;
     root.innerHTML = `<div class="mx-grid">${[3, 3, 3, 3].map(() => U.card({ title: ' ', size: 'compact', span: 3, body: U.loading(2) })).join('')}</div>`;
-    const [d, k, w] = await Promise.all([data(), get('/api/kpis?days=30'), get('/api/pulse/waiting')]);
-    const days = Array.isArray(k) ? k : [], a = days.slice(-15), b = days.slice(0, -15);
-    const S = (l, f) => l.reduce((s, x) => s + (f(x) || 0), 0), avgMs = l => { const m = l.filter(x => x.reply_ms != null); return m.length ? S(m, x => x.reply_ms) / m.length : null; };
-    const share = l => S(l, x => x.chats) ? S(l, x => x.handled) / S(l, x => x.chats) * 100 : null;
-    const sa = share(a), sb = share(b), ra = avgMs(a), rb = avgMs(b);
-    // same funnel as the chart below: conversations against bookings the AI made (30 days)
-    const nw = d.live.now || {}, chats30 = Math.max(d.conv.length, nw.conversations || 0), booked30 = nw.ai_count ?? d.conv.filter(c => c.outcome === 'booked').length;
-    const ca = chats30 ? Math.min(100, booked30 / chats30 * 100) : null, cb = null;
-    const q = (w?.items || []).filter(x => x.kind === 'question').length || d.live.now?.unsure || 0, nm = window.P10?.named?.('Nora') || 'Nora';
+    const [s, k, w] = await Promise.all([get('/api/stats?days=30'), get('/api/kpis?days=30'), get('/api/pulse/waiting')]);
+    const st = s || {}, days = Array.isArray(k) ? k : [], nm = window.P10?.named?.('Nora') || 'Nora', pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+    const conv = st.conv || 0, answered = st.answered || 0, hand = st.handoff || 0, booked = st.booked_conv || 0, ai = st.ai || {};
+    const alone = Math.max(0, answered - hand), q = (w?.items || []).filter(x => x.kind === 'question').length;
+    const avg = ai.avg_ms || null, delivered = ai.replies ? pct(ai.replies - (ai.failures || 0), ai.replies) : null;
+    // 1 · four figures
     const kpis = [
-      U.kpi({ title: 'Chats answered alone', value: sa == null ? '–' : `${Math.round(sa)}%`, ctx: `${S(a, x => x.chats)} chats in 15 days`, change: sa != null && sb != null ? sa - sb : null, vs: 'pts', why: sa == null ? 'No chats yet' : sa >= 85 ? `${nm} rarely needs you` : 'Teach the questions that come to you most', state: sa == null ? 'empty' : sa >= 85 ? 'healthy' : sa >= 70 ? 'neutral' : 'warning' }),
-      U.kpi({ title: 'Average reply', value: ra == null ? '–' : `${(ra / 1000).toFixed(1)}s`, ctx: 'from message to answer', change: ra && rb ? (ra - rb) / rb * 100 : null, lowerIsBetter: true, vs: 'vs 15 days before', why: ra == null ? 'No replies yet' : ra <= 5000 ? 'Faster than any person can type' : 'Slower than usual; check AI health', state: ra == null ? 'empty' : ra <= 5000 ? 'healthy' : 'warning' }),
-      U.kpi({ title: 'Chats that became bookings', value: ca == null ? '–' : `${Math.round(ca)}%`, ctx: `${booked30} of ${chats30} chats in 30 days`, why: ca == null ? 'No chats yet' : ca >= 30 ? 'Strong for a front desk' : 'Offering times earlier in the chat usually helps', state: ca == null ? 'empty' : ca >= 30 ? 'healthy' : 'neutral' }),
-      U.kpi({ title: 'Questions to teach', value: String(q), ctx: q ? `${nm} couldn't answer these` : 'nothing waiting', why: q ? 'Answer once and it remembers for every client' : 'Every question had an answer', state: q ? 'warning' : 'healthy', action: q ? U.button('Teach now', 'a:3') : '' })].join('');
-    const cell = (n, span) => { try { const h = F[n](d); return h ? `<div class="mx-c${span} rp-cell">${h}</div>` : ''; } catch { return ''; } };
-    root.innerHTML = (window.P10?.named || (x => x))(`<div class="mx-grid">${kpis}</div><div class="mx-grid">${cell(39, 4)}${cell(15, 4)}${cell(7, 4)}</div><div class="mx-grid">${cell(18, 12)}</div><div class="mx-grid">${cell(29, 6)}${cell(26, 6)}</div>`);
-    root.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i)); countUp(root);
-    root.addEventListener('click', ev => { const t = ev.target.closest('[data-go^="a:"]'); if (t) window.P10?.go('pulse', +t.dataset.go.slice(2)); });
+      U.kpi({ title: 'Answered alone', value: `${pct(alone, conv)}%`, ctx: `${alone} of ${conv} chats, last 30 days`, state: pct(alone, conv) >= 80 ? 'healthy' : 'warning' }),
+      U.kpi({ title: 'Average reply', value: avg ? `${(avg / 1000).toFixed(1)}s` : '–', ctx: 'from message to answer', state: !avg ? 'empty' : avg <= 5000 ? 'healthy' : 'warning' }),
+      U.kpi({ title: 'Booked by ' + nm, value: money(st.ai_value || 0), ctx: `${st.ai_bookings || 0} bookings from chats`, state: st.ai_value ? 'improving' : 'neutral' }),
+      U.kpi({ title: 'Questions to teach', value: String(q), ctx: q ? `${nm} couldn't answer these` : 'nothing waiting', state: q ? 'warning' : 'healthy', action: q ? U.button('Teach now', 'a:3') : '' })].join('');
+    // 2 · chats and bookings per day: one bar per day, the booked part in green inside it
+    const daily = (st.daily || []).slice(-21), top = Math.max(1, ...daily.map(d => d.conv || 0));
+    const bars = daily.length ? `<div class="ap-pair">${daily.map((d, i) => { const dt = new Date(d.day + 'T12:00');
+      return `<div class="ap-day" title="${dt.getDate()}/${dt.getMonth() + 1}: ${d.conv || 0} chats, ${d.booked || 0} booked"><div class="ap-bar"><i style="height:${(d.conv || 0) / top * 100}%"><u style="height:${d.conv ? (d.booked || 0) / d.conv * 100 : 0}%"></u></i></div><span>${i % 3 === 0 || i === daily.length - 1 ? dt.getDate() : ''}</span></div>`; }).join('')}</div>
+      <div class="pv-key"><span><i class="ap-k a"></i>Chats</span><span><i class="ap-k b"></i>Became a booking</span></div>` : U.empty('No chats in the last 30 days');
+    const perDay = U.card({ title: `${pct(booked, conv)}% of chats became bookings`, span: 7, size: 'wide', meta: 'per day, last 3 weeks', body: bars });
+    // how chats end: four outcomes as rings, the title says the share handled alone
+    const ends = [{ label: `Booked by ${nm}`, value: booked }, { label: 'Answered, no booking', value: Math.max(0, alone - booked) }, { label: 'Handed to you', value: hand }, { label: 'Not answered', value: Math.max(0, conv - answered) }].filter(x => x.value);
+    const howEnd = U.card({ title: `${nm} handles ${pct(alone, conv)}% of chats alone`, span: 5, size: 'wide', meta: `${conv} chats`, body: ends.length ? U.rings(ends) : U.empty('No chats yet') });
+    // 3 · three small checks: speed against a target, delivery, chat to visit
+    const speed = U.card({ title: avg ? (avg <= 5000 ? 'Replies are fast' : 'Replies are slow') : 'Reply speed', span: 4, size: 'compact',
+      body: avg ? `<div class="ap-big"><b>${(avg / 1000).toFixed(1)}s</b><span>average reply · target under 5s</span></div><div class="mx-meter"><u style="width:${Math.min(100, avg / 50)}%;background:${avg <= 5000 ? 'var(--mx-ok)' : 'var(--mx-warn)'}"></u></div>` : U.empty('No replies yet') });
+    const deliv = U.card({ title: delivered == null ? 'Delivery' : delivered >= 95 ? 'Messages are delivered' : 'Some messages fail to deliver', span: 4, size: 'compact',
+      body: delivered == null ? U.empty('No replies yet') : `<div class="ap-big"><b>${delivered}%</b><span>of ${ai.replies} replies reached the client · ${ai.failures || 0} failed</span></div><div class="mx-meter"><u style="width:${delivered}%;background:${delivered >= 95 ? 'var(--mx-ok)' : 'var(--mx-warn)'}"></u></div>` });
+    const steps = [{ label: 'Chats', value: conv }, { label: 'Answered', value: answered }, { label: 'Booked', value: booked }];
+    const funnel = U.card({ title: 'From chat to booking', span: 4, size: 'compact', body: conv ? U.flowFunnel(steps) : U.empty('No chats yet') });
+    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${perDay}${howEnd}</div><div class="mx-grid">${speed}${deliv}${funnel}</div>`;
+    root.onclick = ev => { const t = ev.target.closest('[data-go^="a:"]'); if (t) window.P10?.go('pulse', +t.dataset.go.slice(2)); };
   };
   // Customers › Clients: who the clients are, read before the full list — four figures, then the groups, the top
   // spenders and new clients per month. Test entries are left out, as in the list's default

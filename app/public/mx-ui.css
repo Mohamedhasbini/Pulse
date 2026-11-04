@@ -1028,3 +1028,17 @@ html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg bu
 html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button:focus-visible{outline:2px solid var(--mx-ink);outline-offset:1px}
 @media (max-width:767px){html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row{grid-template-columns:1fr;grid-template-areas:"name" "help" "ctl";row-gap:8px}
   html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>.cu-seg{flex-wrap:wrap;justify-self:start}}
+
+/* AI Control > Performance: paired day bars (chats, the booked share inside in green), big figures with one line */
+.ap-pair{display:flex;align-items:flex-end;gap:4px;height:150px;margin-top:4px}
+.ap-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;height:100%}
+.ap-bar{flex:1;width:100%;max-width:26px;display:flex;align-items:flex-end;border-radius:7px;background:var(--mx-raise)}
+:root[data-theme="light"] .ap-bar{background:#fff}
+.ap-bar i{display:flex;align-items:flex-end;width:100%;border-radius:7px;background:var(--mx-s2);overflow:hidden;min-height:2px}
+.ap-bar u{display:block;width:100%;background:var(--mx-s1)}
+.ap-day span{font-size:11px;color:var(--mx-mute);height:14px}
+.ap-k{display:inline-block;width:10px;height:10px;border-radius:3px}.ap-k.a{background:var(--mx-s2)}.ap-k.b{background:var(--mx-s1)}
+.ap-big{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}.ap-big b{font-size:26px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.ap-big span{font-size:12.5px;color:var(--mx-mute)}
+html body main .ap-bar:not(#_):not(#__) i{background:var(--mx-s2)!important;border:0!important}
+html body main .ap-bar:not(#_):not(#__) u{background:var(--mx-s1)!important}
+html body main .pv-key:not(#_) .ap-k.a{background:var(--mx-s2)!important}html body main .pv-key:not(#_) .ap-k.b{background:var(--mx-s1)!important}
