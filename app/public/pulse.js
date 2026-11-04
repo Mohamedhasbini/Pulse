@@ -34,7 +34,7 @@
       ['Requests', { page: 'inbox', tab: 'conversations', panes: ['approvals'], bare: true }],
       ['Booking page', { page: 'settings', tab: 'booking', bare: true, cards: ['Online booking page'], hidden: true }]]],
     ['customers', 'Customers', 'Know every client', [
-      ['Clients', { page: 'people', tab: 'clients' }],
+      ['Clients', { own: 'clients' }], // clients.js: who to act on first, then the list
       ['Win back', { own: 'growth', hidden: true }], // moved to Growth; kept so the index stays put
       ['Board', { page: 'people', tab: 'board', panes: ['board'], hidden: true }],
       ['Reviews', { page: 'support', tab: 'reviews', bare: true }],
@@ -240,7 +240,7 @@
   function setPart(k) {
     setPartNow = k; const st = $('#setup'); if (st) st.dataset.part = k;
     // the section list sits inside the page as a side menu, like a settings window
-    const ix = $('.p10-bar .set-ix'); if (st && ix) { $$('#setup > .set-ix').forEach(x => x.remove()); st.prepend(ix); }
+    const ix = $('.mxh .set-ix, .p10-bar .set-ix'); if (st && ix) { $$('#setup > .set-ix').forEach(x => x.remove()); st.prepend(ix); }
     // the menu left the tab row, so it answers its own clicks
     if (st && !st.dataset.ixOn) { st.dataset.ixOn = 1; st.addEventListener('click', ev => { const j = ev.target.closest('.set-ix [data-jump]'); if (j) return setPart(j.dataset.jump); const t = ev.target.closest('.set-ix [data-t]'); if (t) go('settings', +t.dataset.t); }); }
     if (st && !st.querySelector('.spane[data-pane="costs"]')) { const c = document.createElement('div'); c.className = 'spane'; c.dataset.pane = 'costs'; c.innerHTML = '<h2>Costs</h2><div id="cstRoot"></div>'; st.append(c); }
@@ -253,18 +253,36 @@
   }
   window.P10setPart = k => setPart(k);
   function bar(id, i, purpose, tabs) {
-    $$('.p10-bar').forEach(x => x.remove());
+    $$('.p10-bar, .mxh').forEach(x => x.remove());
     const sec = $('main > section:not([hidden])'); if (!sec) return;
-    const b = document.createElement('div'); b.className = 'p10-bar';
     const title = named(PAGES.find(p => p[0] === id)[1]), tab = tabs.length > 1 ? tabs[i][0] : '';
     // tabs marked adv stay out of the way until the owner asks for detail (or is already on one)
     const sel = tabs[i][1].hidden ? (tabs[i][1].parent ?? 0) : i, hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || detailOn(id));
-    b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.filter(t => !t[1].hidden).length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.hidden || (o.adv && !detail) || (o.tpl && !o.tpl.includes(window.MXBIZ?.template)) ? '' :
-      `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" aria-pressed="${k === sel}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${false ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${id === 'insights' ? (detail ? 'Back to the report' : 'Explore all charts') : detail ? 'Fewer tools' : 'More tools'}</button>` : ''}</div>` : '');
+    const visible = tabs.map((t, k) => [t, k]).filter(([[, o]]) => !(o.hidden || (o.adv && !detail) || (o.tpl && !o.tpl.includes(window.MXBIZ?.template))));
+    let b;
+    if (id === 'today') {
+      // Today draws its own header; only the "needs you" chips ride along
+      b = document.createElement('div'); b.className = 'p10-bar';
+      b.innerHTML = `<p class="p10-purpose"><b>${e(title)}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>`;
+    } else {
+      // every other page: the same anatomy as Today (date, title, one live sentence, main actions), quiet tabs below
+      b = document.createElement('div'); b.className = 'mxh'; b.setAttribute('role', 'region'); b.setAttribute('aria-label', title);
+      const d = new Date(), dateLine = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + (tab && tabs[sel] && sel !== visible[0]?.[1] ? ` · ${tabs[sel][0]}` : '');
+      b.innerHTML = `<div class="mxh-top"><div class="mxh-id"><p class="mxh-date">${e(dateLine)}</p><h1>${e(title)}</h1>
+          <p class="mxh-sub" aria-live="polite"><span class="mxh-skel" aria-hidden="true"></span></p><div class="p10-need mxh-need" id="p10Need"></div></div>
+        <div class="mxh-acts">${window.MXHead?.actions(id) || ''}</div></div>`
+        + (visible.length > 1 ? `<div class="mxh-tabs" role="tablist" aria-label="${e(title)} sections">${visible.map(([[l], k]) =>
+          `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" tabindex="${k === sel ? 0 : -1}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}</div>` : '');
+      window.MXHead?.sentence(id, b.querySelector('.mxh-sub'));
+      // arrow keys move between tabs (the tablist pattern)
+      b.querySelector('.mxh-tabs')?.addEventListener('keydown', ev => {
+        if (!/^Arrow(Left|Right)$|^Home$|^End$/.test(ev.key)) return; const list = [...b.querySelectorAll('.mxh-tabs [data-t]')], at = list.indexOf(document.activeElement); if (at < 0) return;
+        ev.preventDefault(); const to = ev.key === 'Home' ? 0 : ev.key === 'End' ? list.length - 1 : (at + (ev.key === 'ArrowRight' ? 1 : -1) + list.length) % list.length; list[to].focus(); list[to].click(); });
+    }
     // Settings is one page: a row of chips jumps to each part; Website and Integrations open their own screens
     if (id === 'settings' && (i === 0 || i === 12)) { b.insertAdjacentHTML('beforeend', `<div class="set-ix" role="navigation" aria-label="Settings sections">${SET_IX.map(([l, k]) =>
       `<button type="button" ${typeof k === 'number' ? `data-t="${k}"` : `data-jump="${k}"`}>${e(l)}</button>`).join('')}</div>`); setTimeout(() => { if (i === 0) return setPart(setPartNow);
-      const host = $('#p10-integrations'), ix = $('.p10-bar .set-ix'); if (!host || !ix) return; $$('#p10-integrations > .set-ix').forEach(x => x.remove()); host.prepend(ix); host.classList.add('set-host');
+      const host = $('#p10-integrations'), ix = $('.mxh .set-ix, .p10-bar .set-ix'); if (!host || !ix) return; $$('#p10-integrations > .set-ix').forEach(x => x.remove()); host.prepend(ix); host.classList.add('set-host');
       ix.querySelectorAll('button').forEach(x => x.setAttribute('aria-current', String(x.dataset.t === '12')));
       if (!host.dataset.ixOn) { host.dataset.ixOn = 1; host.addEventListener('click', ev => { const j = ev.target.closest('.set-ix [data-jump]'); if (j) { go('settings', 0); setTimeout(() => setPart(j.dataset.jump), 120); } }); } }); }
     b.addEventListener('click', ev => {
@@ -311,6 +329,7 @@
     if (key === 'aictl') { const s = page('aictl', 'AI control', 'Decide who answers your clients: MXAi or your team.', '<div id="aiRoot"></div>'); s.hidden = false; window.MXAiMode?.mount(s); }
     if (key === 'integrations') { const s = page('integrations', 'Integrations', '', '<div id="igRoot"></div>'); s.hidden = false; window.PulseIntegrations?.mount(s); }
     if (key === 'report') { const s = page('report', 'Insights', '', '<div id="rpRoot" class="rp"></div>'); s.hidden = false; window.PVReport?.(s.querySelector('#rpRoot')); }
+    if (key === 'clients') { const s = page('clients', 'Clients', '', '<div id="clRoot"></div>'); s.hidden = false; window.MXClients?.mount(s.querySelector('#clRoot')); }
     if (key === 'members') { const s = page('members', 'Customers', '', '<div id="mbRoot" class="rp"></div>'); s.hidden = false; window.PVMembers?.(s.querySelector('#mbRoot')); }
     if (key === 'finance') { const s = page('finance', 'Finance', '', '<div id="fnRoot" class="rp"></div>'); s.hidden = false; window.PVFinance?.(s.querySelector('#fnRoot')); }
     if (key === 'aiperf') { const s = page('aiperf', 'AI performance', '', '<div id="apRoot" class="rp"></div>'); s.hidden = false; window.PVAIPerf?.(s.querySelector('#apRoot')); }
@@ -335,7 +354,7 @@
     box.innerHTML = d.items.length ? d.items.map((x, i) => `<div class="pa-item" data-i="${i}"><span class="pa-k pa-${x.kind}">${KIND[x.kind]}</span>
       <div class="pa-t"><b>${e(x.title)}</b><small>${e(x.why || '')}</small></div><div class="pa-a">${ACT[x.kind](x)}</div></div>`).join('')
       : `<p class="empty">Nothing waiting. MXAi Assistant is handling everything.</p>`;
-    const n = $('.p10-bar [data-t="0"]'); if (current?.[0] === 'pulse' && n) n.innerHTML = 'To review' + (count ? ` <b class="pa-n">${count}</b>` : '');
+    const n = $('.mxh [data-t="0"]'); if (current?.[0] === 'pulse' && n) n.innerHTML = 'To review' + (count ? ` <b class="pa-n">${count}</b>` : '');
   }
   async function act(ev) {
     const b = ev.target.closest('[data-a]'); if (!b) return;
@@ -448,7 +467,7 @@
   // any other way of opening a section (Today's buttons, notifications) drops our tab row so the page isn't mislabelled
   document.addEventListener('click', ev => {
     const n = ev.target.closest('nav button[data-view]'); if (!n || n.classList.contains('p10')) return;
-    if (ev.isTrusted) { $$('.p10-bar').forEach(x => x.remove()); hideOwn(); current = null; mark(null); }
+    if (ev.isTrusted) { $$('.p10-bar, .mxh').forEach(x => x.remove()); hideOwn(); current = null; mark(null); }
   }, true);
 
   addEventListener('load', () => {

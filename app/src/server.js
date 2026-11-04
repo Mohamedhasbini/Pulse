@@ -1042,7 +1042,9 @@ app.get('/api/customers', wrap(async (req, res) => {
       count(b.id) FILTER (WHERE b.status='confirmed' AND b.starts_at >= now())::int AS upcoming,
       count(b.id) FILTER (WHERE b.status='no_show')::int AS no_shows,
       COALESCE(sum(b.price) FILTER (WHERE b.status IN ('completed','confirmed')),0)::float AS spent,
-      to_char(max(b.starts_at) FILTER (WHERE b.status <> 'cancelled'),'YYYY-MM-DD') AS last_booking
+      to_char(max(b.starts_at) FILTER (WHERE b.status <> 'cancelled'),'YYYY-MM-DD') AS last_booking,
+      to_char(max(b.starts_at) FILTER (WHERE b.status IN ('completed','confirmed') AND b.starts_at < now()),'YYYY-MM-DD') AS last_visit,
+      to_char(min(b.starts_at) FILTER (WHERE b.status='confirmed' AND b.starts_at >= now()),'YYYY-MM-DD"T"HH24:MI') AS next_visit
       FROM customers cu LEFT JOIN bookings b ON b.customer_id=cu.id
       WHERE cu.business_id=$1 ${test ? '' : 'AND ' + realPhone}
         AND ($2 = '' OR cu.name ILIKE '%'||$2||'%' OR cu.phone LIKE '%'||$2||'%' OR cu.contact_phone LIKE '%'||$2||'%' OR cu.email ILIKE '%'||$2||'%')

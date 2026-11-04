@@ -1,0 +1,98 @@
+/* One page anatomy for every page, the same as Today: date · title · one live sentence · main actions on the right,
+   quiet underlined tabs below. Loaded last; the :not(#_) guards win over the older override rules without !important wars. */
+
+/* ---- the header ---- */
+main > section > .mxh:not(#_){display:block;margin:0 0 20px;padding:4px 0 0;background:none;border:0}
+.mxh .mxh-top:not(#_){display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.mxh .mxh-id:not(#_){min-width:0;flex:1 1 420px}
+.mxh .mxh-date:not(#_){margin:0;font-size:13px;color:var(--mx-mute)}
+main .mxh h1:not(#_):not(#__){margin:2px 0 4px;font-size:28px!important;font-weight:600;letter-spacing:-.025em;line-height:1.15;color:var(--mx-ink);text-transform:none}
+.mxh .mxh-sub:not(#_){margin:0;font-size:15px;line-height:1.5;color:var(--mx-ink2);max-width:72ch}
+.mxh .mxh-sub b:not(#_){font-weight:600;color:var(--mx-ink)}
+.mxh .mxh-sub .mxh-warn:not(#_),.mxh .mxh-sub .mxh-warn b:not(#_){color:var(--mx-warn,#b45309)}
+.mxh .mxh-sub .mxh-up:not(#_){color:var(--mx-good,#3f7d20);font-weight:600}
+.mxh .mxh-dot:not(#_){color:var(--mx-mute)}
+.mxh .mxh-skel:not(#_){display:inline-block;width:min(360px,60vw);height:14px;border-radius:7px;background:var(--mx-line);vertical-align:middle}
+.mxh .mxh-need:not(#_){display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+.mxh .mxh-need:empty:not(#_){display:none}
+.mxh .mxh-need .need:not(#_){all:unset;cursor:pointer;font-size:13px;padding:5px 12px;border-radius:999px;border:1px solid var(--mx-line);color:var(--mx-ink2);background:var(--mx-surf)}
+.mxh .mxh-need .need:hover:not(#_){color:var(--mx-ink);border-color:var(--mx-ink2)}
+.mxh .mxh-need .need:focus-visible:not(#_){outline:2px solid var(--mx-ink);outline-offset:2px}
+.mxh .mxh-acts:not(#_){display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ---- tabs: a quiet underline, not black pills ---- */
+.mxh .mxh-tabs:not(#_){display:flex;gap:4px;margin:18px 0 0;border-bottom:1px solid var(--mx-line);overflow-x:auto;scrollbar-width:none}
+.mxh .mxh-tabs button:not(#_){all:unset;cursor:pointer;position:relative;padding:10px 12px 12px;font-size:14px;font-weight:500;color:var(--mx-mute);white-space:nowrap;border-radius:8px 8px 0 0;min-height:24px}
+.mxh .mxh-tabs button:hover:not(#_){color:var(--mx-ink)}
+.mxh .mxh-tabs button[aria-selected="true"]:not(#_){color:var(--mx-ink);font-weight:600}
+.mxh .mxh-tabs button[aria-selected="true"]:not(#_)::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;border-radius:2px;background:var(--mx-ink)}
+.mxh .mxh-tabs button:focus-visible:not(#_){outline:2px solid var(--mx-ink);outline-offset:-2px}
+.mxh .mxh-tabs .pa-n:not(#_){display:inline-grid;place-items:center;min-width:18px;height:18px;margin-left:6px;padding:0 5px;border-radius:9px;font-size:11px;font-weight:700;background:var(--mx-ink);color:var(--mx-surf)}
+
+/* the page's old heading, the old hero and the old pill row give way to the header */
+main > section:has(> .mxh) > .top:not(#_):not(#__),main > section:has(> .mxh) .hx:not(#_):not(#__){display:none!important}
+@media (max-width:767px){main .mxh h1:not(#_):not(#__){font-size:22px!important}.mxh .mxh-acts:not(#_){width:100%}.mxh .mxh-acts .mx-btn:not(#_){flex:1}}
+
+/* ---- duplicates the header now covers ---- */
+/* Inbox: the four number boxes are the header sentence now; the chats come first */
+main #ibIns:not(#_):not(#__){display:none!important}
+/* Calendar: New booking and Block time live in the header, like Today's + New booking */
+main .gc-side .gc-new:not(#_):not(#__),main .gc-side .gc-off:not(#_):not(#__){display:none!important}
+
+/* ---- AI Control › To review: one calm row per item, the kind as a small label, one clear action ---- */
+#p10-approvals .pa-list:not(#_):not(#__){background:var(--mx-surf);border:1px solid var(--mx-line);border-radius:16px;padding:4px 18px;box-shadow:none}
+#p10-approvals .pa-item:not(#_):not(#__){grid-template-columns:1fr auto;gap:6px 16px;padding:16px 0;border-bottom:1px solid var(--mx-line)}
+#p10-approvals .pa-item:last-child:not(#_){border-bottom:0}
+#p10-approvals .pa-k:not(#_):not(#__){grid-column:1;justify-self:start;font-size:12px!important;font-weight:500;letter-spacing:0;text-transform:none;color:var(--mx-ink2);padding:2px 10px;border-radius:999px;background:var(--mx-raise);border:1px solid var(--mx-line)}
+#p10-approvals .pa-t:not(#_){grid-column:1}
+#p10-approvals .pa-t b:not(#_){display:block;font-size:15px;font-weight:600;color:var(--mx-ink)}
+#p10-approvals .pa-t small:not(#_){color:var(--mx-mute)}
+#p10-approvals .pa-a:not(#_){grid-column:2;grid-row:1 / span 2;align-self:center;display:flex;gap:8px}
+#p10-approvals .empty:not(#_){padding:28px 0;text-align:center;color:var(--mx-mute)}
+
+/* ---- Clients ---- */
+.cl .cl-why:not(#_){margin:0 0 10px;font-size:13px;line-height:1.45;color:var(--mx-mute)}
+.cl .cl-list:not(#_){display:flex;flex-direction:column}
+.cl .cl-p:not(#_){all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;padding:9px 8px;margin:0 -8px;border-radius:10px;min-height:44px}
+.cl .cl-p:hover:not(#_){background:var(--mx-raise)}
+.cl .cl-p:focus-visible:not(#_){outline:2px solid var(--mx-ink);outline-offset:-2px}
+.cl .cl-av:not(#_){width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--mx-ink2);background:var(--mx-raise);border:1px solid var(--mx-line)}
+.cl .cl-pt:not(#_){min-width:0;display:flex;flex-direction:column}
+.cl .cl-pt b:not(#_){font-size:14px;font-weight:600;color:var(--mx-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl .cl-pt small:not(#_){font-size:12px;color:var(--mx-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl .cl-pv:not(#_){font-size:13px;font-variant-numeric:tabular-nums;color:var(--mx-ink2)}
+.cl .cl-foot:not(#_){display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.cl .cl-foot .mx-btn:last-child:not(#_){margin-left:auto}
+.cl .cl-bar:not(#_){display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px;scroll-margin-top:16px}
+.cl .cl-chips:not(#_){display:flex;gap:6px;flex-wrap:wrap}
+.cl .cl-chip:not(#_){all:unset;cursor:pointer;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--mx-line);color:var(--mx-ink2);min-height:24px}
+.cl .cl-chip span:not(#_){color:var(--mx-mute);font-variant-numeric:tabular-nums;margin-left:2px}
+.cl .cl-chip:hover:not(#_){color:var(--mx-ink);border-color:var(--mx-ink2)}
+.cl .cl-chip[aria-pressed="true"]:not(#_){background:var(--mx-ink);border-color:var(--mx-ink);color:var(--mx-surf)}
+.cl .cl-chip[aria-pressed="true"] span:not(#_){color:inherit;opacity:.75}
+.cl .cl-chip:focus-visible:not(#_){outline:2px solid var(--mx-ink);outline-offset:2px}
+.cl .cl-search input:not(#_){width:min(320px,100%);height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--mx-line);background:var(--mx-surf);color:var(--mx-ink);font:inherit;font-size:14px}
+.cl .cl-scroll:not(#_){overflow-x:auto}
+.cl .cl-t:not(#_){width:100%;border-collapse:collapse;font-size:14px}
+.cl .cl-t th:not(#_){text-align:left;font-size:12px;font-weight:500;color:var(--mx-mute);padding:8px 12px;border-bottom:1px solid var(--mx-line);white-space:nowrap}
+.cl .cl-t td:not(#_){padding:12px;border-bottom:1px solid var(--mx-line);color:var(--mx-ink2);vertical-align:middle;white-space:nowrap}
+.cl .cl-t tbody tr:not(#_){cursor:pointer}
+.cl .cl-t tbody tr:hover td:not(#_){background:var(--mx-raise)}
+.cl .cl-t tbody tr:focus-visible:not(#_){outline:2px solid var(--mx-ink);outline-offset:-2px}
+.cl .cl-t .num:not(#_){text-align:right;font-variant-numeric:tabular-nums}
+.cl .cl-t td small:not(#_){display:block;font-size:12px;color:var(--mx-mute);margin-top:2px}
+.cl .cl-name:not(#_){display:flex;gap:8px;align-items:center}
+.cl .cl-name b:not(#_){color:var(--mx-ink);font-weight:600}
+.cl .cl-tag:not(#_){font-size:11px;font-weight:500;padding:1px 8px;border-radius:999px;border:1px solid var(--mx-line);color:var(--mx-ink2)}
+.cl .cl-tag.warn:not(#_){color:var(--mx-warn,#b45309);border-color:currentColor}
+.cl .cl-tag.new:not(#_){color:var(--mx-good,#3f7d20);border-color:currentColor}
+.cl .cl-mute:not(#_){color:var(--mx-mute)}
+.cl .cl-yes:not(#_){color:var(--mx-ink2)}
+.cl .cl-ns:not(#_){font-size:12px;color:var(--mx-warn,#b45309)}
+.cl .cl-more:not(#_){display:flex;justify-content:center;padding:14px 0 2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (max-width:767px){.cl .cl-t th:nth-child(3):not(#_),.cl .cl-t td:nth-child(3):not(#_),.cl .cl-t th:nth-child(6):not(#_),.cl .cl-t td:nth-child(6):not(#_){display:none}}
+/* the header sentence already says what waits; the old "needs" chips would repeat it word for word */
+.mxh .mxh-need:not(#_):not(#__){display:none}
+/* old glass ornaments (corner arcs) don't belong on the calm cards */
+main > section:has(> .mxh) .glass:not(#_)::before,main > section:has(> .mxh) .glass:not(#_)::after{display:none!important}

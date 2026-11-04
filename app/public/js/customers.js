@@ -26,10 +26,10 @@ async function openCustomer(id){const c=await req("/api/customers/"+id);pplOpen=
 $("#pEraseOpen").onclick=()=>{$("#pErase").hidden=false;$("#pEraseIn").focus()};
 $("#pEraseGo").onclick=async()=>{const msg=$("#pEraseMsg");
   if($("#pEraseIn").value.trim()!=="ERASE"){msg.textContent="Type ERASE in capitals to confirm.";return}
-  try{await req(`/api/customers/${pplOpen.id}/erase`,"POST",{confirm:"ERASE"});toast("Client erased. Their bookings stay in your records without their name.");$("#pModal").hidden=true;loadPeople()}
+  try{await req(`/api/customers/${pplOpen.id}/erase`,"POST",{confirm:"ERASE"});toast("Client erased. Their bookings stay in your records without their name.");$("#pModal").hidden=true;loadPeople();window.MXClients?.refresh()}
   catch(err){msg.textContent=err.message||"That did not work. Try again."}};
 document.addEventListener("click",e=>{const r=e.target.closest("[data-cust]");if(r)openCustomer(r.dataset.cust)});
 $("#pClose").onclick=()=>$("#pModal").hidden=true;
 $("#pForm").onsubmit=async e=>{e.preventDefault();try{await req("/api/customers/"+pplOpen.id,"PUT",{name:$("#pName").value,email:$("#pEmail").value,reminder_channel:$("#pRemind").value,birthday:$("#pBday").value,staff_notes:$("#pNotes").value});
-  toast("Profile saved.");$("#pModal").hidden=true;loadPeople()}catch(err){$("#pErr").textContent=err.message;$("#pErr").hidden=false}};
+  toast("Profile saved.");$("#pModal").hidden=true;loadPeople();window.MXClients?.refresh()}catch(err){$("#pErr").textContent=err.message;$("#pErr").hidden=false}};
 
