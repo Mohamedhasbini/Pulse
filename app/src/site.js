@@ -19,6 +19,8 @@ export function mountSite(app) {
   app.get(['/brand.css', '/pulse-logo.svg', '/manifest.webmanifest'], (req, res) => res.set('Cache-Control', 'public, max-age=3600').sendFile(PUBLIC + req.path));
   // fonts are public too: the sign-in page uses them, and the browser may keep them for a month
   app.get(['/fonts.css', /^\/fonts\/[\w.-]+\.woff2$/], (req, res) => res.set('Cache-Control', 'public, max-age=2592000').sendFile(PUBLIC + req.path));
+  // real dashboard screenshots for the website's templates and tools (public, cached a day)
+  app.get(/^\/shots\/[\w-]+\.jpg$/, (req, res) => res.set('Cache-Control', 'public, max-age=86400').sendFile(PUBLIC + req.path));
   app.get('/', (req, res, next) => readSession(req.get('cookie')) ? next() : res.sendFile(PUBLIC + '/site.html'));
   app.get(['/dashboard', '/app'], (req, res) => res.redirect(readSession(req.get('cookie')) ? '/' : '/login'));
 

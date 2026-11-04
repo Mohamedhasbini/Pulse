@@ -585,11 +585,11 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 
 /* ── pages: one file, each address shows its own sections (the sections themselves are unchanged) */
 body[data-page] main>section{display:none}
-body[data-page="home"] main>:is(#see,#does,#core,#industries,#reviews:not([hidden]),#faq,#start),
+body[data-page="home"] main>:is(#see,#does,#core,#tools,#industries,#reviews:not([hidden]),#faq,#start),
 body[data-page="product"] main>:is(#dashboard,#value,#agents,#features,#inside,#start),
 body[data-page="how"] main>:is(#problem,#how,#architecture,#demo,#start),
 body[data-page="pricing"] main>:is(#pricing,#faq,#start),
-body[data-page="templates"] main>:is(#templates,#start){display:block}
+body[data-page="templates"] main>:is(#templates,#tools,#start){display:block}
 body[data-page]:not([data-page="home"]) main>.hero{display:none}
 body[data-page]:not([data-page="home"]) main{padding-top:110px}
 body[data-page="templates"] main{display:flex;flex-direction:column}body[data-page="templates"] #pageH{order:-2}body[data-page="templates"] #templates{order:-1}
@@ -685,6 +685,25 @@ html[data-theme="light"] .vz-chat .c,html[data-theme="light"] .vz-rules span,htm
 .btn.sm{padding:9px 16px;font-size:14px}.tp-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 @media (max-width:900px){.tp-grid{grid-template-columns:1fr}}
 @media (max-width:560px){.tp-shot{height:220px}.tp-k b{font-size:14px}.tp-2{grid-template-columns:1fr}.tp-2>:last-child{display:none}}
+
+/* real screenshots: template previews and the tools gallery */
+.tp-img{display:block;width:100%;height:250px;object-fit:cover;object-position:top left;border-radius:14px 14px 0 0;box-shadow:0 20px 40px -20px rgba(0,0,0,.7)}
+.tl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.tl{margin:0;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));transition:transform .3s,border-color .3s}
+.tl:hover{transform:translateY(-4px);border-color:rgba(198,244,50,.4)}
+.tl-img{padding:14px 14px 0;background:radial-gradient(120% 90% at 50% 0%,rgba(198,244,50,.10),transparent 60%)}
+.tl-img img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top left;border-radius:12px 12px 0 0}
+.tl figcaption{padding:16px 18px 20px;display:flex;flex-direction:column;gap:4px}
+.tl small{font:700 11px ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tl b{font-size:19px;letter-spacing:-.02em;color:var(--ink)}.tl span{color:var(--ink2);font-size:14.5px}
+@media (max-width:1000px){.tl-grid{grid-template-columns:1fr 1fr}}@media (max-width:600px){.tl-grid{grid-template-columns:1fr}.tp-img{height:200px}}
+
+/* screenshots are cropped in, so a visitor can read them at card size */
+.tp-crop{height:250px;overflow:hidden;border-radius:14px 14px 0 0;background:#fff;box-shadow:0 20px 40px -20px rgba(0,0,0,.7)}
+.tp-crop .tp-img{width:185%;max-width:none;height:auto!important;margin:-58px 0 0 -9%;border-radius:0;box-shadow:none;object-fit:initial}
+.tl-img{overflow:hidden}.tl-img img{width:230%!important;height:auto!important;max-width:none;aspect-ratio:auto!important;margin:-64px 0 0 -14%;object-fit:initial!important;border-radius:0!important}
+.tl-img{height:230px}
+@media (max-width:600px){.tp-crop{height:200px}.tl-img{height:200px}}
 </style>
 </head>
 <body>
@@ -976,6 +995,24 @@ html[data-theme="light"] .vz-chat .c,html[data-theme="light"] .vz-rules span,htm
   </div>
 </div></section>
 
+<section id="tools"><div class="wrap">
+  <div class="sh rv"><span class="k">Everything inside</span><h2>One dashboard. Every tool your business runs on.</h2><p>Each template is built from the same parts. Here they are, exactly as they look.</p></div>
+  <div class="tl-grid">
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/inbox.jpg" alt="MXAi Inbox screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Inbox</small><b>Every channel in one place</b><span>WhatsApp, Instagram, Telegram and email side by side. The AI answers in seconds; you step in with one tap.</span></figcaption></figure>
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/calendar.jpg" alt="MXAi Calendar screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Calendar</small><b>Bookings that fill themselves</b><span>Clients book by chat at any hour. Gaps fill first, nothing is double-booked, reminders cut no-shows.</span></figcaption></figure>
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/finance.jpg" alt="MXAi Finance screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Finance</small><b>Know what you keep</b><span>Revenue, costs and profit, and a cash flow from every service to every expense.</span></figcaption></figure>
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/growth.jpg" alt="MXAi Growth screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Growth</small><b>Bring clients back</b><span>MXAi finds who is drifting away and prepares the offer. You approve, it sends, you see what came back.</span></figcaption></figure>
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/memberships.jpg" alt="MXAi Memberships screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Memberships</small><b>Recurring income, visible</b><span>Plans, renewals and members at risk of leaving, for gyms, studios and subscriptions.</span></figcaption></figure>
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/connectors.jpg" alt="MXAi Connectors screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Connectors</small><b>Plugs into what you use</b><span>Channels, payments, CRMs and automation. One dashboard, fed from everything.</span></figcaption></figure>
+  </div>
+</div></section>
+
 <section id="industries"><div class="wrap">
   <div class="sh rv"><span class="k">Who it's for</span><h2>Built for businesses that run on bookings.</h2><p>Your services, prices, hours and team, set up in a day. The AI speaks to your clients the way you would.</p></div>
   <div class="does inds">
@@ -991,28 +1028,28 @@ html[data-theme="light"] .vz-chat .c,html[data-theme="light"] .vz-rules span,htm
   <div class="tp-filter" role="tablist"><button type="button" aria-selected="true" data-f="all">All</button><button type="button" aria-selected="false" data-f="live">Live now</button><button type="button" aria-selected="false" data-f="soon">Coming soon</button></div>
   <div class="tp-grid">
     <article class="tp rv" data-st="live">
-      <div class="tp-frame"><div class="tp-shot" aria-hidden="true"><div class="tp-sd"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div><div class="tp-main"><div class="tp-k"><div><small>Revenue</small><b>$12,480</b><em class="up">+18%</em></div><div><small>Bookings</small><b>126</b><em class="up">+9%</em></div><div><small>No-shows</small><b>2%</b><em class="up">−4%</em></div></div><div class="tp-2"><div class="tp-bars "><i style="height:40%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:70%"></i><i style="height:62%"></i><i style="height:85%"></i><i style="height:78%"></i><i style="height:92%"></i></div><div class="tp-rows"><div><span class="d" style="--c:#c6f432"></span><span>Colour</span><b>$4.2k</b></div><div><span class="d" style="--c:#7cc4ff"></span><span>Haircut</span><b>$3.1k</b></div><div><span class="d" style="--c:#c4a5ff"></span><span>Nails</span><b>$1.9k</b></div></div></div></div></div><span class="tp-badge live">Live</span></div>
+      <div class="tp-frame"><div class="tp-crop"><img class="tp-img" src="/shots/salon.jpg" alt="Salon dashboard: team, earnings, bookings and the AI front desk" loading="lazy" width="1440" height="900"></div><span class="tp-badge live">Live</span></div>
       <div class="tp-info"><small>Hair, nails and beauty</small><h3>Salon and spa</h3><p>The full command center: AI front desk, calendar, clients, win-back offers and money.</p>
         <div class="tp-chips"><span>Today</span><span>Inbox</span><span>Calendar</span><span>Clients</span><span>Growth</span><span>Finance</span></div>
-        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Instagram">I</i><i title="Stripe">S</i></span><span class="tp-btns"><a class="btn gho sm" href="/demo/salon">See it live</a><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Instagram">I</i><i title="Stripe">S</i></span><span class="tp-btns"><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
     </article>
     <article class="tp rv" data-st="live">
-      <div class="tp-frame"><div class="tp-shot" aria-hidden="true"><div class="tp-sd"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div><div class="tp-main"><div class="tp-k"><div><small>Active members</small><b>40</b><em class="up">+6</em></div><div><small>Monthly recurring</small><b>$2,287</b><em class="up">+12%</em></div><div><small>At risk</small><b>9</b><em class="warn">needs a look</em></div></div><div class="tp-2"><div class="tp-fill"><div><span>HIIT 18:00</span><i><u style="width:100%"></u></i><b>12/12</b></div><div><span>Spin 19:00</span><i><u style="width:71%"></u></i><b>10/14</b></div><div><span>Yoga 20:00</span><i><u style="width:60%"></u></i><b>6/10</b></div><div><span>HIIT 07:00</span><i><u style="width:42%"></u></i><b>5/12</b></div></div><div class="tp-bars b"><i style="height:50%"></i><i style="height:62%"></i><i style="height:58%"></i><i style="height:74%"></i><i style="height:80%"></i><i style="height:66%"></i><i style="height:88%"></i></div></div></div></div><span class="tp-badge live">Live</span></div>
+      <div class="tp-frame"><div class="tp-crop"><img class="tp-img" src="/shots/memberships.jpg" alt="Gym dashboard: memberships, renewals and members at risk" loading="lazy" width="1440" height="900"></div><span class="tp-badge live">Live</span></div>
       <div class="tp-info"><small>Classes, members and renewals</small><h3>Gym and fitness</h3><p>Memberships, class spots, at-risk members and income per class, with the AI booking classes.</p>
         <div class="tp-chips"><span>Today</span><span>Members</span><span>Calendar</span><span>Memberships</span><span>Finance</span></div>
-        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Instagram">I</i><i title="Stripe">S</i></span><span class="tp-btns"><a class="btn gho sm" href="/demo/gym">See it live</a><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Instagram">I</i><i title="Stripe">S</i></span><span class="tp-btns"><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
     </article>
     <article class="tp rv" data-st="live">
-      <div class="tp-frame"><div class="tp-shot" aria-hidden="true"><div class="tp-sd"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div><div class="tp-main"><div class="tp-k"><div><small>Answered alone</small><b>94%</b><em class="up">+3%</em></div><div><small>Avg reply</small><b>1.8s</b><em class="up">fast</em></div><div><small>Booked by AI</small><b>$9,044</b><em class="up">+21%</em></div></div><div class="tp-chat"><div><span class="d" style="--c:#25d366"></span><b>Sara K.</b><span>Booked ✓ Fri 18:00</span></div><div><span class="d" style="--c:#e1306c"></span><b>@omar.fit</b><span>Price sent, asked for a slot</span></div><div><span class="d" style="--c:#2aabee"></span><b>Lina</b><span>Moved to Sat 10:30</span></div><div><span class="d" style="--c:#25d366"></span><b>Hadi N.</b><span>Handed to you: refund question</span></div></div></div></div><span class="tp-badge live">Live</span></div>
+      <div class="tp-frame"><div class="tp-crop"><img class="tp-img" src="/shots/inbox.jpg" alt="AI receptionist: every chat answered and booked, in one inbox" loading="lazy" width="1440" height="900"></div><span class="tp-badge live">Live</span></div>
       <div class="tp-info"><small>Just the front desk</small><h3>AI receptionist only</h3><p>Every chat answered and booked in seconds, on every channel, with a simple inbox.</p>
         <div class="tp-chips"><span>Today</span><span>Inbox</span><span>Calendar</span><span>AI Control</span></div>
-        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Instagram">I</i><i title="Telegram">T</i></span><span class="tp-btns"><a class="btn gho sm" href="/demo/receptionist">See it live</a><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Instagram">I</i><i title="Telegram">T</i></span><span class="tp-btns"><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
     </article>
     <article class="tp rv" data-st="live">
-      <div class="tp-frame"><div class="tp-shot" aria-hidden="true"><div class="tp-sd"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div><div class="tp-main"><div class="tp-k"><div><small>Appointments</small><b>214</b><em class="up">+7%</em></div><div><small>Confirmed</small><b>92%</b><em class="up">by reminder</em></div><div><small>Follow-ups due</small><b>14</b><em class="warn">this week</em></div></div><div class="tp-day"><div><small>09:00</small><span style="--c:#7cc4ff">Consultation · Dr. Rami</span></div><div><small>10:30</small><span style="--c:#c4a5ff">Botox follow-up</span></div><div><small>12:00</small><span style="--c:#c6f432">Laser session</span></div><div><small>14:30</small><span style="--c:#7cc4ff">Skin check</span></div></div></div></div><span class="tp-badge live">Live</span></div>
+      <div class="tp-frame"><div class="tp-crop"><img class="tp-img" src="/shots/clinic.jpg" alt="Clinic dashboard: appointments, treatments and follow-ups" loading="lazy" width="1440" height="900"></div><span class="tp-badge live">Live</span></div>
       <div class="tp-info"><small>Appointments and follow-ups</small><h3>Clinic and medspa</h3><p>Consultations, reminders and follow-ups that keep the diary full and no-shows low.</p>
         <div class="tp-chips"><span>Today</span><span>Inbox</span><span>Calendar</span><span>Patients</span><span>AI Control</span></div>
-        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Email">E</i></span><span class="tp-btns"><a class="btn gho sm" href="/demo/clinic">See it live</a><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Email">E</i></span><span class="tp-btns"><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
     </article>
     <article class="tp rv" data-st="soon">
       <div class="tp-frame"><div class="tp-shot" aria-hidden="true"><div class="tp-sd"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div><div class="tp-main"><div class="tp-k"><div><small>Orders</small><b>1,284</b><em class="up">+14%</em></div><div><small>Avg order</small><b>$46</b><em class="up">+$3</em></div><div><small>Questions answered</small><b>97%</b><em class="up">by AI</em></div></div><div class="tp-2"><svg class="tp-ln" viewBox="0 0 200 60" preserveAspectRatio="none"><path class="ar" d="M0 50 L25 44 L50 46 L75 34 L100 36 L125 24 L150 26 L175 14 L200 10 L200 60 L0 60Z"/><path class="ln" d="M0 50 L25 44 L50 46 L75 34 L100 36 L125 24 L150 26 L175 14 L200 10"/></svg><div class="tp-rows"><div><span class="d" style="--c:#c6f432"></span><span>Linen shirt</span><b>312</b></div><div><span class="d" style="--c:#7cc4ff"></span><span>Canvas tote</span><b>204</b></div><div><span class="d" style="--c:#c4a5ff"></span><span>Sun hat</span><b>151</b></div></div></div></div></div><span class="tp-badge soon">Coming soon</span></div>

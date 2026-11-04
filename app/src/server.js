@@ -214,7 +214,7 @@ app.post('/api/logout', (_req, res) => { res.set('Set-Cookie', 'rb_session=; Pat
 // The public API authenticates with a business API key, so it sits before the session check.
 mountPublicApi(app);
 mountPublicCatalog(app);
-mountLiveDemo(app); // /demo/<template>: read-only live dashboards for website visitors
+// live demos are off: the website shows real screenshots instead (mountLiveDemo(app) turns /demo/<template> back on)
 
 // Who is signed in, and which business this request is about. Owners and staff only ever get their own business;
 // the admin works on whichever business they switched to (rb_biz cookie).
