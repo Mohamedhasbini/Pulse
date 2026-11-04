@@ -467,3 +467,6 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS costs JSONB DEFAULT '[]'::jsonb;
 CREATE TABLE IF NOT EXISTS testimonials (id SERIAL PRIMARY KEY, quote TEXT NOT NULL, name TEXT NOT NULL, role TEXT, business TEXT, city TEXT,
   consent BOOLEAN NOT NULL DEFAULT false, published BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CHECK (NOT published OR consent));
+
+-- which dashboard template a business runs (connectors.js TEMPLATES): decides the pages it sees
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS template TEXT;

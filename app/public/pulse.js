@@ -114,10 +114,16 @@
     if (!P().training || !P().inbox) return false; // sidebar.js not ready yet
     if (typeof me === 'undefined' || !me) return false; // who is signed in decides the menu
     if (window.LAB) return true; // the admin's Lab shows only the Command center
+    // the business's template decides which pages show and what clients are called (members, patients…)
+    if (window.MXBIZ === undefined) { window.MXBIZ = null; fetch('/api/business').then(r => r.ok ? r.json() : {}).then(b => { window.MXBIZ = b || {}; }).catch(() => { window.MXBIZ = {}; }); return false; }
+    if (window.MXBIZ === null) return false;
     pills.dataset.p10 = '1';
+    const keep = window.MXBIZ.nav, cust = window.MXBIZ.terms?.customers;
+    if (cust) { const row = PAGES.find(p => p[0] === 'customers'); if (row) row[1] = cust[0].toUpperCase() + cust.slice(1); }
     $$('nav .navpills > button, nav .navpills > .ns').forEach(x => { if (x.id !== 'adminNav') x.classList.add('nav-gone') });
     nav = {};
     for (const [id, label] of PAGES) {
+      if (keep && !keep.includes(id)) continue;
       if (GROUP[id]) { const g = document.createElement('div'); g.className = 'p10-grp'; g.textContent = GROUP[id]; pills.insertBefore(g, $('#adminNav')); }
       const b = document.createElement('button'); b.type = 'button'; b.className = 'p10'; b.dataset.p10 = id; b.title = label; b.setAttribute('aria-label', label);
       b.innerHTML = `<svg viewBox="0 0 24 24">${ICON[id] || ICON.insights}</svg><span>${label}</span>${BADGE[id] ? `<b class="badge-n p10-n" data-for="${id}" hidden></b>` : ''}`;

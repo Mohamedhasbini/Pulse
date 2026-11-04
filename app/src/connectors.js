@@ -41,10 +41,13 @@ export const TEMPLATES = [
   T('salon', 'Salon and spa command center', 'AI front desk, calendar, clients, win-back offers, insights and finance.', ['Today', 'Inbox', 'Calendar', 'Customers', 'Growth', 'Insights', 'Finance', 'AI Control'], ['whatsapp', 'email', 'stripe']),
   T('receptionist', 'AI receptionist only', 'Just the front desk: chats answered and booked, with a simple inbox.', ['Today', 'Inbox', 'Calendar', 'AI Control'], ['whatsapp']),
   T('clinic', 'Clinic and medspa', 'Appointments, reminders and follow-ups with the same AI front desk.', ['Today', 'Inbox', 'Calendar', 'Customers', 'Insights', 'AI Control'], ['whatsapp', 'email']),
+  T('gym', 'Gym and fitness studio', 'Class bookings, members, coaches, renewals and revenue per class, with the AI front desk.', ['Today', 'Inbox', 'Calendar', 'Members', 'Growth', 'Insights', 'Finance', 'AI Control'], ['whatsapp', 'instagram', 'stripe']),
   T('store', 'Online store', 'Orders, products and customer questions from your shop in one view.', ['Today', 'Inbox', 'Orders', 'Customers', 'Finance'], ['shopify', 'instagram', 'stripe'], 'soon'),
   T('social', 'Social media and ads', 'Messages, leads and ad results from every channel together.', ['Today', 'Inbox', 'Leads', 'Ads', 'Insights'], ['instagram', 'messenger', 'tiktok', 'meta_ads'], 'soon'),
   T('restaurant', 'Restaurants', 'Table bookings, questions and reminders, handled by chat.', ['Today', 'Inbox', 'Calendar', 'Customers'], ['whatsapp', 'instagram'], 'soon'),
 ];
+
+export const NAV = { salon: null, gym: null, clinic: null, receptionist: ['today', 'inbox', 'calendar', 'pulse', 'settings'] };
 
 export function mountConnectors(app, BIZ) {
   // per business: each connector with whether its provider is set up here

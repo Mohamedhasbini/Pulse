@@ -12,7 +12,7 @@ import { mountAgents } from './agents.js';
 import { mountTeam } from './team.js';
 import { mountPulse } from './pulse.js';
 import { mountFinance } from './finance.js';
-import { mountConnectors, mountPublicCatalog } from './connectors.js';
+import { mountConnectors, mountPublicCatalog, NAV } from './connectors.js';
 import { mountMarketing } from './marketing.js';
 import { mountIntegrations, mountPublicApi } from './integrations.js';
 import { mountShortcuts } from './shortcuts.js';
@@ -500,7 +500,7 @@ app.get('/api/admin/audit', adminOnly, wrap(async (req, res) => res.json(await q
     FROM audit_log a LEFT JOIN businesses b ON b.id=a.business_id WHERE ($1 = '' OR a.action ILIKE $1 || '%' OR a.user_email ILIKE '%' || $1 || '%' OR b.name ILIKE '%' || $1 || '%')
     ORDER BY a.id DESC LIMIT 200`, [String(req.query.q || '').trim()]))));
 
-app.get('/api/business', wrap(async (_req, res) => { const b = await loadBusiness(BIZ()); delete b.telegram_token; delete b.telegram_token_hash; res.json({ ...b, terms: termsOf(b.vertical) }); }));
+app.get('/api/business', wrap(async (_req, res) => { const b = await loadBusiness(BIZ()); delete b.telegram_token; delete b.telegram_token_hash; res.json({ ...b, terms: termsOf(b.vertical), nav: NAV[b.template] || null }); }));
 app.get('/api/verticals', (_req, res) => res.json(listVerticals()));
 
 // Switch business type. With template=true it also loads that type's starter services, FAQs and policies
