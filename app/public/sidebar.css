@@ -79,3 +79,38 @@ html body main.p10-sw:not(#_) > section{opacity:0!important;transition:none}
 
 /* the toast floats in its corner on every screen; the generic glass style made it sit in the page and add height */
 html body #toast.toast:not(#_):not(#__){position:fixed!important}
+
+/* ── adjustable width and room to breathe (Nov 2026) ── */
+.sb-resize{display:none}
+@media (min-width:1001px){
+  /* the drag handle: a 10px strip on the bar's right edge, a hairline shows on hover, drag and focus */
+  .sb-resize{display:block;position:fixed;top:0;bottom:0;left:calc(var(--sb-w) - 5px);width:10px;z-index:45;cursor:col-resize;touch-action:none;outline:none}
+  .sb-resize::after{content:"";position:absolute;top:0;bottom:0;left:4px;width:2px;border-radius:2px;background:transparent;transition:background-color .15s ease-out}
+  .sb-resize:hover::after,.sb-resize:focus-visible::after,html.sb-dragging .sb-resize::after{background:var(--fu-line2)}
+  .sb-resize:focus-visible::after{background:var(--fu-ink)}
+  html.sb-dragging,html.sb-dragging *{cursor:col-resize!important;user-select:none!important}
+
+  /* spacing: the page keeps a clear gap from the bar; rows and controls are not packed together */
+  html body main:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){padding:14px 18px 12px 18px!important}
+  html body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){padding:20px 14px 16px!important;gap:6px!important}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){gap:4px!important}
+  html body nav[aria-label="Main"] button.p10:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){padding:10px 12px!important}
+  html body nav[aria-label="Main"] #labBtn:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){margin:0 0 14px!important;padding:9px 12px!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+  html body #hxAsk:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){margin:14px 0 0!important;width:100%!important;max-width:none!important;box-sizing:border-box!important}
+  html body nav[aria-label="Main"] .navfoot:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){gap:8px!important;margin:12px 0 0!important;padding:14px 0 0!important;justify-content:flex-start!important}
+  html body nav[aria-label="Main"] .navfoot #aiChip:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){margin-right:auto!important}
+
+  /* icon rail (72px): icons centred, labels and the Ask text hidden, badges become dots, controls stack */
+  html.sb-rail body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){padding:18px 10px 14px!important;align-items:center!important}
+  html.sb-rail body nav[aria-label="Main"] button.p10:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){justify-content:center!important;padding:11px 0!important;width:44px!important;position:relative}
+  html.sb-rail body nav[aria-label="Main"] button.p10 span:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){display:none!important}
+  html.sb-rail body nav[aria-label="Main"] button.p10 .p10-n:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){position:absolute!important;top:6px;right:6px;min-width:8px!important;height:8px!important;padding:0!important;font-size:0!important;border-radius:50%!important}
+  html.sb-rail body nav[aria-label="Main"] .brand:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){margin:2px 0 14px!important}
+  html.sb-rail body nav[aria-label="Main"] .brand .pl-word:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){display:none!important}
+  html.sb-rail body nav[aria-label="Main"] #labBtn:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){width:44px!important;padding:9px 0!important;font-size:0!important;justify-content:center}
+  html.sb-rail body nav[aria-label="Main"] #labBtn::before{content:"←";font-size:15px}
+  html.sb-rail body #hxAsk:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){width:44px!important;padding:12px 0!important;justify-content:center!important}
+  html.sb-rail body #hxAsk :is(span,kbd):not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){display:none!important}
+  html.sb-rail body nav[aria-label="Main"] .navfoot:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){flex-direction:column!important;align-items:center!important}
+  html.sb-rail body nav[aria-label="Main"] .navfoot #aiChip:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){width:44px!important;padding:0!important;margin:0!important;font-size:0!important;justify-content:center}
+}
