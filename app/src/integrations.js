@@ -96,6 +96,12 @@ export function mountIntegrations(app, BIZ) {
       cfg[f.k] = f.secret ? seal(v) : v;
     }
     if (p.fields.some(f => f.secret) && !p.fields.filter(f => f.secret && f.k !== 'secret').every(f => unseal(cfg[f.k]))) return res.status(400).json({ error: 'Add the key first.' });
+    // one Instagram account answers for one business: claiming another's id would swallow that business's DMs
+    if (req.params.p === 'instagram') {
+      if (!/^\d+$/.test(cfg.ig_user_id || '')) return res.status(400).json({ error: 'The Instagram account ID is numbers only.' });
+      if (await one(`SELECT 1 FROM integrations WHERE provider='instagram' AND business_id<>$1 AND config->>'ig_user_id'=$2`, [BIZ(), cfg.ig_user_id]))
+        return res.status(409).json({ error: 'That Instagram account is already connected to another business.' });
+    }
     await q(`INSERT INTO integrations (business_id, provider, config, status, updated_at) VALUES ($1,$2,$3,'saved',now())
       ON CONFLICT (business_id, provider) DO UPDATE SET config=EXCLUDED.config, status='saved', error=NULL, updated_at=now()`, [BIZ(), req.params.p, cfg]);
     res.json({ ok: true, secret: req.params.p === 'webhook' && !old.secret ? unseal(cfg.secret) : undefined });

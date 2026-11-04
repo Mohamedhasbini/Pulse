@@ -569,7 +569,8 @@ app.put('/api/business', wrap(async (req, res) => {
       reminders_enabled=$13, reminder_hours=$14, reminder_text=$15, booking_enabled=$16, booking_title=$17, booking_intro=$18,
       booking_color=$19, booking_show_prices=$20, booking_min_notice_hours=$21, booking_days_ahead=$22,
       description=$23, website=$24, instagram=$25, maps_url=$26, languages=$27, tone=$28, team=$29, policies=$30, ai_instructions=$31, faqs=$32, ask_email=$33, assistant_name=$34 WHERE id=$8`,
-    [b.name, b.address, b.faq, b.wa_phone_number_id || '', JSON.stringify(cleanHours(b.hours)), Math.max(1, +b.capacity || 1), [15, 30, 60].includes(+b.slot_step) ? +b.slot_step : 30, BIZ(), b.payment_methods || '', b.booking_note || '', String(b.phone || '').trim(), Math.min(Math.max(+b.cancel_hours || 0, 0), 168),
+    // the WhatsApp number id is sent with the platform's own token: only the platform admin sets it, digits only
+    [b.name, b.address, b.faq, req.user.role === 'admin' ? String(b.wa_phone_number_id || '').replace(/\D/g, '') : (await one('SELECT wa_phone_number_id FROM businesses WHERE id=$1', [BIZ()]))?.wa_phone_number_id || '', JSON.stringify(cleanHours(b.hours)), Math.max(1, +b.capacity || 1), [15, 30, 60].includes(+b.slot_step) ? +b.slot_step : 30, BIZ(), b.payment_methods || '', b.booking_note || '', String(b.phone || '').trim(), Math.min(Math.max(+b.cancel_hours || 0, 0), 168),
      b.reminders_enabled !== false, [2, 12, 24, 48].includes(+b.reminder_hours) ? +b.reminder_hours : 24, String(b.reminder_text || '').trim() || null,
      b.booking_enabled !== false, String(b.booking_title || '').trim(), String(b.booking_intro || '').trim(),
      /^#[0-9a-f]{6}$/i.test(b.booking_color) ? b.booking_color : '#10a35a', b.booking_show_prices !== false,
@@ -578,7 +579,7 @@ app.put('/api/business', wrap(async (req, res) => {
      ['warm', 'professional', 'playful'].includes(b.tone) ? b.tone : 'warm',
      ...['team', 'policies', 'ai_instructions'].map(k => String(b[k] || '').trim().slice(0, 4000)),
      JSON.stringify((Array.isArray(b.faqs) ? b.faqs : []).map(f => ({ q: String(f.q || '').trim().slice(0, 300), a: String(f.a || '').trim().slice(0, 1500) })).filter(f => f.q && f.a).slice(0, 60)),
-     b.ask_email !== false, String(b.assistant_name || '').trim().slice(0, 40) || 'Nora']);
+     b.ask_email !== false, String(b.assistant_name || '').replace(/[<>"&]/g, '').trim().slice(0, 40) || 'Nora']); // a name, never markup
   const keep = (b.services || []).filter(s => s.id).map(s => s.id);
   // Services that already have bookings are kept so past bookings stay intact.
   await q(`DELETE FROM services s WHERE s.business_id=$1 AND s.id <> ALL($2::int[]) AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.service_id=s.id)`, [BIZ(), keep]);
@@ -1344,8 +1345,8 @@ app.put('/api/channels/telegram', wrap(async (req, res) => {
   r.ok ? res.json(r) : res.status(400).json({ error: r.error || 'Could not connect the bot.' });
 }));
 app.get('/api/webook-demo', wrap(async (_req, res) => res.json(await one('SELECT count(*)::int AS n FROM businesses WHERE is_demo'))));
-app.post('/api/webook-demo/remove', wrap(async (_req, res) => res.json({ removed: await removeDemo() })));
-app.post('/api/webook-demo/add', wrap(async (_req, res) => res.json({ added: await seedDemo({ force: true }) })));
+app.post('/api/webook-demo/remove', adminOnly, wrap(async (_req, res) => res.json({ removed: await removeDemo() })));
+app.post('/api/webook-demo/add', adminOnly, wrap(async (_req, res) => res.json({ added: await seedDemo({ force: true }) })));
 
 // ---------- Insights ----------
 app.put('/api/insights/goal', wrap(async (req, res) => {
@@ -1354,7 +1355,7 @@ app.put('/api/insights/goal', wrap(async (req, res) => {
 app.get('/api/insights', wrap(async (req, res) => res.json(await insights(BIZ(), Math.min(Math.max(+req.query.days || 30, 1), 365)))));
 
 // ---------- Reminders ----------
-app.post('/api/reminders/run', wrap(async (_req, res) => res.json({ checked: await runReminders() })));
+app.post('/api/reminders/run', adminOnly, wrap(async (_req, res) => res.json({ checked: await runReminders() })));
 app.post('/api/reminders/preview', wrap(async (req, res) => {
   const b = await loadBusiness(BIZ());
   res.json({ text: fill(String(req.body.text || b.reminder_text), { id: 42, customer: 'Rana Khalil', service: b.services[0]?.name || 'Haircut', business: b.name,

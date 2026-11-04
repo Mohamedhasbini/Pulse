@@ -16,7 +16,7 @@ window.PulseInbox = (() => {
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   }
   // the receptionist's name as this business set it (Settings › Assistant), Nora by default
-  const ai = () => (typeof biz !== 'undefined' && biz?.assistant_name) || 'Nora';
+  const ai = () => e((typeof biz !== 'undefined' && biz?.assistant_name) || 'Nora'); // escaped: it lands in innerHTML and an attribute
   const who = r => r.name || (r.phone && !/^test-|^e2e-/.test(r.phone) ? r.phone : 'Test customer');
   const initials = n => n.split(/\s+/).map(x => x[0]).slice(0, 2).join('').toUpperCase();
   // each person keeps one soft colour, so a name is recognised at a glance down the list

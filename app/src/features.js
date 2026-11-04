@@ -59,20 +59,23 @@ export const hasFeature = async (bizId, key) => (await featuresOf(bizId)).has(ke
 // Owners and the admin get every section; staff get only the ones ticked for them.
 export const canOpen = (user, module) => user.role !== 'staff' || (user.permissions || []).includes(module);
 
-// Which section an API path belongs to (null = available to every signed-in login).
+// Which section an API path belongs to. Staff are denied by default: a path that is in no section and not in OPEN
+// belongs to 'owner' (API keys, integrations, the AI team that can read every table). A new route stays closed to
+// staff until it is given a section here.
+const OPEN = /^\/api\/(me|changes|events|studio|notifications|shortcuts|support|briefing|logout|login|verticals|public|webook)(\/|$)/;
 const ROUTES = [
-  [/^\/api\/(stats|conversations|live|kpis|inbox)/, 'overview'],
-  [/^\/api\/(calendar|bookings|time-off|requests)/, 'calendar'],
-  [/^\/api\/(customers|marketing)/, 'customers'],
-  [/^\/api\/tools/, 'setup'],
-  [/^\/api\/(insights|finance)/, 'insights'],
-  [/^\/api\/(learning|review|ai-rules|coach|pulse)/, 'teach'],
-  [/^\/api\/(test-chat|test-data)/, 'testchat'],
-  [/^\/api\/site/, 'website'],
-  [/^\/api\/(business|reminders|coupons)/, 'setup'],
-  [/^\/api\/(channels|webook-demo)/, 'channels'],
+  [/^\/api\/(stats|conversations|live|kpis|inbox|ai-mode|ai-queue)(\/|$)/, 'overview'],
+  [/^\/api\/(calendar|bookings|time-off|requests)(\/|$)/, 'calendar'],
+  [/^\/api\/(customers|marketing|memberships|agents)(\/|$)/, 'customers'],
+  [/^\/api\/(insights|finance)(\/|$)/, 'insights'],
+  [/^\/api\/(learning|review|ai-rules|coach|pulse|lessons|ratings|versions)(\/|$)/, 'teach'],
+  [/^\/api\/(test-chat|test-data|tests)(\/|$)/, 'testchat'],
+  [/^\/api\/site(\/|$)/, 'website'],
+  [/^\/api\/(business|reminders|coupons|tools)(\/|$)/, 'setup'],
+  [/^\/api\/channels(\/|$)/, 'channels'],
 ];
 export function moduleOf(method, path) {
   if (method === 'GET' && path === '/api/business') return null; // every page needs the business name and wording
-  return ROUTES.find(([re]) => re.test(path))?.[1] || null;
+  if (OPEN.test(path)) return null;
+  return ROUTES.find(([re]) => re.test(path))?.[1] || 'owner';
 }

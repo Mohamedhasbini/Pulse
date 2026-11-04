@@ -56,6 +56,28 @@ try {
   const m = await fetch(BASE + x.url); say('Logo is served publicly', m.status === 200 && m.headers.get('content-type').includes('png'));
   x = await fetch(BASE + '/api/business/upload/logo', { method: 'POST', headers: { ...as(owner), 'Content-Type': 'text/html' }, body: '<script>' });
   say('Non-image upload refused', x.status === 400);
+  // Staff are denied by default: a calendar-only login can't make API keys, read the AI team or run platform jobs
+  const st = await one(`INSERT INTO users (email, name, password_hash, business_id, role, permissions) VALUES ($1,'Staff','x',$2,'staff','["calendar"]') RETURNING id, session_version`, [`staff-${Date.now()}@example.test`, r.id]);
+  const sCal = await fetch(BASE + '/api/calendar', { headers: as(st) }), sMe = await fetch(BASE + '/api/me', { headers: as(st) });
+  const sKey = await fetch(BASE + '/api/integration-keys', { method: 'POST', headers: { ...as(st), 'Content-Type': 'application/json' }, body: '{"name":"x"}' });
+  const sTeam = await fetch(BASE + '/api/team', { headers: as(st) }), sCust = await fetch(BASE + '/api/customers', { headers: as(st) });
+  say('Staff see their own section and nothing unlisted', sCal.status !== 403 && sMe.status === 200 && sKey.status === 403 && sTeam.status === 403 && sCust.status === 403,
+    [sCal, sMe, sKey, sTeam, sCust].map(x => x.status).join(','));
+  const oRun = await fetch(BASE + '/api/reminders/run', { method: 'POST', headers: as(owner) }), oDemo = await fetch(BASE + '/api/webook-demo/remove', { method: 'POST', headers: as(owner) });
+  say('Owners can\'t run platform-wide jobs (reminders for all, remove demo businesses)', oRun.status === 403 && oDemo.status === 403, `${oRun.status},${oDemo.status}`);
+  // Settings: the assistant name is never markup; an owner can't point the business at another WhatsApp number
+  const bz = await fetch(BASE + '/api/business', { headers: as(owner) }).then(r => r.json());
+  const put = await fetch(BASE + '/api/business', { method: 'PUT', headers: { ...as(owner), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...bz, assistant_name: 'Nour<img src=x onerror=alert(1)>', wa_phone_number_id: '999000111' }) });
+  const bz2 = await one('SELECT assistant_name, wa_phone_number_id FROM businesses WHERE id=$1', [r.id]);
+  say('Assistant name saved without markup; owner can\'t set the WhatsApp number id', put.status === 200 && !/[<>]/.test(bz2.assistant_name) && bz2.wa_phone_number_id !== '999000111', `${put.status} ${bz2.assistant_name} ${bz2.wa_phone_number_id}`);
+  // Instagram: an account id already connected to another business is refused
+  const other = await one(`SELECT id FROM businesses WHERE id<>$1 ORDER BY id LIMIT 1`, [r.id]);
+  await q(`INSERT INTO integrations (business_id, provider, config, status) VALUES ($1,'instagram','{"ig_user_id":"17841400000001"}','saved') ON CONFLICT DO NOTHING`, [other.id]);
+  const igPut = await fetch(BASE + '/api/integrations/instagram', { method: 'PUT', headers: { ...as(owner), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ access_token: 'tok', ig_user_id: '17841400000001', app_secret: 'sec' }) });
+  await q(`DELETE FROM integrations WHERE business_id=$1 AND provider='instagram' AND config->>'ig_user_id'='17841400000001'`, [other.id]);
+  say('An Instagram account connected to another business is refused', igPut.status === 409, String(igPut.status));
   // admin platform pages
   const h = await fetch(BASE + '/api/admin/health', { headers: as(admin) }).then(r => r.json());
   say('Health check answers', Array.isArray(h) && h.length >= 5, h.map(c => `${c.name}:${c.ok ? 'ok' : 'check'}`).join(', '));
