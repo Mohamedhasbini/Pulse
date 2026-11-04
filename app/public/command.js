@@ -70,7 +70,7 @@
   // ---------- data: tables, charts, files ----------
   const head = s => String(s).replace(/_/g, ' ');
   const cell = v => v == null ? '—' : typeof v === 'number' ? v.toLocaleString() : typeof v === 'object' ? JSON.stringify(v) : String(v);
-  const hidden = c => /(^|_)id$/.test(c);
+  const hidden = c => /(^|_)id$/.test(c) || /^(agent|key|slug|kind)$/.test(c); // internal names, never shown to the owner
   // columns worth showing: no ids, and none that are empty in every row (they read as a wall of dashes)
   const shown = t => Object.keys(t.rows[0]).filter(c => !hidden(c) && t.rows.some(r => r[c] != null && r[c] !== '' && r[c] !== '—' && r[c] !== false));
   // a dropped connection (the app restarting, a blip on the line) is retried once before it counts as a failure

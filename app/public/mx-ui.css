@@ -1072,3 +1072,36 @@ html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]:check
 html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]::before{display:none!important}
 html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]:checked::after{content:"";display:block;width:8px;height:4px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px);background:none;position:static}
 html body main .gc:not(#_):not(#__):not(#___) .gc-side .gc-new::after,html body main .gc:not(#_):not(#__):not(#___) .gc-side .gc-new::before{display:none!important;content:none!important}
+
+/* ── MXAi chat, after the claude.ai reading experience: a warm paper canvas, one centred column, plain answer text
+   with generous rhythm, your message in a soft bubble, thin quiet scrollbars, tables that wrap instead of scrolling */
+html body .pc:not(#_):not(#__):not(#___):not(#____){--pc-bg:#faf9f6;--pc-side:#f4f3ee;--pc-raise:#ffffff;--pc-line:#e7e5dd;--pc-ink:#1f1e1b;--pc-mut:#6b6a63;background:#faf9f6!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-side{background:#f4f3ee!important;border-right:1px solid #e7e5dd!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log{max-width:760px!important;padding:24px 28px 32px!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-m{margin:0 0 36px!important}
+/* nothing in the conversation keeps a colour from the dark theme: text takes the chat's ink */
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log :is(p,li,td,th,span,b,strong,em,i,small,div,h1,h2,h3,h4,dd,dt,summary,label):not(.pc-mark):not(.pc-caret){color:inherit!important;text-shadow:none!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log{color:#1f1e1b!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log :is(small,th,.pc-dh small){color:#6b6a63!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-a{font-size:15.5px!important;line-height:1.7!important;color:#1f1e1b!important;max-width:68ch}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-a :is(p,ul,ol){margin:0 0 14px!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-a :is(h1,h2,h3,h4){margin:22px 0 8px!important;font-size:16px!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-m.you .pc-b{background:#f0eee6!important;color:#1f1e1b!important;border-radius:20px!important;padding:12px 18px!important;font-size:15.5px!important}
+/* tables wrap; the data card sits quietly on the paper */
+html body .pc:not(#_):not(#__):not(#___):not(#____) :is(.pc-scroll,.pc-mdt){overflow-x:auto;scrollbar-width:thin}
+html body .pc:not(#_):not(#__):not(#___):not(#____) :is(.pc-scroll,.pc-mdt) table{min-width:0!important;width:100%;table-layout:auto}
+html body .pc:not(#_):not(#__):not(#___):not(#____) :is(.pc-scroll,.pc-mdt) :is(td,th){white-space:normal!important;word-break:normal;overflow-wrap:anywhere;padding:10px 14px!important;font-size:13.5px!important;vertical-align:top}
+html body .pc:not(#_):not(#__):not(#___):not(#____) :is(.pc-data,.pc-mdt){border:1px solid #e7e5dd!important;box-shadow:none!important;border-radius:14px!important;background:#fff!important}
+/* thin quiet scrollbars, everywhere in the chat */
+html body .pc:not(#_):not(#__):not(#___):not(#____),html body .pc:not(#_):not(#__):not(#___):not(#____) *{scrollbar-width:thin;scrollbar-color:#d6d3c9 transparent}
+html body .pc:not(#_):not(#__):not(#___):not(#____) ::-webkit-scrollbar{width:8px;height:8px}
+html body .pc:not(#_):not(#__):not(#___):not(#____) ::-webkit-scrollbar-thumb{background:#d6d3c9;border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+html body .pc:not(#_):not(#__):not(#___):not(#____) ::-webkit-scrollbar-track,html body .pc:not(#_):not(#__):not(#___):not(#____) ::-webkit-scrollbar-button{background:transparent;display:none}
+/* the composer: white on the paper, a soft lift, the send in ink */
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-dock{max-width:760px!important;padding:0 28px 18px!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-in{background:#fff!important;border-radius:22px!important;box-shadow:0 0 0 1px #e2dfd6,0 4px 18px -8px rgba(60,50,30,.18)!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-in:focus-within{box-shadow:0 0 0 1px #b9b5a8,0 6px 22px -8px rgba(60,50,30,.22)!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-chip{background:#faf9f6!important;box-shadow:inset 0 0 0 1px #e7e5dd!important;color:#6b6a63!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) ::selection{background:#e8e3d3}
+/* action buttons under an answer: quiet text buttons */
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log button:not(.pc-more){color:#4a4943!important}
