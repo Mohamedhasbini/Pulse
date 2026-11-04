@@ -12,7 +12,8 @@ export function mountSite(app) {
   const wrap = fn => (req, res, next) => fn(req, res).catch(next);
   const ipOf = req => req.get('cf-connecting-ip') || req.ip;
 
-  app.get(['/pulse', '/start'], (_req, res) => res.sendFile(PUBLIC + '/site.html'));
+  // the website: one file, each address shows its own sections
+  app.get(['/pulse', '/start', '/product', '/how-it-works', '/pricing', '/templates'], (_req, res) => res.sendFile(PUBLIC + '/site.html'));
   app.get('/privacy', (_req, res) => res.sendFile(PUBLIC + '/privacy.html'));
   // Brand files are public: the sign-in page and the website use them before anyone signs in
   app.get(['/brand.css', '/pulse-logo.svg', '/manifest.webmanifest'], (req, res) => res.set('Cache-Control', 'public, max-age=3600').sendFile(PUBLIC + req.path));

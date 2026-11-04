@@ -582,16 +582,74 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 @media (max-width:380px){
   .vals>*,.bento>*,.core-feats>*,.boards>*,.gcols>*,.tiers>*{flex-basis:90%!important;max-width:90%!important}
 }
+
+/* ── pages: one file, each address shows its own sections (the sections themselves are unchanged) */
+body[data-page] main>section{display:none}
+body[data-page="home"] main>:is(#see,#does,#core,#industries,#faq,#start),
+body[data-page="product"] main>:is(#dashboard,#value,#agents,#features,#inside,#start),
+body[data-page="how"] main>:is(#problem,#how,#architecture,#demo,#start),
+body[data-page="pricing"] main>:is(#pricing,#faq,#start),
+body[data-page="templates"] main>:is(#templates,#industries,#start){display:block}
+body[data-page]:not([data-page="home"]) main>.hero{display:none}
+body[data-page]:not([data-page="home"]) main{padding-top:110px}
+body[data-page="templates"] main{display:flex;flex-direction:column}body[data-page="templates"] #pageH{order:-2}body[data-page="templates"] #templates{order:-1}
+.page-h{text-align:center;max-width:760px;margin:0 auto 10px;padding-top:10px}.page-h h1{font-size:clamp(36px,5vw,64px);margin:12px 0}.page-h p{color:var(--ink2);font-size:18px;margin:0 auto;max-width:600px}
+body[data-page="home"] .page-h{display:none}
+.inds{grid-template-columns:repeat(4,1fr)}.tpls{grid-template-columns:repeat(3,1fr)}
+.tpls .soon{opacity:.78}.tpls .soon i{color:var(--muted)}
+@media (max-width:900px){.inds,.tpls{grid-template-columns:1fr 1fr}}@media (max-width:560px){.inds,.tpls{grid-template-columns:1fr}}
+/* ── the menu: dropdown panels with a title and one line each */
+header nav.mn{display:flex;align-items:center;gap:2px}
+.mn-i{position:relative}
+.mn-t{all:unset;cursor:pointer;padding:8px 14px;border-radius:999px;color:var(--ink2);font-size:14.5px;display:inline-flex;align-items:center;gap:6px;transition:background .2s,color .2s}
+.mn-t::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px)}
+.mn-t:hover,.mn-i:focus-within .mn-t,.mn-t[aria-expanded="true"]{color:var(--ink);background:rgba(255,255,255,.06)}
+.mn-t:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.mn-p{position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%) translateY(4px);width:340px;padding:8px;border-radius:18px;background:rgba(18,20,22,.96);border:1px solid var(--line);
+  box-shadow:0 20px 50px -20px rgba(0,0,0,.6);display:grid;gap:2px;opacity:0;visibility:hidden;transition:opacity .16s,transform .16s,visibility .16s}
+.mn-i:hover .mn-p,.mn-i:focus-within .mn-p,.mn-t[aria-expanded="true"]+.mn-p{opacity:1;visibility:visible;transform:translateX(-50%)}
+.mn-p::before{content:"";position:absolute;inset:-14px 0 auto;height:14px}
+.mn-p a{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;text-decoration:none}
+.mn-p a:hover,.mn-p a:focus-visible{background:rgba(255,255,255,.06);outline:none}
+.mn-p b{font-size:14px;color:var(--ink);font-weight:600}.mn-p small{font-size:12.5px;color:var(--muted)}
+header nav.mn>a{text-decoration:none;padding:8px 14px;border-radius:999px;color:var(--ink2);font-size:14.5px}
+header nav.mn>a:hover,header nav.mn>a[aria-current="page"]{color:var(--ink);background:rgba(255,255,255,.06)}
+.demo-b{white-space:nowrap}
+@media (max-width:1100px){.demo-b{display:none}}
+@media (max-width:900px){header nav.mn{display:none}}
+@media (prefers-reduced-motion:reduce){.mn-p{transition:none}}
+.mn-burger{display:none;all:unset;cursor:pointer;width:42px;height:42px;border-radius:50%;place-items:center;align-content:center;gap:5px;margin-left:auto}
+.mn-burger i{display:block;width:18px;height:2px;border-radius:2px;background:var(--ink);transition:transform .2s}
+.mn-burger{position:relative}.mn-burger i{position:absolute;left:12px;top:20px}.mn-burger i:first-child{transform:translateY(-4px)}.mn-burger i:last-child{transform:translateY(4px)}.mn-burger[aria-expanded="true"] i:first-child{transform:rotate(45deg)}.mn-burger[aria-expanded="true"] i:last-child{transform:rotate(-45deg)}
+.mn-sheet{position:absolute;top:calc(100% + 10px);left:0;right:0;display:grid;gap:2px;padding:8px;border-radius:20px;background:rgba(18,20,22,.97);border:1px solid var(--line);box-shadow:0 20px 50px -20px rgba(0,0,0,.6)}
+.mn-sheet a{padding:14px 16px;border-radius:12px;text-decoration:none;color:var(--ink);font-size:16px}.mn-sheet a:hover{background:rgba(255,255,255,.06)}
+header .wrap{position:relative}
+@media (max-width:900px){.mn-burger{display:grid}header .signin{display:none}}
 </style>
 </head>
 <body>
 <header><div class="wrap">
   <a class="logo" href="/pulse" aria-label="MXAi home"><i><svg viewBox="0 0 24 24"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i>MXAi</a>
-  <nav><a href="#see">See it work</a><a href="#does">What it does</a><a href="#dashboard">Dashboard</a><a href="#pricing">Pricing</a><a href="#faq">Questions</a></nav>
-  <a class="btn gho signin" href="/login">Sign in</a><a class="btn pri" href="#start" data-kind="signup">Get started</a>
+  <nav class="mn" aria-label="Site">
+    <div class="mn-i"><button type="button" class="mn-t" aria-expanded="false">Product</button><div class="mn-p">
+      <a href="/#see"><b>AI receptionist</b><small>Answers, books and reminds on WhatsApp, day and night</small></a>
+      <a href="/product#dashboard"><b>Command center</b><small>One dashboard for bookings, clients and money</small></a>
+      <a href="/product#agents"><b>AI team</b><small>Agents that win clients back and fill quiet days</small></a>
+      <a href="/product#value"><b>Insights and finance</b><small>Revenue, costs, profit and what to do next</small></a></div></div>
+    <div class="mn-i"><button type="button" class="mn-t" aria-expanded="false">Solutions</button><div class="mn-p">
+      <a href="/#industries"><b>Hair salons</b><small>Colour, cuts and bridal, booked by chat</small></a>
+      <a href="/#industries"><b>Barbers</b><small>Fast walk-in and chair booking</small></a>
+      <a href="/#industries"><b>Spas and clinics</b><small>Treatments, rooms and follow-ups</small></a>
+      <a href="/templates"><b>Any business</b><small>A dashboard built for how you work</small></a></div></div>
+    <a href="/templates">Templates</a><a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a>
+  </nav>
+  <button type="button" class="mn-burger" aria-label="Menu" aria-expanded="false" aria-controls="mnSheet"><i></i><i></i></button>
+  <div class="mn-sheet" id="mnSheet" hidden><a href="/pulse">Home</a><a href="/product">Product</a><a href="/templates">Templates</a><a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a><a href="/login">Sign in</a></div>
+  <a class="btn gho signin" href="/login">Sign in</a><a class="btn gho demo-b" href="/pricing#start" data-kind="demo">Book a demo</a><a class="btn pri" href="/pricing#start" data-kind="signup">Get started</a>
 </div></header>
 
 <main>
+<div class="page-h wrap" id="pageH"></div>
 <div class="hero">
   <div class="ghost" aria-hidden="true">MXAi</div>
   <div class="wrap">
@@ -858,6 +916,28 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
   </div>
 </div></section>
 
+<section id="industries"><div class="wrap">
+  <div class="sh rv"><span class="k">Who it's for</span><h2>Built for businesses that run on bookings.</h2><p>Your services, prices, hours and team, set up in a day. The AI speaks to your clients the way you would.</p></div>
+  <div class="does inds">
+    <div class="glass rv"><i>Hair</i><h3>Hair salons</h3><p>Colour, cuts, keratin and bridal. Books the right length of time and the right stylist.</p></div>
+    <div class="glass rv"><i>Barber</i><h3>Barbers</h3><p>Quick chair bookings, walk-in questions and regulars who come back every few weeks.</p></div>
+    <div class="glass rv"><i>Spa</i><h3>Spas and nails</h3><p>Treatments, packages and gift questions, answered at any hour.</p></div>
+    <div class="glass rv"><i>Clinic</i><h3>Clinics and medspas</h3><p>Consultations, follow-ups and reminders that keep the diary full.</p></div>
+  </div>
+</div></section>
+
+<section id="templates"><div class="wrap">
+  <div class="sh rv"><span class="k">Templates</span><h2>A dashboard for the way your business works.</h2><p>Start from a template and MXAi shapes it around your data. More templates are on the way.</p></div>
+  <div class="does tpls">
+    <div class="glass rv"><i>Available</i><h3>Salon and spa command center</h3><p>AI front desk, calendar, clients, win-back offers, insights and finance.</p></div>
+    <div class="glass rv"><i>Available</i><h3>AI receptionist only</h3><p>Just the front desk: chats answered and booked, with a simple inbox.</p></div>
+    <div class="glass rv"><i>Available</i><h3>Clinic and medspa</h3><p>Appointments, reminders and follow-ups, with the same AI front desk.</p></div>
+    <div class="glass rv soon"><i>Coming soon</i><h3>Online store</h3><p>Orders, products and customer questions from your shop in one view.</p></div>
+    <div class="glass rv soon"><i>Coming soon</i><h3>Social media and ads</h3><p>Messages, leads and ad results from every channel together.</p></div>
+    <div class="glass rv soon"><i>Coming soon</i><h3>Restaurants</h3><p>Table bookings, questions and reminders, handled by chat.</p></div>
+  </div>
+</div></section>
+
 <section id="pricing"><div class="wrap">
   <div class="sh rv"><span class="k">Pricing</span><h2>Simple monthly plans.</h2><p>Priced below the value of one recovered booking a week. Your customers never pay anything.</p></div>
   <div class="plans" id="plans"></div>
@@ -916,9 +996,9 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 
 <footer><div class="wrap fcols">
   <div><a class="logo" href="/pulse"><i><svg viewBox="0 0 24 24"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i>MXAi</a><p style="margin:12px 0 0;max-width:280px">The AI command center for your business.</p></div>
-  <div><b>Product</b><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#demo">Walkthrough</a><a href="#start" data-kind="demo">Book a walkthrough</a></div>
+  <div><b>Product</b><a href="/product">Features</a><a href="/templates">Templates</a><a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a><a href="/pricing#start" data-kind="demo">Book a demo</a></div>
   <div><b>For customers</b><a href="/webook">WeBook marketplace</a><a href="/webook" data-install>Get the app</a></div>
-  <div><b>For businesses</b><a href="/login">Sign in</a><a href="#start" data-kind="signup">Get started</a><a href="/privacy">Privacy</a></div>
+  <div><b>For businesses</b><a href="/login">Sign in</a><a href="/pricing#start" data-kind="signup">Get started</a><a href="/privacy">Privacy</a></div>
   </div>
   <div class="big" aria-hidden="true">MXAi</div>
   <div class="wrap" style="border-top:1px solid var(--line);padding-top:18px"><span>© <span id="yr"></span> MXAi. Run your business from one place.</span></div></footer>
@@ -1040,5 +1120,22 @@ $("#lead").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new 
 })();
 </script>
 <script>(()=>{const el=document.querySelector(".see");if(!el)return;if(!("IntersectionObserver" in window)){el.classList.add("play");return}const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){el.classList.add("play");io.disconnect()}},{threshold:.35});io.observe(el)})()</script>
+<script>
+// which page this address is; the menu marks it, inner pages get a heading, and the menu's dropdowns open by tap too
+(()=>{const P={"/product":["product","Product","Everything MXAi does for your business","One command center for your AI front desk, bookings, clients and money."],
+  "/how-it-works":["how","How it works","From a missed message to a booked client","How MXAi answers, books and learns, and how it is built."],
+  "/pricing":["pricing","Pricing","Simple monthly plans","Start small and add what you need. No setup fee."],
+  "/templates":["templates","Templates","A dashboard for every business","Pick the template closest to your business. MXAi shapes it around your data."]};
+  const m=P[location.pathname.replace(/\/$/,"")];document.body.dataset.page=m?m[0]:"home";
+  if(m){document.getElementById("pageH").innerHTML=`<span class="k">${m[1]}</span><h1>${m[2]}</h1><p>${m[3]}</p>`;document.title=`${m[1]} · MXAi`;
+    document.querySelectorAll('header nav.mn>a').forEach(a=>{if(a.getAttribute("href")===location.pathname)a.setAttribute("aria-current","page")})}
+  document.querySelectorAll(".mn-t").forEach(t=>t.addEventListener("click",()=>{const o=t.getAttribute("aria-expanded")==="true";document.querySelectorAll(".mn-t").forEach(x=>x.setAttribute("aria-expanded","false"));t.setAttribute("aria-expanded",String(!o))}));
+  const bg=document.querySelector(".mn-burger"),sh=document.getElementById("mnSheet");bg?.addEventListener("click",()=>{const o=bg.getAttribute("aria-expanded")==="true";bg.setAttribute("aria-expanded",String(!o));sh.hidden=o});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sh&&!sh.hidden){sh.hidden=true;bg.setAttribute("aria-expanded","false");bg.focus()}});
+  document.addEventListener("click",e=>{if(!e.target.closest(".mn-i"))document.querySelectorAll(".mn-t").forEach(x=>x.setAttribute("aria-expanded","false"))});
+  // links to a section of this same page scroll instead of reloading
+  document.querySelectorAll('a[href^="/"][href*="#"]').forEach(a=>{const u=new URL(a.href);if(u.pathname===location.pathname||(u.pathname==="/"&&document.body.dataset.page==="home"&&location.pathname.match(/^\/(pulse)?$/)))a.setAttribute("href",u.hash)});
+})();
+</script>
 </body>
 </html>
