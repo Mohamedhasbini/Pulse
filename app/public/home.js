@@ -47,9 +47,16 @@ homeBtn.addEventListener("click",ev=>{ev.stopImmediatePropagation();show()},true
 $$("nav button[data-view]").forEach(b=>{if(b!==homeBtn)b.addEventListener("click",()=>{sec.hidden=true;clearInterval(timer)})});
 function show(){if(window.LAB)return;$$("nav button[data-view]").forEach(x=>x.setAttribute("aria-current",x===homeBtn));$$("main > section.wrap").forEach(s=>s.hidden=s!==sec);
   document.body.dataset.page="today";scrollTo(0,0);load();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden&&!sec.hidden&&!document.documentElement.classList.contains("live-on"))load()},30000)}
-window.homeLoad=()=>{if(!sec.hidden)load()}; // live.js calls this the moment data changes
+window.homeLoad=()=>{if(!sec.hidden)load(true)}; // live.js calls this the moment data changes
+// one load at a time: a second ask while one runs joins it (start-up opens Today twice); a real data change (force)
+// queues exactly one fresh load after the running one, so nothing is missed
+// and a plain ask right after a load finished (start-up shows Today twice in a row) reuses that load
+let running=null,again=false,doneAt=0;
+function load(force){if(running){if(force)again=true;return running}
+  if(!force&&Date.now()-doneAt<2000)return Promise.resolve();
+  running=loadNow().catch(err=>console.error("Today:",err)).finally(()=>{running=null;doneAt=Date.now();if(again){again=false;load(true)}});return running}
 
-async function load(){
+async function loadNow(){
   const t=day(new Date()),get=u=>req(u).catch(()=>null);
   const [team,hist,biz,live,ch,wait,brief,cal,kpis,month]=await Promise.all([window.PVTeam?window.PVTeam().catch(()=>null):null,window.PVData?window.PVData().catch(()=>null):null,get("/api/business"),get("/api/live?days=30"),get("/api/channels"),get("/api/pulse/waiting"),get("/api/briefing"),get(`/api/calendar?from=${t}T00:00&to=${t}T23:59`),get("/api/kpis?days=30"),get(`/api/calendar?from=${day(new Date(new Date().getFullYear(),new Date().getMonth()-1,1))}T00:00&to=${t}T23:59`)]);
   if(!biz||!live){$("#tdA").innerHTML=U.card({title:"Today",span:12,state:"critical",body:U.error("today's numbers","reload")});return}
@@ -210,7 +217,7 @@ function go(where){
   if(where.startsWith("c:")){window.P10?.go("inbox",0);setTimeout(()=>window.PulseInbox?.openChat(where.slice(2)),500);return}
   if(where==="ask")return window.P10?window.P10.go("pulse",1):document.getElementById("hxAsk")?.click();
   if(where==="settings")return window.P10?.go("settings",0);
-  if(where==="reload")return load();
+  if(where==="reload")return load(true);
   if(where==="newbooking"){window.P10?.go("calendar",0);setTimeout(()=>$("#calNew")?.click(),450)}}
 sec.addEventListener("click",ev=>{const tm=ev.target.closest("[data-tm]");if(tm&&last){const m=last.team[+tm.dataset.tm],t=m?.tasks[0];if(t)window.P10?.go(...t.go);else window.PulseCommand?.open(m?.ask);return}
   const sg=ev.target.closest("[data-seg]");if(sg&&last){const v=sg.dataset.seg;if(sg.closest(".td-bk")){bkDays=+v;sg.closest(".mx-card").outerHTML=bookingsCard(last.hist);return}if(sg.closest(".td-sv")){svDays=+v;sg.closest(".mx-card").outerHTML=svcCard(last.hist.past||[]);return}
