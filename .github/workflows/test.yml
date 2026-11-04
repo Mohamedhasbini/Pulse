@@ -7,18 +7,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Test settings: example file with fresh random secrets
-        run: |
-          cp .env.example .env && mkdir -p backups
-          # fresh random secrets, like a real deployment (the app refuses the example ones)
-          sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=$(openssl rand -hex 16)|; s|^DB_PASSWORD=.*|DB_PASSWORD=$(openssl rand -hex 16)|" .env
-          grep -q '^DATA_KEY=' .env && sed -i "s|^DATA_KEY=.*|DATA_KEY=$(openssl rand -hex 32)|" .env || echo "DATA_KEY=$(openssl rand -hex 32)" >> .env
       - name: Syntax check every script
         run: for f in app/src/*.js app/public/*.js app/public/js/*.js; do node --check "$f"; done
-      - name: Start a throwaway stack
-        run: docker compose -p ci -f docker-compose.yml -f docker-compose.ci.yml up -d --build --wait db app
-      - name: Run the test suites
-        run: docker compose -p ci -f docker-compose.yml -f docker-compose.ci.yml exec -T app npm test
-      - name: App log on failure
-        if: failure()
-        run: docker compose -p ci -f docker-compose.yml -f docker-compose.ci.yml logs app --tail 200
+      - name: Run every test suite on a throwaway stack (fresh database, fresh random secrets, channels and AI off)
+        run: bash scripts/test-fresh.sh ci

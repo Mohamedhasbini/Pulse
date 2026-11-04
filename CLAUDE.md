@@ -57,7 +57,9 @@ docker compose up -d --build app
 docker compose exec app npm test
 ```
 Six suites: client data separation, end-to-end platform, client websites, Coach, metrics agree, MXAi Assistant.
-A crash counts as a failure. Fresh-database run without touching real data: see README "Tests".
+A crash counts as a failure. Fresh-database run without touching real data: `bash scripts/test-fresh.sh [name]`
+(throwaway stack, own `.env.ci` with channels and AI off; use a different name per parallel run). Never point a
+throwaway stack at the real `.env`: the app long-polls the real Telegram bot and would steal live messages.
 Every bug fix gets a regression test (usually in `app/src/smoke-test.js`).
 
 ## Rules

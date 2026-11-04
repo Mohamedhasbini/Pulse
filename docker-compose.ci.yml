@@ -1,7 +1,9 @@
-# Test-only override: no host ports (so it can run beside the real stack), throwaway volumes per project name.
-# docker compose -p mxci -f docker-compose.yml -f docker-compose.ci.yml up -d --build db app
+# Test-only override: no host ports (so it can run beside the real stack), throwaway volumes per project name,
+# and its own settings file (.env.ci, made by scripts/test-fresh.sh) so it never sees your real tokens and keys.
+#   bash scripts/test-fresh.sh
 services:
   app:
+    env_file: !override [.env.ci]
     ports: !reset []
     restart: "no"
   db:

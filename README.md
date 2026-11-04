@@ -61,9 +61,10 @@ Six suites run: client data separation, end-to-end platform, client websites, Co
 A crash in a suite counts as a failure. To test against a fresh, empty database without touching your data:
 
 ```bash
-docker compose -p mxci -f docker-compose.yml -f docker-compose.ci.yml up -d --build db app
-docker compose -p mxci -f docker-compose.yml -f docker-compose.ci.yml exec app npm test
-docker compose -p mxci -f docker-compose.yml -f docker-compose.ci.yml down -v
+bash scripts/test-fresh.sh
 ```
 
-GitHub runs the same steps on every push (`.github/workflows/test.yml`).
+It starts a throwaway copy beside the real one, runs every suite and removes the copy. The copy gets its own settings
+(`.env.ci`, fresh random secrets, every channel and AI switched off), so it can never read your real Telegram bot, send a
+WhatsApp or email, or use up the free AI quota the live receptionist needs. It refuses to run under your real stack's name.
+GitHub runs the same script on every push (`.github/workflows/test.yml`).
