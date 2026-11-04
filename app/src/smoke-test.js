@@ -10,6 +10,8 @@ const r = await createBusiness({ name: 'Smoke test restaurant', vertical: 'resta
 const owner = await one('SELECT id, session_version FROM users WHERE business_id=$1', [r.id]), admin = await one(`SELECT id, session_version FROM users WHERE role='admin' LIMIT 1`);
 const as = u => ({ cookie: `rb_session=${signSession(u.id, u.session_version)}`, origin: BASE });
 try {
+  const hz = await fetch(BASE + '/health'); const hj = await hz.json();
+  say('Health check confirms the database answers', hz.status === 200 && hj.db === true);
   // a write with Origin: null (sandboxed frames) is refused cleanly, not a server error
   let o = await fetch(BASE + '/api/business', { method: 'PUT', headers: { ...as(owner), origin: 'null', 'Content-Type': 'application/json' }, body: '{}' });
   say('Origin "null" write gets 403, not 500', o.status === 403, String(o.status));

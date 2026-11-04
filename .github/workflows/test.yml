@@ -7,8 +7,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Test settings (no real keys; AI calls fall back or are skipped)
-        run: cp .env.example .env && mkdir -p backups
+      - name: Test settings: example file with fresh random secrets
+        run: |
+          cp .env.example .env && mkdir -p backups
+          # fresh random secrets, like a real deployment (the app refuses the example ones)
+          sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=$(openssl rand -hex 16)|; s|^DB_PASSWORD=.*|DB_PASSWORD=$(openssl rand -hex 16)|" .env
+          grep -q '^DATA_KEY=' .env && sed -i "s|^DATA_KEY=.*|DATA_KEY=$(openssl rand -hex 32)|" .env || echo "DATA_KEY=$(openssl rand -hex 32)" >> .env
       - name: Syntax check every script
         run: for f in app/src/*.js app/public/*.js app/public/js/*.js; do node --check "$f"; done
       - name: Start a throwaway stack

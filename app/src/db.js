@@ -1,7 +1,9 @@
 import pg from 'pg';
 import fs from 'node:fs';
 
-export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 10000 });
+// A dropped idle connection (database restart, network blip) must not crash the app: log it; the pool reconnects on the next query
+pool.on('error', e => console.error('Database connection lost (will reconnect):', e.message));
 // Dates in SQL (daily chart, busy hours) use the business time zone, like the rest of the app.
 // search_path is pinned too: pooled cloud connections (Neon) can carry an empty one left by a pg_dump restore.
 pool.on('connect', c => c.query(`SET TIME ZONE '${(process.env.TZ || 'UTC').replace(/'/g, '')}'; SET search_path TO public`));

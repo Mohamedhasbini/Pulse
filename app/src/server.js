@@ -1,3 +1,4 @@
+import './startup-check.js'; // first: refuse unsafe secrets on a public deployment
 import * as metrics from './metrics.js';
 import express from 'express';
 import { fileURLToPath } from 'node:url';
@@ -89,7 +90,11 @@ app.post('/webhook/kapso', async (req, res) => {
   }
 });
 
-app.get('/health', (_req, res) => res.json({ ok: true }));
+// for uptime monitors: 200 only when the database answers too (within 3 s); 503 otherwise. No details leak out
+app.get('/health', async (_req, res) => {
+  try { await Promise.race([one('SELECT 1'), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 3000))]); res.set('Cache-Control', 'no-store').json({ ok: true, db: true }); }
+  catch (e) { console.error('Health check:', e.message); res.status(503).set('Cache-Control', 'no-store').json({ ok: false, db: false }); }
+});
 
 // Client websites answer on their own domain or subdomain before anything else
 mountClientSites(app, readSession);
