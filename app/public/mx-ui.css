@@ -1221,3 +1221,5 @@ html body main:not(#_) table :is(td,th){text-align:left!important}html body main
 /* Settings: the one Save button stays in reach while the long form scrolls */
 #setupForm .set-save{position:sticky;bottom:0;z-index:2;padding:12px 0;background:var(--mx-surf);border-top:1px solid var(--mx-line);display:flex;justify-content:flex-end}
 #setup .spane:has(#setupForm){overflow:visible!important} /* let the page scroll the form, so Save can stick */
+/* Keyboard focus is always visible (WCAG 2.4.7). Several older rules set outline:none; this one ring wins, for keyboard only */
+:where(a[href],button,input,select,textarea,summary,[tabindex]:not([tabindex="-1"]),[role=button],[role=tab]):focus-visible{outline:2px solid var(--mx-ink,currentColor)!important;outline-offset:2px!important}
