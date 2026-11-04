@@ -9,7 +9,9 @@
 <meta property="og:description" content="See every customer, booking and dollar live. An AI front desk and support team keep it all moving, day and night.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23c6f432'/%3E%3Cpath d='M9 22V10l7 7 7-7v12' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- display=optional: the headline never re-wraps when the font arrives late (that jump was most of the page's layout shift) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=optional">
 <style>
 :root{--bg:#0f1113;--s1:rgba(255,255,255,.035);--s2:rgba(255,255,255,.07);--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
   --ink:#f5f4fa;--ink2:#b3b8bd;--muted:#7d838a;--v:#c6f432;--v2:#d9ff6a;--v3:#a6d11c;--glow:rgba(198,244,50,.32);--r:22px;color-scheme:dark}
@@ -1255,7 +1257,6 @@ $("#lead").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new 
     $("#formBox").innerHTML=`<div class="done"><b>${kind==="demo"?"Your walkthrough request is in.":"You're on your way."}</b><p style="color:var(--ink2);margin:0">We'll message you on ${f.phone?"WhatsApp":"email"} within one working day${kind==="demo"?" to pick a time":" to set everything up"}.</p></div>`}
   catch(err){$("#err").textContent=err.message;$("#go").disabled=false}};
 </script>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 
 
 <script id="phone-layer-js">

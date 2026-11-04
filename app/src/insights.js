@@ -56,10 +56,10 @@ export async function insights(BIZ, days) {
              count(DISTINCT b.customer_id) FILTER (WHERE f.first <= ${since})::int AS returning
       FROM bookings b JOIN firsts f ON f.customer_id=b.customer_id WHERE b.business_id=$1 AND b.created_at > ${since} AND ${live}`, P);
   const top = await q(`SELECT cu.name, cu.phone, count(*)::int AS visits, COALESCE(sum(b.price) FILTER (WHERE ${earns}),0)::float AS spent, to_char(max(b.starts_at),'YYYY-MM-DD') AS last
-      FROM bookings b JOIN customers cu ON cu.id=b.customer_id WHERE b.business_id=$1 AND ${live} AND cu.phone NOT LIKE 'test-%'
+      FROM bookings b JOIN customers cu ON cu.id=b.customer_id WHERE b.business_id=$1 AND ${live} AND cu.phone NOT LIKE 'test-%' AND cu.phone NOT LIKE 'e2e-%' AND COALESCE(cu.name,'') !~* '^test '
       GROUP BY cu.id ORDER BY spent DESC LIMIT 6`, [BIZ]);
   const atRisk = await q(`SELECT cu.name, cu.phone, count(*)::int AS visits, to_char(max(b.starts_at),'YYYY-MM-DD') AS last
-      FROM bookings b JOIN customers cu ON cu.id=b.customer_id WHERE b.business_id=$1 AND b.status IN ('completed','confirmed') AND cu.phone NOT LIKE 'test-%'
+      FROM bookings b JOIN customers cu ON cu.id=b.customer_id WHERE b.business_id=$1 AND b.status IN ('completed','confirmed') AND cu.phone NOT LIKE 'test-%' AND cu.phone NOT LIKE 'e2e-%' AND COALESCE(cu.name,'') !~* '^test '
       GROUP BY cu.id HAVING count(*) >= 2 AND max(b.starts_at) < now() - interval '45 days' ORDER BY max(b.starts_at) LIMIT 6`, [BIZ]);
   const repeatNoShow = await q(`SELECT cu.name, cu.phone, count(*)::int AS n FROM bookings b JOIN customers cu ON cu.id=b.customer_id
       WHERE b.business_id=$1 AND b.status='no_show' GROUP BY cu.id HAVING count(*) >= 2 ORDER BY n DESC LIMIT 6`, [BIZ]);

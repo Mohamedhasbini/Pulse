@@ -25,6 +25,12 @@ try {
   const cl0 = await fetch(BASE + '/api/customers?test=0', { headers: as(owner) }).then(r => r.json()), cl1 = await fetch(BASE + '/api/customers?test=1', { headers: as(owner) }).then(r => r.json());
   const has = l => (Array.isArray(l) ? l : l.rows || []).some(c => c.name === 'Test Deposit');
   say('Test clients hidden by default, shown on request', !has(cl0) && has(cl1));
+  // the same rule holds in Insights: a client named "Test ..." with a booking never shows as a top or at-risk customer
+  const svc0 = await one('SELECT id FROM services WHERE business_id=$1 ORDER BY id LIMIT 1', [r.id]);
+  const tc = await one(`SELECT id FROM customers WHERE business_id=$1 AND name='Test Deposit'`, [r.id]);
+  await q(`INSERT INTO bookings (business_id, customer_id, service_id, starts_at, ends_at, status, price) VALUES ($1,$2,$3, now() - interval '3 days', now() - interval '3 days' + interval '1 hour', 'completed', 500)`, [r.id, tc.id, svc0.id]);
+  const ins = await fetch(BASE + '/api/insights?days=30', { headers: as(owner) }).then(r => r.json());
+  say('Insights top and at-risk lists leave test clients out', ![...(ins.customers?.top || []), ...(ins.customers?.atRisk || [])].some(c => /^test /i.test(c.name || '')));
   // merging a Test lab rehearsal into a real, unnamed client keeps the test name off the real client
   const realC = await one(`INSERT INTO customers (business_id, phone) VALUES ($1, '+34600111222') RETURNING id`, [r.id]);
   await q(`INSERT INTO customers (business_id, phone, name, contact_phone) VALUES ($1, 'test-lab-9-x', 'Test lab', '+34600111222')`, [r.id]);
