@@ -37,7 +37,8 @@
       ['Clients', { page: 'people', tab: 'clients' }],
       ['Win back', { own: 'growth', hidden: true }], // moved to Growth; kept so the index stays put
       ['Board', { page: 'people', tab: 'board', panes: ['board'], adv: true }],
-      ['Reviews', { page: 'support', tab: 'reviews', bare: true }]]],
+      ['Reviews', { page: 'support', tab: 'reviews', bare: true }],
+      ['Memberships', { own: 'members', tpl: ['gym'] }]]], // only for businesses that sell memberships
     ['growth', 'Growth', 'Bring new clients in and old ones back', [
       ['Overview', { own: 'growthhome' }],
       ['Win back', { page: 'people', tab: 'winback' }],
@@ -96,7 +97,7 @@
   // pages that were merged: [new page, tab index] for each old tab
   const MOVED = { studio: i => ['insights', 8 + i], train: i => ['pulse', 3 + i], lab: i => ['pulse', [8, 7, 9][i] ?? 7],
     marketing: i => i >= 4 ? ['growth', 6 + i - 4] : ['growth', i + 2],
-    customers: i => i === 1 ? ['growth', 1] : i >= 4 ? ['growth', i - 2] : ['customers', i] };
+    customers: i => i === 1 ? ['growth', 1] : i >= 5 ? ['growth', i - 2] : ['customers', i] }; // 4 = Memberships
   // the menu in four groups, each heading drawn before its first page
   const GROUP = {};
   const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Costs', 'costs'], ['Account & security', 's2fa'], ['Look', 'look'], ['Integrations', 12]];
@@ -132,7 +133,7 @@
       const tabs = PAGES.find(p => p[0] === id)[3];
       if (tabs.length > 1) {
         const sub = document.createElement('div'); sub.className = 'p10-sub'; sub.dataset.for = id; sub.hidden = true;
-        sub.innerHTML = tabs.map(([l], k) => `<button type="button" data-k="${k}">${e(l)}</button>`).join('');
+        sub.innerHTML = tabs.map(([l, o], k) => o?.tpl && !o.tpl.includes(window.MXBIZ?.template) ? '' : `<button type="button" data-k="${k}">${e(l)}</button>`).join('');
         sub.addEventListener('click', ev => { const t = ev.target.closest('[data-k]'); if (t) { ev.stopImmediatePropagation(); go(id, +t.dataset.k) } });
         pills.insertBefore(sub, $('#adminNav'));
       }
@@ -298,6 +299,7 @@
     if (key === 'aictl') { const s = page('aictl', 'AI control', 'Decide who answers your clients: MXAi or your team.', '<div id="aiRoot"></div>'); s.hidden = false; window.MXAiMode?.mount(s); }
     if (key === 'integrations') { const s = page('integrations', 'Integrations', '', '<div id="igRoot"></div>'); s.hidden = false; window.PulseIntegrations?.mount(s); }
     if (key === 'report') { const s = page('report', 'Insights', '', '<div id="rpRoot" class="rp"></div>'); s.hidden = false; window.PVReport?.(s.querySelector('#rpRoot')); }
+    if (key === 'members') { const s = page('members', 'Customers', '', '<div id="mbRoot" class="rp"></div>'); s.hidden = false; window.PVMembers?.(s.querySelector('#mbRoot')); }
     if (key === 'finance') { const s = page('finance', 'Insights', '', '<div id="fnRoot" class="rp"></div>'); s.hidden = false; window.PVFinance?.(s.querySelector('#fnRoot')); }
     if (key === 'aiperf') { const s = page('aiperf', 'AI Control', '', '<div id="apRoot" class="rp"></div>'); s.hidden = false; window.PVAIPerf?.(s.querySelector('#apRoot')); }
     if (key === 'growthhome') { const s = page('growthhome', 'Growth', '', '<div id="grRoot" class="rp"></div>'); s.hidden = false; window.PVGrowth?.(s.querySelector('#grRoot')); }

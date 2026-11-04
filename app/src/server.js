@@ -12,6 +12,7 @@ import { mountAgents } from './agents.js';
 import { mountTeam } from './team.js';
 import { mountPulse } from './pulse.js';
 import { mountFinance } from './finance.js';
+import { mountMemberships } from './memberships.js';
 import { mountConnectors, mountPublicCatalog, NAV } from './connectors.js';
 import { mountMarketing } from './marketing.js';
 import { mountIntegrations, mountPublicApi } from './integrations.js';
@@ -574,7 +575,7 @@ app.get('/api/calendar', wrap(async (req, res) => {
   const from = parseLocal(req.query.from), to = parseLocal(req.query.to);
   if (isNaN(from) || isNaN(to)) return res.status(400).json({ error: 'Pick a date range.' });
   const bookings = await q(`SELECT b.id, ${LOCAL('b.starts_at')} AS start, ${LOCAL('b.ends_at')} AS "end", b.price::float, b.status, b.source,
-      b.service_id, b.conversation_id, b.notes, b.coupon_code, b.reminder_status, s.name service, cu.name customer, cu.phone
+      b.service_id, b.conversation_id, b.notes, b.coupon_code, b.reminder_status, s.name service, s.capacity spots, cu.name customer, cu.phone
       FROM bookings b JOIN services s ON s.id=b.service_id JOIN customers cu ON cu.id=b.customer_id
       WHERE b.business_id=$1 AND b.starts_at < $3 AND b.ends_at > $2 ORDER BY b.starts_at`, [BIZ(), from, to]);
   const timeOff = await q(`SELECT id, ${LOCAL('starts_at')} AS start, ${LOCAL('ends_at')} AS "end", reason FROM time_off
@@ -663,6 +664,7 @@ setSenders({ sendWhatsApp, sendTelegram }); startAutopilot();
 mountTeam(app, () => BIZ(), { sendWhatsApp, sendTelegram, audit });
 mountPulse(app, () => BIZ());
 mountFinance(app, () => BIZ());
+mountMemberships(app, () => BIZ());
 mountConnectors(app, () => BIZ());
 mountMarketing(app, () => BIZ());
 mountIntegrations(app, () => BIZ());

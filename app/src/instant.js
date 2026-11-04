@@ -13,14 +13,16 @@ const PACKS = {
     vertical: 'gym', assistant: 'Max', capacity: 12, tone: 'energetic',
     hours: { 0: [['08:00', '14:00']], 1: [['06:00', '23:00']], 2: [['06:00', '23:00']], 3: [['06:00', '23:00']], 4: [['06:00', '23:00']], 5: [['06:00', '22:00']], 6: [['08:00', '20:00']] },
     team: 'Karim – strength and personal training\nMaya – yoga and mobility\nJad – HIIT and spin\nLea – nutrition coaching',
-    services: [['HIIT class', 12, 45, 'High-intensity group class, up to 12 people', 30], ['Spin class', 12, 45, 'Indoor cycling with music', 20], ['Yoga flow', 12, 60, 'All levels', 18],
-      ['Personal training', 40, 60, 'One-to-one with a coach', 18], ['Monthly membership', 60, 30, 'Unlimited gym floor, sign-up visit', 7], ['Nutrition consult', 35, 45, 'Plan and check-ins', 5], ['Free trial session', 0, 45, 'First visit on us', 9]],
+    services: [['HIIT class', 12, 45, 'High-intensity group class, up to 12 people', 30, 12], ['Spin class', 12, 45, 'Indoor cycling, 14 bikes', 20, 14], ['Yoga flow', 12, 60, 'All levels, up to 10 mats', 18, 10],
+      ['Personal training', 40, 60, 'One-to-one with a coach', 18], ['Membership sign-up visit', 0, 30, 'Tour, goals and first workout plan', 7], ['Nutrition consult', 35, 45, 'Plan and check-ins', 5], ['Free trial session', 0, 45, 'First visit on us', 9]],
     faqs: [['Do I need to book classes?', 'Yes, classes have 12 spots. Book here and we hold your place.'], ['What are your prices?', 'Membership is $60 a month. Classes are $12, or included with a membership.'],
       ['Is there parking?', 'Yes, free parking for members under the building.'], ['Can I freeze my membership?', 'Yes, up to 30 days a year. Message us the dates.']],
     costs: [['Rent', 'Premises', 'month', 1400], ['Coach salaries', 'Team', 'month', 2600], ['Equipment lease', 'Equipment', 'month', 350], ['Utilities', 'Premises', 'month', 250],
       ['Card fees', 'Payments', 'percent', 2.5], ['Towels and cleaning', 'Supplies', 'booking', 0.6], ['Instagram ads', 'Marketing', 'month', 200]],
     asks: ['Is there a spin class tonight?', 'How much is the monthly membership?', 'Can I book a free trial?', 'I want personal training 3 times a week', 'Do you have yoga on Sunday?', 'Can I freeze my membership for 2 weeks?'],
     peak: [7, 8, 18, 19, 20],
+    timetable: { 'HIIT class': [7, 18], 'Spin class': [8, 19], 'Yoga flow': [9, 20] },
+    plans: [['Monthly membership', 60, 30, 0.7], ['3-month membership', 160, 90, 0.2], ['Student monthly', 45, 30, 0.1]],
   },
 };
 const FIRST = ['Ali', 'Sara', 'Omar', 'Lina', 'Hadi', 'Nour', 'Rami', 'Yara', 'Karim', 'Dana', 'Fadi', 'Rita', 'Tarek', 'Maya', 'Ziad', 'Jana', 'Elie', 'Hiba', 'Samir', 'Lea', 'Rawan', 'Bilal', 'Mira', 'Joe'];
@@ -40,14 +42,15 @@ export async function instantDashboard({ template, name, city = 'Beirut', countr
   // services: the pack's list replaces the starter ones
   await q('UPDATE services SET active=false WHERE business_id=$1', [b.id]);
   const svc = [];
-  for (const [n, price, minutes, description, weight] of p.services) {
+  for (const [n, price, minutes, description, weight, cap = null] of p.services) {
     const s = await one('SELECT id FROM services WHERE business_id=$1 AND name=$2', [b.id, n]);
-    const id = s ? (await q('UPDATE services SET price=$2, minutes=$3, description=$4, active=true WHERE id=$1', [s.id, price, minutes, description]), s.id)
-      : (await one('INSERT INTO services (business_id, name, price, minutes, description) VALUES ($1,$2,$3,$4,$5) RETURNING id', [b.id, n, price, minutes, description])).id;
-    svc.push({ id, price, minutes, weight });
+    const id = s ? (await q('UPDATE services SET price=$2, minutes=$3, description=$4, capacity=$5, active=true WHERE id=$1', [s.id, price, minutes, description, cap]), s.id)
+      : (await one('INSERT INTO services (business_id, name, price, minutes, description, capacity) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id', [b.id, n, price, minutes, description, cap])).id;
+    svc.push({ id, name: n, price, minutes, weight, cap });
   }
   // replace earlier demo activity, then add members, chats and bookings for the last 60 days and the next 7
   await q("DELETE FROM bookings WHERE business_id=$1", [b.id]);
+  await q("DELETE FROM memberships WHERE business_id=$1", [b.id]);
   await q("DELETE FROM conversations WHERE business_id=$1", [b.id]);
   await q("DELETE FROM customers WHERE business_id=$1 AND phone LIKE 'demo-%'", [b.id]);
   const r = rng(b.id * 7919 + 1), members = [];
@@ -58,12 +61,14 @@ export async function instantDashboard({ template, name, city = 'Beirut', countr
   }
   const total = svc.reduce((s, x) => s + x.weight, 0), choose = () => { let k = r() * total; for (const s of svc) if ((k -= s.weight) < 0) return s; return svc[0]; };
   const channels = ['whatsapp', 'whatsapp', 'whatsapp', 'instagram', 'instagram', 'telegram'];
-  let n = 0;
+  let n = 0; const full = {};
   for (let d = -60; d <= 7; d++) {
     const perDay = Math.round((d > 0 ? 9 : 14) * (0.7 + r() * 0.6) * (new Date(Date.now() + d * 864e5).getDay() === 0 ? 0.5 : 1));
     for (let k = 0; k < perDay; k++) {
       const m = r() < 0.6 ? members.filter(x => x.loyal)[Math.floor(r() * members.filter(x => x.loyal).length)] : pick(members, r), s = choose();
-      const at = new Date(Date.now() + d * 864e5); at.setHours(r() < 0.65 ? pick(p.peak, r) : 9 + Math.floor(r() * 9), r() < 0.5 ? 0 : 30, 0, 0);
+      const at = new Date(Date.now() + d * 864e5), slot = p.timetable?.[s.name];
+      if (slot) at.setHours(pick(slot, r), 0, 0, 0); else at.setHours(r() < 0.65 ? pick(p.peak, r) : 9 + Math.floor(r() * 9), r() < 0.5 ? 0 : 30, 0, 0);
+      const ck = s.id + '@' + +at; if (s.cap && (full[ck] = (full[ck] || 0) + 1) > s.cap) continue;
       const status = d > 0 ? 'confirmed' : r() < 0.06 ? 'no_show' : r() < 0.08 ? 'cancelled' : 'completed';
       let conv = null;
       if (r() < 0.55) { // most bookings start as a chat the AI handled
@@ -83,7 +88,17 @@ export async function instantDashboard({ template, name, city = 'Beirut', countr
       await q(`INSERT INTO messages (conversation_id, role, text, created_at) VALUES ($1,'customer',$2,$3)`, [c, pick(p.asks, r), when]);
     }
   }
-  return { id: b.id, subdomain: sub, template: t.name, pages: t.pages, bookings: n, members: members.length };
+  let mem = 0;
+  for (const m of members) {
+    if (!p.plans || r() > (m.loyal ? 0.9 : 0.45)) continue;
+    let k = r(), plan = p.plans[0]; for (const x of p.plans) if ((k -= x[3]) < 0) { plan = x; break; }
+    const [pname, price, every] = plan, started = 20 + Math.floor(r() * 160), status = r() < 0.08 ? 'paused' : r() < 0.06 ? 'cancelled' : 'active';
+    let paid = new Date(Date.now() - started * 864e5);
+    const id = (await one(`INSERT INTO memberships (business_id, customer_id, plan, price, every_days, status, started_at) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`, [b.id, m.id, pname, price, every, status, paid])).id;
+    while (paid < Date.now()) { await q('INSERT INTO membership_payments (membership_id, business_id, amount, paid_at) VALUES ($1,$2,$3,$4)', [id, b.id, price, paid]); paid = new Date(+paid + every * 864e5); }
+    await q('UPDATE memberships SET renews_at=$2 WHERE id=$1', [id, paid]); mem++;
+  }
+  return { id: b.id, subdomain: sub, memberships: mem, template: t.name, pages: t.pages, bookings: n, members: members.length };
 }
 
 if (process.argv[1]?.endsWith('instant.js')) {

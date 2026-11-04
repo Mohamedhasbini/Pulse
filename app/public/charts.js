@@ -729,3 +729,39 @@
     window.MXStudio?.decorate(box, id, sub); // edit or hide any built-in chart
   };
 })();
+
+// Customers › Memberships: who pays every month, who renews soon, and who stopped coming (likely to cancel)
+window.PVMembers = async root => {
+  const U = window.MXUI; if (!root || !U) return;
+  const e = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const money = n => '$' + Math.round(n || 0).toLocaleString('en-US');
+  const day = d => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '–';
+  const ago = d => { if (!d) return 'never'; const n = Math.floor((Date.now() - new Date(d)) / 864e5); return n < 1 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`; };
+  const draw = async () => {
+    const r = await fetch('/api/memberships').then(x => x.ok ? x.json() : null).catch(() => null);
+    if (!r) { root.innerHTML = U.error('memberships', 'm:retry'); return; }
+    const s = r.summary, items = r.items, risk = m => m.status === 'active' && (!m.last_visit || Date.now() - new Date(m.last_visit) > 14 * 864e5);
+    const kpis = [
+      U.kpi({ title: 'Active members', value: String(s.active), ctx: `${s.paused} paused · ${s.cancelled_30} cancelled this month`, state: 'healthy' }),
+      U.kpi({ title: 'Monthly recurring', value: money(s.monthly), ctx: `${money(s.paid_30)} paid in the last 30 days`, state: 'improving' }),
+      U.kpi({ title: 'Renewing this week', value: String(s.renewing_7), ctx: 'payments due in 7 days', state: 'neutral' }),
+      U.kpi({ title: 'At risk', value: String(s.at_risk), ctx: 'active, but no visit in 14 days', state: s.at_risk ? 'warning' : 'healthy' })].join('');
+    const st = m => risk(m) ? '<span class="mb-st risk">At risk</span>' : `<span class="mb-st ${m.status}">${m.status[0].toUpperCase() + m.status.slice(1)}</span>`;
+    const act = m => m.status === 'cancelled' ? '' : `<span class="mb-act"><button type="button" data-pay="${m.id}">Record payment</button><button type="button" data-st="${m.id}" data-to="${m.status === 'paused' ? 'active' : 'paused'}">${m.status === 'paused' ? 'Resume' : 'Pause'}</button></span>`;
+    const rows = items.map(m => ({ cells: [{ html: `<b>${e(m.name || m.phone)}</b>` }, m.plan, money(m.price), day(m.renews_at), ago(m.last_visit), String(m.visits_30), { html: st(m) }, { html: act(m) }] }));
+    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${U.card({ title: `${items.length} memberships`, span: 12, size: 'wide', meta: 'sorted by next renewal',
+      body: U.table(['Member', 'Plan', 'Price', 'Renews', 'Last visit', 'Visits (30d)', 'Status', ''], rows, 'No memberships yet. They appear here when a member signs up.') })}</div>`;
+  };
+  root.onclick = async ev => {
+    const p = ev.target.closest('[data-pay]'), t = ev.target.closest('[data-st]');
+    if (ev.target.closest('[data-go="m:retry"]')) return draw();
+    if (!p && !t) return;
+    (p || t).disabled = true;
+    const ok = p ? await fetch(`/api/memberships/${p.dataset.pay}/pay`, { method: 'POST' }).then(x => x.ok)
+      : await fetch(`/api/memberships/${t.dataset.st}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: t.dataset.to }) }).then(x => x.ok);
+    U.toast?.(ok ? (p ? 'Payment recorded, renewal moved on' : 'Membership updated') : 'Could not save, try again');
+    draw();
+  };
+  root.innerHTML = `<div class="mx-grid">${[1, 2, 3, 4].map(() => U.card({ title: ' ', size: 'compact', span: 3, body: U.loading(2) })).join('')}</div>`;
+  draw();
+};

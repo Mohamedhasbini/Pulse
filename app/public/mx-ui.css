@@ -1123,3 +1123,18 @@ html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log button:not(.pc-more)
 .cn-c em{font-style:normal;font-size:11.5px;padding:3px 8px;border-radius:999px;color:var(--mx-mute);background:var(--mx-line,#eee)}
 .cn-c.live em{color:var(--mx-ink)}.cn-c.on em{color:var(--mx-ok,#16a34a)}
 @media (max-width:700px){.cn-f{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.cn-f button{flex:none;min-height:0;white-space:nowrap}}
+
+/* Customers › Memberships: status pills and row actions */
+.mb-st{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--mx-raise);color:var(--mx-mute)}
+.mb-st.active{background:color-mix(in srgb,var(--mx-ok,#22c55e) 18%,transparent);color:var(--mx-ok,#15803d)}
+.mb-st.risk{background:color-mix(in srgb,var(--mx-warn,#f59e0b) 22%,transparent);color:#b45309}
+:root[data-theme="dark"] .mb-st.risk{color:#fbbf24}
+.mb-act{display:inline-flex;gap:6px;white-space:nowrap}
+.mb-act button{all:unset;cursor:pointer;padding:5px 10px;border-radius:999px;font-size:12px;background:var(--mx-raise);color:var(--mx-ink)}
+:root[data-theme="light"] .mb-act button{background:#fff;border:1px solid #e5e5e5}
+.mb-act button:focus-visible{outline:2px solid var(--mx-s2);outline-offset:2px}.mb-act button:disabled{opacity:.5}
+
+/* Calendar: a class with spots is one block with a fill bar (8/12 booked) */
+.gc-class .gc-spots{display:block;height:4px;border-radius:99px;background:color-mix(in srgb,var(--c) 22%,transparent);margin:3px 0 2px;overflow:hidden}
+.gc-class .gc-spots i{display:block;height:100%;background:var(--c);border-radius:99px}
+.gc-class.full small{font-weight:600}

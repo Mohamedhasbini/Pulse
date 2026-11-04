@@ -470,3 +470,11 @@ CREATE TABLE IF NOT EXISTS testimonials (id SERIAL PRIMARY KEY, quote TEXT NOT N
 
 -- which dashboard template a business runs (connectors.js TEMPLATES): decides the pages it sees
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS template TEXT;
+
+-- memberships: recurring plans; every payment is a row so Finance counts it when paid
+CREATE TABLE IF NOT EXISTS memberships (id SERIAL PRIMARY KEY, business_id INT REFERENCES businesses(id) ON DELETE CASCADE, customer_id INT REFERENCES customers(id) ON DELETE CASCADE,
+  plan TEXT NOT NULL, price NUMERIC NOT NULL DEFAULT 0, every_days INT NOT NULL DEFAULT 30, status TEXT NOT NULL DEFAULT 'active',
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(), renews_at TIMESTAMPTZ);
+CREATE TABLE IF NOT EXISTS membership_payments (id SERIAL PRIMARY KEY, membership_id INT REFERENCES memberships(id) ON DELETE CASCADE,
+  business_id INT REFERENCES businesses(id) ON DELETE CASCADE, amount NUMERIC NOT NULL, paid_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS membership_payments_biz ON membership_payments (business_id, paid_at);

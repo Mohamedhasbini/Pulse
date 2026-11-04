@@ -4,10 +4,11 @@
 // from bookings that happened and were not cancelled; its channel is the chat's channel for AI bookings, otherwise
 // how the booking was made. Every figure is for the chosen period and the same length of time before it.
 import { q, one } from './db.js';
+import { membershipIncome } from './memberships.js';
 
 const wrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 const BASIS = ['month', 'percent', 'booking'];
-const CHANNEL = { whatsapp: 'WhatsApp', instagram: 'Instagram', telegram: 'Telegram', web: 'Website chat', webook: 'WeBook app', messenger: 'Messenger', manual: 'Walk-in and phone', ai: 'AI chat', page: 'Booking page', test: 'Test lab' };
+const CHANNEL = { membership: 'Memberships', whatsapp: 'WhatsApp', instagram: 'Instagram', telegram: 'Telegram', web: 'Website chat', webook: 'WeBook app', messenger: 'Messenger', manual: 'Walk-in and phone', ai: 'AI chat', page: 'Booking page', test: 'Test lab' };
 
 // one cost line, cleaned: name, category, fixed or variable, basis and amount, and where it is paid (optional)
 const clean = c => {
@@ -21,7 +22,8 @@ async function period(B, from, to) {
   const rows = await q(`SELECT b.price::float AS price, s.name AS service, COALESCE(c.channel, b.source, 'manual') AS ch
       FROM bookings b LEFT JOIN services s ON s.id=b.service_id LEFT JOIN conversations c ON c.id=b.conversation_id
       WHERE b.business_id=$1 AND b.status NOT IN ('cancelled','no_show') AND b.starts_at >= $2 AND b.starts_at < $3`, [B, from, to]);
-  return { rows, revenue: rows.reduce((s, r) => s + (r.price || 0), 0), bookings: rows.length };
+  rows.push(...await membershipIncome(B, from, to)); // membership payments count as income on the day they were paid
+  return { rows, revenue: rows.reduce((s, r) => s + (r.price || 0), 0), bookings: rows.filter(r => r.ch !== 'membership').length };
 }
 // what the costs come to for a stretch of time with this much revenue and this many bookings
 const costFor = (costs, days, revenue, bookings) => costs.map(c => ({ ...c,

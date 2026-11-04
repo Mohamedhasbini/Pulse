@@ -80,8 +80,18 @@ window.PulseCal = (() => {
     html += `<div class="gc-times">${Array.from({ length: h1 - h0 }, (_, i) => `<span style="top:${i * rowH}px">${p2(h0 + i)}:00</span>`).join('')}</div>`;
     for (let i = 0; i < days; i++) {
       const d = add(s, i), k = key(d);
-      const blocks = live().filter(b => b.start.slice(0, 10) === k).map(b => {
-        const a = parse(b.start), z = parse(b.end), top = (a.getHours() - h0 + a.getMinutes() / 60) * rowH, h = Math.max(18, (z - a) / 36e5 * rowH - 2);
+      const groups = [], seen = {};
+      live().filter(b => b.start.slice(0, 10) === k).forEach(b => {
+        if (!(b.spots > 1)) return groups.push(b);
+        const g = seen[b.service + b.start]; if (g) { g.people.push(b); return; }
+        groups.push(seen[b.service + b.start] = { ...b, people: [b] });
+      });
+      const blocks = groups.map(b => {
+        const a = parse(b.start), z = parse(b.end);
+        if (b.people) { const top = (a.getHours() - h0 + a.getMinutes() / 60) * rowH, h = Math.max(18, (z - a) / 36e5 * rowH - 2), n = b.people.length, full = n >= b.spots;
+          return `<button type="button" class="gc-b gc-class${full ? ' full' : ''}" data-b="${b.id}" title="${e(b.people.map(p => p.customer).join(', '))}" style="top:${top}px;height:${h}px;--c:${svcColor(b.service)}">
+            <b>${e(b.service)}<small>, ${hm(a)}</small></b>${h >= 34 ? `<span class="gc-spots"><i style="width:${Math.min(100, n / b.spots * 100)}%"></i></span><small>${n}/${b.spots} ${full ? 'full' : 'booked'}</small>` : `<small>${n}/${b.spots}</small>`}</button>`; }
+        const top = (a.getHours() - h0 + a.getMinutes() / 60) * rowH, h = Math.max(18, (z - a) / 36e5 * rowH - 2);
         return `<button type="button" class="gc-b${b.status === 'no_show' ? ' faded' : ''}" data-b="${b.id}" style="top:${top}px;height:${h}px;--c:${svcColor(b.service)}">
           ${h < 34 ? `<b>${e(b.customer)}<small>, ${hm(a)}</small></b>` : `<b>${e(b.customer)}</b><small>${hm(a)} – ${hm(z)}</small>${h > 50 ? `<span>${e(b.service)}</span>` : ''}`}</button>`;
       }).join('');
