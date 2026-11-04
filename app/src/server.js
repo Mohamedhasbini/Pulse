@@ -30,6 +30,7 @@ import { mountCoach } from './coach.js';
 import { mountClientSites, siteOf, mergeSite, STYLES, SECTIONS, LANGS, validSubdomain, validDomain } from './sitegen.js';
 import { seedDemo, removeDemo } from './demo.js';
 import { startTelegram, sendTelegram, telegramStatus, connectTelegram, stopBot } from './telegram.js';
+import { mountInstagram, sendInstagram } from './instagram.js';
 import { notify, KINDS, ownerLinkCode } from './notify.js';
 import { unify, unifyAll } from './customers.js';
 import { insights } from './insights.js';
@@ -66,6 +67,9 @@ app.post('/webhook/whatsapp', async (req, res) => {
 });
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
+
+// ---------- Instagram DMs (public, protected by each business's Meta app signature) ----------
+mountInstagram(app, handleMessage);
 
 // ---------- WhatsApp through Kapso (public, protected by Kapso's signature) ----------
 app.post('/webhook/kapso', async (req, res) => {
@@ -768,6 +772,7 @@ async function notifyCustomer(conversationId, text) {
   await q('UPDATE conversations SET updated_at=now() WHERE id=$1', [c.id]);
   if (c.channel === 'whatsapp') await sendWhatsApp(c.wa_phone_number_id, c.phone, text);
   if (c.channel === 'telegram') await sendTelegram(c.telegram_chat_id, text, c.business_id);
+  if (c.channel === 'instagram') await sendInstagram(c.business_id, c.phone, text);
 }
 
 app.get('/api/requests', wrap(async (req, res) => {
@@ -842,6 +847,7 @@ async function staffReply(conversationId, text) {
   let sent = { ok: true };
   if (c.channel === 'whatsapp') sent = await sendWhatsApp(c.wa_phone_number_id, c.phone, text);
   if (c.channel === 'telegram') sent = await sendTelegram(c.telegram_chat_id, text, c.business_id);
+  if (c.channel === 'instagram') sent = await sendInstagram(c.business_id, c.phone, text);
   await q(`INSERT INTO messages (conversation_id, role, text, failed) VALUES ($1,'staff',$2,$3)`, [c.id, text, !sent.ok]);
   await q(`UPDATE conversations SET updated_at=now(), needs_attention=false WHERE id=$1`, [c.id]);
   return { ok: sent.ok, warning: sent.ok ? null : `Saved, but not delivered: ${sent.reason}` };
@@ -1203,7 +1209,7 @@ async function segmentOf(seg = {}, everyone = false) {
 function marketingRoute(c) {
   if (c.channel === 'telegram' && c.telegram_chat_id) return 'telegram';
   if (c.channel === 'webook') return 'webook';
-  if (c.channel === 'whatsapp') return c.last_msg && Date.now() - new Date(c.last_msg) < 23.5 * 3600e3 ? 'whatsapp' : null;
+  if (c.channel === 'whatsapp' || c.channel === 'instagram') return c.last_msg && Date.now() - new Date(c.last_msg) < 23.5 * 3600e3 ? c.channel : null;
   return null;
 }
 // Campaign studio: five ready-to-send drafts built from this business's own numbers. Each has its audience (the same
@@ -1264,6 +1270,7 @@ app.post('/api/marketing/send', wrap(async (req, res) => {
     let status = recent ? 'skipped: had an offer today' : route ? 'sent' : 'skipped: not reachable now';
     if (route === 'telegram') { const r = await sendTelegram(c.telegram_chat_id, text, BIZ()); if (!r.ok) status = 'failed: ' + r.reason; }
     if (route === 'whatsapp') { const r = await sendWhatsApp(biz.wa_phone_number_id, c.phone, text); if (!r.ok) status = 'failed: ' + r.reason; }
+    if (route === 'instagram') { const r = await sendInstagram(BIZ(), c.phone, text); if (!r.ok) status = 'failed: ' + r.reason; }
     if (route && status === 'sent') {
       await q(`INSERT INTO messages (conversation_id, role, text, source) VALUES ($1,'staff',$2,'campaign')`, [c.conv_id, text]);
       await q('UPDATE conversations SET updated_at=now() WHERE id=$1', [c.conv_id]);
@@ -1346,6 +1353,8 @@ if (LIVE) startAiQueue(async ({ channel, businessId, phone, reply, options }) =>
   } else if (channel === 'telegram') {
     const c = await one('SELECT telegram_chat_id FROM customers WHERE business_id=$1 AND phone=$2', [businessId, phone]);
     if (c?.telegram_chat_id) await sendTelegram(c.telegram_chat_id, reply, businessId, options);
+  } else if (channel === 'instagram') {
+    await sendInstagram(businessId, phone, reply, options);
   }
 });
 await sealExistingSecrets().catch(e => console.error('Encrypt secrets:', e.message));

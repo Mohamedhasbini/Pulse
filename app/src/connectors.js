@@ -10,7 +10,7 @@ export const CONNECTORS = [
   C('whatsapp', 'WhatsApp', 'channel', 'Clients chat and book on your WhatsApp number.', 'live', 'whatsapp'),
   C('telegram', 'Telegram', 'channel', 'A Telegram bot answers and books.', 'live', 'telegram'),
   C('email', 'Email', 'channel', 'Confirmations and reminders from your domain.', 'live', 'resend'),
-  C('instagram', 'Instagram', 'channel', 'Direct messages answered and booked.'),
+  C('instagram', 'Instagram', 'channel', 'Direct messages answered and booked.', 'live', 'instagram'),
   C('messenger', 'Messenger', 'channel', 'Facebook page messages in the same inbox.'),
   C('tiktok', 'TikTok', 'channel', 'Messages and leads from TikTok.'),
   C('line', 'LINE', 'channel', 'LINE official account chats.'),
