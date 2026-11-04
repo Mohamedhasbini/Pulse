@@ -169,15 +169,38 @@ const VIEWS = {
   campaigns: `SELECT id, name, message, sent, skipped, created_at FROM public.campaigns WHERE business_id=$1`,
   time_off: `SELECT id, starts_at, ends_at, reason FROM public.time_off WHERE business_id=$1`,
 };
-let REAL_TABLES = null;
-async function safeQuery(B, sql) {
+// Allowlist, not blocklist: Postgres has thousands of functions (schema_to_xml, table_to_xml, ...) and a list of
+// forbidden ones always misses one that reads other businesses' tables. Anything called like a function must be one
+// of these, and a ::cast may only name a plain type (a 'users'::regclass cast would reach a table by its name).
+const CALLS = new Set(('count sum avg min max round floor ceil ceiling abs coalesce nullif greatest least date_trunc date_part extract '
+  + 'to_char to_date to_timestamp now age make_interval lower upper initcap length trim btrim ltrim rtrim left right substring substr '
+  + 'position strpos replace concat concat_ws split_part string_agg array_agg bool_and bool_or every percentile_cont percentile_disc '
+  + 'mode stddev variance row_number rank dense_rank ntile lag lead first_value last_value generate_series '
+  // SQL words that are followed by a bracket without being a call
+  + 'select from where and or not in exists any all some as on join using over filter values within group by partition '
+  + 'when then else case is between like ilike lateral union intersect except distinct having order limit offset with interval').split(' '));
+const TYPES = new Set('int int4 int8 integer bigint smallint numeric decimal float float4 float8 real double precision text varchar char date time timestamp timestamptz interval boolean bool'.split(' '));
+export function fenceSql(sql) {
   sql = String(sql || '').trim().replace(/;\s*$/, '');
   if (!/^(select|with)\b/i.test(sql)) return { error: 'Only one SELECT query is allowed.' };
-  if (/;|--|\/\*/.test(sql)) return { error: 'One statement only, no comments.' };
-  if (/\b(insert|update|delete|merge|drop|alter|create|grant|revoke|truncate|copy|call|do|execute|vacuum|analyze|set|reset|listen|notify|lock|prepare|refresh|security|into)\b/i.test(sql)) return { error: 'Read-only: that keyword is not allowed.' };
-  if (/\b(pg_\w+|information_schema|current_setting|set_config|dblink\w*|lo_\w+|version|inet_\w+|txid_\w+|query_to_xml\w*|xpath)\b|\bpublic\s*\.|"/i.test(sql)) return { error: 'System functions, schema names and quoted names are not allowed.' };
+  if (/;|--|\/\*|\$|\\|"/.test(sql)) return { error: 'One statement only: no comments, quoted names or $ strings.' };
+  // what is outside quotes is the code: string contents can't call anything
+  const code = sql.replace(/'(?:[^']|'')*'/g, "''");
+  if (/'/.test(code.replace(/''/g, ''))) return { error: 'A quote is not closed.' };
+  if (/\b(insert|update|delete|merge|drop|alter|create|grant|revoke|truncate|copy|call|do|execute|vacuum|analyze|set|reset|listen|notify|lock|prepare|refresh|security|into|table|current_user|session_user|current_role|current_schema|current_catalog|current_database|user)\b/i.test(code)) return { error: 'Read-only: that keyword is not allowed.' };
+  if (/\bpg_\w+|\binformation_schema\b|\w\s*\.\s*\w+\s*\(|\bpublic\s*\./i.test(code)) return { error: 'System functions and schema names are not allowed.' };
+  for (const [, fn] of code.toLowerCase().matchAll(/([a-z_][a-z0-9_]*)\s*\(/g)) if (!CALLS.has(fn)) return { error: `The function ${fn}() is not allowed here.` };
+  for (const [, ty] of code.toLowerCase().matchAll(/::\s*([a-z_][a-z0-9_]*)/g)) if (!TYPES.has(ty)) return { error: `Casting to ${ty} is not allowed here.` };
+  if (/::\s*[^a-z\s]/i.test(code)) return { error: 'Only simple casts like ::int or ::date.' };
+  if (/\bcast\s*\(/i.test(code)) return { error: 'Use ::type instead of CAST.' };
+  return { sql, words: new Set(code.toLowerCase().match(/[a-z_][a-z0-9_]*/g) || []) };
+}
+let REAL_TABLES = null;
+async function safeQuery(B, raw) {
+  const f = fenceSql(raw);
+  if (f.error) return { error: f.error };
+  const { sql, words } = f;
   REAL_TABLES ||= new Set((await q(`SELECT table_name FROM information_schema.tables WHERE table_schema='public'`)).map(r => r.table_name));
-  const words = new Set((sql.toLowerCase().match(/[a-z_][a-z0-9_]*/g) || []));
   const bad = [...words].filter(w => REAL_TABLES.has(w) && !VIEWS[w]);
   if (bad.length) return { error: `Only these tables can be used: ${Object.keys(VIEWS).join(', ')}.` };
   const used = Object.keys(VIEWS).filter(v => words.has(v));
@@ -459,7 +482,10 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
     res.json({ team: Object.entries(TEAM).map(([id, e]) => ({ id, name: e.name, role: e.title || e.role, avatar: e.avatar, skills: e.skills })), calls_left: Math.max(0, DAILY_CAP - used.n), cap: DAILY_CAP });
   }));
   app.post('/api/team/ask', wrap(async (req, res) => {
-    const B = await biz(), convo = (Array.isArray(req.body.messages) ? req.body.messages : []).slice(-10).filter(m => m && m.text);
+    // what the browser sends is only ever the owner's words or the employee's earlier replies: a "system" NOTE from the
+    // browser would let anyone steer the employee as if the app had said it
+    const B = await biz(), convo = (Array.isArray(req.body.messages) ? req.body.messages : []).slice(-10).filter(m => m && m.text)
+      .map(m => ({ role: m.role === 'owner' ? 'owner' : 'assistant', text: String(m.text) }));
     if (!convo.length || convo[convo.length - 1].role !== 'owner') return res.status(400).json({ error: 'Ask a question first.' });
     const e = TEAM[req.body.employee] ? req.body.employee : route(convo[convo.length - 1].text);
     const [used] = await q(USED_TODAY, [B.id]);
