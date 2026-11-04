@@ -84,7 +84,7 @@ body.dark{--ground:#0d0e0f;--body:#121314;--card:#1b1c1e;--nest:#242628;--ink:#f
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{text-align:left;font-weight:400;color:var(--meta);font-size:12px;padding:6px 4px}
 .tbl td{padding:10px 4px;border-top:1px solid var(--rule)}.tbl .n{text-align:right;font-variant-numeric:tabular-nums}
-.tbl tr.r:hover td{background:var(--nest)}
+.tbl tr.r{transition:background var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}.tbl tr.r:hover td{background:var(--nest)}
 .av{display:inline-block;width:26px;height:26px;border-radius:50%;vertical-align:middle;margin-right:10px;background:linear-gradient(135deg,#d6cfc4,#857c70)}
 .st{font-size:11.5px;padding:3px 10px;border-radius:99px;border:1px solid var(--rule);color:var(--ink2)}.st.k{background:var(--tag);color:var(--tag-ink);border-color:transparent}
 .money{color:var(--rev-ink);font-weight:500}
@@ -124,7 +124,7 @@ body.dark .ai{background:linear-gradient(160deg,#2c2e31,#1a1b1d)}
 .pin{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.07);font-size:16px}
 .pin input{all:unset;flex:1;font-size:16px}.pin kbd{font:500 11px "Geist Mono";padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.1)}
 .pgroup{padding:10px 8px}.pgroup h6{margin:4px 10px 6px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#7d8186}
-.pi{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;font-size:14px;cursor:pointer}.pi:hover,.pi.sel{background:rgba(255,255,255,.07)}
+.pi{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;font-size:14px;cursor:pointer}.pi{transition:background var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}.pi:hover,.pi.sel{background:rgba(255,255,255,.07)}
 .pi i{width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-style:normal;font-size:12px}.pi small{margin-left:auto;color:#7d8186}
 .pans{padding:16px 20px 20px;border-top:1px solid rgba(255,255,255,.07);display:none}.pans.on{display:block}
 .pans p{margin:0 0 10px;font-size:15px;line-height:1.5}.pans p em{font-family:var(--serif);font-size:17px}

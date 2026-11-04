@@ -98,7 +98,7 @@ html body .pv-c .pv-hb:first-of-type .pv-bar i:not(#_):not(#__),html body .pv-bu
 .pv-sbars .r>div{height:8px!important;gap:3px}.pv-sbars i{border-radius:999px!important}
 /* timeline lanes: slim pills */
 .pv-gantt .r>div{height:20px!important;background:transparent!important;border-bottom:1px dashed var(--pv-line)}.pv-gantt i{top:5px!important;bottom:5px!important;font-size:0!important;border-radius:999px!important;background:var(--pv-ink)!important;opacity:.8}
-.pv-gantt i:hover{opacity:1}
+.pv-gantt i:hover{opacity:1;transition:opacity var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 /* heatmaps: dots, not blocks */
 .pv-heat{gap:6px!important}.pv-heat b{height:auto!important;aspect-ratio:1;border-radius:50%!important;width:70%;justify-self:center;transform:scale(calc(.45 + var(--s,0.55)))}
 .heat i,.cc-heat i,.cv .vh i{border-radius:50%!important}
@@ -119,7 +119,7 @@ html body main .sg-bar i:first-child:not(#_){background:var(--pv-lime)!important
 html body main button.sg-row:not(#_)[aria-pressed="true"],html body main button.sg-row.on:not(#_),html body main button.sg-row:not(#_)[style*="background"]{background:#1b1e21!important;color:#eef0f2!important}
 html body main button.sg-row:not(#_):not(#__){--sel:#1b1e21}
 :root[data-theme="light"] body :is(.ptabs button[aria-pressed="true"],nav button[data-view][aria-current="true"],.sg-row[aria-current="true"]):not(#_):not(#__){background:#1b1e21!important;color:#eef0f2!important}
-:root[data-theme="light"] body main tbody tr:hover td:not(.hc):not(#_):not(#__){background:color-mix(in srgb,var(--pv-ink) 6%,transparent)!important}
+:root[data-theme="light"] body main tbody tr:hover td:not(.hc):not(#_):not(#__){background:color-mix(in srgb,var(--pv-ink) 6%,transparent)!important;transition:background var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 
 /* ===== personalise any page: My view bar, edit/hide on built-in charts, customise mode ===== */
 .st-mine{margin:16px 24px 0}

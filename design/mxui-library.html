@@ -28,7 +28,7 @@
 .mx-hd h3{margin:0;font-size:13px;font-weight:600;letter-spacing:.01em;color:var(--mx-ink2);flex:1;min-width:0}
 .mx-hd .mx-meta{font-size:12.5px;color:var(--mx-mute);white-space:nowrap}
 .mx-hd a,.mx-hd button.mx-link{all:unset;cursor:pointer;font-size:12.5px;color:var(--mx-ink2);white-space:nowrap}
-.mx-hd a:hover,.mx-hd button.mx-link:hover{color:var(--mx-ink)}
+.mx-hd a:hover,.mx-hd button.mx-link:hover{color:var(--mx-ink);transition:color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 .mx-num{font-size:32px;font-weight:500;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--mx-ink)}
 .mx-ctx{font-size:13px;color:var(--mx-ink2)}
 .mx-why{font-size:13px;color:var(--mx-mute);line-height:1.45}
@@ -45,7 +45,7 @@
 
 /* buttons */
 .mx-btn{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 14px;border-radius:99px;font-size:13px;font-weight:500;color:var(--mx-ink);border:1px solid var(--mx-line);background:transparent}
-.mx-btn:hover{background:var(--mx-raise)}.mx-btn:focus-visible,.mx-row:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+.mx-btn:hover{background:var(--mx-raise);transition:background var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}.mx-btn:focus-visible,.mx-row:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
 .mx-btn.pri{background:var(--mx-ink);color:var(--mx-surf);border-color:transparent}
 .mx-btn.sig{background:var(--mx-lime);color:#14181b;border-color:transparent}
 
@@ -119,8 +119,8 @@
 /* rows: a little air and a hover, like a list you can click */
 .mx-row{padding:11px 10px;margin:0 -10px;border-radius:12px;border-top:0}
 .mx-row+.mx-row{box-shadow:0 -1px 0 var(--mx-line)}
-.mx-row[role="button"]:hover{background:var(--mx-raise);box-shadow:none}
-.mx-row[role="button"]:hover+.mx-row{box-shadow:none}
+.mx-row[role="button"]:hover{background:var(--mx-raise);box-shadow:none;transition:background var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1)),box-shadow var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
+.mx-row[role="button"]:hover+.mx-row{box-shadow:none;transition:box-shadow var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 .mx-row .mx-time{font-weight:600;color:var(--mx-ink)}
 .mx-row .mx-val{font-weight:600}
 .mx-row .mx-btn{min-height:32px;padding:0 12px;font-size:12.5px;border-radius:10px}
@@ -152,7 +152,7 @@
 .pc-sugg button{display:grid!important;grid-template-columns:auto 1fr;column-gap:12px;align-items:start;padding:14px!important;border-radius:16px!important;
   background:var(--pc-raise);border-color:var(--pc-line)!important;box-shadow:0 1px 2px #0000000f}
 .pc-sugg button b{grid-column:2;margin:0 0 2px!important}
-.pc-sugg button:hover{border-color:var(--pc-line2)!important;transform:translateY(-1px)}
+.pc-sugg button:hover{border-color:var(--pc-line2)!important;transform:translateY(-1px);transition:border-color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1)),transform var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 .pc-sic{grid-row:span 2;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--pc-bg);border:1px solid var(--pc-line);color:var(--pc-ink);font-size:14px}
 .pc-main>header{border-bottom:1px solid var(--pc-line)}
 .pc-m.you .pc-b{border-radius:18px 18px 6px 18px!important}
@@ -170,11 +170,11 @@
 .ask-door{max-width:760px;margin:24px auto;display:flex;flex-direction:column;gap:12px}
 .ask-open{all:unset;box-sizing:border-box;cursor:text;display:flex;align-items:center;gap:12px;padding:18px 14px 18px 22px;border-radius:22px;background:var(--mx-surf);border:1px solid var(--mx-line);box-shadow:var(--mx-shadow);color:var(--mx-mute);font-size:15px}
 .ask-open span{flex:1}.ask-open b{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--mx-lime);color:#14181b}
-.ask-open:hover{border-color:var(--mx-ink2)}
+.ask-open:hover{border-color:var(--mx-ink2);transition:border-color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 .ask-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .ask-cards button{all:unset;box-sizing:border-box;cursor:pointer;padding:14px;border-radius:16px;background:var(--mx-surf);border:1px solid var(--mx-line);font-size:13px;color:var(--mx-mute);line-height:1.4}
 .ask-cards button b{display:block;color:var(--mx-ink);font-weight:600;margin-bottom:2px}
-.ask-cards button:hover{border-color:var(--mx-ink2)}
+.ask-cards button:hover{border-color:var(--mx-ink2);transition:border-color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 @media (max-width:767px){.ask-cards{grid-template-columns:1fr 1fr}}
 /* Insights › the ask bar: one composer row, the suggestions as small chips under it */
 :root .hx-ask:not(#_):not(#__){display:flex!important;flex-wrap:wrap;align-items:center;gap:8px!important;padding:12px!important;border-radius:20px!important;background:var(--mx-surf)!important;border:1px solid var(--mx-line)!important;box-shadow:var(--mx-shadow)!important;max-width:760px}
@@ -198,7 +198,7 @@
 /* ── library additions: segmented, chip, usage, bar list, funnel, radial, spark bars, stages, toast, thinking */
 .mx-seg{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:var(--mx-raise)}
 .mx-seg button{all:unset;cursor:pointer;padding:6px 12px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mx-mute);transition:color .15s,background-color .15s}
-.mx-seg button:hover{color:var(--mx-ink)}
+.mx-seg button:hover{color:var(--mx-ink);transition:color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 .mx-seg button[aria-selected="true"]{background:var(--mx-surf);color:var(--mx-ink);box-shadow:0 0 0 1px var(--mx-line),0 1px 2px rgba(0,0,0,.08)}
 .mx-seg button:focus-visible{outline:2px solid var(--mx-ink);outline-offset:1px}
 .mx-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:500;background:var(--mx-raise);color:var(--mx-ink2);white-space:nowrap}
