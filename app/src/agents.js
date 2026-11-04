@@ -4,6 +4,7 @@
 // window after the client's last message, and an agent never contacts the same client twice within its cool-down.
 // Clients who can't be reached by the app get a ready WhatsApp link the owner can send from their own phone.
 import { q, one } from './db.js';
+import { tzOf, wall, dayStart } from './clock.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const first = n => String(n || '').trim().split(/\s+/)[0] || 'there';
@@ -30,16 +31,17 @@ const waLink = (phone, text) => /^\+?\d{7,15}$/.test(String(phone).replace(/[\s-
 
 // free share of each of the next 7 open days, from opening hours and confirmed bookings
 async function quietDays(biz) {
-  const b = await one('SELECT hours FROM businesses WHERE id=$1', [biz]);
-  const booked = await q(`SELECT (starts_at AT TIME ZONE 'UTC')::date AS d, sum(extract(epoch FROM ends_at - starts_at)/60)::int AS m FROM bookings
-      WHERE business_id=$1 AND status='confirmed' AND starts_at > now() AND starts_at < now() + interval '8 days' GROUP BY 1`, [biz]);
+  const b = await one('SELECT hours, timezone FROM businesses WHERE id=$1', [biz]), tz = tzOf(b);
+  // booked minutes per day of the business's own calendar (was grouped by UTC day, so evening bookings landed on the wrong day)
+  const booked = await q(`SELECT to_char(starts_at AT TIME ZONE $2, 'YYYY-MM-DD') AS d, sum(extract(epoch FROM ends_at - starts_at)/60)::int AS m FROM bookings
+      WHERE business_id=$1 AND status='confirmed' AND starts_at > now() AND starts_at < now() + interval '8 days' GROUP BY 1`, [biz, tz]);
   const out = [];
   for (let i = 1; i <= 7; i++) {
-    const d = new Date(); d.setDate(d.getDate() + i);
-    const open = (b.hours?.[d.getDay()] || []).reduce((a, [s, e]) => { const m = t => +t.split(':')[0] * 60 + +(t.split(':')[1] || 0); return a + m(e) - m(s); }, 0);
+    const day = wall(dayStart(new Date(), i, tz), tz);
+    const open = (b.hours?.[day.wd] || []).reduce((a, [s, e]) => { const m = t => +t.split(':')[0] * 60 + +(t.split(':')[1] || 0); return a + m(e) - m(s); }, 0);
     if (!open) continue;
-    const used = booked.find(x => new Date(x.d).toDateString() === d.toDateString())?.m || 0;
-    out.push({ day: DAY[d.getDay()], date: d.toISOString().slice(0, 10), pct: Math.round(used / open * 100) });
+    const used = booked.find(x => x.d === day.date)?.m || 0;
+    out.push({ day: DAY[day.wd], date: day.date, pct: Math.round(used / open * 100) });
   }
   return out;
 }

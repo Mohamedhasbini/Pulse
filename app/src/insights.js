@@ -2,6 +2,7 @@
 import { q, one } from './db.js';
 import { loadBusiness } from './brain.js';
 import { dayRanges } from './slots.js';
+import { tzOf, dayStart } from './clock.js';
 
 // Groups customer messages into topics (English + Arabic + Lebanese chat spelling). First match wins.
 const TOPICS = [
@@ -120,8 +121,8 @@ export async function insights(BIZ, days) {
 
   // Capacity used = booked minutes / (open minutes × customers at the same time), past part of the period and next 7 days.
   const openMinutes = (from, to) => {
-    let m = 0; const d = new Date(from); d.setHours(0, 0, 0, 0);
-    for (; d < to; d.setDate(d.getDate() + 1)) for (const [a, b] of dayRanges(biz, d)) m += b - a;
+    let m = 0; const tz = tzOf(biz); // the business's own days
+    for (let d = dayStart(from, 0, tz); d < to; d = dayStart(d, 1, tz)) for (const [a, b] of dayRanges(biz, d)) m += b - a;
     return m * (biz.capacity || 1);
   };
   const [bookedPast] = await q(`SELECT COALESCE(sum(extract(epoch FROM ends_at - starts_at)/60),0)::float AS m FROM bookings b

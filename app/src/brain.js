@@ -12,6 +12,7 @@ import { emit } from './live.js';
 import { unify } from './customers.js';
 import { hasFeature } from './features.js';
 import { availability, isFree, freeSlots, bufferOf, label, hoursText, localDate, parseLocal } from './slots.js';
+import { inZone, wall, daysBetween, fmtDate, fmtTime } from './clock.js';
 
 const looksLikeQuestion = t => /[?؟]/.test(t) || /^\s*(how|what|when|where|which|who|why|do|does|did|is|are|can|could|will|would|should|have|has|shu|sho|kif|wen|ade|qué|cómo|cuándo|dónde|cuánto|tienen|hay|هل|كم|شو|كيف|وين|متى|ماذا|ما)(?=\s|$)/iu.test(t);
 const FALLBACK = 'Thanks for your message! A team member will get back to you shortly.';
@@ -52,7 +53,12 @@ async function openConversation(bizId, customerId, channel) {
 }
 
 // queued: a second pass from the AI queue; the customer's message is already saved and acknowledged.
-export async function handleMessage({ businessId, phone, name, text, channel = 'whatsapp', waId = null, queued = false }) {
+// Every message is handled on its business's clock (clock.js): days, hours and labels in that business's time zone.
+export async function handleMessage(args) {
+  const z = await one('SELECT timezone FROM businesses WHERE id=$1', [args.businessId]);
+  return inZone(z?.timezone, () => handle(args));
+}
+async function handle({ businessId, phone, name, text, channel = 'whatsapp', waId = null, queued = false }) {
   const biz = await loadBusiness(businessId);
   const customer = await one(
     `INSERT INTO customers (business_id, phone, name) VALUES ($1,$2,$3)
@@ -616,8 +622,8 @@ const SITE = (process.env.PUBLIC_URL || 'https://app.nexfoyz.dev').replace(/\/$/
 function confirmation(biz, b, aiReply, moved = false) {
   const ar = AR.test(aiReply || '');
   const lang = ar ? 'ar' : 'en-GB';
-  const date = b.start.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const t = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const date = fmtDate(b.start, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }, lang);
+  const t = d => fmtTime(d);
   const cur = biz.currency || 'USD';
   const money = b.coupon && b.listPrice !== b.price
     ? `${b.price} ${cur} (${ar ? 'بدلاً من' : 'was'} ${b.listPrice}, ${ar ? 'كود' : 'code'} ${b.coupon})` : `${b.price} ${cur}`;
@@ -663,34 +669,29 @@ function quickSlots(biz, bookings, timeOff) {
     const days = [...byDay.values()].slice(0, 3), pick = [];
     days.forEach((list, i) => {
       const want = target[i];
-      pick.push(list.reduce((best, t) => Math.abs(t.getHours() * 60 + t.getMinutes() - want) < Math.abs(best.getHours() * 60 + best.getMinutes() - want) ? t : best, list[0]));
+      pick.push(list.reduce((best, t) => Math.abs(wall(t).min - want) < Math.abs(wall(best).min - want) ? t : best, list[0]));
     });
     // fewer than 3 open days ahead: fill with other times on those days
     for (const list of days) for (const t of list) { if (pick.length >= 3) break; if (pick.every(p => Math.abs(t - p) >= 120 * 60000)) pick.push(t); }
     pick.sort((a, b) => a - b);
-    out[s.name] = pick.map(t => ({ label: slotLabel(t), slot: `${localDate(t)} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}` }));
+    out[s.name] = pick.map(t => ({ label: slotLabel(t), slot: `${localDate(t)} ${wall(t).hm}` }));
   }
   return out;
 }
 // The next open days, for "Another day": short labels the customer can tap.
 function openDays(biz, bookings, timeOff) {
   const days = [];
-  for (const a of availability(biz, bookings, timeOff, 21)) { if (a.free && !/closed|fully booked/.test(a.free) && days.length < 10) days.push(dayLabel(new Date(a.date + 'T12:00'))); }
+  for (const a of availability(biz, bookings, timeOff, 21)) { if (a.free && !/closed|fully booked/.test(a.free) && days.length < 10) days.push(dayLabel(parseLocal(a.date + 'T12:00'))); }
   return days;
 }
+// "Today", "Tomorrow", "Mon 26 Oct" on the business's calendar
 function dayLabel(t) {
-  const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d = new Date(t); d.setHours(0, 0, 0, 0);
-  const n = Math.round((d - d0) / 864e5);
-  return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${t.toLocaleDateString('en-GB', { weekday: 'short' })} ${t.getDate()} ${t.toLocaleDateString('en-GB', { month: 'short' })}`;
+  const n = daysBetween(new Date(), t);
+  return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${fmtDate(t, { weekday: 'short' })} ${wall(t).d} ${fmtDate(t, { month: 'short' })}`;
 }
 // "Today 14:00", "Tomorrow 10:30", "Mon 26 Oct 17:00": short enough for a WhatsApp button.
 function slotLabel(t) {
-  const hm = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
-  const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d = new Date(t); d.setHours(0, 0, 0, 0);
-  const days = Math.round((d - d0) / 864e5);
-  if (days === 0) return `Today ${hm}`;
-  if (days === 1) return `Tomorrow ${hm}`;
-  return `${t.toLocaleDateString('en-GB', { weekday: 'short' })} ${t.getDate()} ${t.toLocaleDateString('en-GB', { month: 'short' })} ${hm}`;
+  return `${dayLabel(t)} ${wall(t).hm}`;
 }
 // Choices the customer can tap: short, unique, at most 10; none once a booking is confirmed.
 export function cleanOptions(list) {

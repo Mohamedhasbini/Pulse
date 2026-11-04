@@ -7,7 +7,8 @@ import { notify } from './notify.js';
 import { unify } from './customers.js';
 import { q, one, withBusinessLock } from './db.js';
 import { loadBusiness, checkCoupon } from './brain.js';
-import { dayRanges, isFree, bufferOf, parseLocal, localStamp, localDate, label } from './slots.js';
+import { dayRanges, isFree, bufferOf, parseLocal, localStamp, localDate, label, localDays } from './slots.js';
+import { inZone, tzOf } from './clock.js';
 import { termsOf } from './verticals.js';
 
 const PUBLIC = fileURLToPath(new URL('../public', import.meta.url));
@@ -32,11 +33,11 @@ async function snapshot(biz) {
 // Every start time on `day` where the whole service fits.
 function startsOn(biz, day, minutes, bookings, timeOff, buffer = biz.buffer_minutes || 0, serviceId = null) {
   const out = [], step = biz.slot_step || 30, earliest = Date.now() + Math.max(30, (biz.booking_min_notice_hours ?? 2) * 60) * 60000;
-  const d0 = new Date(day); d0.setHours(0, 0, 0, 0);
-  for (const [a, b] of dayRanges(biz, d0)) {
+  const [d0] = localDays(biz, day, 1); // the business's local day that `day` falls on
+  for (const [a, b] of dayRanges(biz, d0.noon)) {
     for (let m = a; m + minutes <= b; m += step) {
-      const s = new Date(d0.getTime() + m * 60000);
-      if (s.getTime() >= earliest && isFree(biz, bookings, timeOff, s, new Date(s.getTime() + minutes * 60000), buffer, serviceId)) out.push(localStamp(s).slice(11));
+      const s = d0.time(m);
+      if (s.getTime() >= earliest && isFree(biz, bookings, timeOff, s, new Date(s.getTime() + minutes * 60000), buffer, serviceId)) out.push(localStamp(s, tzOf(biz)).slice(11));
     }
   }
   return out;
@@ -46,6 +47,15 @@ export function mountPublic(app, DEFAULT_BIZ) {
   // Works for any business: ?b=<id> (WeBook passes it); the website link defaults to the main business.
   const pick = req => +(req.query.b || req.body?.b) || DEFAULT_BIZ;
   const wrap = fn => (req, res, next) => fn(req, res).catch(next);
+  // Every public request runs on its business's clock (clock.js): the booking link's business, else ?b=
+  const tzs = new Map();
+  app.use('/api/public', (req, res, next) => (async () => {
+    const token = /^\/booking\/([^/]+)/.exec(req.path)?.[1];
+    const id = token ? (await one('SELECT business_id FROM bookings WHERE manage_token=$1', [token]))?.business_id : pick(req);
+    let c = tzs.get(id);
+    if (!c || Date.now() - c.at > 60000) tzs.set(id, c = { tz: (await one('SELECT timezone FROM businesses WHERE id=$1', [id]))?.timezone, at: Date.now() });
+    inZone(c.tz, next);
+  })().catch(next));
 
   app.get('/book', (_req, res) => res.sendFile(PUBLIC + '/book.html'));
   // The booking page is an optional add-on; when it's off only existing booking links keep working.
@@ -68,10 +78,8 @@ export function mountPublic(app, DEFAULT_BIZ) {
     if (!svc) return res.status(400).json({ error: 'Pick a service.' });
     const { bookings, timeOff } = await snapshot(biz);
     const out = [];
-    for (let i = 0; i < (biz.booking_days_ahead || DAYS_AHEAD); i++) {
-      const d = new Date(); d.setDate(d.getDate() + i);
-      out.push({ date: localDate(d), open: dayRanges(biz, d).length > 0, free: startsOn(biz, d, svc.minutes, bookings, timeOff, bufferOf(biz, svc.id), svc.id).length });
-    }
+    for (const d of localDays(biz, new Date(), biz.booking_days_ahead || DAYS_AHEAD))
+      out.push({ date: d.date, open: dayRanges(biz, d.noon).length > 0, free: startsOn(biz, d.noon, svc.minutes, bookings, timeOff, bufferOf(biz, svc.id), svc.id).length });
     res.json(out);
   }));
 

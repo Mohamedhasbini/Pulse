@@ -2,7 +2,8 @@
 // docker compose exec app node src/smoke-test.js   (creates one temporary business and removes it)
 import { q, one, pool } from './db.js';
 import { createBusiness, signSession } from './accounts.js';
-import { isFree } from './slots.js';
+import { isFree, freeSlots, parseLocal, availability } from './slots.js';
+import { inZone } from './clock.js';
 import { loadBusiness } from './brain.js';
 import { unify } from './customers.js';
 const BASE = 'http://localhost:3100', ok = [], say = (n, c, d = '') => { ok.push(c); console.log(`${c ? 'PASS' : 'FAIL'}  ${n}${d ? '  (' + d + ')' : ''}`); };
@@ -93,6 +94,20 @@ try {
   biz.hours = { ...biz.hours, [d.getDay()]: [['12:00', '23:00']] };
   say('Restaurant: 2nd table of a type still free', isFree(biz, bk(1), [], d, end, 0, svc.id));
   say('Restaurant: 3rd table of that type is full', !isFree(biz, bk(2), [], d, end, 0, svc.id));
+  // Time zones: each business books on its own clock, not the server's (the server runs on Beirut time)
+  const week = h => Object.fromEntries([0, 1, 2, 3, 4, 5, 6].map(d => [d, [h]]));
+  const zoneBiz = tz => ({ timezone: tz, hours: week(['10:00', '20:00']), slot_step: 30, capacity: 1, services: [] });
+  const first = (tz, now) => freeSlots(zoneBiz(tz), [], [], 60, 1, new Date(now))[0]?.id;
+  say('Madrid salon opening at 10:00 offers 10:00 Madrid time first', first('Europe/Madrid', '2026-12-01T05:00:00Z') === '2026-12-01T09:00:00.000Z', first('Europe/Madrid', '2026-12-01T05:00:00Z'));
+  say('Beirut salon opening at 10:00 offers 10:00 Beirut time first', first('Asia/Beirut', '2026-12-01T05:00:00Z') === '2026-12-01T08:00:00.000Z', first('Asia/Beirut', '2026-12-01T05:00:00Z'));
+  say('On the night Spain changes its clocks, 10:00 is still 10:00', first('Europe/Madrid', '2027-03-28T00:30:00Z') === '2027-03-28T08:00:00.000Z', first('Europe/Madrid', '2027-03-28T00:30:00Z'));
+  say('A typed 10:30 means 10:30 in the business\'s zone', parseLocal('2026-12-01 10:30', 'Europe/Madrid').toISOString() === '2026-12-01T09:30:00.000Z'
+    && inZone('Europe/Madrid', () => parseLocal('2026-12-01T10:30')).toISOString() === '2026-12-01T09:30:00.000Z');
+  const av = availability(zoneBiz('Europe/Madrid'), [], [], 1, new Date('2026-12-01T22:30:00Z')); // 23:30 in Madrid, 00:30 next day in Beirut
+  say('Availability lists the business\'s own date', av[0]?.date === '2026-12-01', av[0]?.date);
+  // SQL on a business's clock: dates come out in that business's zone
+  const sqlDay = await inZone('Europe/Madrid', () => one(`SELECT to_char('2026-12-01T23:30:00Z'::timestamptz, 'YYYY-MM-DD HH24:MI') AS t`));
+  say('Database dates follow the business\'s zone', sqlDay.t === '2026-12-02 00:30', sqlDay.t);
   // tap-to-answer choices: 1-3 short ones become WhatsApp buttons, up to 10 a list, otherwise plain text
   const { waBody } = await import('./whatsapp.js'), { cleanOptions } = await import('./brain.js');
   say('3 short choices become WhatsApp buttons', waBody('Pick a time', ['Tomorrow 10:00', 'Tomorrow 12:30', 'Another day']).interactive?.type === 'button');

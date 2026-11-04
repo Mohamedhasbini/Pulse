@@ -1,6 +1,7 @@
 // Sends a reminder message before each confirmed appointment (default 24 hours before).
 // Runs every 5 minutes. Each booking gets at most one reminder.
 import { q, one } from './db.js';
+import { okTz, currentTz, daysBetween, fmtDate, fmtTime } from './clock.js';
 import { sendWhatsApp } from './whatsapp.js';
 import { sendTelegram } from './telegram.js';
 import { sendEmail } from './email.js';
@@ -8,20 +9,20 @@ import { sendEmail } from './email.js';
 const REF = id => 'RB-' + String(id).padStart(4, '0');
 
 export function fill(template, b) {
-  const s = new Date(b.starts_at);
-  const day = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
-  const diff = Math.round((day(s) - day(new Date())) / 864e5);
+  // on the business's own clock: "tomorrow at 10:30" means its tomorrow and its 10:30
+  const s = new Date(b.starts_at), tz = okTz(b.timezone) ? b.timezone : currentTz();
+  const diff = daysBetween(new Date(), s, tz);
   const vals = {
-    when: diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : 'on ' + s.toLocaleDateString('en-GB', { weekday: 'long' }),
+    when: diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : 'on ' + fmtDate(s, { weekday: 'long' }, 'en-GB', tz),
     name: (b.customer || '').split(' ')[0] || 'there', service: b.service, business: b.business,
-    date: s.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }),
-    time: s.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), ref: REF(b.id),
+    date: fmtDate(s, { weekday: 'long', day: 'numeric', month: 'long' }, 'en-GB', tz),
+    time: fmtTime(s, tz), ref: REF(b.id),
   };
   return template.replace(/\{(\w+)\}/g, (m, k) => vals[k] ?? m);
 }
 
 export async function runReminders() {
-  const due = await q(`SELECT b.*, s.name service, cu.name customer, cu.phone, cu.reminder_channel, cu.email, cu.telegram_chat_id, bz.name business, bz.reminder_text, bz.reminder_hours, bz.wa_phone_number_id
+  const due = await q(`SELECT b.*, s.name service, cu.name customer, cu.phone, cu.reminder_channel, cu.email, cu.telegram_chat_id, bz.name business, bz.reminder_text, bz.reminder_hours, bz.wa_phone_number_id, bz.timezone
       FROM bookings b JOIN services s ON s.id=b.service_id JOIN customers cu ON cu.id=b.customer_id JOIN businesses bz ON bz.id=b.business_id
       WHERE b.status='confirmed' AND b.reminder_sent_at IS NULL AND b.reminder_status IS NULL AND bz.reminders_enabled
         AND b.starts_at > now() + interval '1 hour'

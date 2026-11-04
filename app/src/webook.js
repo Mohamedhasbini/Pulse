@@ -3,6 +3,7 @@
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { q, one } from './db.js';
+import { tzOf, wall } from './clock.js';
 import { handleMessage, loadBusiness } from './brain.js';
 
 import { VERTICALS } from './verticals.js';
@@ -49,16 +50,17 @@ export function mountWeBook(app) {
         (SELECT count(*) FROM reviews r WHERE r.business_id=b.id)::int AS reviews,
         ((SELECT count(*) FROM bookings k WHERE k.business_id=b.id AND k.created_at > now() - interval '14 days' AND k.status <> 'cancelled') * 2
           + (SELECT count(*) FROM reviews r WHERE r.business_id=b.id AND r.created_at > now() - interval '30 days'))::int AS trend,
-        b.currency FROM businesses b WHERE b.listed ORDER BY b.name`);
+        b.currency, b.timezone FROM businesses b WHERE b.listed ORDER BY b.name`);
     // Only businesses whose plan includes the WeBook listing (demo businesses always show).
     const allowed = new Set(); for (const b of list) if (b.is_demo || await hasFeature(b.id, 'webook_listing')) allowed.add(b.id);
-    const now = new Date(), mins = now.getHours() * 60 + now.getMinutes();
+    const now = new Date();
     res.json(list.filter(b => allowed.has(b.id)).map(b => {
       const v = VERTICALS[b.vertical] || VERTICALS.salon;
-      const today = (b.hours?.[now.getDay()] || []).map(([a, z]) => [toMin(a), toMin(z)]);
+      const w = wall(now, tzOf(b)), mins = w.min; // "open now" on each business's own clock
+      const today = (b.hours?.[w.wd] || []).map(([a, z]) => [toMin(a), toMin(z)]);
       const open = today.some(([a, z]) => mins >= a && mins < z);
-      const closesAt = open ? (b.hours[now.getDay()].find(([a, z]) => mins >= toMin(a) && mins < toMin(z)) || [])[1] : null;
-      delete b.hours;
+      const closesAt = open ? (b.hours[w.wd].find(([a, z]) => mins >= toMin(a) && mins < toMin(z)) || [])[1] : null;
+      delete b.hours; delete b.timezone;
       return { ...b, type: v.label, emoji: v.emoji, category: CATEGORY[b.vertical] || 'Other', open, closes_at: closesAt };
     }));
   }));

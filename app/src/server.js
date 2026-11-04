@@ -23,6 +23,7 @@ import { mountInbox } from './inbox.js';
 import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
 import { mountLive, emit } from './live.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
+import { inZone, currentTz, wall, dayStart, fmtStamp, fmtDate } from './clock.js';
 import { sendWhatsApp, validSignature, parseIncoming, validKapsoSignature, parseKapso, whatsappReady } from './whatsapp.js';
 import { mountPublic } from './public.js';
 import { sendEmail, emailEnabled } from './email.js';
@@ -227,6 +228,15 @@ mountPublicCatalog(app);
 // Who is signed in, and which business this request is about. Owners and staff only ever get their own business;
 // the admin works on whichever business they switched to (rb_biz cookie).
 const BIZ = () => ctx.getStore().biz;
+// each business's time zone, read at most once a minute (changing it is an admin action, rare)
+const tzCache = new Map();
+async function bizTz(id) {
+  const c = tzCache.get(id);
+  if (c && Date.now() - c.at < 60000) return c.tz;
+  const tz = (await one('SELECT timezone FROM businesses WHERE id=$1', [id]))?.timezone || null;
+  tzCache.set(id, { tz, at: Date.now() });
+  return tz;
+}
 app.use(wrap(async (req, res, next) => {
   const s = readSession(req.get('cookie'));
   let user = s && recallUser(s.uid);
@@ -251,7 +261,7 @@ app.use(wrap(async (req, res, next) => {
     if (!canOpen(user, mod)) { await audit(req, 'denied', `${req.method} ${req.path}`, biz); return res.status(403).json({ error: "You don't have access to this section. Ask the account owner.", locked: 'permission' }); }
   }
   // The platform admin is never blocked by a plan: they test and set up every business.
-  if (user.role === 'admin') return ctx.run({ biz }, next);
+  if (user.role === 'admin') { const tz = biz && await bizTz(biz); return ctx.run({ biz }, () => inZone(tz, next)); }
   if (mod && MODULE_FEATURE[mod] && !(await hasFeature(biz, MODULE_FEATURE[mod])))
     return res.status(402).json({ error: `${FEATURES[MODULE_FEATURE[mod]]} is not in your plan. Upgrade or add it to unlock it.`, locked: 'plan', feature: MODULE_FEATURE[mod] });
   if (/^\/api\/marketing/.test(req.path) && !(await hasFeature(biz, 'marketing')))
@@ -260,7 +270,8 @@ app.use(wrap(async (req, res, next) => {
     return res.status(402).json({ error: 'Discount codes are not in your plan.', locked: 'plan', feature: 'coupons' });
   if (req.method === 'PUT' && req.path === '/api/channels/telegram' && req.body.token && !(await hasFeature(biz, 'telegram')))
     return res.status(402).json({ error: 'A Telegram bot is not in your plan.', locked: 'plan', feature: 'telegram' });
-  ctx.run({ biz }, next);
+  const tz = biz && await bizTz(biz); // the rest of this request runs on the business's own clock (clock.js)
+  ctx.run({ biz }, () => inZone(tz, next));
 }));
 const assets = fingerprint(PUBLIC);
 app.get(['/', '/index.html'], assets.page);
@@ -772,7 +783,7 @@ app.get('/api/stats', wrap(async (req, res) => {
     q(`SELECT count(*)::int AS n FROM learning WHERE business_id=$1 AND status='open'`, [BIZ()]),
     one('SELECT name, plan_price::float FROM businesses WHERE id=$1', [BIZ()])]);
   res.json({ ...t, ...bk, approvals: pend.n, to_learn: learn.n, ai: { ...ai, last: aiHealth }, outcomes, daily, heat, channels, services, today, upcoming, attention,
-    business: biz, now: localStamp(new Date()), tz: process.env.TZ,
+    business: biz, now: localStamp(new Date()), tz: currentTz(),
     booking_url: (process.env.PUBLIC_URL || 'https://app.nexfoyz.dev').replace(/\/$/, '') + '/book?b=' + BIZ() });
 }));
 
@@ -791,7 +802,7 @@ app.get('/api/conversations/:id/messages', wrap(async (req, res) => {
 
 // ---------- Approvals: late cancellations, late time changes, extra requests ----------
 const REF = id => 'RB-' + String(id).padStart(4, '0');
-const nice = d => new Date(d).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const nice = d => fmtStamp(d, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 // Tells the customer the decision in their chat (and on WhatsApp when that's where they wrote from).
 async function notifyCustomer(conversationId, text) {
@@ -1142,14 +1153,14 @@ app.get('/api/live', wrap(async (req, res) => {
   // ---- richer desk data ----
   // Micro charts: last 24 hours of messages (and failed replies), last 14 days of bookings and booked value.
   // This week, Monday to Sunday: booked minutes against open minutes per day (capsule bars) and today's capacity (gauge).
-  const mon = new Date(); mon.setHours(0, 0, 0, 0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+  const mon = dayStart(new Date(), -((wall(new Date()).wd + 6) % 7)); // this Monday, local midnight
   const wk = await q(`SELECT starts_at, ends_at FROM bookings WHERE business_id=$1 AND status <> 'cancelled' AND starts_at >= $2 AND starts_at < $2::timestamptz + interval '7 days'`, [B, mon]);
   const toMin = t => { const [h, m] = String(t).split(':').map(Number); return h * 60 + (m || 0); };
   const week = [...Array(7)].map((_, i) => {
-    const day = new Date(mon); day.setDate(mon.getDate() + i);
-    const open = (biz.hours?.[day.getDay()] || []).reduce((a, [x, y]) => a + toMin(y) - toMin(x), 0) * (biz.capacity || 1);
-    const booked = wk.filter(b => new Date(b.starts_at).toDateString() === day.toDateString()).reduce((a, b) => a + (new Date(b.ends_at) - new Date(b.starts_at)) / 60000, 0);
-    return { d: localDate(day), open, booked: Math.round(booked), pct: open ? Math.min(100, Math.round(booked / open * 100)) : null, today: day.toDateString() === new Date().toDateString() };
+    const day = dayStart(mon, i), dayKey = localDate(day), todayKey = localDate(new Date());
+    const open = (biz.hours?.[wall(day).wd] || []).reduce((a, [x, y]) => a + toMin(y) - toMin(x), 0) * (biz.capacity || 1);
+    const booked = wk.filter(b => localDate(new Date(b.starts_at)) === dayKey).reduce((a, b) => a + (new Date(b.ends_at) - new Date(b.starts_at)) / 60000, 0);
+    return { d: dayKey, open, booked: Math.round(booked), pct: open ? Math.min(100, Math.round(booked / open * 100)) : null, today: dayKey === todayKey };
   });
   // From channel to result, last 30 days (flow chart).
   // Busiest moments: messages by weekday and hour, last 30 days (heat grid).
@@ -1254,7 +1265,7 @@ app.get('/api/marketing/studio', wrap(async (_req, res) => {
       (SELECT count(*) FROM customers WHERE business_id=$1 AND marketing_ok AND phone !~ '^(test|e2e|walk-in)')::int AS opted
       FROM bookings WHERE business_id=$1 AND status IN ('confirmed','completed') AND starts_at > now() - interval '90 days'`, [BIZ()]);
   const svc = biz.services.find(s => s.id === st.top_service) || biz.services[0], DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const end = new Date(Date.now() + 7 * 864e5).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const end = fmtDate(Date.now() + 7 * 864e5, { weekday: 'long', day: 'numeric', month: 'long' });
   const quiet = st.quiet_dow != null ? DAY[st.quiet_dow] : 'Tuesday', t = st.ticket || svc?.price || 0;
   const drafts = [
     { id: 'winback', name: 'We miss you', goal: 'Bring back clients who stopped coming', segment: { type: 'inactive', days: 60 }, audience: 'Clients with no visit in 60 days', pct: 15, code: 'BACK15', rate: 0.15,

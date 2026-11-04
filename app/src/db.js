@@ -1,13 +1,22 @@
 import pg from 'pg';
 import fs from 'node:fs';
+import { currentTz, DEFAULT_TZ } from './clock.js';
 
 export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 10000 });
 // A dropped idle connection (database restart, network blip) must not crash the app: log it; the pool reconnects on the next query
 pool.on('error', e => console.error('Database connection lost (will reconnect):', e.message));
 // Dates in SQL (daily chart, busy hours) use the business time zone, like the rest of the app.
 // search_path is pinned too: pooled cloud connections (Neon) can carry an empty one left by a pg_dump restore.
-pool.on('connect', c => c.query(`SET TIME ZONE '${(process.env.TZ || 'UTC').replace(/'/g, '')}'; SET search_path TO public`));
-export const q = (text, params) => pool.query(text, params).then(r => r.rows);
+pool.on('connect', c => c.query(`SET TIME ZONE '${DEFAULT_TZ.replace(/'/g, '')}'; SET search_path TO public`));
+// On a business's clock (clock.js inZone) dates in SQL (to_char, date_trunc, ::date, extract) use that business's zone.
+// Businesses in the server's own zone (all of Lebanon today) take the plain path; others pay two tiny extra round trips.
+export const q = async (text, params) => {
+  const tz = currentTz();
+  if (tz === DEFAULT_TZ) return (await pool.query(text, params)).rows;
+  const c = await pool.connect();
+  try { await c.query(`SET TIME ZONE '${tz}'`); return (await c.query(text, params)).rows; }
+  finally { await c.query(`SET TIME ZONE '${DEFAULT_TZ}'`).catch(() => {}); c.release(); }
+};
 export const one = async (text, params) => (await q(text, params))[0];
 
 export async function migrate() {
