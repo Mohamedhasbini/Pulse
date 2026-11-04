@@ -2,19 +2,21 @@
 // so the same question always gets the same number on every screen.
 //   booking      a booking that was not cancelled
 //   AI booking   a booking made by the receptionist (chat) or the online booking page (web)
-//   revenue      the price of non-cancelled appointments that start in the period
+//   revenue      the price of appointments that start in the period and were not cancelled or no-shows (EARNS):
+//                a no-show pays nothing; Insights, Finance and the weekly brief all use this one rule
 //   "today"      the business's own calendar day (its time zone), not the server's
 import { q, one } from './db.js';
 
 export const TZ = `COALESCE((SELECT timezone FROM businesses WHERE id=$1),'Asia/Beirut')`;
 export const ACTIVE = `status <> 'cancelled'`;
+export const EARNS = `status NOT IN ('cancelled','no_show')`; // revenue counts only appointments that pay
 export const AI_SOURCE = `source IN ('ai','web')`;
 const isToday = col => `(${col} AT TIME ZONE ${TZ})::date = (now() AT TIME ZONE ${TZ})::date`;
 
 // today's figures for one business: appointments and revenue by start time, new bookings by when they were made
 export const today = B => one(`SELECT
     count(*) FILTER (WHERE ${isToday('starts_at')})::int AS visits_today,
-    COALESCE(sum(price) FILTER (WHERE ${isToday('starts_at')}),0)::float AS revenue_today,
+    COALESCE(sum(price) FILTER (WHERE ${isToday('starts_at')} AND status <> 'no_show'),0)::float AS revenue_today,
     count(*) FILTER (WHERE ${isToday('created_at')})::int AS booked_today,
     COALESCE(sum(price) FILTER (WHERE ${isToday('created_at')}),0)::float AS value_today
   FROM bookings WHERE business_id=$1 AND ${ACTIVE}`, [B]);
@@ -35,7 +37,7 @@ export const daily = (B, days) => q(`WITH tz AS (SELECT COALESCE((SELECT timezon
   d AS (SELECT generate_series((now() AT TIME ZONE z)::date - ($2::int - 1), (now() AT TIME ZONE z)::date, '1 day')::date AS day FROM tz),
   lo AS (SELECT ((SELECT min(day) FROM d)::timestamp AT TIME ZONE tz.z) - interval '1 day' AS t0 FROM tz),
   bk AS (SELECT (b.created_at AT TIME ZONE tz.z)::date AS day, count(*) AS n FROM bookings b, tz, lo WHERE b.business_id=$1 AND b.status <> 'cancelled' AND b.created_at >= lo.t0 GROUP BY 1),
-  rv AS (SELECT (b.starts_at AT TIME ZONE tz.z)::date AS day, sum(b.price) AS s FROM bookings b, tz, lo WHERE b.business_id=$1 AND b.status <> 'cancelled' AND b.starts_at >= lo.t0 AND b.starts_at < now() + interval '2 days' GROUP BY 1),
+  rv AS (SELECT (b.starts_at AT TIME ZONE tz.z)::date AS day, sum(b.price) AS s FROM bookings b, tz, lo WHERE b.business_id=$1 AND b.status NOT IN ('cancelled','no_show') AND b.starts_at >= lo.t0 AND b.starts_at < now() + interval '2 days' GROUP BY 1),
   cv AS (SELECT (c.created_at AT TIME ZONE tz.z)::date AS day, count(*) AS n, count(*) FILTER (WHERE COALESCE(c.outcome,'')<>'handoff') AS h FROM conversations c, tz, lo WHERE c.business_id=$1 AND c.channel<>'test' AND c.created_at >= lo.t0 GROUP BY 1),
   rm AS (SELECT (m.created_at AT TIME ZONE tz.z)::date AS day, round(avg(m.latency_ms))::int AS ms FROM messages m JOIN conversations c ON c.id=m.conversation_id, tz, lo WHERE c.business_id=$1 AND m.role='assistant' AND NOT m.failed AND m.created_at >= lo.t0 GROUP BY 1)
 SELECT to_char(d.day,'YYYY-MM-DD') AS day, COALESCE(bk.n,0)::int AS bookings, COALESCE(rv.s,0)::float AS revenue, COALESCE(cv.n,0)::int AS chats, COALESCE(cv.h,0)::int AS handled, rm.ms AS reply_ms
