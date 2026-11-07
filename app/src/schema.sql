@@ -562,4 +562,3 @@ CREATE TABLE IF NOT EXISTS ai_traces (
   at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS ai_traces_biz_at ON ai_traces (business_id, at DESC);
-

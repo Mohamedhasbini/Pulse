@@ -56,6 +56,7 @@ Roles: `admin` (platform), `owner`, `staff` (permissions per section). Plans and
 | New client onboarding | `.claude/skills/new-client/` |
 | Server setup / restore | `scripts/` (`restore.sh <backup>`) |
 | CI | `.github/workflows/test.yml` |
+| **MXAi v2** (separate product: growth engine, lead lab; own app on port 3200 and own database) | `v2/` (start: `cd v2 && docker compose up -d --build`; tests: `docker compose exec -T app npm test`); see `v2/README.md` |
 | Open-source tools we install (inbox, booking, crawling, voice…) | `docs/repos.md`: **update it whenever a repo is installed, upgraded or removed**; each tool lives in `C:\Users\Mohamad\mxai-stack\<name>\` with its own compose file |
 
 ## Tests (must pass before every commit)

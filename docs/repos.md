@@ -7,6 +7,8 @@ Last updated: 2026-11-07
 
 ## Where things run
 
+- **MXAi v1** (`app/`, port 3100) does not use the engine services. **MXAi v2** (`v2/`, port 3200) reaches Crawl4AI, SearXNG and Reacher over the private Docker network `mxai-net`.
+
 - **This PC** (Windows, Docker Desktop): 24 GB RAM (Docker limit ~12 GB), 24 CPU threads, ~570 GB free disk, AMD Radeon 890M (no NVIDIA GPU).
   - No NVIDIA GPU means open-source AI *video* models (LTX-Video, Wan, HunyuanVideo) cannot run here; they need a cloud GPU or a paid API.
   - CPU-friendly tools (voice, transcription, crawling, inbox, scheduling) run fine.
@@ -25,9 +27,9 @@ Last updated: 2026-11-07
 
 | Tool | Version | What it does | How MXAi uses it | Licence | Where / port | Installed | Status |
 |---|---|---|---|---|---|---|---|
-| pgvector | 0.8.7 | Search by meaning inside Postgres | Similar companies, knowledge and chat search | Safe | Built into the MXAi database image (`db/Dockerfile`, Alpine kept so indexes and sorting are unchanged); `CREATE EXTENSION vector` in `schema.sql` | 2026-11-07 | Working (distance query tested; all 6 test suites pass) |
-| pg-boss | 12.38.1 | Job queue and scheduler in Postgres | Background runs of every AI worker, with retries and schedules | Safe | npm library in `app/` (not started yet: wired in with the workers) | 2026-11-07 | Installed, loads |
-| Vercel AI SDK (`ai`, `@ai-sdk/google`) + Zod | 7.0.164 / 4.0.113 / 4.6.7 | One API for AI models, validated answers, tool calls | The workers' AI gateway | Safe | npm libraries in `app/` (wired in with the workers) | 2026-11-07 | Installed, loads |
+| pgvector | 0.8.7 | Search by meaning inside Postgres | v2: company and ideal-customer matching; v1: available, unused | Safe | Built into both database images (`db/Dockerfile`, `v2/db/Dockerfile`; Alpine kept so indexes and sorting are unchanged) | 2026-11-07 | Working in v1 and v2 |
+| pg-boss | 12.38.1 | Job queue and scheduler in Postgres | Background runs of the growth engine (lead batches, business profiles) | Safe | npm library in **MXAi v2** (`v2/app`), schema `pgboss` in v2's database | 2026-11-07 | Working (runs every lead batch) |
+| Vercel AI SDK (`ai`, `@ai-sdk/google`) + Zod | 7.0.164 / 4.0.113 / 4.6.7 | One API for AI models, validated answers, tool calls | The growth engine's AI gateway (`v2/app/src/engine/ai.js`) | Safe | npm libraries in **MXAi v2** | 2026-11-07 | Working |
 | Crawl4AI | 0.9.5 | Reads websites into clean text | Prospector and Signal scout | Safe | `mxai-stack\crawl4ai`, http://127.0.0.1:11235 (needs `Authorization: Bearer <CRAWL4AI_API_TOKEN>` from its `.env`) | 2026-11-07 | Working (test crawl OK; refuses calls without the key) |
 | SearXNG | 2026.11.6 | Private meta search engine | Finding company websites, news, mentions | Care (unmodified, separate service) | `mxai-stack\searxng`, http://127.0.0.1:8081 (`/search?q=…&format=json`) | 2026-11-07 | Working (36 results for a Dubai fit-out search) |
 | Reacher | 0.11.11 | Checks if an email exists, without sending | Verifying lead emails | Safe | `mxai-stack\reacher`, http://127.0.0.1:8082 `/v0/check_email` (header `x-reacher-secret` from its `.env`); outbound port 25 is open on this PC | 2026-11-07 | Working |

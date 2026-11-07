@@ -1,0 +1,18 @@
+{
+  "name": "mxai-v2",
+  "private": true,
+  "type": "module",
+  "description": "MXAi v2: the growth engine product (separate from MXAi v1 in ../../app)",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node src/test.js"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "4.0.113",
+    "ai": "7.0.164",
+    "express": "4.22.3",
+    "pg": "8.23.1",
+    "pg-boss": "12.38.1",
+    "zod": "4.6.7"
+  }
+}
