@@ -23,6 +23,8 @@ Roles: `admin` (platform), `owner`, `staff` (permissions per section). Plans and
   - `app` → http://localhost:3100 (public: https://app.nexfoyz.dev via Cloudflare tunnel "jarvis")
   - `db` (Postgres), `backup` (daily `pg_dump` + uploads into `./backups`, kept 14 days)
 - AI replies: n8n workflow at :5678 (`n8n/ringback-receptionist.json`, Gemini) with backup models in `app/src/ai-router.js`.
+- **Stays online by itself:** the Windows task "MXAi watchdog" (`scripts/mxai-watchdog.ps1`) starts at sign-in and every 2 minutes
+  restarts whatever dropped (Docker, app, n8n, Cloudflare tunnel, home page). Log: `logs/watchdog.log`. `start-mxai.cmd` is the manual fallback.
 - **The code is baked into the image.** After any change to `app/`, rebuild: `docker compose up -d --build app`.
 - Cloud hosting (Render) was tried and rolled back on 2026-10-25. Cost stance: zero monthly fees until the first paying client.
 
