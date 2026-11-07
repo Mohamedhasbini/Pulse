@@ -37,7 +37,8 @@ Roles: `admin` (platform), `owner`, `staff` (permissions per section). Plans and
 | Server, auth, sessions, API routes | `app/src/server.js` (security headers, CSRF origin check, login/2FA, permissions, plan gates) |
 | Startup safety (refuses weak secrets on a public URL) | `app/src/startup-check.js` |
 | Database pool + migrations | `app/src/db.js`, `app/src/schema.sql` (additive `ALTER … IF NOT EXISTS` only; never destroy data) |
-| One message in → AI → booking/handoff → reply | `app/src/brain.js`, `slots.js`, `ai-router.js`, `prompts/` |
+| One message in → AI → booking/handoff → reply | `app/src/brain.js` (chat housekeeping), `slots.js`, `ai-router.js` |
+| **MXAi orchestrator** (8 layers): customer roles (receptionist/support/sales) and the dashboard chat (`askMxai`, used by `team.js /api/team/ask`) | `app/src/mxai/` (read `CONTRACT.md` first; tools in `tools.js`, guardrails, access, persona) |
 | Business numbers (single source of truth) | `app/src/metrics.js` |
 | Clients, merging duplicates | `app/src/customers.js` |
 | Inbox, campaigns, finance, team agents | `inbox.js`, `marketing.js`, `finance.js`, `team.js`, `agents.js` |

@@ -174,7 +174,9 @@ export async function ownerFacts(biz) {
   return {
     currency: biz.currency || 'USD',
     today: { appointments: t.visits_today, revenue: t.revenue_today, new_bookings: t.booked_today, new_bookings_value: t.value_today },
-    last_7_days: { bookings: sum('bookings'), revenue: sum('revenue'), chats, by_day: week },
+    // named for what they count: bookings MADE that day (by anyone, for any date) and the value of visits that day
+    last_7_days: { new_bookings_made: sum('bookings'), revenue_from_visits: sum('revenue'), chats,
+      by_day: week.map(d => ({ day: d.day, new_bookings_made: d.bookings, revenue_from_visits: d.revenue, chats: d.chats })) },
     waiting: waiting || {},
     ai: {
       bookings_7d: ai7.ai_count, value_7d: ai7.ai_value, value_prev_7d: ai7.ai_value_prev,

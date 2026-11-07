@@ -117,35 +117,53 @@ export async function customerTurn(s) {
   } catch (e) { t.flag('error', String(e.message).slice(0, 160)); await t.end({ outcome: 'error' }); throw e; }
 }
 
-// The owner's (or staff's / admin's) MXAi: answers from the dashboard's data, proposes changes for approval.
-// Returns { answer, proposals, provider }.
-export async function askMxai({ biz, businessId, user, text, history = [] }) {
+// The owner's (or staff's / admin's) MXAi, the dashboard chat: answers from the dashboard's data (only what this user
+// may see), looks things up with up to 4 tools per round, and proposes changes for one-click approval.
+// opts: { page, memory: [facts], onStep(label, isThought) }. Returns { answer, proposals, results, remember, provider }.
+const OFFERS_TO_LOOK = /\b(shall|should|would you like|do you want|want) (me to |i )?(pull|check|fetch|look|get|dig|find)\b|\bi (can|could|need to) (pull|fetch|check|look)\b/i;
+export async function askMxai({ biz, businessId, user, text, history = [], page = '', memory = [], onStep = null }) {
   if (!biz && businessId) { const { loadBusiness } = await import('../brain.js'); biz = await loadBusiness(businessId); }
   const audience = user?.role === 'admin' ? 'admin' : user?.role === 'staff' ? 'staff' : 'owner';
   const t = startTrace({ businessId: biz.id, audience, role: 'mxai' });
-  const inp = checkInput({ text, audience });
-  const allowed = await allowedTools(biz, audience, 'mxai', user);
-  // the dashboard's numbers only for those allowed to see them (staff need Overview or Insights)
-  const facts = { ...(canSee(audience, 'owner', user) && { dashboard: await ownerFacts(biz).catch(() => ({})) }), business: await publicFacts(biz) };
-  const system = systemPrompt({ biz, role: 'mxai', audience, lang: detectLang(inp.text), facts, tools: toolList(allowed), now: new Date() });
-  const messages = [...history.slice(-12).map(m => ({ role: m.role === 'owner' || m.role === 'user' ? 'user' : 'assistant', content: String(m.text || '') })), { role: 'user', content: inp.text }];
-  const proposals = [];
-  let answer = '', provider = null;
   try {
-  // up to 4 steps: the model may look something up, then answers with the result
-  for (let step = 0; step < 4; step++) {
-    const res = await think({ businessId: biz.id, role: 'mxai', audience, system, messages, json: true, size: 'large', trace: t });
-    provider = res.provider;
-    const d = clean(res.json?.plain ? { reply: res.json.reply || res.json.answer } : res.json);
-    if (!d.tool || !allowed.has(d.tool)) { if (d.tool) t.flag('tool_denied', d.tool); answer = d.reply; break; }
-    const out = await runTool(d.tool, { biz, user, trace: t }, d.args);
-    if (out?.data?.proposal) proposals.push(out.data.proposal);
-    messages.push({ role: 'assistant', content: JSON.stringify({ tool: d.tool, args: d.args }) },
-      { role: 'user', content: `RESULT of ${d.tool}: ${JSON.stringify(out?.data ?? out ?? {}).slice(0, 3500)}\nNow answer the owner.` });
-    answer = d.reply;
-  }
-  const g = checkOutput({ reply: answer, biz, audience, role: 'mxai', facts });
-  await t.end({ outcome: 'answered', provider });
-  return { answer: g.reply ?? answer, proposals, provider };
+    const inp = checkInput({ text, audience });
+    const allowed = await allowedTools(biz, audience, 'mxai', user);
+    // the dashboard's numbers only for those allowed to see them (staff need Overview or Insights)
+    const facts = { ...(canSee(audience, 'owner', user) && { dashboard: await ownerFacts(biz).catch(() => ({})) }), business: await publicFacts(biz) };
+    const lang = detectLang(inp.text);
+    const system = systemPrompt({ biz, role: 'mxai', audience, lang, facts, tools: toolList(allowed), now: new Date(), page, memory: audience === 'staff' ? [] : memory });
+    const messages = [...history.slice(-12).map(m => ({ role: m.role === 'owner' || m.role === 'user' ? 'user' : 'assistant', content: String(m.text || '') })), { role: 'user', content: inp.text }];
+    const proposals = [], results = [], remember = [];
+    let answer = '', provider = null;
+    for (let round = 0; round < 5; round++) {
+      const res = await think({ businessId: biz.id, role: 'mxai', audience, system, messages, json: true, size: 'large', trace: t });
+      provider = res.provider;
+      const j = res.json || {};
+      if (j.broken) { messages.push({ role: 'assistant', content: String(res.text || '').slice(0, 500) }, { role: 'user', content: 'That was not valid JSON. Reply with one valid JSON object only.' }); continue; }
+      const reply = String(j.reply ?? j.answer ?? (j.plain ? res.text : '') ?? '').trim();
+      // one tool (the customer format) or several
+      const calls = (Array.isArray(j.tools) ? j.tools : j.tool && j.tool !== 'null' ? [{ name: j.tool, args: j.args }] : []).filter(x => x && x.name).slice(0, 4);
+      if (Array.isArray(j.remember)) remember.push(...j.remember.map(x => String(x).trim().slice(0, 240)).filter(Boolean).slice(0, 3));
+      // an answer that offers to look something up instead of looking: send it back to do the work
+      if (reply && !calls.length && round < 4 && OFFERS_TO_LOOK.test(reply)) {
+        messages.push({ role: 'assistant', content: JSON.stringify({ reply }) }, { role: 'user', content: 'Do not offer to look it up: fetch that data now with a tool and give the complete answer.' }); continue; }
+      if (calls.length && j.thinking && !reply) onStep?.(String(j.thinking).slice(0, 160), true);
+      const out = [];
+      for (const call of calls) {
+        if (!allowed.has(call.name)) { t.flag('tool_denied', call.name); out.push({ name: call.name, data: { error: `${call.name} is not available to you.` } }); continue; }
+        if (!call.name.startsWith('propose_')) onStep?.(`Reading ${call.name.replace(/_/g, ' ')}`);
+        const r = await runTool(call.name, { biz, user, trace: t }, call.args || {});
+        if (r?.data?.proposal) proposals.push(r.data.proposal);
+        else results.push({ name: call.name, args: call.args || {}, data: r?.data ?? r ?? {} });
+        out.push({ name: call.name, data: r?.data ?? r ?? {} });
+      }
+      if (reply) { answer = reply; break; }
+      if (!calls.length) break;
+      messages.push({ role: 'assistant', content: JSON.stringify({ tools: calls }) },
+        { role: 'user', content: `TOOL RESULTS:\n${out.map(o => `${o.name}: ${JSON.stringify(o.data).slice(0, 3500)}`).join('\n')}\n${round >= 3 ? 'Answer now with what you have.' : 'Fetch more if needed, otherwise answer.'}` });
+    }
+    const g = checkOutput({ reply: answer, biz, audience, role: 'mxai', facts });
+    await t.end({ outcome: answer ? 'answered' : 'error', provider });
+    return { answer: g.reply ?? answer, proposals, results, remember: [...new Set(remember)], provider };
   } catch (e) { t.flag('error', String(e.message).slice(0, 160)); await t.end({ outcome: 'error' }).catch(() => {}); throw e; }
 }

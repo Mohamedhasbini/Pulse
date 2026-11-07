@@ -68,6 +68,12 @@ try {
   const viaPulse = await post('/api/team/act', { type: 'add_shortcut', label: 'How was my week', ask: 'How did this week go?' }, OA);
   const mine = (await get('/api/shortcuts', OA)).shortcuts || [];
   check('Pulse AI adds a shortcut with its action', viaPulse.ok && mine.length === 2 && mine[1].ask === 'How did this week go?', viaPulse.done);
+  // the dashboard chat runs on MXAi: the route still refuses empty questions, staff can't open it, the old loop is gone
+  const empty = await post('/api/team/ask', { messages: [] }, OA);
+  check('The chat refuses an empty question', /Ask a question first/.test(empty.error || ''), JSON.stringify(empty));
+  check('Only the owner (not staff) can use the chat', (await import('./features.js')).moduleOf('POST', '/api/team/ask') === 'owner');
+  { const src = (await import('node:fs')).readFileSync(new URL('./team.js', import.meta.url), 'utf8');
+    check('The chat thinks through MXAi (askMxai), not its own AI loop', src.includes('askMxai') && !src.includes('function prompt(') && !src.includes('MAX_STEPS')); }
   check("Business B doesn't see A's shortcuts", ((await get('/api/shortcuts', OB)).shortcuts || []).length === 0);
 } catch (e) { check('Pulse test ran', false, e.message) } finally {
   for (const id of made) await closeBusiness(id).catch(() => {});
