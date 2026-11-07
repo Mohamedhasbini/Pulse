@@ -300,11 +300,12 @@ function namesIn(f, names, ownName) {
 }
 
 // Phones: any run of 8+ digits that is not this business's number or the customer's own.
-function strangerPhones(reply, biz, facts) {
+function strangerPhones(reply, biz, facts, said = '') {
   const mine = new Set();
   const addP = p => { const d = digits(p); if (d.length >= 7) mine.add(d.slice(-8)); };
   for (const [k, v] of Object.entries(biz || {})) if (/phone|whatsapp|tel/i.test(k) && typeof v === 'string') addP(v);
   for (const p of [facts.customer?.phone, facts.customer?.contact_phone, facts.public?.phone, facts.phone, ...(facts.allowedPhones || [])]) addP(p);
+  for (const m of String(said || '').matchAll(/\+?\d[\d\s().-]{6,}\d/g)) addP(m[0]);   // the customer's own number, typed just now
   const out = [];
   const conv = String(reply).replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660));
   for (const m of conv.matchAll(/\+?\d[\d\s().-]{6,}\d/g)) {
@@ -318,8 +319,9 @@ function strangerPhones(reply, biz, facts) {
 }
 
 // Other customers of this business (never the person we are talking to, never a team member's name).
-function otherCustomers(f, reply, facts, teamNames) {
+function otherCustomers(f, reply, facts, teamNames, said = '') {
   const me = fold(facts.customer?.name || '');
+  const own = fold(said), ownDigits = digits(said);
   const myFirst = me.split(' ')[0];
   const TITLES = /^(dr|dra|doctor|doctora|docteur|mr|mrs|ms|miss|mme|mlle|m|sr|sra|srta|prof|profesor|profesora|chef|coach|د|دكتور|الدكتور|دكتوره|الدكتوره|السيد|السيده|الاستاذ|الاستاذه)$/;
   const team = new Set(teamNames.filter(Boolean).flatMap(t => fold(t).replace(/[^\p{L}\p{N}' ]/gu, ' ').split(' ').filter(w => w && !TITLES.test(w)).slice(0, 1)));
@@ -328,13 +330,13 @@ function otherCustomers(f, reply, facts, teamNames) {
   const replyDigits = digits(reply);
   for (const c of facts.knownCustomers || []) {
     const name = fold(c?.name || '');
-    if (name && name !== me) {
+    if (name && name !== me && !(own && wordRe(name.split(' ')[0]).test(own))) {
       const first = name.split(' ')[0];
       if (name.includes(' ') && name.length >= 5 && wordRe(name).test(f)) hits.push(c.name);
       else if (first.length >= 4 && first !== myFirst && !team.has(first) && wordRe(first).test(f)) hits.push(c.name);
     }
     const d = digits(c?.phone).slice(-8);
-    if (d.length >= 7 && d !== myDigits && replyDigits.includes(d)) hits.push('phone of ' + (c.name || 'a customer'));
+    if (d.length >= 7 && d !== myDigits && !ownDigits.includes(d) && replyDigits.includes(d)) hits.push('phone of ' + (c.name || 'a customer'));
   }
   return [...new Set(hits)];
 }
@@ -456,9 +458,9 @@ export function checkOutput({ reply, biz = {}, audience = 'customer', role = nul
   // (b) internal data
   if (LEAK.some(re => re.test(f))) hits.push({ kind: 'leak', detail: 'numbers' });
   if (PROMPT_MARKERS.some(re => re.test(f)) || recitesPrompt(f, facts.systemPrompt)) hits.push({ kind: 'leak', detail: 'instructions' });
-  const people = otherCustomers(f, tidied, facts, [...k.team, biz.assistant_name, k.pub.assistant_name, 'Nora']);
+  const people = otherCustomers(f, tidied, facts, [...k.team, biz.assistant_name, k.pub.assistant_name, 'Nora'], text);
   if (people.length) hits.push({ kind: 'leak', detail: people });
-  const phones = strangerPhones(tidied, biz, facts);
+  const phones = strangerPhones(tidied, biz, facts, text);
   if (phones.length) hits.push({ kind: 'leak', detail: phones.map(p => 'phone ' + p) });
   const never = namesIn(f, k.never, '');
   if (never.length) hits.push({ kind: 'never_say', detail: never });

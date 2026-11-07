@@ -64,7 +64,6 @@
       ['Finance', { own: 'finance' }]]],
     ['pulse', 'AI Control', 'Your receptionist: check, teach and test Nora', [
       ['To review', { own: 'approvals' }],
-      ['Roles & guidelines', { own: 'airoles' }],
       ['Ask', { own: 'ask', hidden: true }],
       ['Brief', { own: 'brief', hidden: true }],
       ['Teach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach', 'tchRules', 'tchQuestions'] }],
@@ -74,7 +73,8 @@
       ['Test', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
       ['Practice chats', { entry: 'demo', only: ['top', 'labSum', 'lab'], hidden: true }],
       ['Undo changes', { entry: 'training', only: ['top', 'learn'], hidden: true }],
-      ['Performance', { own: 'aiperf', hidden: true }]]], // moved to Insights › AI performance
+      ['Performance', { own: 'aiperf', hidden: true }], // moved to Insights › AI performance
+      ['Roles & guidelines', { own: 'airoles' }]]], // last on purpose: older links use tab numbers
     ['settings', 'Settings', 'Set it up once', [
       ['All settings', { page: 'settings', tab: 'details', panes: ['details', 'channels', 'booking', 'codes', 's2fa', 'sdev', 'look', 'dash'], cls: 'set-one' }],
       ['Profile', { page: 'settings', tab: 'details', form: [0, 1, 2, 3, 4, 5, 6, 24], hidden: true, parent: 0 }],

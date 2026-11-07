@@ -432,6 +432,19 @@ try {
     const hb = { name: 'Skin Test', hours: { mon: ['09:00', '18:00'] } };
     say('A holiday question is not answered with the weekly hours', !fastPath({ biz: hb, text: 'Are you open on Christmas day?' }) && !!fastPath({ biz: hb, text: 'What are your opening hours?' }));
     const v = validate({ properties: { guests: { type: 'integer', minimum: 1 } }, required: ['guests'] }, { guests: '2' });
+    const g3 = checkOutput({ reply: 'Thanks Lina Haddad! I have your number +961 70 123456.', biz: gb, text: 'Lina Haddad, +961 70 123456',
+      facts: { knownCustomers: [{ name: 'Lina Haddad', phone: '+96170123456' }], customer: { name: null } }, lang: 'en' });
+    say('A name and phone the customer just typed are theirs, not another customer\'s', g3.action !== 'handoff', JSON.stringify(g3.hits));
+    const g4 = checkOutput({ reply: 'Sure, Lina Haddad is booked on Friday.', biz: gb, text: 'Book me Friday',
+      facts: { knownCustomers: [{ name: 'Lina Haddad', phone: '+96170123456' }], customer: { name: 'Sam' } }, lang: 'en' });
+    say('Another customer\'s name is still blocked', g4.action === 'handoff');
+    const { allowedTools, canSee } = await import('./mxai/access.js');
+    const staffCal = { role: 'staff', permissions: ['calendar'] };
+    const st = await allowedTools({ id: 1 }, 'staff', 'mxai', staffCal, { hasFeature: async () => true, allowedFor: async () => true });
+    say('Staff with Calendar access get the calendar tools, not the money ones', st.has('bookings') && !st.has('today'), [...st].join(','));
+    say('Staff without Overview or Insights never see the business numbers', !canSee('staff', 'owner', staffCal) && canSee('owner', 'owner'));
+    const g5 = checkOutput({ reply: 'Students get 10% off any service!', biz: gb, facts: { activeCoupons: [{ code: '(owner guideline)', kind: 'percent', value: 10 }] }, lang: 'en' });
+    say('A discount the owner wrote in the guidelines may be mentioned', g5.action !== 'handoff', JSON.stringify(g5.hits));
     say('A number written as text ("2") is accepted', v.ok && (v.args?.guests ?? 2) === 2, JSON.stringify(v)); }
 } catch (e) {
   say("Smoke test crashed", false, e.message); // a crash is a failure, never a silent pass

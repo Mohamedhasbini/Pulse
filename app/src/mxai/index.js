@@ -8,7 +8,7 @@ import { fastPath, pickSize, detectLang } from './router.js';
 import { startTrace } from './trace.js';
 import { delegate, systemPrompt } from './persona.js';
 import { publicFacts, customerFacts, availabilityFacts, ownerFacts, retrieve } from './knowledge.js';
-import { allowedTools } from './access.js';
+import { allowedTools, canSee } from './access.js';
 import { TOOLS, toolList, validate } from './tools.js';
 import { checkInput, checkOutput, HANDOFF_TEXT } from './guardrails.js';
 import { mustRequestLateCancel, saveProfile } from './booking.js';
@@ -33,14 +33,20 @@ async function runTool(name, ctx, args) {
 }
 
 // what the guardrails need to judge a reply: real prices, coupons, links, other businesses' and customers' names
-async function guardFacts(biz, pub, cust) {
+async function guardFacts(biz, pub, cust, role) {
   const [others, coupons, names] = await Promise.all([
     q('SELECT name FROM businesses WHERE id<>$1', [biz.id]).catch(() => []),
-    q(`SELECT code FROM coupons WHERE business_id=$1 AND active AND (expires_on IS NULL OR expires_on >= current_date)`, [biz.id]).catch(() => []),
+    q(`SELECT code, kind, value FROM coupons WHERE business_id=$1 AND active AND (expires_on IS NULL OR expires_on >= current_date)`, [biz.id]).catch(() => []),
     q(`SELECT name, phone FROM customers WHERE business_id=$1 AND id<>$2 AND name IS NOT NULL ORDER BY id DESC LIMIT 300`, [biz.id, cust?.id || 0]).catch(() => [])]);
   return { public: pub, services: biz.services, customer: cust, otherBusinesses: others.map(r => r.name),
-    activeCoupons: coupons.map(r => r.code), knownCustomers: names.map(r => ({ name: r.name, phone: r.phone })),
+    activeCoupons: [...coupons, ...guidelineOffers(biz, role)], knownCustomers: names.map(r => ({ name: r.name, phone: r.phone })),
     allowedLinks: [biz.website, biz.maps_url, biz.instagram, biz.payment_link, process.env.PUBLIC_URL].filter(Boolean) };
+}
+
+// "10% student discount" written by the owner in a role's guidelines or the AI rules is a real offer the AI may repeat
+function guidelineOffers(biz, role) {
+  const cfg = biz.ai_config || {}, text = [cfg.roles?.[role]?.guidelines, biz.ai_instructions, ...(Array.isArray(biz.ai_rules) ? biz.ai_rules.map(r => r?.text ?? r) : [])].filter(Boolean).join(' ');
+  return [...String(text).matchAll(/(\d{1,3})\s?%/g)].map(m => ({ code: '(owner guideline)', kind: 'percent', value: +m[1] }));
 }
 
 const clean = d => ({
@@ -85,7 +91,7 @@ export async function customerTurn(s) {
     // 05 a tool outside this role's list is never run
     if (d.tool && !allowed.has(d.tool)) { t.flag('tool_denied', d.tool); d.tool = 'handoff'; d.args = { reason: 'tool_denied' }; d.unknown = true; d.reply = HANDOFF_TEXT[lang] || HANDOFF_TEXT.en; }
     // 06 output: competitors, leaks, made-up prices or links, wrong identity -> the safe hand-over line
-    const g = checkOutput({ reply: d.reply, biz, audience: 'customer', role, facts: { ...(await guardFacts(biz, pub, cf)), systemPrompt: system }, lang: d.lang || lang, text: inp.text });
+    const g = checkOutput({ reply: d.reply, biz, audience: 'customer', role, facts: { ...(await guardFacts(biz, pub, cf, role)), systemPrompt: system }, lang: d.lang || lang, text: inp.text });
     if (g.hits?.length) t.flag('guard', g.hits.map(h => h.kind || h).join(',').slice(0, 200));
     if (g.action === 'handoff') { d.reply = g.reply || HANDOFF_TEXT[lang] || HANDOFF_TEXT.en; d.tool = 'handoff'; d.args = { unknown_question: true, reason: 'guardrail' }; d.confidence = 'low'; }
     else d.reply = g.reply ?? d.reply;
@@ -119,7 +125,8 @@ export async function askMxai({ biz, businessId, user, text, history = [] }) {
   const t = startTrace({ businessId: biz.id, audience, role: 'mxai' });
   const inp = checkInput({ text, audience });
   const allowed = await allowedTools(biz, audience, 'mxai', user);
-  const facts = { dashboard: await ownerFacts(biz).catch(() => ({})), business: await publicFacts(biz) };
+  // the dashboard's numbers only for those allowed to see them (staff need Overview or Insights)
+  const facts = { ...(canSee(audience, 'owner', user) && { dashboard: await ownerFacts(biz).catch(() => ({})) }), business: await publicFacts(biz) };
   const system = systemPrompt({ biz, role: 'mxai', audience, lang: detectLang(inp.text), facts, tools: toolList(allowed), now: new Date() });
   const messages = [...history.slice(-12).map(m => ({ role: m.role === 'owner' || m.role === 'user' ? 'user' : 'assistant', content: String(m.text || '') })), { role: 'user', content: inp.text }];
   const proposals = [];

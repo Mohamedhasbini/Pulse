@@ -50,7 +50,7 @@ export async function allowedTools(biz, audience, role, user = null, deps = {}) 
       if (!feats.get(t.feature)) continue;
     }
     if (t.switchKey && !(await allowedFor(biz?.id, t.switchKey).catch(() => false))) continue;
-    if (audience === 'staff' && !canOpen(user || { role: 'staff' }, t.module || 'owner')) continue;
+    if (audience === 'staff' && !canOpen(user || { role: 'staff' }, t.permission || t.module || 'owner')) continue;
     out.add(name);
   }
   return out;
