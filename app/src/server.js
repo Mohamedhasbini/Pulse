@@ -23,7 +23,9 @@ import { mountInbox } from './inbox.js';
 import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
 import { mountLive, emit } from './live.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
-import { receive, work, resume as resumeInbound, inFlight } from './inbound.js';
+import { receive, work, resume as resumeInbound, inFlight, markUndelivered } from './inbound.js';
+import { answerTelegram } from './telegram.js';
+import { answerInstagram } from './instagram.js';
 import { inZone, currentTz, wall, dayStart, fmtStamp, fmtDate } from './clock.js';
 import { sendWhatsApp, validSignature, parseIncoming, validKapsoSignature, parseKapso, whatsappReady } from './whatsapp.js';
 import { mountPublic } from './public.js';
@@ -47,6 +49,7 @@ import { mountUpgrades, pendingFor } from './upgrades.js';
 import { mountControls } from './controls.js';
 import { surfaceOf, doorAllows } from './hosts.js';
 import { mountSupport, activeSupport, READ_ONLY_OK } from './support.js';
+import { accessOf, stopped, forgetAccess, STILL_ALLOWED, mountBilling } from './billing.js';
 import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
 import { compress, fingerprint, rememberUser, recallUser, forgetUser, requestLog, CSP } from './web.js';
 
@@ -76,7 +79,7 @@ async function answerWhatsApp(m) {
   if (!biz) { console.warn('No business for phone number id', m.phoneNumberId); return; }
   const text = m.text || '(The customer sent a ' + m.type + ' message that cannot be read.)';
   const r = await handleMessage({ businessId: biz.id, phone: m.from, name: m.name, text, waId: m.id });
-  if (!r.duplicate && r.reply) await sendWhatsApp(m.phoneNumberId, m.from, r.reply, r.options);
+  if (!r.duplicate && r.reply) { const s = await sendWhatsApp(m.phoneNumberId, m.from, r.reply, r.options); if (!s.ok) await markUndelivered(r.conversationId, s.reason); }
 }
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
@@ -277,6 +280,9 @@ app.use(wrap(async (req, res, next) => {
   const viewAs = user.role === 'admin' && biz && /(?:^|;\s*)rb_viewas=([a-z0-9_-]{1,40})/.exec(req.get('cookie') || '')?.[1] || null;
   if (user.role === 'admin' && !viewAs) { const tz = biz && await bizTz(biz); return ctx.run({ biz }, () => inZone(tz, next)); }
   const F = await featuresOf(biz, viewAs), hasFeature = (_b, f) => F.has(f); // one lookup for every check below
+  // a plan that has ended (or is paused): everything can be read and clients can be answered, nothing else changes
+  if (!viewAs && biz && req.method !== 'GET' && req.method !== 'HEAD' && req.path.startsWith('/api/') && !STILL_ALLOWED.test(req.path) && stopped(await accessOf(biz)))
+    return res.status(402).json({ error: 'Your MXAi plan has ended. You can still read everything and reply to clients. Contact MXAi to continue.', billing: 'ended' });
   if (mod && MODULE_FEATURE[mod] && !(await hasFeature(biz, MODULE_FEATURE[mod])))
     return res.status(402).json({ error: `${FEATURES[MODULE_FEATURE[mod]]} is not in your plan. Upgrade or add it to unlock it.`, locked: 'plan', feature: MODULE_FEATURE[mod] });
   if (/^\/api\/marketing/.test(req.path) && !(await hasFeature(biz, 'marketing')))
@@ -357,7 +363,7 @@ app.get('/api/me', wrap(async (req, res) => {
       GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left FROM businesses b LEFT JOIN plans p ON p.key=b.plan_key WHERE b.id=$1`, [BIZ()]);
   const u = req.user;
   res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, totp_enabled: u.totp_enabled, email_2fa: u.email_2fa }, email_ready: emailEnabled(), business: b,
-    features: [...await featuresOf(BIZ(), ctx.getStore().viewAs)], view_as: ctx.getStore().viewAs || null, feature_names: FEATURES, surface: surfaceOf(req),
+    features: [...await featuresOf(BIZ(), ctx.getStore().viewAs)], view_as: ctx.getStore().viewAs || null, feature_names: FEATURES, surface: surfaceOf(req), billing: BIZ() ? await accessOf(BIZ()) : null,
     support: req.support ? { business: req.support.business, can_edit: req.support.can_edit, seconds_left: req.support.seconds_left, reason: req.support.reason, test: req.support.is_demo } : null, requested: BIZ() ? await pendingFor(BIZ()) : [],
     plans: u.role === 'admin' ? await q('SELECT key, name FROM plans ORDER BY sort') : undefined, playground: BIZ() ? await isPlayground(BIZ()) : false, modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE,
     edition: process.env.EDITION === 'product' ? 'product' : 'lab', lab: u.role === 'admin' && !BIZ(),
@@ -468,7 +474,7 @@ app.delete('/api/admin/plans/:key', adminOnly, wrap(async (req, res) => {
   await audit(req, table === 'plans' ? 'plan_deleted' : 'addon_deleted', req.params.key, 0);
   res.json({ ok: true });
 }));
-app.get('/api/admin/businesses', adminOnly, wrap(async (_req, res) => res.json(await q(`SELECT b.id, b.name, b.vertical, b.country, b.city, b.currency, b.timezone, b.is_demo, b.ai_budget::float AS ai_budget,
+app.get('/api/admin/businesses', adminOnly, wrap(async (_req, res) => res.json(await q(`SELECT b.id, b.name, b.vertical, b.country, b.city, b.currency, b.timezone, b.is_demo, b.ai_budget::float AS ai_budget, to_char(b.paid_until,'YYYY-MM-DD') AS paid_until,
     b.plan_status, b.plan_key, b.addons, b.feature_overrides, to_char(b.trial_ends_at,'YYYY-MM-DD') AS trial_ends, GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left,
     (SELECT string_agg(u.email, ', ') FROM users u WHERE u.business_id=b.id AND u.role='owner') AS owners,
     (SELECT count(*) FROM users u WHERE u.business_id=b.id)::int AS logins,
@@ -504,6 +510,7 @@ app.post('/api/admin/businesses/:id/plan', adminOnly, wrap(async (req, res) => {
   const budget = req.body.ai_budget != null && req.body.ai_budget !== '' && isFinite(+req.body.ai_budget) ? Math.min(Math.max(+req.body.ai_budget, 0), 1000) : +(b.ai_budget ?? 5);
   await q(`UPDATE businesses SET plan_status=$1, plan_key=$2, addons=$3, feature_overrides=$4, trial_ends_at = trial_ends_at + make_interval(days => $5), ai_budget=$7 WHERE id=$6`,
     [status, plan, JSON.stringify(addons), JSON.stringify(overrides), Math.min(Math.max(+req.body.extend_days || 0, 0), 365), id, budget]);
+  forgetAccess(id);
   await audit(req, 'plan_changed', `${b.name}: ${status}, ${plan}, add-ons [${addons}], switches ${JSON.stringify(overrides)}, Claude budget $${budget}${req.body.extend_days ? `, +${req.body.extend_days}d` : ''}`, id);
   res.json({ ok: true });
 }));
@@ -721,6 +728,7 @@ mountHQ(app, adminOnly, wrap, audit, aiHealth);
 mountUpgrades(app, { adminOnly, wrap, audit, BIZ });
 mountControls(app, { adminOnly, wrap, audit });
 mountSupport(app, { adminOnly, wrap, audit, secureCookie });
+mountBilling(app, { adminOnly, wrap, audit });
 mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
 // a PREVIEW_ONLY copy on the real data must never send: Autopilot only runs in the live app
 setSenders({ sendWhatsApp, sendTelegram }); if (!process.env.PREVIEW_ONLY) startAutopilot();
@@ -805,7 +813,8 @@ app.get('/api/stats', wrap(async (req, res) => {
       WHERE c.business_id=$1 AND c.needs_attention ${convF} ORDER BY c.updated_at DESC LIMIT 10`, [BIZ()]),
     q(`SELECT count(*)::int AS n FROM requests WHERE business_id=$1 AND status='pending'`, [BIZ()]),
     q(`SELECT count(*)::int AS n FROM learning WHERE business_id=$1 AND status='open'`, [BIZ()]),
-    one('SELECT name, plan_price::float FROM businesses WHERE id=$1', [BIZ()])]);
+    one(`SELECT b.name, (COALESCE(p.price,0) + COALESCE((SELECT sum(a.price) FROM addons a WHERE COALESCE(b.addons,'[]'::jsonb) ? a.key),0))::float AS plan_price
+      FROM businesses b LEFT JOIN plans p ON p.key=b.plan_key WHERE b.id=$1`, [BIZ()])]);
   res.json({ ...t, ...bk, approvals: pend.n, to_learn: learn.n, ai: { ...ai, last: aiHealth }, outcomes, daily, heat, channels, services, today, upcoming, attention,
     business: biz, now: localStamp(new Date()), tz: currentTz(),
     booking_url: (process.env.PUBLIC_URL || 'https://app.nexfoyz.dev').replace(/\/$/, '') + '/book?b=' + BIZ() });
@@ -1470,7 +1479,7 @@ const stop = sig => {
 };
 process.on('SIGTERM', () => stop('SIGTERM'));
 process.on('SIGINT', () => stop('SIGINT'));
-if (LIVE) resumeInbound({ whatsapp: answerWhatsApp, kapso: answerWhatsApp }).catch(e => console.error('Resume incoming messages:', e.message));
+if (LIVE) resumeInbound({ whatsapp: answerWhatsApp, kapso: answerWhatsApp, telegram: answerTelegram, instagram: answerInstagram }).catch(e => console.error('Resume incoming messages:', e.message));
 if (LIVE) startReminders();
 if (LIVE) startAiQueue(async ({ channel, businessId, phone, reply, options }) => {
   if (channel === 'whatsapp') {

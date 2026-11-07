@@ -2,7 +2,7 @@
 // Runs every 5 minutes. Each booking gets at most one reminder.
 import { q, one } from './db.js';
 import { okTz, currentTz, daysBetween, fmtDate, fmtTime } from './clock.js';
-import { sendWhatsApp } from './whatsapp.js';
+import { sendWhatsApp, sendWhatsAppTemplate } from './whatsapp.js';
 import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
 import { sendTelegram } from './telegram.js';
 import { sendEmail } from './email.js';
@@ -54,7 +54,16 @@ export async function runReminders() {
         // an Instagram client has no phone number (ig-<id>): a WhatsApp send could never arrive, so say so honestly
         if (/^ig-/.test(b.phone)) status = 'not_sent: Instagram clients get no reminders yet (Meta allows replies within 24 hours only)';
         else if (channel === 'whatsapp') {
-          const r = await sendWhatsApp(b.wa_phone_number_id, b.phone, text);
+          // WhatsApp accepts free text only within 24 hours of the client's last message; after that only an approved
+          // template (WA_REMINDER_TEMPLATE, body: {{1}} name, {{2}} service, {{3}} day, {{4}} time, {{5}} business)
+          const last = await one(`SELECT max(m.created_at) AS at FROM messages m JOIN conversations c ON c.id=m.conversation_id
+            WHERE c.customer_id=$1 AND c.channel='whatsapp' AND m.role='customer'`, [b.customer_id]);
+          const open = last?.at && Date.now() - new Date(last.at) < 23.5 * 3600e3, tpl = process.env.WA_REMINDER_TEMPLATE;
+          const tz = b.timezone || currentTz();
+          const r = open ? await sendWhatsApp(b.wa_phone_number_id, b.phone, text)
+            : tpl ? await sendWhatsAppTemplate(b.wa_phone_number_id, b.phone, tpl, process.env.WA_REMINDER_LANG || 'en', [b.customer || 'there', b.service, fmtDate(new Date(b.starts_at), { weekday: 'long', day: 'numeric', month: 'long' }, 'en-GB', tz), fmtTime(new Date(b.starts_at), tz), b.business])
+            : b.email ? await sendEmail(b.email, `Reminder: ${b.service} at ${b.business}`, text, b.business)
+            : { ok: false, reason: "outside WhatsApp's 24-hour window; add an approved reminder template (WA_REMINDER_TEMPLATE)" };
           if (!r?.ok) status = 'not_sent: ' + (r?.reason || 'unknown');
         } else status = `not_sent: ${channel === 'sms' ? 'SMS' : 'email'} sending is not connected yet`;
       }

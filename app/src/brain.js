@@ -11,6 +11,7 @@ import { notify } from './notify.js';
 import { emit } from './live.js';
 import { unify } from './customers.js';
 import { hasFeature } from './features.js';
+import { accessOf, stopped } from './billing.js';
 import { availability, isFree, freeSlots, bufferOf, label, hoursText, localDate, parseLocal } from './slots.js';
 import { inZone, wall, daysBetween, fmtDate, fmtTime } from './clock.js';
 
@@ -55,8 +56,27 @@ async function openConversation(bizId, customerId, channel) {
 // queued: a second pass from the AI queue; the customer's message is already saved and acknowledged.
 // Every message is handled on its business's clock (clock.js): days, hours and labels in that business's time zone.
 export async function handleMessage(args) {
-  const z = await one('SELECT timezone FROM businesses WHERE id=$1', [args.businessId]);
-  return inZone(z?.timezone, () => handle(args));
+  const z = await one('SELECT timezone, name, assistant_name FROM businesses WHERE id=$1', [args.businessId]);
+  const r = await inZone(z?.timezone, () => handle(args));
+  if (r?.reply && !r.duplicate && r.conversationId && args.channel !== 'test') r.reply = await disclose(r.conversationId, r.reply, z);
+  return r;
+}
+// People must be told they are talking to an AI (EU AI Act, art. 50). The first reply of each chat starts with one
+// short line in the customer's language, unless the reply already says it. The stored copy matches what was sent.
+const AI_LINE = {
+  en: (n, b) => `I'm ${n}, the AI assistant of ${b}.`,
+  ar: (n, b) => `أنا ${n}، المساعد الذكي (ذكاء اصطناعي) لـ ${b}.`,
+  es: (n, b) => `Soy ${n}, el asistente de IA de ${b}.`,
+  fr: (n, b) => `Je suis ${n}, l'assistant IA de ${b}.`,
+};
+async function disclose(conversationId, reply, biz) {
+  if (/\b(AI|IA)\b|ذكاء اصطناعي|virtual assistant|asistente virtual|assistant virtuel/i.test(reply)) return reply;
+  const n = await one(`SELECT count(*)::int AS n, max(id) AS last FROM messages WHERE conversation_id=$1 AND role='assistant'`, [conversationId]);
+  if (!n || n.n !== 1) return reply; // not the first reply of this chat
+  const line = (AI_LINE[langOf(reply)] || AI_LINE.en)(biz?.assistant_name || 'Nora', biz?.name || 'this business');
+  const out = `${line}\n${reply}`;
+  await q('UPDATE messages SET text=$2 WHERE id=$1', [n.last, out]);
+  return out;
 }
 async function handle({ businessId, phone, name, text, channel = 'whatsapp', waId = null, queued = false }) {
   const biz = await loadBusiness(businessId);
@@ -88,6 +108,12 @@ async function handle({ businessId, phone, name, text, channel = 'whatsapp', waI
     await q(`UPDATE conversations SET updated_at=now(), needs_attention=true, attention_reason='AI is off: answer from your Inbox' WHERE id=$1`, [conv.id]);
     await notify(businessId, 'handoff', `${customer.name || 'A customer'} is waiting for a reply (AI is off)`, text.slice(0, 200), { conversationId: conv.id });
     return { reply: null, paused: true, aiOff: true, outcome: conv.outcome, conversationId: conv.id };
+  }
+
+  // MXAi plan ended or paused (billing.js): the AI stops, every chat waits for the owner, nothing is lost
+  if (stopped(await accessOf(businessId))) {
+    await q(`UPDATE conversations SET updated_at=now(), needs_attention=true, attention_reason='Your MXAi plan has ended: answer from your Inbox' WHERE id=$1`, [conv.id]);
+    return { reply: null, paused: true, aiOff: true, billing: 'ended', outcome: conv.outcome, conversationId: conv.id };
   }
 
   // Satisfaction: the chat asked "how did I do? 1-5"; a bare number or stars is the answer, not a new question.
@@ -642,6 +668,7 @@ async function saveProfile(customer, decision, text, conversationChannel) {
   // a short "ok" or a number says nothing about the language: keep what we knew
   const lg = langOf(text);
   if (lg !== 'en' || /[a-z]{3,}\s+[a-z]{3,}/i.test(text)) set('language', lg);
+  if (!sets.length) return; // nothing new to save (a short "Thanks!" used to crash the reply here)
   vals.push(customer.id);
   await q(`UPDATE customers SET ${sets.join(', ')} WHERE id=$${vals.length}`, vals);
   Object.assign(customer, await one('SELECT * FROM customers WHERE id=$1', [customer.id]));

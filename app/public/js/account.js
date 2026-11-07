@@ -68,7 +68,7 @@ window.PUB=()=>(typeof me!=="undefined"&&me&&me.public_url)||location.origin;
 document.addEventListener("click",e=>{if(!e.target.closest("#tfNudgeX"))return;try{localStorage.setItem("rb-2fa-nudge","off")}catch{}$("#tfNudge")?.remove();$("#tfNudgeX")?.remove();if(!$("#planText").textContent.trim())$("#planBar").hidden=true});
 const nudgeOff=()=>{try{return localStorage.getItem("rb-2fa-nudge")==="off"}catch{return false}};
 async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();const b=me.business,admin=me.user.role==="admin",asOwner=!admin||!!me.view_as;
-  $("#adminNav").hidden=true;$("#labBtn")&&($("#labBtn").hidden=!admin);viewAsBar(admin);supportBar();window.P10?.markLocks?.();$("#planBar").hidden=false;
+  $("#adminNav").hidden=true;$("#labBtn")&&($("#labBtn").hidden=!admin);viewAsBar(admin);supportBar();billingBar(asOwner);window.P10?.markLocks?.();$("#planBar").hidden=false;
   // Sections this login can't open disappear; sections the plan doesn't include show a lock.
   document.querySelectorAll("nav button[data-view]").forEach(x=>{const m=VIEW_MODULE[x.dataset.view];if(!m)return;
     x.hidden=!me.modules.includes(m);const f=me.module_feature[m];x.classList.toggle("locked",asOwner&&!!f&&!me.features.includes(f));
@@ -107,6 +107,14 @@ function supportBar(){let w=$("#supBar");const s=me.support;if(!s){w?.remove();c
     try{if(a==="extend"){await req("/api/admin/support/extend","POST");toast("Extended by 30 minutes.");return loadMe()}
       if(a==="edit"){const why=prompt("Why do you need to change something? This is recorded and the owner is told.");if(!why)return;await req("/api/admin/support/edit","POST",{reason:why});toast("Changes allowed for this visit.");return loadMe()}
       if(a==="end"){await req("/api/admin/support/end","POST");location.href="/"}}catch(err){toast(err.message)}}}
+// The owner's plan: a quiet line when the trial or the paid period ends within 3 days, a clear one when it has ended.
+function billingBar(asOwner){let w=$("#billBar");const a=me.billing;const show=asOwner&&a&&(a.state==="ended"||a.state==="paused"||a.state==="ending");
+  if(!show){w?.remove();return}
+  if(!w){w=document.createElement("div");w.id="billBar";w.className="sup-bar bill-bar";w.setAttribute("role","status");document.querySelector("main")?.prepend(w)}
+  const d=a.days_left,when=d>1?`in ${d} days`:d===1?"tomorrow":d===0?"today":"";
+  w.classList.toggle("ended",a.state!=="ending");
+  w.innerHTML=a.state==="ending"?`<span class="sup-dot" aria-hidden="true"></span><b>${a.kind==="trial"?"Your free trial ends":"Your next payment is due"} ${when||"now"}</b><span>${a.grace?"Everything keeps working for a few more days.":"Everything keeps working until then."} Contact MXAi to continue without a break.</span>`
+    :`<span class="sup-dot" aria-hidden="true"></span><b>${a.state==="paused"?"Your MXAi plan is paused":"Your MXAi plan has ended"}</b><span>The AI and online booking are stopped. You can still read everything and reply to clients. Contact MXAi to continue.</span>`}
 // Admin only: "View as" a plan, to see this business exactly as an owner on that plan would (made for test businesses).
 function viewAsBar(admin){let w=$("#viewAs");if(!admin){w?.remove();return}
   if(!w){const lab=$("#labBtn");w=document.createElement("label");w.id="viewAs";w.className="viewAs";if(lab)lab.after(w);else{if((viewAsBar.n=(viewAsBar.n||0)+1)<10)setTimeout(()=>viewAsBar(admin),300);return}}

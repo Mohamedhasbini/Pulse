@@ -294,6 +294,28 @@ try {
   say('The website animation file is public', (await fetch(BASE + '/stream.js', { redirect: 'manual' })).status === 200);
   const pub = await raw('GET', '/pulse', 'app.nexfoyz.dev');
   say('The public website gets the security headers', !!pub.headers['x-frame-options'] && !!pub.headers['x-content-type-options']);
+  // ---- billing (billing.js): a paused or ended plan is read-and-reply only, the AI stops, a payment brings it back
+  const planBody = st => JSON.stringify({ status: st });
+  await fetch(BASE + `/api/admin/businesses/${r.id}/plan`, { method: 'POST', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: planBody('paused') });
+  const ow = { ...as(owner), 'Content-Type': 'application/json' };
+  const w1 = await fetch(BASE + '/api/integrations/webhook', { method: 'DELETE', headers: ow });
+  say('A paused plan blocks changes', w1.status === 402 && (await w1.json()).billing === 'ended');
+  const meP = await fetch(BASE + '/api/me', { headers: as(owner) }).then(x => x.json());
+  say('The owner is told the plan has stopped', meP.billing?.state === 'paused');
+  const { handleMessage } = await import('./brain.js'), { forgetAccess } = await import('./billing.js');
+  forgetAccess(r.id);
+  const hm = await handleMessage({ businessId: r.id, phone: 'test-billing-1', name: 'Test Billing', text: 'Hello, can I book tomorrow?', channel: 'whatsapp' });
+  say('A paused plan stops the AI and hands the chat to the owner', hm.reply == null && hm.billing === 'ended');
+  const pay = await fetch(BASE + `/api/admin/businesses/${r.id}/payment`, { method: 'POST', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: 59, months: 1, method: 'whish', note: 'smoke' }) }).then(x => x.json());
+  const paidNow = await one(`SELECT plan_status, paid_until >= current_date + 27 AS ok FROM businesses WHERE id=$1`, [r.id]);
+  say('Recording a payment makes the plan active and moves paid-until a month ahead', !!pay.paid_until && paidNow.plan_status === 'active' && paidNow.ok);
+  say('After payment, changes work again', (await fetch(BASE + '/api/integrations/webhook', { method: 'DELETE', headers: ow })).status === 200);
+  say('The payment is listed in the Lab', (await fetch(BASE + `/api/admin/businesses/${r.id}/payments`, { headers: as(admin) }).then(x => x.json())).some(p => p.amount === 59 && p.method === 'whish'));
+  say('Owners cannot record payments', (await fetch(BASE + `/api/admin/businesses/${r.id}/payment`, { method: 'POST', headers: ow, body: '{"amount":1}' })).status === 403);
+  // ---- EU AI Act: the first reply of a chat says it is an AI assistant
+  forgetAccess(r.id);
+  const firstReply = await handleMessage({ businessId: r.id, phone: 'test-disclose-1', name: 'Test Disclose', text: 'Thanks!', channel: 'whatsapp' });
+  say('The first reply of a chat says it is an AI assistant', !firstReply.reply || /AI assistant|asistente de IA|ذكاء اصطناعي|assistant IA/.test(firstReply.reply), (firstReply.reply || 'no reply').slice(0, 60));
   // the admin with no business opened is in the Lab: platform pages only
   const me0 = await fetch(BASE + '/api/me', { headers: as(admin) }).then(r => r.json());
   say('Admin signs in to the Lab, not a business', me0.lab === true && !me0.business);

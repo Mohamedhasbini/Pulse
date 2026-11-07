@@ -5,6 +5,7 @@
 import crypto from 'node:crypto';
 import { q } from './db.js';
 import { credentials } from './integrations.js';
+import { receive, work, markUndelivered } from './inbound.js';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 export const igKey = id => 'ig-' + id;
@@ -23,7 +24,7 @@ export async function sendInstagram(businessId, phoneOrId, text, options = []) {
   const c = await credentials(businessId, 'instagram');
   if (!c?.access_token || !c?.ig_user_id) return { ok: false, reason: 'Instagram is not connected' };
   try {
-    const r = await fetch(`${GRAPH}/${encodeURIComponent(c.ig_user_id)}/messages`, {
+    const r = await fetch(`${GRAPH}/${encodeURIComponent(c.ig_user_id)}/messages`, { signal: AbortSignal.timeout(10000),
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${c.access_token}` }, body: JSON.stringify(igBody(to, text, options)) });
     if (r.ok) return { ok: true };
     const j = await r.json().catch(() => ({}));
@@ -34,7 +35,7 @@ export async function sendInstagram(businessId, phoneOrId, text, options = []) {
 // The client's name or @username for the inbox (Meta allows this once they've written to you); null when not available
 async function igProfile(c, id) {
   try {
-    const r = await fetch(`${GRAPH}/${encodeURIComponent(id)}?fields=username,name`, { headers: { Authorization: `Bearer ${c.access_token}` } });
+    const r = await fetch(`${GRAPH}/${encodeURIComponent(id)}?fields=username,name`, { headers: { Authorization: `Bearer ${c.access_token}` }, signal: AbortSignal.timeout(8000) });
     if (!r.ok) return null; const j = await r.json(); return j.name || (j.username ? '@' + j.username : null);
   } catch { return null; }
 }
@@ -67,6 +68,7 @@ export function parseInstagram(body) {
 }
 
 export function mountInstagram(app, handleMessage) {
+  handle = handleMessage;
   // Meta checks the address once with a verify token: IG_VERIFY_TOKEN, or the WhatsApp one when unset
   app.get('/webhook/instagram', (req, res) => {
     const token = process.env.IG_VERIFY_TOKEN || process.env.WA_VERIFY_TOKEN;
@@ -79,13 +81,18 @@ export function mountInstagram(app, handleMessage) {
     for (const a of new Set(msgs.map(m => m.account))) owners.set(a, await businessFor(a));
     // every account in the payload must be ours and signed with its own app secret
     if (msgs.length && ![...owners.values()].every(o => o && validSig(req.rawBody, req.get('x-hub-signature-256'), o.c.app_secret))) return res.sendStatus(401);
+    let ids;
+    try { ids = await receive('instagram', msgs); } // written down first (inbound.js), like WhatsApp
+    catch (e) { console.error('Could not store incoming Instagram messages:', e.message); return res.sendStatus(500); } // Meta retries
     res.sendStatus(200); // answer Meta fast, then work
-    for (const m of msgs) {
-      try {
-        const o = owners.get(m.account);
-        const r = await handleMessage({ businessId: o.id, phone: igKey(m.from), name: (await igProfile(o.c, m.from)) || 'Instagram client', text: m.text, channel: 'instagram', waId: m.id });
-        if (!r.duplicate && r.reply) await sendInstagram(o.id, m.from, r.reply, r.options);
-      } catch (e) { console.error('Failed to handle Instagram message', e); }
-    }
+    for (const id of ids) await work(id, answerInstagram);
   });
+}
+let handle = null; // set by mountInstagram (the receptionist)
+// One stored Instagram DM: also used after a restart (server.js resume)
+export async function answerInstagram(m) {
+  if (!handle) throw new Error('Instagram is not ready yet');
+  const o = await businessFor(m.account); if (!o) return;
+  const r = await handle({ businessId: o.id, phone: igKey(m.from), name: (await igProfile(o.c, m.from)) || 'Instagram client', text: m.text, channel: 'instagram', waId: m.id });
+  if (!r.duplicate && r.reply) { const s = await sendInstagram(o.id, m.from, r.reply, r.options); if (!s.ok) await markUndelivered(r.conversationId, s.reason); }
 }

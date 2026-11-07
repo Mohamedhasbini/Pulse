@@ -152,7 +152,12 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS reminder_text TEXT DEFAULT 'Hi {
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_status TEXT;
 -- the name typed on the public booking page (shown back to the booker instead of the name the business has on file)
-ALTER TABLE bookings ADD COLUMN IF NOT EXISTS booked_name TEXT;   -- sent | skipped | not_sent: <reason>
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS booked_name TEXT;
+-- Billing (billing.js): payments recorded by the admin move "paid until" forward
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS paid_until DATE;
+CREATE TABLE IF NOT EXISTS payments (id serial PRIMARY KEY, business_id int REFERENCES businesses(id) ON DELETE CASCADE, amount numeric(10,2) NOT NULL,
+  currency text NOT NULL DEFAULT 'USD', method text, months int NOT NULL DEFAULT 1, note text, recorded_by text, at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS payments_biz ON payments (business_id, at DESC);   -- sent | skipped | not_sent: <reason>
 
 -- Online booking page is an optional add-on the business can switch on and customise
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS booking_enabled BOOLEAN DEFAULT true;

@@ -258,3 +258,5 @@ nav button.p10.locked,.p10-sub button.locked{opacity:.5}
 .sup-bar.edit .sup-dot{background:#e8a33d}
 .sup-bar .sup-act{margin-left:auto;display:flex;gap:6px}
 .sup-bar button{min-height:30px;padding:4px 12px;border-radius:999px;border:1px solid var(--fu-line,rgba(255,255,255,.18));background:transparent;color:inherit;font:600 12.5px/1 inherit;cursor:pointer}
+/* the owner's plan notice (billing.js): amber when ending soon, red once ended */
+.bill-bar .sup-dot{background:#e8a33d}.bill-bar.ended .sup-dot{background:#dc2626}

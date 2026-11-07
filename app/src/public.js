@@ -3,6 +3,7 @@
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { hasFeature } from './features.js';
+import { accessOf, stopped } from './billing.js';
 import { notify } from './notify.js';
 import { unify } from './customers.js';
 import { q, one, withBusinessLock } from './db.js';
@@ -61,7 +62,7 @@ export function mountPublic(app, DEFAULT_BIZ) {
   app.get('/book', (_req, res) => res.sendFile(PUBLIC + '/book.html'));
   // The booking page is an optional add-on; when it's off only existing booking links keep working.
   // Needs the owner's switch on and the booking-page feature in the business's plan.
-  const enabled = async BIZ => (await one('SELECT booking_enabled FROM businesses WHERE id=$1', [BIZ]))?.booking_enabled !== false && await hasFeature(BIZ, 'booking_page');
+  const enabled = async BIZ => (await one('SELECT booking_enabled FROM businesses WHERE id=$1', [BIZ]))?.booking_enabled !== false && await hasFeature(BIZ, 'booking_page') && !stopped(await accessOf(BIZ));
   app.get('/booking/:token', (_req, res) => res.sendFile(PUBLIC + '/book.html'));
 
   app.get('/api/public/info', wrap(async (req, res) => {

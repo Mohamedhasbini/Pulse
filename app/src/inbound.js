@@ -5,6 +5,9 @@
 import { q, one } from './db.js';
 
 let busy = 0; // messages being worked on right now (a clean stop waits for them)
+// A reply the channel refused (or that timed out): the chat is flagged so the owner sees it in Needs you
+export const markUndelivered = (conversationId, reason) => conversationId ? q(`UPDATE conversations SET needs_attention=true,
+  attention_reason=$2 WHERE id=$1`, [conversationId, `Reply not delivered: ${String(reason || 'unknown').slice(0, 120)}`]).catch(() => {}) : null;
 export const inFlight = () => busy;
 
 // Write each parsed message down; returns their ids. Throws if the database is down (the caller then answers 500,
