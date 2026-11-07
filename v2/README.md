@@ -40,9 +40,14 @@ A worldwide, consented B2C lead database. Screen: http://localhost:3200/pool.htm
 | Capture: merge duplicates, keep allowed facts, sign consents, score | `app/src/pool/capture.js` |
 | Public form `/f/<slug>`, confirm `/c/<token>`, unsubscribe `/u/<token>`, Meta/Google webhooks, admin API | `app/src/pool/routes.js`, `form-page.js` |
 | The screen | `app/public/pool.html` |
+| One-time codes (WhatsApp/SMS; Twilio Verify, WhatsApp Cloud API or test mode) | `app/src/pool/codes.js` |
+| Phone line type, gmail match key, email checks (Reacher) | `app/src/pool/checks.js` |
+| Duplicates: auto-merge the same mailbox, list likely ones, merge safely | `app/src/pool/dedupe.js` |
+| Daily upkeep at 03:30 (consent expiry, checks, duplicates, scores) | `app/src/pool/jobs.js` |
 | Example people (add / remove) | `docker compose exec -T app node src/pool/demo-seed.js [--remove]` |
 
 ## Next
-- Phase B: one-time codes (WhatsApp/SMS) to prove leads are real, phone line checks, nightly duplicate matching (Splink), consent expiry jobs.
+- Real code sending: add Twilio (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SID`) or WhatsApp Cloud API (`WA_TOKEN`, `WA_PHONE_ID`,
+  `WA_OTP_TEMPLATE`) to `v2/.env`. Until then codes run in test mode and appear only in the app log.
 - Meta lead ads: fetch the answers for each `leadgen_id` once a page token is connected.
 - Public address for forms (Cloudflare tunnel) when the first client goes live.

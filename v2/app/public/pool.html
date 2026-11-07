@@ -147,6 +147,17 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
 .sw::after { content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:var(--faint); transition:left .15s; }
 .sw[aria-checked="true"] { background:var(--btn); border-color:var(--btn); } .sw[aria-checked="true"]::after { left:16px; background:var(--lime); }
 .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--btn); color:var(--btn-fg); border-radius:9px; padding:9px 14px; z-index:60; box-shadow:var(--shadow); }
+.vf { display:inline-grid; place-items:center; width:15px; height:15px; border-radius:50%; background:var(--ink); color:var(--surface); font-size:9px; font-weight:700; vertical-align:1px; margin-left:4px; }
+.flagw { font-size:10.5px; font-weight:600; color:var(--warn); background:var(--warn-bg); border-radius:4px; padding:0 5px; margin-left:4px; }
+.stats4 { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+.stat { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px 14px; display:grid; gap:2px; }
+.stat b { font:600 20px var(--mono); } .stat span { color:var(--muted); font-size:12px; }
+.pair { display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); }
+.pair .side { display:grid; gap:2px; min-width:0; } .pair .side b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pair .acts { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.why { grid-column:1/-1; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.runs td { white-space:normal; }
+@media (max-width:760px) { .stats4 { grid-template-columns:1fr 1fr; } .pair { grid-template-columns:1fr; } .pair .acts { justify-content:flex-start; } }
 @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
 </style>
 </head>
@@ -158,6 +169,7 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
       <button class="tab" role="tab" data-page="people" aria-selected="true">People</button>
       <button class="tab" role="tab" data-page="forms" aria-selected="false">Capture forms</button>
       <button class="tab" role="tab" data-page="rules" aria-selected="false">Country rules</button>
+      <button class="tab" role="tab" data-page="care" aria-selected="false">Data care</button>
       <a class="tab" href="/eng-lab.html" style="text-decoration:none">Company leads</a>
     </nav>
     <div class="search"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
@@ -217,6 +229,15 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
     </div>
   </div>
 
+  <div class="page" id="pCare" hidden>
+    <div class="stats4" id="careStats"></div>
+    <div class="card"><h2>Possible duplicates <span class="muted" style="font-weight:400">· people who may be the same person; the same mailbox is merged automatically</span></h2>
+      <div class="pad" id="dupList"></div></div>
+    <div class="card" style="margin-top:14px"><h2 style="display:flex;align-items:center;gap:10px">Daily upkeep <span class="muted" style="font-weight:400">· every night at 03:30: ends expired consents, checks numbers and emails, finds duplicates, refreshes scores</span>
+      <button class="primary" id="runUpkeep" style="margin-left:auto">Run now</button></h2>
+      <div style="overflow:auto"><table class="runs" style="min-width:700px"><thead><tr><th>Started</th><th>Took</th><th>What it did</th></tr></thead><tbody id="runRows"></tbody></table></div></div>
+  </div>
+
   <div class="page" id="pRules" hidden>
     <div class="card"><h2>Country rules <span class="muted" style="font-weight:400">· what may be sent, per channel (research of 7 Nov 2026, not legal advice)</span></h2>
       <div style="overflow:auto"><table style="min-width:900px"><thead><tr><th>Country</th><th>Email</th><th>SMS</th><th>WhatsApp</th><th>Call</th><th>AI call</th><th>Hours</th><th>Limit</th><th>Registries</th><th>Cold email</th></tr></thead><tbody id="ruleRows"></tbody></table></div>
@@ -240,6 +261,8 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
   const initials = n => (String(n || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '?').toUpperCase();
   const CH = { email: '@', sms: 'S', whatsapp: 'W', call: '☎', ai_call: 'AI' };
   const CHN = { email: 'Email', sms: 'SMS', whatsapp: 'WhatsApp', call: 'Call', ai_call: 'AI call' };
+  const LANDLINE = new Set(['fixed_line', 'toll_free', 'premium_rate', 'shared_cost', 'uan', 'pager']);
+  const LINE = { mobile: 'mobile', fixed_line: 'landline', fixed_line_or_mobile: 'mobile or landline', voip: 'internet number', toll_free: 'toll-free', premium_rate: 'premium rate' };
 
   // ---------- state ----------
   let filters = {}, sort = 'score', offset = 0, total = 0, rows = [], selected = new Set(), facets = null;
@@ -259,7 +282,7 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
         <div class="opts">${list.length ? list.map(o => `<label class="opt"><input type="checkbox" data-f="${key}" value="${esc(o.v)}" ${on.includes(String(o.v)) ? 'checked' : ''}><span>${esc(label ? label(o.v) : o.v)}</span><span class="c">${o.n === '' ? '' : o.n}</span></label>`).join('') : '<div class="faint" style="padding:4px">Nothing yet</div>'}</div></div>`;
     }).join('') + `<div class="fsec open"><button type="button"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m4 2 4 4-4 4"/></svg>Lead score${filters.minScore ? `<span class="n">≥${filters.minScore}</span>` : ''}</button>
       <div class="opts"><div class="range"><input type="range" min="0" max="100" step="5" value="${filters.minScore || 0}" id="minScore" aria-label="Minimum lead score"><span class="mono" id="msv">${filters.minScore || 0}</span></div>
-      <label class="toggle"><input type="checkbox" id="hasEmail" ${filters.hasEmail ? 'checked' : ''}> Has email</label><label class="toggle"><input type="checkbox" id="hasPhone" ${filters.hasPhone ? 'checked' : ''}> Has phone</label>
+      <label class="toggle"><input type="checkbox" id="hasEmail" ${filters.hasEmail ? 'checked' : ''}> Has email</label><label class="toggle"><input type="checkbox" id="hasPhone" ${filters.hasPhone ? 'checked' : ''}> Has phone</label><label class="toggle"><input type="checkbox" id="verified" ${filters.verified ? 'checked' : ''}> Confirmed number</label>
       <label class="toggle"><input type="checkbox" id="includeOptedOut" ${filters.includeOptedOut ? 'checked' : ''}> Include people who opted out</label></div></div>`;
   }
   function renderChips() {
@@ -272,7 +295,7 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
   async function loadFacets() {
     facets = await api('/api/pool/facets');
     const t = facets.totals || {};
-    $('#kpis').innerHTML = [['People', t.people], ['New · 7 days', t.new_7d], ['Consented', t.consented], ['Opted out', t.opted_out], ['Avg score', t.avg_score ?? '–']]
+    $('#kpis').innerHTML = [['People', t.people], ['New · 7 days', t.new_7d], ['Consented', t.consented], ['Confirmed', t.verified], ['Opted out', t.opted_out], ['Avg score', t.avg_score ?? '–']]
       .map(([l, v]) => `<div class="kpi"><b>${v ?? 0}</b><span>${l}</span></div>`).join('');
     renderFilters();
   }
@@ -292,7 +315,7 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
     return `<tr data-id="${p.id}" class="${selected.has(p.id) ? 'sel' : ''}">
       <td class="cb"><input type="checkbox" data-sel="${p.id}" ${selected.has(p.id) ? 'checked' : ''} aria-label="Select ${esc(p.full_name || 'person')}"></td>
       <td><div class="who"><span class="av">${esc(initials(p.full_name))}</span><div><b>${esc(p.full_name || 'Unnamed')}</b><small>${esc(p.language ? p.language.toUpperCase() : '')}</small></div></div></td>
-      <td><div>${esc(p.email || '')}</div><small class="muted mono">${esc(p.phone || '')}</small></td>
+      <td><div>${esc(p.email || '')}${['invalid', 'disposable'].includes(p.email_status) ? `<span class="flagw">${esc(p.email_status)}</span>` : ''}</div><small class="muted mono">${esc(p.phone || '')}</small>${p.phone_verified ? '<span class="vf" title="Number confirmed with a code">✓</span>' : ''}${LANDLINE.has(p.phone_line) ? `<span class="flagw">${esc(p.phone_line.replace(/_/g, ' '))}</span>` : ''}</td>
       <td>${flag(p.country)} ${esc([p.city, p.country].filter(Boolean).join(', ') || '–')}</td>
       <td>${i.vertical ? `<span class="tag">${esc(i.vertical)}</span>` : '–'} <small class="muted">${esc(i.timing || '')}</small></td>
       <td class="muted">${esc(prof || '–')}</td>
@@ -318,7 +341,10 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
           <select id="dStatus" style="margin-left:auto;height:30px;border:1px solid var(--line2);border-radius:7px;background:var(--surface)">${['new', 'qualified', 'contacted', 'booked', 'won', 'lost'].map(s => `<option ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
       </div>
       <div class="db">
-        <div class="sec"><h3>Contact</h3><dl class="kv">${d.identities.map(i => `<dt>${esc(i.kind)}</dt><dd class="mono">${esc(i.value)}${i.verified_at ? ' <span class="ok">verified</span>' : ''}</dd>`).join('')}</dl></div>
+        <div class="sec"><h3>Contact</h3><dl class="kv">${d.identities.map(i => `<dt>${esc(i.kind)}</dt><dd><span class="mono">${esc(i.value)}</span>${i.verified_at ? ` <span class="ok">confirmed by ${esc(i.verified_via === 'sms' ? 'text' : i.verified_via || 'code')}</span>` : ''}
+            <span class="src">${i.kind === 'phone' ? esc(LINE[i.line_type] || i.line_type || 'not checked yet') : esc(i.status ? 'email ' + i.status.replace('_', '-') : 'email not checked yet')}${i.check_source ? ' · ' + esc(i.check_source.replace('_', ' ')) : ''}</span></dd>`).join('')}</dl>
+          ${d.identities.some(i => i.kind === 'phone' && !i.verified_at && !LANDLINE.has(i.line_type)) ? '<div class="row1" style="margin-top:8px"><button class="iconbtn" id="dCode" data-ch="whatsapp">Send code by WhatsApp</button><button class="iconbtn" id="dCodeSms" data-ch="sms">by SMS</button></div>' : ''}</div>
+        ${d.duplicates.length ? `<div class="sec"><h3>May be the same person</h3>${d.duplicates.map(x => `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px"><a href="#" data-openp="${x.other_id}">${esc(x.other_name || 'Unnamed')}</a><span class="mono muted">${Math.round(x.score * 100)}%</span>${x.reasons.map(r => `<span class="tag">${esc(r)}</span>`).join('')}</div>`).join('')}<p class="muted" style="margin:4px 0 0">Decide in Data care.</p></div>` : ''}
         <div class="sec"><h3>What they want</h3>${d.interests.map(i => `<div style="margin-bottom:8px"><span class="tag">${esc(i.vertical)}</span> <span class="muted">${esc([i.timing, i.budget].filter(Boolean).join(' · '))}</span>${i.intent ? `<div style="margin-top:4px">${esc(i.intent)}</div>` : ''}</div>`).join('') || '<span class="muted">Nothing stated</span>'}</div>
         <div class="sec"><h3>Details · each with its source</h3>${attr ? `<dl class="kv">${attr}</dl>` : '<span class="muted">No other details</span>'}</div>
         <div class="sec"><h3>Can we contact them now? · ${esc(d.rule.name)} rules</h3><div class="can">${can}</div>${d.rule.note ? `<p class="muted" style="margin:8px 0 0">${esc(d.rule.note)}</p>` : ''}</div>
@@ -333,6 +359,8 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
       </div>`;
     $('#scrim').hidden = false; $('#drawer').hidden = false; $('#dClose').focus();
     $('#dClose').onclick = closeDrawer;
+    $$('#dCode, #dCodeSms').forEach(b => b.onclick = async () => { try { const r = await api(`/api/pool/people/${id}/send-code`, { channel: b.dataset.ch }); toast(r.already ? 'Already confirmed' : r.provider === 'dev' ? 'Test mode: the code is in the app log, nothing was sent' : 'Code sent'); } catch (err) { toast(err.message); } });
+    $$('[data-openp]').forEach(a => a.onclick = ev => { ev.preventDefault(); openPerson(+a.dataset.openp).catch(err => toast(err.message)); });
     $('#dStatus').onchange = async e => { await api(`/api/pool/people/${id}/status`, { status: e.target.value }); toast('Status updated'); loadPeople(); };
     $('#dCopyU').onclick = async () => { const u = location.origin + d.unsubscribe_url; try { await navigator.clipboard.writeText(u); toast('Unsubscribe link copied'); } catch { prompt('Unsubscribe link', u); } };
     $('#dOptOut').onclick = async () => { if (!confirm('Withdraw all marketing consent for this person and suppress them everywhere?')) return; await api(`/api/pool/people/${id}/opt-out`, {}); toast('Opted out everywhere'); openPerson(id); loadPeople(); loadFacets(); };
@@ -362,7 +390,7 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
     const t = e.target;
     if (t.dataset.f) { const k = t.dataset.f, set = new Set(filters[k] || []); t.checked ? set.add(t.value) : set.delete(t.value); filters[k] = [...set]; if (!filters[k].length) delete filters[k]; renderFilters(); refresh(); }
     if (t.id === 'minScore') { filters.minScore = +t.value || undefined; if (!filters.minScore) delete filters.minScore; refresh(); }
-    if (['hasEmail', 'hasPhone', 'includeOptedOut'].includes(t.id)) { t.checked ? filters[t.id] = true : delete filters[t.id]; refresh(); }
+    if (['hasEmail', 'hasPhone', 'verified', 'includeOptedOut'].includes(t.id)) { t.checked ? filters[t.id] = true : delete filters[t.id]; refresh(); }
   });
   document.addEventListener('input', e => { if (e.target.id === 'minScore') $('#msv').textContent = e.target.value; });
   let qt; $('#q').addEventListener('input', e => { clearTimeout(qt); qt = setTimeout(() => { const v = e.target.value.trim(); v ? filters.q = v : delete filters.q; refresh(); }, 250); });
@@ -387,7 +415,35 @@ td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-
 
   // ---------- pages ----------
   $$('.tab[data-page]').forEach(b => b.onclick = () => { $$('.tab[data-page]').forEach(x => x.setAttribute('aria-selected', String(x === b))); const p = b.dataset.page;
-    $('#pPeople').hidden = p !== 'people'; $('#pForms').hidden = p !== 'forms'; $('#pRules').hidden = p !== 'rules'; if (p === 'forms') loadForms(); if (p === 'rules') loadRules(); });
+    $('#pPeople').hidden = p !== 'people'; $('#pForms').hidden = p !== 'forms'; $('#pRules').hidden = p !== 'rules'; $('#pCare').hidden = p !== 'care';
+    if (p === 'forms') loadForms(); if (p === 'rules') loadRules(); if (p === 'care') loadCare().catch(e => toast(e.message)); });
+
+  // ---------- data care ----------
+  const VIA = { dev: 'Test mode (code in the app log)', twilio_verify: 'Twilio Verify', whatsapp_cloud: 'WhatsApp Cloud API' };
+  const RES = { consents_expired: 'consents ended', unconfirmed_closed: 'unconfirmed opt-ins closed', merged: 'duplicates merged', candidates: 'possible duplicates', contacts_checked: 'contacts checked', rescored: 'scores refreshed', codes_deleted: 'old codes deleted' };
+  const side = x => `<div class="side"><b>${esc(x.name || 'Unnamed')}</b><span class="muted">${esc([x.city, x.country].filter(Boolean).join(', '))} · added ${ago(x.created_at)} ago</span>
+    <span class="mono muted" style="font-size:12px">${esc(x.email || '')}${x.email && x.phone ? ' · ' : ''}${esc(x.phone || '')}</span></div>`;
+  async function loadCare() {
+    const [up, dups, fc] = await Promise.all([api('/api/pool/upkeep'), api('/api/pool/duplicates'), api('/api/pool/facets')]);
+    const t = fc.totals || {};
+    $('#careStats').innerHTML = [[t.verified ?? 0, 'People with a confirmed number'], [dups.length, 'Possible duplicates to review'], [up.expiring, 'Consents ending in 30 days'], [VIA[up.providers.whatsapp] || up.providers.whatsapp, 'How codes are sent']]
+      .map(([v, l]) => `<div class="stat"><b style="${typeof v === 'string' ? 'font-size:14px;font-family:inherit' : ''}">${esc(v)}</b><span>${esc(l)}</span></div>`).join('');
+    $('#dupList').innerHTML = dups.length ? dups.map(m => `<div class="pair">${side(m.pa)}${side(m.pb)}
+        <div class="acts"><button class="iconbtn" data-merge="${m.id}" data-keep="${m.a}">Keep left</button><button class="iconbtn" data-merge="${m.id}" data-keep="${m.b}">Keep right</button><button class="iconbtn" data-diff="${m.id}">Not the same</button></div>
+        <div class="why"><span class="mono muted">${Math.round(m.score * 100)}%</span>${m.reasons.map(r => `<span class="tag">${esc(r)}</span>`).join('')}</div></div>`).join('')
+      : '<p class="muted">No possible duplicates. The daily upkeep looks for them every night.</p>';
+    $('#runRows').innerHTML = up.runs.length ? up.runs.map(r => `<tr><td>${new Date(r.started_at).toLocaleString()}</td><td class="mono">${r.finished_at ? Math.max(1, Math.round((new Date(r.finished_at) - new Date(r.started_at)) / 1000)) + 's' : 'running'}</td>
+        <td>${r.error ? `<span class="no">${esc(r.error)}</span>` : Object.entries(r.result || {}).filter(([k, v]) => RES[k] && v).map(([k, v]) => `${v} ${RES[k]}`).join(' · ') || 'nothing to do'}${r.result?.emails?.checked ? ` · ${r.result.emails.checked} emails checked` : ''}</td></tr>`).join('')
+      : '<tr><td colspan="3" class="muted">Not run yet. It runs every night, or press Run now.</td></tr>';
+  }
+  document.addEventListener('click', async e => {
+    const m = e.target.closest('[data-merge]'), d = e.target.closest('[data-diff]'), r = e.target.closest('#runUpkeep');
+    try {
+      if (m) { if (!confirm('Merge these two people into one? Contacts, consents, details and history all move to the person you keep.')) return; await api(`/api/pool/duplicates/${m.dataset.merge}/merge`, { keep: +m.dataset.keep }); toast('Merged'); loadCare(); loadFacets(); }
+      if (d) { await api(`/api/pool/duplicates/${d.dataset.diff}/different`, {}); toast('Marked as different people'); loadCare(); }
+      if (r) { r.disabled = true; r.textContent = 'Running…'; await api('/api/pool/upkeep/run', {}); toast('Upkeep finished'); loadCare(); loadFacets(); }
+    } catch (err) { toast(err.message); } finally { if (r) { r.disabled = false; r.textContent = 'Run now'; } }
+  });
 
   async function loadForms() {
     const [forms, clients] = await Promise.all([api('/api/pool/forms'), api('/api/eng/clients')]);

@@ -64,7 +64,11 @@ sender rules (Spain 400 prefix, India DLT, Saudi sender ids) → AI disclosure a
 ## 8. Phases
 - **A — BUILT 2026-11-07, $0/month:** data model, MXAi consent certificate, own forms and quizzes, Meta/Google/WhatsApp lead webhooks, the pool
   filter screen, country rules table with the decision check, global suppression and opt-out in any language, tests.
-- **B — first clients:** WhatsApp/SMS one-time codes, Twilio Lookup, nightly duplicate matching (Splink), consent expiry jobs.
+- **B — BUILT 2026-11-07, $0/month by default:** one-time codes after a form (WhatsApp or SMS; Twilio Verify or WhatsApp Cloud API when keys
+  are added, test mode otherwise), free phone line type from libphonenumber (Twilio Lookup opt-in with `TWILIO_LOOKUP=1`), texts and WhatsApp
+  blocked to landlines, email checks with Reacher, duplicates (same mailbox merged automatically; similar name + shared clue listed for review,
+  pg_trgm in Postgres; Splink kept for big imports), consent certificates still valid after a merge (`signed_person_id`), daily upkeep at 03:30
+  (consent expiry by date and country, unconfirmed double opt-ins closed, old codes deleted, checks, duplicates, scores), Data care tab.
 - **C — US:** TrustedForm certificates on US forms (~$0.15 each), licensed appends, data broker registration if MXAi sells data about
   people who are not its own customers (California DROP checks every 45 days).
 - **D — scale:** ping-post marketplace.

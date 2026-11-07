@@ -251,3 +251,49 @@ CREATE TABLE IF NOT EXISTS lp_views (
   filters JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Lead pool phase B: proof that a lead is real, phone/email checks, duplicate review, daily upkeep
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+ALTER TABLE lp_identities ADD COLUMN IF NOT EXISTS line_type TEXT;          -- mobile | fixed_line | voip | toll_free | premium | ...
+ALTER TABLE lp_identities ADD COLUMN IF NOT EXISTS check_source TEXT;       -- libphonenumber | twilio_lookup | reacher
+ALTER TABLE lp_identities ADD COLUMN IF NOT EXISTS checked_at TIMESTAMPTZ;
+ALTER TABLE lp_identities ADD COLUMN IF NOT EXISTS verified_via TEXT;       -- sms | whatsapp | email
+ALTER TABLE lp_identities ADD COLUMN IF NOT EXISTS match_key TEXT;          -- gmail dots/+tags removed, for duplicate finding
+CREATE INDEX IF NOT EXISTS lp_identities_match ON lp_identities (match_key);
+ALTER TABLE lp_consents ADD COLUMN IF NOT EXISTS signed_person_id INT;      -- set when people are merged: the id the certificate was signed for
+ALTER TABLE lp_forms ADD COLUMN IF NOT EXISTS verify_phone BOOLEAN NOT NULL DEFAULT true;
+CREATE INDEX IF NOT EXISTS lp_persons_name_trgm ON lp_persons USING gin (lower(full_name) gin_trgm_ops);
+-- one-time codes: only a hash of the code is kept; 10 minutes, 5 tries
+CREATE TABLE IF NOT EXISTS lp_codes (
+  id SERIAL PRIMARY KEY,
+  person_id INT NOT NULL REFERENCES lp_persons(id) ON DELETE CASCADE,
+  identity_id INT NOT NULL REFERENCES lp_identities(id) ON DELETE CASCADE,
+  channel TEXT NOT NULL,                         -- sms | whatsapp | email
+  provider TEXT NOT NULL,                        -- twilio_verify | whatsapp_cloud | dev
+  code_hash TEXT,                                -- NULL when the provider keeps the code (Twilio Verify)
+  attempts INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS lp_codes_identity ON lp_codes (identity_id, created_at DESC);
+-- people who may be the same person, for review (sure matches are merged by the daily job)
+CREATE TABLE IF NOT EXISTS lp_merge_candidates (
+  id SERIAL PRIMARY KEY,
+  a INT NOT NULL REFERENCES lp_persons(id) ON DELETE CASCADE,
+  b INT NOT NULL REFERENCES lp_persons(id) ON DELETE CASCADE,
+  score REAL NOT NULL,
+  reasons TEXT[] NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'open',           -- open | merged | different
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  decided_at TIMESTAMPTZ,
+  UNIQUE (a, b)
+);
+CREATE TABLE IF NOT EXISTS lp_job_runs (
+  id SERIAL PRIMARY KEY,
+  job TEXT NOT NULL,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  finished_at TIMESTAMPTZ,
+  result JSONB,
+  error TEXT
+);

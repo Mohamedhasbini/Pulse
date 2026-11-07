@@ -41,6 +41,10 @@ button:active{transform:translateY(1px)}button:disabled{opacity:.6;cursor:defaul
 .note{grid-column:1/-1;font-size:.76rem;color:var(--muted)}.err{grid-column:1/-1;color:var(--bad);font-size:.86rem;min-height:1em}
 altcha-widget{grid-column:1/-1;--altcha-max-width:100%}
 .done{display:none;text-align:center;padding:12px 0}.done h2{font-size:1.2rem;margin:0 0 6px}
+.ver{display:none;gap:12px}.ver h2{font-size:1.2rem;margin:0}.ver .row{display:flex;gap:8px;flex-wrap:wrap}
+.ver .ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}.ver button{grid-column:auto}
+.code{font:600 1.4rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.35em;text-align:center;padding:12px}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;padding:4px;font-size:.84rem;cursor:pointer}
 @media (max-width:480px){form{grid-template-columns:1fr}.card{padding:22px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style><script type="module" src="/vendor/altcha.js"></script></head>
@@ -60,6 +64,15 @@ ${Object.entries(consentTexts).map(([ch, text]) => `<label class="chk"><input ty
 <button type="submit" id="send">Send</button>
 <p class="note">You can unsubscribe at any time with the link in every message or by replying STOP.</p>
 </form>
+<div class="ver" id="ver" role="group" aria-labelledby="verH">
+<h2 id="verH">Confirm your number</h2>
+<p class="intro" id="verText" style="margin:0">We can send a 6-digit code to your number ending in <b id="verEnd"></b>. It takes a few seconds.</p>
+<div class="row" id="verSend"><button type="button" data-ch="whatsapp">Send code by WhatsApp</button><button type="button" class="ghost" data-ch="sms">Send by text message</button></div>
+<div id="verEnter" style="display:none;gap:10px"><label for="code">Code</label><input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}">
+<button type="button" id="verCheck">Confirm</button></div>
+<p class="err" id="verErr" role="alert"></p>
+<button type="button" class="link" id="verSkip">Skip for now</button>
+</div>
 <div class="done" id="done" role="status"><h2>Thank you</h2><p class="intro" id="doneText">We received your request and will be in touch soon.</p></div>
 </section></main>
 <script>
@@ -74,8 +87,22 @@ ${Object.entries(consentTexts).map(([ch, text]) => `<label class="chk"><input ty
     btn.disabled=true;
     try{var r=await fetch(location.pathname,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});var j=await r.json().catch(function(){return{}});
       if(!r.ok)throw new Error(j.error||'Something went wrong.');
-      f.style.display='none';document.getElementById('done').style.display='block';
-      if(j.confirm)document.getElementById('doneText').textContent='Please check your email and click the link to confirm.';
+      f.style.display='none';
+      var finish=function(t){document.getElementById('ver').style.display='none';document.getElementById('done').style.display='block';
+        if(j.confirm)document.getElementById('doneText').textContent='Please check your email and click the link to confirm.';
+        if(t)document.getElementById('doneText').textContent=t+(j.confirm?' Please also check your email and click the link to confirm.':'');};
+      if(!j.verify){finish();return}
+      var v=document.getElementById('ver'),ve=document.getElementById('verErr'),code=document.getElementById('code');
+      document.getElementById('verEnd').textContent=j.verify.ending;v.style.display='grid';
+      var post=async function(u,b){var r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({t:j.verify.token},b))});var o=await r.json().catch(function(){return{}});if(!r.ok)throw new Error(o.error||'Something went wrong.');return o};
+      document.querySelectorAll('#verSend button').forEach(function(b){b.onclick=async function(){ve.textContent='';b.disabled=true;
+        try{var o=await post('/v/send',{channel:b.dataset.ch});if(o.already){finish('Your number is already confirmed.');return}
+          document.getElementById('verSend').style.display='none';document.getElementById('verEnter').style.display='grid';
+          document.getElementById('verText').textContent='We sent a code by '+(o.channel==='sms'?'text message':'WhatsApp')+'. Type it below.';code.focus();
+        }catch(x){ve.textContent=x.message;b.disabled=false}}});
+      var check=async function(){ve.textContent='';try{await post('/v/check',{code:code.value});finish('Thank you, your number is confirmed. We will be in touch soon.')}catch(x){ve.textContent=x.message}};
+      document.getElementById('verCheck').onclick=check;code.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();check()}});
+      document.getElementById('verSkip').onclick=function(){finish()};
     }catch(x){err.textContent=x.message;btn.disabled=false}
   });
 })();

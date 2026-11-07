@@ -1,7 +1,9 @@
 // Lead pool routes.
 //   Public:  GET/POST /f/:slug (capture form, ALTCHA bot filter), GET /c/:token (double opt-in), GET+POST /u/:token (opt-out),
 //            GET /api/altcha (challenge), POST /hooks/google/:formId, GET+POST /hooks/meta (lead ads)
-//   Admin:   /api/pool/* (people with filters, one person, forms, country rules, decision check, saved views, stats)
+//            POST /v/send + /v/check (one-time code after a form, signed token)
+//   Admin:   /api/pool/* (people with filters, one person, forms, country rules, decision check, saved views, stats,
+//            duplicates and merging, daily upkeep runs)
 import crypto from 'node:crypto';
 import { createChallenge, verifySolution, randomInt } from 'altcha-lib';
 import { deriveKey } from 'altcha-lib/algorithms/pbkdf2';
@@ -11,12 +13,19 @@ import { decide, seedRules, ruleFor } from './rules.js';
 import { verifyCert, isOptOut, normEmail, normPhone, idHash, keysReady } from './core.js';
 import { CHANNELS } from './countries.js';
 import { renderForm, renderMessage } from './form-page.js';
+import { sendCode, checkCode, providerStatus } from './codes.js';
+import { listCandidates, mergePeople, markDifferent } from './dedupe.js';
+import { upkeep, lastRuns, startJobs } from './jobs.js';
+import { TEXTABLE } from './checks.js';
 
 const KEY = () => process.env.CERT_KEY || '';
 const ALTCHA = { algorithm: 'PBKDF2/SHA-256', deriveKey, hmacSignatureSecret: () => process.env.ALTCHA_KEY || '', hmacKeySignatureSecret: () => (process.env.ALTCHA_KEY || '') + ':key' };
 const sign = v => crypto.createHmac('sha256', KEY()).update(String(v)).digest('base64url').slice(0, 24);
 export const unsubToken = personId => `${personId}.${sign('u:' + personId)}`;
 const readToken = t => { const [id, s] = String(t || '').split('.'); return id && s && s === sign('u:' + id) ? +id : null; };
+// after a form: lets the same browser ask for and check a code for that person only, for one hour
+export const verifyToken = (personId, at = Date.now()) => `${personId}.${at}.${sign(`v:${personId}:${at}`)}`;
+const readVerify = t => { const [id, at, s] = String(t || '').split('.'); return id && at && s === sign(`v:${id}:${at}`) && Date.now() - +at < 3600e3 ? +id : null; };
 
 const hits = new Map();
 const limited = (key, max, ms) => { const now = Date.now(), h = (hits.get(key) || []).filter(t => now - t < ms); h.push(now); hits.set(key, h); return h.length > max; };
@@ -39,7 +48,10 @@ export function consentText(form, clients, channel) {
   return `I agree that ${names} may contact me by ${how} about ${form.purpose}. I can opt out at any time.`;
 }
 
-export async function startPool() { await seedRules(); }
+export async function startPool() {
+  await seedRules();
+  startJobs().catch(e => console.error('Lead pool jobs did not start:', e.message));
+}
 
 export function mountPool(app, { adminOnly, wrap }) {
   // ---------- public: forms ----------
@@ -82,8 +94,27 @@ export function mountPool(app, { adminOnly, wrap }) {
         page_url: String(req.headers.referer || `/f/${f.slug}`).slice(0, 500), ip: ipOf(req), user_agent: req.headers['user-agent'],
         evidence: { form_id: f.id, form_version: f.version, utm: pick(b, ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']), click: pick(b, ['gclid', 'fbclid', 'ttclid']) } });
       const needConfirm = await one(`SELECT confirm_token FROM lp_consents WHERE id = ANY($1) AND confirm_token IS NOT NULL LIMIT 1`, [r.consentIds]);
-      res.json({ ok: true, confirm: !!needConfirm });
+      // prove the mobile number: offer a code when the form asks for it and the number can receive messages
+      const phone = f.verify_phone ? await one(`SELECT value, line_type FROM lp_identities WHERE person_id=$1 AND kind='phone' AND verified_at IS NULL ORDER BY id DESC LIMIT 1`, [r.personId]) : null;
+      const verify = phone && TEXTABLE.has(phone.line_type) ? { token: verifyToken(r.personId), ending: phone.value.slice(-3) } : null;
+      res.json({ ok: true, confirm: !!needConfirm, verify });
     } catch (e) { res.status(e.status || 500).json({ error: e.status ? e.message : 'Something went wrong. Please try again.' }); }
+  }));
+
+  // one-time code, asked for by the person right after the form
+  app.post('/v/send', wrap(async (req, res) => {
+    const id = readVerify(req.body?.t);
+    if (!id) return res.status(400).json({ error: 'This page has expired. Please send the form again.' });
+    if (limited(`v:${ipOf(req)}`, 6, 60 * 60000)) return res.status(429).json({ error: 'Too many codes. Try again later.' });
+    try { const r = await sendCode(id, req.body?.channel === 'sms' ? 'sms' : 'whatsapp'); res.json({ ok: true, channel: r.channel, already: !!r.already }); }
+    catch (e) { res.status(e.status || 500).json({ error: e.status ? e.message : 'The code could not be sent. Please try again.' }); }
+  }));
+  app.post('/v/check', wrap(async (req, res) => {
+    const id = readVerify(req.body?.t);
+    if (!id) return res.status(400).json({ error: 'This page has expired. Please send the form again.' });
+    if (limited(`vc:${ipOf(req)}`, 20, 60 * 60000)) return res.status(429).json({ error: 'Too many tries. Try again later.' });
+    const r = await checkCode(id, req.body?.code);
+    res.status(r.ok ? 200 : 400).json(r);
   }));
 
   // double opt-in confirmation link (sent by email in DE/AT/CH)
@@ -136,6 +167,8 @@ export function mountPool(app, { adminOnly, wrap }) {
       one(`SELECT count(*)::int AS people, count(*) FILTER (WHERE created_at > now() - interval '7 days')::int AS new_7d,
         (SELECT count(DISTINCT person_id)::int FROM lp_consents WHERE purpose='marketing' AND withdrawn_at IS NULL) AS consented,
         (SELECT count(DISTINCT i.person_id)::int FROM lp_suppressions s JOIN lp_identities i ON i.value_hash=s.value_hash WHERE s.scope='global') AS opted_out,
+        (SELECT count(DISTINCT person_id)::int FROM lp_identities WHERE verified_at IS NOT NULL) AS verified,
+        (SELECT count(*)::int FROM lp_merge_candidates WHERE status='open') AS duplicates,
         round(avg(score))::int AS avg_score FROM lp_persons`)]);
     res.json({ countries, cities, verticals, sources, genders, ages, timings, statuses, totals, channels: CHANNELS });
   }));
@@ -158,6 +191,7 @@ export function mountPool(app, { adminOnly, wrap }) {
     if (f.minScore) add(`p.score >= $?`, +f.minScore || 0);
     if (f.since) add(`p.created_at >= $?::timestamptz`, String(f.since));
     if (f.hasEmail) w.push(`EXISTS (SELECT 1 FROM lp_identities i WHERE i.person_id=p.id AND i.kind='email')`);
+    if (f.verified) w.push(`EXISTS (SELECT 1 FROM lp_identities i WHERE i.person_id=p.id AND i.verified_at IS NOT NULL)`);
     if (f.hasPhone) w.push(`EXISTS (SELECT 1 FROM lp_identities i WHERE i.person_id=p.id AND i.kind='phone')`);
     if (!f.includeOptedOut) w.push(`NOT EXISTS (SELECT 1 FROM lp_suppressions s JOIN lp_identities i ON i.value_hash=s.value_hash WHERE i.person_id=p.id AND s.scope='global')`);
     const sorts = { score: 'p.score DESC', newest: 'p.created_at DESC', name: 'p.full_name NULLS LAST', recent: 'p.last_seen_at DESC' };
@@ -168,6 +202,9 @@ export function mountPool(app, { adminOnly, wrap }) {
       q(`SELECT p.id, p.full_name, p.country, p.city, p.language, p.status, p.score, p.created_at, p.last_seen_at, p.owner_client_id,
           (SELECT value FROM lp_identities i WHERE i.person_id=p.id AND i.kind='email' ORDER BY i.id LIMIT 1) AS email,
           (SELECT value FROM lp_identities i WHERE i.person_id=p.id AND i.kind='phone' ORDER BY i.id LIMIT 1) AS phone,
+          EXISTS (SELECT 1 FROM lp_identities i WHERE i.person_id=p.id AND i.kind='phone' AND i.verified_at IS NOT NULL) AS phone_verified,
+          (SELECT line_type FROM lp_identities i WHERE i.person_id=p.id AND i.kind='phone' ORDER BY i.id LIMIT 1) AS phone_line,
+          (SELECT status FROM lp_identities i WHERE i.person_id=p.id AND i.kind='email' ORDER BY i.id LIMIT 1) AS email_status,
           (SELECT json_object_agg(key, value) FROM (SELECT DISTINCT ON (key) key, value FROM lp_attributes a WHERE a.person_id=p.id ORDER BY key, observed_at DESC) x) AS attrs,
           (SELECT json_agg(json_build_object('vertical', vertical, 'timing', timing, 'budget', budget, 'intent', intent) ORDER BY created_at DESC) FROM lp_interests t WHERE t.person_id=p.id) AS interests,
           (SELECT array_agg(DISTINCT channel) FROM lp_consents c WHERE c.person_id=p.id AND c.purpose='marketing' AND c.withdrawn_at IS NULL) AS consent_channels,
@@ -182,7 +219,7 @@ export function mountPool(app, { adminOnly, wrap }) {
     const p = await one('SELECT * FROM lp_persons WHERE id=$1', [id]);
     if (!p) return res.sendStatus(404);
     const [identities, attributes, interests, consents, events, decisions, deliveries] = await Promise.all([
-      q('SELECT kind, value, verified_at, status, created_at FROM lp_identities WHERE person_id=$1 ORDER BY id', [id]),
+      q('SELECT kind, value, verified_at, verified_via, status, line_type, check_source, checked_at, created_at FROM lp_identities WHERE person_id=$1 ORDER BY id', [id]),
       q('SELECT key, value, source, confidence, observed_at FROM lp_attributes WHERE person_id=$1 ORDER BY key, observed_at DESC', [id]),
       q('SELECT vertical, intent, budget, timing, score, source, created_at FROM lp_interests WHERE person_id=$1 ORDER BY created_at DESC', [id]),
       q(`SELECT c.*, t.text, t.text_hash, (SELECT array_agg(name) FROM eng_clients WHERE id = ANY(c.buyers)) AS buyer_names FROM lp_consents c LEFT JOIN lp_consent_texts t ON t.id=c.text_id WHERE c.person_id=$1 ORDER BY c.captured_at DESC`, [id]),
@@ -190,10 +227,12 @@ export function mountPool(app, { adminOnly, wrap }) {
       q('SELECT channel, purpose, client_id, allowed, reason, at FROM lp_rule_log WHERE person_id=$1 ORDER BY at DESC LIMIT 30', [id]),
       q('SELECT client_id, exclusive, price, at FROM lp_deliveries WHERE person_id=$1 ORDER BY at DESC', [id])]);
     const rule = await ruleFor(p.country);
+    const duplicates = await q(`SELECT m.id, m.score, m.reasons, o.id AS other_id, o.full_name AS other_name FROM lp_merge_candidates m JOIN lp_persons o ON o.id = CASE WHEN m.a=$1 THEN m.b ELSE m.a END
+      WHERE (m.a=$1 OR m.b=$1) AND m.status='open' ORDER BY m.score DESC`, [id]);
     // what may be sent right now, per channel, for the owner business (no log: just a look)
     const now = {};
     for (const ch of CHANNELS) now[ch] = await decide({ personId: id, channel: ch, purpose: 'marketing', clientId: p.owner_client_id, log: false });
-    res.json({ person: p, identities, attributes, interests, decisions, deliveries, events, rule: { country: rule.country, name: rule.name, note: rule.note, channels: rule.channels, quiet: rule.quiet, tz: rule.tz },
+    res.json({ person: p, identities, duplicates, attributes, interests, decisions, deliveries, events, rule: { country: rule.country, name: rule.name, note: rule.note, channels: rule.channels, quiet: rule.quiet, tz: rule.tz },
       consents: consents.map(c => ({ ...c, certificate_valid: verifyCert({ ...c, text_hash: c.text_hash }), awaiting_confirm: !!c.confirm_token, confirm_token: undefined })), allowed_now: now, unsubscribe_url: `/u/${unsubToken(id)}` });
   }));
 
@@ -247,7 +286,34 @@ export function mountPool(app, { adminOnly, wrap }) {
   app.post('/api/pool/views', adminOnly, wrap(async (req, res) => res.json(await one('INSERT INTO lp_views (name, filters) VALUES ($1,$2) RETURNING *', [String(req.body?.name || 'View').slice(0, 60), JSON.stringify(req.body?.filters || {})]))));
   app.delete('/api/pool/views/:id', adminOnly, wrap(async (req, res) => { await q('DELETE FROM lp_views WHERE id=$1', [+req.params.id]); res.json({ ok: true }); }));
 
-  app.get('/api/pool/status', adminOnly, (_req, res) => res.json({ keys: keysReady(), altcha: !!process.env.ALTCHA_KEY, meta: !!process.env.META_APP_SECRET }));
+  // a code sent by the admin (e.g. after a phone call): same limits as the form
+  app.post('/api/pool/people/:id/send-code', adminOnly, wrap(async (req, res) => {
+    try { res.json(await sendCode(+req.params.id, req.body?.channel === 'sms' ? 'sms' : 'whatsapp')); }
+    catch (e) { res.status(e.status || 500).json({ error: e.message }); }
+  }));
+
+  // duplicates
+  app.get('/api/pool/duplicates', adminOnly, wrap(async (req, res) => res.json(await listCandidates(['open', 'merged', 'different'].includes(req.query.status) ? req.query.status : 'open'))));
+  app.post('/api/pool/duplicates/:id/merge', adminOnly, wrap(async (req, res) => {
+    const m = await one(`SELECT * FROM lp_merge_candidates WHERE id=$1 AND status='open'`, [+req.params.id]);
+    if (!m) return res.status(404).json({ error: 'Already decided.' });
+    const keep = +req.body?.keep === m.b ? m.b : m.a;
+    try { res.json(await mergePeople(keep, keep === m.a ? m.b : m.a, 'admin')); } catch (e) { res.status(e.status || 500).json({ error: e.message }); }
+  }));
+  app.post('/api/pool/duplicates/:id/different', adminOnly, wrap(async (req, res) => res.json({ ok: !!(await markDifferent(+req.params.id)) })));
+
+  // daily upkeep
+  app.get('/api/pool/upkeep', adminOnly, wrap(async (_req, res) => res.json({ runs: await lastRuns(),
+    expiring: (await one(`SELECT count(*)::int AS n FROM lp_consents WHERE withdrawn_at IS NULL AND purpose='marketing' AND expires_at BETWEEN now() AND now() + interval '30 days'`)).n,
+    providers: providerStatus() })));
+  let running = false;
+  app.post('/api/pool/upkeep/run', adminOnly, wrap(async (_req, res) => {
+    if (running) return res.status(409).json({ error: 'Upkeep is already running.' });
+    running = true;
+    try { res.json(await upkeep()); } finally { running = false; }
+  }));
+
+  app.get('/api/pool/status', adminOnly, (_req, res) => res.json({ keys: keysReady(), altcha: !!process.env.ALTCHA_KEY, meta: !!process.env.META_APP_SECRET, codes: providerStatus() }));
 }
 
 export const DEFAULT_FIELDS = [

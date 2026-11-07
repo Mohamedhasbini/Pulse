@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { tx, q, one } from '../db.js';
 import { normEmail, normPhone, idHash, certify, textHash, attributeAllowed, valueAllowed } from './core.js';
 import { ruleFor } from './rules.js';
+import { checkIdentity } from './checks.js';
 
 const TIMING_POINTS = { now: 30, 'this week': 30, '1-3 months': 20, '3-6 months': 10, later: 4 };
 
@@ -17,7 +18,7 @@ export async function ingest(lead) {
   const ids = [email && { kind: 'email', value: email }, phone && { kind: 'phone', value: phone.value }].filter(Boolean).map(x => ({ ...x, hash: idHash(x.kind, x.value) }));
   const rule = await ruleFor(country);
 
-  return tx(async ({ q, one }) => {
+  const out = await tx(async ({ q, one }) => {
     // 1. the same person, found by any identity
     const found = await one(`SELECT p.* FROM lp_identities i JOIN lp_persons p ON p.id=i.person_id WHERE i.value_hash = ANY($1) ORDER BY p.id LIMIT 1`, [ids.map(i => i.hash)]);
     const person = found
@@ -71,23 +72,28 @@ export async function ingest(lead) {
     await rescore(person.id, { q, one });
     return { personId: person.id, created: !found, consentIds, rejected };
   });
+  // free checks on new contacts (phone line type, email match key); outside the transaction
+  for (const row of await q(`SELECT id, kind, value FROM lp_identities WHERE person_id=$1 AND ((kind='phone' AND checked_at IS NULL) OR (kind='email' AND match_key IS NULL))`, [out.personId]))
+    await checkIdentity(row).catch(() => {});
+  return out;
 }
 
-// Lead score 0-100: how complete (40) + how ready to buy (30) + how fresh (20) + reachable with consent (10)
+// Lead score 0-100: how complete (40) + how ready to buy (30) + how fresh (20) + consent (6) + a verified number (4)
 export async function rescore(personId, db = { q, one }) {
   const p = await db.one(`SELECT p.*,
       (SELECT count(*) FROM lp_identities i WHERE i.person_id=p.id AND i.kind='email')::int AS emails,
       (SELECT count(*) FROM lp_identities i WHERE i.person_id=p.id AND i.kind='phone')::int AS phones,
       (SELECT count(DISTINCT key) FROM lp_attributes a WHERE a.person_id=p.id)::int AS attrs,
       (SELECT max(score) FROM lp_interests t WHERE t.person_id=p.id AND (t.expires_at IS NULL OR t.expires_at > now()))::int AS intent,
-      (SELECT count(*) FROM lp_consents c WHERE c.person_id=p.id AND c.purpose='marketing' AND c.withdrawn_at IS NULL)::int AS consents
+      (SELECT count(*) FROM lp_consents c WHERE c.person_id=p.id AND c.purpose='marketing' AND c.withdrawn_at IS NULL AND (c.expires_at IS NULL OR c.expires_at > now()))::int AS consents,
+      (SELECT count(*) FROM lp_identities i WHERE i.person_id=p.id AND i.verified_at IS NOT NULL)::int AS verified
     FROM lp_persons p WHERE p.id=$1`, [personId]);
   if (!p) return 0;
   const complete = Math.min(40, (p.full_name ? 8 : 0) + (p.emails ? 8 : 0) + (p.phones ? 8 : 0) + (p.city ? 4 : 0) + Math.min(12, p.attrs * 3));
   const intent = Math.max(0, Math.min(30, (p.intent || 0) - 50));
   const days = (Date.now() - new Date(p.last_seen_at)) / 864e5;
   const fresh = Math.round(20 * Math.max(0, 1 - days / 90));
-  const score = complete + intent + fresh + (p.consents ? 10 : 0);
+  const score = complete + intent + fresh + (p.consents ? 6 : 0) + (p.verified ? 4 : 0);
   await db.q('UPDATE lp_persons SET score=$2 WHERE id=$1', [personId, score]);
   return score;
 }

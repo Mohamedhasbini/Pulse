@@ -5,6 +5,7 @@
 // service messages and are always allowed unless the person opted out of everything.
 import { q, one } from '../db.js';
 import { COUNTRIES, STRICT, CHANNELS } from './countries.js';
+import { TEXTABLE } from './checks.js';
 
 export async function seedRules() {
   for (const [code, r] of Object.entries(COUNTRIES))
@@ -38,6 +39,13 @@ async function evaluate({ personId, channel, purpose, clientId, at }) {
   const sup = await one(`SELECT s.reason, s.scope FROM lp_suppressions s JOIN lp_identities i ON i.value_hash=s.value_hash
     WHERE i.person_id=$1 AND s.scope = ANY($2) LIMIT 1`, [personId, ['global', `client:${clientId}`, `channel:${channel}`]]);
   if (sup && !(purpose === 'service' && sup.scope !== 'global')) return { allowed: false, reason: `suppressed (${sup.scope}${sup.reason ? ': ' + sup.reason : ''})`, rule: rule.country };
+
+  // 1b. texts and WhatsApp need a mobile number (a landline, toll-free or premium number cannot receive them)
+  if (channel === 'sms' || channel === 'whatsapp') {
+    const phones = await q(`SELECT line_type FROM lp_identities WHERE person_id=$1 AND kind='phone'`, [personId]);
+    if (!phones.length) return { allowed: false, reason: 'no phone number', rule: rule.country };
+    if (!phones.some(x => TEXTABLE.has(x.line_type))) return { allowed: false, reason: `the number is a ${phones[0].line_type.replace(/_/g, ' ')}, not a mobile`, rule: rule.country };
+  }
 
   // 2. service replies (the person wrote first): allowed
   if (purpose === 'service') return { allowed: true, reason: 'reply to a person who contacted the business', requirements, rule: rule.country };

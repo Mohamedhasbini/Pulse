@@ -4,6 +4,7 @@ import { pool, one } from './db.js';
 import * as t from './engine/text.js';
 
 const BASE = 'http://localhost:3200', results = [];
+process.env.NODE_ENV = 'test'; // test mode codes are returned to this process only (the running app never returns them)
 const check = (name, ok, detail = '') => { results.push(!!ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? '  (' + detail + ')' : ''}`); };
 try {
   check('A name not on the page is never kept', t.onPage('Rami Saad', 'Our team: Rami Saad, Operations Director') && !t.onPage('Omar Haddad', 'Our team: Rami Saad'));
@@ -116,6 +117,78 @@ try {
     check('The 33 country rules are loaded', (await (await fetch(`${BASE}/api/pool/rules`, { headers: H })).json()).length >= 33);
     check('Meta webhooks without a valid signature are refused', (await fetch(`${BASE}/hooks/meta`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"entry":[]}' })).status === 403);
     check('Google lead webhooks with a wrong key are refused', (await fetch(`${BASE}/hooks/google/${form.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"google_key":"x"}' })).status === 403);
+    // ---------------- phase B: real leads, checks, duplicates, upkeep ----------------
+    const codes = await import('./pool/codes.js'), checks = await import('./pool/checks.js'), dedupe = await import('./pool/dedupe.js'), jobs = await import('./pool/jobs.js');
+    check('Line types are read from the number (mobile, landline, toll-free)', checks.phoneLine('+971501234567') === 'mobile' && checks.phoneLine('+97143334444') === 'fixed_line' && checks.phoneLine('+18005551234') === 'toll_free');
+    check('Gmail dots, +tags and googlemail.com are the same mailbox', checks.matchKey('email', 'R.ania.K+promo@googlemail.com') === 'raniak@gmail.com' && checks.matchKey('email', 'r.k+x@outlook.com') === 'r.k@outlook.com');
+    const land = await ingest({ clientId: client.id, source: 'form:test', name: 'Landline Test', phone: '+97143334444', consents: [consent('whatsapp')], at: new Date() });
+    made.push(land.personId);
+    const dl = await decide({ personId: land.personId, channel: 'whatsapp', clientId: client.id, at: at(12), log: false });
+    check('WhatsApp to a landline is blocked even with consent', !dl.allowed && /fixed line/.test(dl.reason), dl.reason);
+    let landCode = null; try { await codes.sendCode(land.personId, 'whatsapp'); } catch (e) { landCode = e.message; }
+    check('No code is sent to a landline', /not a mobile/.test(landCode || ''), landCode);
+
+    const v = await ingest({ clientId: client.id, source: 'form:test', name: 'Verify Test', phone: '+971507771234', consents: [consent('whatsapp')], at: new Date() });
+    made.push(v.personId);
+    const s1 = await codes.sendCode(v.personId, 'whatsapp');
+    check('A code is sent (test mode when no provider is set up)', s1.sent && s1.provider === 'dev' && /^\d{6}$/.test(s1.code), JSON.stringify(s1));
+    const wrong = await codes.checkCode(v.personId, s1.code === '000000' ? '111111' : '000000');
+    check('A wrong code is refused', !wrong.ok);
+    const right = await codes.checkCode(v.personId, s1.code);
+    const vid = await one(`SELECT verified_at, verified_via FROM lp_identities WHERE person_id=$1 AND kind='phone'`, [v.personId]);
+    check('The right code confirms the number', right.ok && !!vid.verified_at && vid.verified_via === 'whatsapp');
+    check('A used code cannot be used again', !(await codes.checkCode(v.personId, s1.code)).ok);
+    const v2 = await ingest({ clientId: client.id, source: 'form:test', name: 'Limit Test', phone: '+971507775678', at: new Date() });
+    made.push(v2.personId);
+    for (let i = 0; i < 3; i++) await codes.sendCode(v2.personId, 'sms');
+    let lim = null; try { await codes.sendCode(v2.personId, 'sms'); } catch (e) { lim = e.status; }
+    check('At most 3 codes an hour per number', lim === 429);
+    const last = (await codes.sendCode(v2.personId, 'sms').catch(() => null));
+    check('Codes are stored only as a hash', !(await one(`SELECT 1 FROM lp_codes WHERE person_id=$1 AND code_hash ~ '^[0-9]{6}$'`, [v2.personId])) && last === null);
+    let tries = 0; await q(`UPDATE lp_codes SET attempts=5 WHERE person_id=$1`, [v2.personId]);
+    const locked = await codes.checkCode(v2.personId, '123456'); tries = locked.error;
+    check('After 5 wrong tries the code is locked', !locked.ok && /Too many/.test(tries), tries);
+
+    // the public form asks for the code right after sending
+    const ch2 = await (await fetch(`${BASE}/api/altcha`)).json();
+    const sol2 = await solveChallenge({ challenge: ch2, deriveKey });
+    const fv = await (await sub({ ...base, name: 'Omar Verify', email: `omar.${stamp}@example.com`, phone: '+971508881234', altcha: Buffer.from(JSON.stringify({ challenge: ch2, solution: sol2 })).toString('base64') })).json();
+    const omar = await one(`SELECT person_id FROM lp_identities WHERE value=$1`, [`omar.${stamp}@example.com`]);
+    if (omar) made.push(omar.person_id);
+    check('After the form, the person is offered a code for their mobile', !!fv.verify?.token && fv.verify.ending === '234', JSON.stringify(fv).slice(0, 160));
+    const vs = await fetch(`${BASE}/v/send`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: fv.verify?.token, channel: 'whatsapp' }) });
+    const vsj = await vs.json();
+    check('The form page can send the code, and the code is never sent back to the browser', vs.ok && !('code' in vsj), JSON.stringify(vsj));
+    check('A wrong code from the form page is refused', (await fetch(`${BASE}/v/check`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: fv.verify?.token, code: '000001' }) })).status === 400);
+    check('A forged code token is refused', (await fetch(`${BASE}/v/send`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: `${omar?.person_id}.${Date.now()}.forged` }) })).status === 400);
+
+    // duplicates
+    const r1 = await ingest({ clientId: client.id, source: 'form:test', name: 'Rania Khoury', email: `rania.khoury.${stamp}@gmail.com`, country: 'AE', city: 'Dubai', consents: [consent('email')], at: new Date() });
+    const r2 = await ingest({ clientId: client.id, source: 'meta_lead', name: 'Rania K', email: `ra.nia.khoury.${stamp}+promo@googlemail.com`, country: 'AE', attributes: { budget: 'AED 5,000' }, at: new Date() });
+    made.push(r1.personId, r2.personId);
+    check('Two spellings of the same mailbox start as two people', r1.personId !== r2.personId);
+    const k1 = await ingest({ clientId: client.id, source: 'form:test', name: 'Karim Nasser', phone: '+971501112233', country: 'AE', city: 'Dubai', at: new Date() });
+    const k2 = await ingest({ clientId: client.id, source: 'chat', name: 'Kareem Nasser', phone: '+971551112233', country: 'AE', city: 'Dubai', at: new Date() });
+    made.push(k1.personId, k2.personId);
+    const up = await jobs.upkeep({ emails: false });
+    const rLeft = await one(`SELECT count(*)::int AS n FROM lp_persons WHERE id = ANY($1)`, [[r1.personId, r2.personId]]);
+    check('Daily upkeep merges the same mailbox automatically', rLeft.n === 1 && up.merged >= 1, JSON.stringify(up));
+    const moved = await q(`SELECT c.*, t.text_hash FROM lp_consents c JOIN lp_consent_texts t ON t.id=c.text_id WHERE c.person_id=$1`, [r1.personId]);
+    check('Consent certificates stay valid after a merge', moved.length >= 1 && moved.every(core.verifyCert));
+    check('Details from both records are kept after a merge', !!(await one(`SELECT 1 FROM lp_attributes WHERE person_id=$1 AND key='budget'`, [r1.personId])));
+    const cand = await one(`SELECT * FROM lp_merge_candidates WHERE ((a=$1 AND b=$2) OR (a=$2 AND b=$1)) AND status='open'`, [k1.personId, k2.personId]);
+    check('Similar names with the same phone ending are listed for review, not merged', !!cand && cand.reasons.includes('phone ends the same'), JSON.stringify(cand?.reasons));
+    const dm = await fetch(`${BASE}/api/pool/duplicates/${cand?.id}/merge`, { method: 'POST', headers: H, body: JSON.stringify({ keep: k1.personId }) });
+    check('An admin can merge a listed pair', dm.ok && !(await one('SELECT 1 FROM lp_persons WHERE id=$1', [k2.personId])) && (await q(`SELECT 1 FROM lp_identities WHERE person_id=$1 AND kind='phone'`, [k1.personId])).length === 2);
+
+    // consent expiry
+    await q(`UPDATE lp_consents SET expires_at = now() - interval '1 day' WHERE person_id=$1 AND purpose='marketing'`, [v.personId]);
+    const up2 = await jobs.upkeep({ emails: false });
+    const expired = await one(`SELECT withdrawn_how FROM lp_consents WHERE person_id=$1 AND purpose='marketing' LIMIT 1`, [v.personId]);
+    check('Daily upkeep ends consents past their end date', expired.withdrawn_how === 'expired' && up2.consents_expired >= 1, JSON.stringify(up2));
+    check('Each upkeep run is recorded', !!(await one(`SELECT 1 FROM lp_job_runs WHERE finished_at IS NOT NULL AND error IS NULL ORDER BY id DESC LIMIT 1`)));
+    check('The upkeep screen API refuses anyone not signed in', (await fetch(`${BASE}/api/pool/upkeep/run`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status === 401);
+
     await q('DELETE FROM lp_forms WHERE id=$1', [form.id]);
   } finally {
     await q('DELETE FROM lp_suppressions WHERE value_hash IN (SELECT value_hash FROM lp_identities WHERE person_id = ANY($1))', [made]).catch(() => {});

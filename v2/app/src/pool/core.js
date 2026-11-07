@@ -21,10 +21,11 @@ export const idHash = (kind, value) => crypto.createHmac('sha256', PEPPER()).upd
 // ---- consent certificate ----------------------------------------------------------------------------------
 // The certificate is an HMAC over a canonical copy of everything recorded at the moment of consent. Changing any
 // recorded field later (who, what wording, which businesses, when, from where) makes it fail verification.
+// After two people are merged, signed_person_id keeps the id the consent was signed for, so the proof still holds.
 const canon = v => (Array.isArray(v) ? `[${v.map(canon).join(',')}]`
   : v && typeof v === 'object' ? `{${Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',')}}` : JSON.stringify(v ?? null));
 export const certFields = c => ({
-  person_id: c.person_id, channel: c.channel, purpose: c.purpose, buyers: [...(c.buyers || [])].map(Number).sort((a, b) => a - b),
+  person_id: c.signed_person_id ?? c.person_id, channel: c.channel, purpose: c.purpose, buyers: [...(c.buyers || [])].map(Number).sort((a, b) => a - b),
   text_hash: c.text_hash, method: c.method, jurisdiction: c.jurisdiction || null, source: c.source || null, page_url: c.page_url || null,
   ip: c.ip || null, user_agent: c.user_agent || null, evidence: c.evidence || {}, captured_at: new Date(c.captured_at).toISOString(),
 });
