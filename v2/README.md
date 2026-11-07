@@ -30,7 +30,19 @@ Needs the engine services in `C:\Users\Mohamad\mxai-stack` (Crawl4AI, SearXNG, R
 | Background jobs (pg-boss) and API | `app/src/engine/index.js` |
 | Lead lab page (grade leads) | `app/public/eng-lab.html` |
 
-## Next (designed, not built yet)
-- B2C engine: consented "hand-raiser" leads (ads, forms, WhatsApp, content, referrals) with AI qualification and booking.
-- Lead pool: a consented, filterable database of B2C leads per country.
-- Country rules layer: which channels and data each country allows.
+## Lead pool (phase A, built 2026-11-07)
+A worldwide, consented B2C lead database. Screen: http://localhost:3200/pool.html (People · Capture forms · Country rules).
+| Part | File |
+|---|---|
+| Country rules data (33 countries) | `app/src/pool/countries.js` (from `docs/country-rules.md`) |
+| May we send this? (consent, suppression, quiet hours, limits, labels) | `app/src/pool/rules.js` |
+| Identities, consent certificates, sensitive-data guard, opt-out words | `app/src/pool/core.js` |
+| Capture: merge duplicates, keep allowed facts, sign consents, score | `app/src/pool/capture.js` |
+| Public form `/f/<slug>`, confirm `/c/<token>`, unsubscribe `/u/<token>`, Meta/Google webhooks, admin API | `app/src/pool/routes.js`, `form-page.js` |
+| The screen | `app/public/pool.html` |
+| Example people (add / remove) | `docker compose exec -T app node src/pool/demo-seed.js [--remove]` |
+
+## Next
+- Phase B: one-time codes (WhatsApp/SMS) to prove leads are real, phone line checks, nightly duplicate matching (Splink), consent expiry jobs.
+- Meta lead ads: fetch the answers for each `leadgen_id` once a page token is connected.
+- Public address for forms (Cloudflare tunnel) when the first client goes live.

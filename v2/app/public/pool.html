@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lead pool · MXAi</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* MXAi v2 lead pool — dense data workspace: top bar, filter rail, results table, detail drawer. Graphite + silver, lime as a rare signal. */
+:root {
+  --canvas:#eceff1; --rail:#f4f6f7; --surface:#ffffff; --sunk:#f1f3f5; --hover:#f6f8f9; --sel:#eef2e3;
+  --ink:#0e1317; --ink2:#2b333a; --muted:#66717b; --faint:#98a2ab; --line:#e1e5e9; --line2:#d3d9de;
+  --btn:#12171c; --btn-fg:#f3f6f8; --lime:#c6f432; --lime-ink:#3d5a00; --good:#2f6b2a; --good-bg:#e6f1df; --bad:#a3302e; --bad-bg:#f7e4e3; --warn:#8a5a00; --warn-bg:#f6ecd6;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --shadow:0 1px 2px rgba(14,19,23,.05),0 8px 24px -10px rgba(14,19,23,.18);
+}
+@media (prefers-color-scheme: dark) { :root {
+  --canvas:#0b0e10; --rail:#101417; --surface:#14181c; --sunk:#191e22; --hover:#1a2025; --sel:#1f2716;
+  --ink:#e8ecef; --ink2:#c8cfd5; --muted:#909aa3; --faint:#69737c; --line:#232a30; --line2:#2d353c;
+  --btn:#c6f432; --btn-fg:#0b0e10; --lime-ink:#c6f432; --good:#9fd47a; --good-bg:#1b2a17; --bad:#f0928a; --bad-bg:#2c1716; --warn:#e8b552; --warn-bg:#2a2214;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -12px rgba(0,0,0,.6); color-scheme:dark; } }
+* { box-sizing:border-box; }
+html, body { height:100%; margin:0; }
+body { background:var(--canvas); color:var(--ink); font:13px/1.45 var(--sans); -webkit-font-smoothing:antialiased; }
+button, input, select, textarea { font:inherit; color:inherit; }
+button { cursor:pointer; }
+:focus-visible { outline:2px solid var(--ink); outline-offset:1px; border-radius:4px; }
+.mono { font-family:var(--mono); font-variant-numeric:tabular-nums; }
+.muted { color:var(--muted); } .faint { color:var(--faint); }
+[hidden] { display:none !important; }
+
+/* app frame */
+.app { display:grid; grid-template-rows:52px 1fr; height:100vh; }
+.top { display:flex; align-items:center; gap:14px; padding:0 16px; background:var(--surface); border-bottom:1px solid var(--line); }
+.logo { display:flex; align-items:center; gap:9px; font-weight:700; letter-spacing:-.01em; }
+.logo i { width:22px; height:22px; border-radius:7px; background:var(--btn); display:grid; place-items:center; }
+.logo i::after { content:""; width:7px; height:7px; border-radius:50%; background:var(--lime); }
+.tabs { display:flex; gap:2px; margin-left:8px; }
+.tab { border:0; background:transparent; padding:7px 12px; border-radius:7px; color:var(--muted); font-weight:500; }
+.tab:hover { background:var(--hover); color:var(--ink); }
+.tab[aria-selected="true"] { background:var(--sunk); color:var(--ink); font-weight:600; }
+.search { margin-left:auto; position:relative; width:min(360px,34vw); }
+.search input { width:100%; height:34px; padding:0 12px 0 32px; border:1px solid var(--line2); border-radius:8px; background:var(--canvas); }
+.search svg { position:absolute; left:10px; top:10px; width:14px; height:14px; color:var(--faint); }
+.iconbtn { border:1px solid var(--line2); background:var(--surface); height:32px; padding:0 10px; border-radius:8px; color:var(--ink2); font-weight:500; }
+.iconbtn:hover { background:var(--hover); }
+
+.body { display:grid; grid-template-columns:272px minmax(0,1fr); min-height:0; }
+@media (max-width:900px) { .body { grid-template-columns:1fr; } .rail { display:none; } .rail.open { display:block; position:fixed; inset:52px 0 0 0; z-index:30; } }
+
+/* filter rail */
+.rail { background:var(--rail); border-right:1px solid var(--line); overflow-y:auto; padding:12px 10px 40px; }
+.rail h4 { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); margin:12px 8px 6px; font-weight:600; }
+.view { display:flex; align-items:center; gap:8px; width:100%; border:0; background:transparent; padding:6px 8px; border-radius:7px; text-align:left; color:var(--ink2); }
+.view:hover { background:var(--hover); } .view.on { background:var(--surface); box-shadow:inset 0 0 0 1px var(--line); font-weight:600; color:var(--ink); }
+.view .x { margin-left:auto; opacity:0; border:0; background:transparent; color:var(--faint); } .view:hover .x { opacity:1; }
+.fsec { border-top:1px solid var(--line); }
+.fsec > button { display:flex; width:100%; align-items:center; gap:8px; padding:10px 8px; border:0; background:transparent; font-weight:600; color:var(--ink); text-align:left; }
+.fsec > button .n { margin-left:auto; font:500 11px var(--mono); background:var(--btn); color:var(--btn-fg); border-radius:99px; padding:1px 7px; }
+.fsec > button svg { width:12px; height:12px; color:var(--faint); transition:transform .15s; }
+.fsec.open > button svg { transform:rotate(90deg); }
+.fsec .opts { display:none; padding:0 8px 10px; max-height:240px; overflow:auto; }
+.fsec.open .opts { display:block; }
+.opt { display:flex; align-items:center; gap:8px; padding:4px 4px; border-radius:6px; cursor:pointer; color:var(--ink2); }
+.opt:hover { background:var(--hover); }
+.opt input { accent-color:var(--btn); margin:0; }
+.opt .c { margin-left:auto; color:var(--faint); font:11px var(--mono); }
+.range { display:flex; align-items:center; gap:10px; padding:4px; }
+.range input[type=range] { flex:1; accent-color:var(--btn); }
+.toggle { display:flex; align-items:center; gap:8px; padding:4px; color:var(--ink2); }
+.clear { margin:12px 8px 0; border:0; background:transparent; color:var(--muted); text-decoration:underline; text-underline-offset:2px; }
+
+/* main */
+.main { min-width:0; display:grid; grid-template-rows:auto auto 1fr auto; min-height:0; }
+.head { display:flex; align-items:flex-end; gap:16px; padding:16px 20px 10px; flex-wrap:wrap; }
+.head h1 { margin:0; font-size:18px; font-weight:650; letter-spacing:-.01em; }
+.head .sub { color:var(--muted); margin-top:2px; }
+.kpis { display:flex; gap:22px; margin-left:auto; flex-wrap:wrap; }
+.kpi { display:grid; gap:1px; } .kpi b { font:600 16px var(--mono); } .kpi span { font-size:11px; color:var(--muted); }
+.toolbar { display:flex; align-items:center; gap:8px; padding:8px 20px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--surface); flex-wrap:wrap; }
+.chips { display:flex; gap:6px; flex-wrap:wrap; flex:1; min-width:0; }
+.chip { display:inline-flex; align-items:center; gap:6px; background:var(--sunk); border:1px solid var(--line); border-radius:99px; padding:2px 4px 2px 10px; font-size:12px; color:var(--ink2); }
+.chip button { border:0; background:transparent; color:var(--faint); padding:0 4px; }
+.toolbar select { height:30px; border:1px solid var(--line2); border-radius:7px; background:var(--surface); padding:0 8px; }
+.bulk { display:flex; align-items:center; gap:8px; background:var(--btn); color:var(--btn-fg); border-radius:8px; padding:4px 6px 4px 12px; }
+.bulk button { border:0; border-radius:6px; padding:5px 10px; background:rgba(255,255,255,.12); color:inherit; font-weight:600; }
+
+.tablewrap { overflow:auto; min-height:0; background:var(--surface); }
+table { width:100%; border-collapse:separate; border-spacing:0; min-width:1080px; }
+thead th { position:sticky; top:0; z-index:2; background:var(--surface); text-align:left; font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); padding:9px 12px; border-bottom:1px solid var(--line); white-space:nowrap; }
+tbody td { padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:middle; white-space:nowrap; max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+tbody tr { cursor:pointer; } tbody tr:hover td { background:var(--hover); } tbody tr.sel td { background:var(--sel); } tbody tr.open td { box-shadow:inset 0 1px 0 var(--line2), inset 0 -1px 0 var(--line2); }
+td.cb, th.cb { width:36px; padding-right:0; } td.cb input, th.cb input { accent-color:var(--btn); }
+.who { display:flex; align-items:center; gap:10px; }
+.av { width:28px; height:28px; border-radius:50%; background:var(--sunk); border:1px solid var(--line); display:grid; place-items:center; font-weight:600; font-size:11px; color:var(--ink2); flex:none; }
+.who b { font-weight:600; color:var(--ink); display:block; } .who small { color:var(--muted); }
+.tag { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); background:var(--sunk); border-radius:6px; padding:1px 7px; font-size:12px; color:var(--ink2); }
+.pill { display:inline-block; border-radius:99px; padding:2px 9px; font-size:11.5px; font-weight:600; }
+.st-new { background:var(--sunk); color:var(--ink2); } .st-qualified { background:var(--warn-bg); color:var(--warn); } .st-contacted { background:var(--sunk); color:var(--ink); box-shadow:inset 0 0 0 1px var(--line2); }
+.st-booked, .st-won { background:var(--good-bg); color:var(--good); } .st-lost { background:var(--bad-bg); color:var(--bad); }
+.ch { display:inline-grid; place-items:center; width:22px; height:22px; border-radius:6px; border:1px solid var(--line); color:var(--faint); margin-right:3px; font-size:11px; }
+.ch.on { background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.score { display:flex; align-items:center; gap:8px; } .score i { display:block; width:46px; height:5px; border-radius:99px; background:var(--sunk); overflow:hidden; }
+.score i b { display:block; height:100%; background:var(--faint); border-radius:99px; } .score.hi i b { background:var(--ink); }
+.pager { display:flex; align-items:center; gap:10px; padding:8px 20px; border-top:1px solid var(--line); background:var(--surface); color:var(--muted); }
+.pager button { height:28px; }
+.empty { padding:60px 20px; text-align:center; color:var(--muted); }
+.empty b { display:block; color:var(--ink); font-size:15px; margin-bottom:6px; }
+
+/* drawer */
+.scrim { position:fixed; inset:0; background:rgba(8,10,12,.28); z-index:40; }
+.drawer { position:fixed; top:0; right:0; bottom:0; width:min(540px,100%); background:var(--surface); border-left:1px solid var(--line); box-shadow:var(--shadow); z-index:41; display:grid; grid-template-rows:auto 1fr; }
+.dh { padding:16px 18px 12px; border-bottom:1px solid var(--line); display:grid; gap:10px; }
+.dh .row1 { display:flex; align-items:center; gap:12px; }
+.dh .av { width:40px; height:40px; font-size:14px; }
+.dh h2 { margin:0; font-size:17px; font-weight:650; }
+.dh .close { margin-left:auto; }
+.db { overflow:auto; padding:6px 18px 40px; }
+.sec { padding:14px 0; border-bottom:1px solid var(--line); }
+.sec h3 { margin:0 0 10px; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:600; }
+.kv { display:grid; grid-template-columns:130px 1fr; gap:6px 12px; } .kv dt { color:var(--muted); } .kv dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+.src { color:var(--faint); font-size:11px; margin-left:6px; }
+.can { display:grid; gap:6px; }
+.can div { display:grid; grid-template-columns:96px 70px 1fr; gap:10px; align-items:center; }
+.ok { color:var(--good); font-weight:600; } .no { color:var(--bad); font-weight:600; }
+.consent { border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:grid; gap:6px; margin-bottom:8px; background:var(--sunk); }
+.consent q { color:var(--ink2); quotes:"“" "”"; }
+.cert { font:11px var(--mono); color:var(--muted); overflow-wrap:anywhere; }
+.tl { display:grid; gap:8px; } .tl div { display:grid; grid-template-columns:120px 1fr; gap:10px; } .tl time { color:var(--muted); font-size:12px; }
+
+/* forms & rules pages */
+.page { padding:20px; overflow:auto; }
+.grid2 { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:18px; align-items:start; }
+@media (max-width:1100px) { .grid2 { grid-template-columns:1fr; } }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:12px; }
+.card h2 { margin:0; font-size:14px; font-weight:650; padding:14px 16px; border-bottom:1px solid var(--line); }
+.card .pad { padding:14px 16px; display:grid; gap:10px; }
+.card label { display:grid; gap:5px; font-size:12px; font-weight:600; color:var(--ink2); }
+.card input, .card select, .card textarea { border:1px solid var(--line2); border-radius:8px; padding:8px 10px; background:var(--surface); font-weight:400; }
+.card .row { display:flex; gap:10px; flex-wrap:wrap; } .card .row > * { flex:1; min-width:120px; }
+.primary { background:var(--btn); color:var(--btn-fg); border:0; border-radius:8px; height:34px; padding:0 14px; font-weight:600; }
+.code { font:600 10.5px var(--mono); border-radius:5px; padding:2px 6px; letter-spacing:.02em; }
+.c-CONSENT { background:var(--warn-bg); color:var(--warn); } .c-OPT_OUT, .c-OK { background:var(--good-bg); color:var(--good); } .c-RESTRICTED { background:var(--bad-bg); color:var(--bad); } .c-BANNED { background:var(--bad); color:#fff; }
+.sw { position:relative; width:34px; height:20px; border-radius:99px; border:1px solid var(--line2); background:var(--sunk); }
+.sw::after { content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:var(--faint); transition:left .15s; }
+.sw[aria-checked="true"] { background:var(--btn); border-color:var(--btn); } .sw[aria-checked="true"]::after { left:16px; background:var(--lime); }
+.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--btn); color:var(--btn-fg); border-radius:9px; padding:9px 14px; z-index:60; box-shadow:var(--shadow); }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="logo"><i aria-hidden="true"></i>MXAi</div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-page="people" aria-selected="true">People</button>
+      <button class="tab" role="tab" data-page="forms" aria-selected="false">Capture forms</button>
+      <button class="tab" role="tab" data-page="rules" aria-selected="false">Country rules</button>
+      <a class="tab" href="/eng-lab.html" style="text-decoration:none">Company leads</a>
+    </nav>
+    <div class="search"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+      <input id="q" type="search" placeholder="Search name, email or phone" aria-label="Search people"></div>
+    <button class="iconbtn" id="railBtn" title="Filters">Filters</button>
+    <button class="iconbtn" id="logout">Sign out</button>
+  </header>
+
+  <div class="body" id="pPeople">
+    <aside class="rail" id="rail" aria-label="Filters">
+      <h4>Saved views</h4>
+      <div id="views"></div>
+      <button class="view" id="saveView">＋ Save current filters</button>
+      <h4>Filters</h4>
+      <div id="filters"></div>
+      <button class="clear" id="clearAll">Clear all filters</button>
+    </aside>
+    <section class="main">
+      <div class="head">
+        <div><h1>People</h1><div class="sub" id="sub">Consented B2C leads, worldwide</div></div>
+        <div class="kpis" id="kpis"></div>
+      </div>
+      <div class="toolbar">
+        <div class="chips" id="chips"></div>
+        <div class="bulk" id="bulk" hidden><span id="bulkN"></span><button id="exportSel">Export CSV</button><button id="clearSel">Clear</button></div>
+        <label class="muted" for="sort">Sort</label>
+        <select id="sort"><option value="score">Best score</option><option value="newest">Newest</option><option value="recent">Last active</option><option value="name">Name</option></select>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th class="cb"><input type="checkbox" id="all" aria-label="Select all on this page"></th>
+            <th>Name</th><th>Contact</th><th>Location</th><th>Wants</th><th>Profile</th><th>Consent</th><th>Score</th><th>Status</th><th>Source</th><th>Added</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="empty" id="empty" hidden><b>No people match these filters</b>Leads appear here as soon as someone fills in a capture form or an ad lead form.</div>
+      </div>
+      <div class="pager"><span id="range"></span><span style="flex:1"></span><button class="iconbtn" id="prev">Previous</button><button class="iconbtn" id="next">Next</button></div>
+    </section>
+  </div>
+
+  <div class="page" id="pForms" hidden>
+    <div class="grid2">
+      <div class="card"><h2>Capture forms</h2><div id="formList" class="pad"></div></div>
+      <form class="card" id="newForm"><h2>New form</h2><div class="pad">
+        <label>Business<select id="nfClient" required></select></label>
+        <label>Title<input id="nfTitle" required placeholder="Free skin consultation in Dubai"></label>
+        <label>Intro<textarea id="nfIntro" rows="2" placeholder="Tell us what you're looking for and we'll get back to you today."></textarea></label>
+        <div class="row"><label>Sector<input id="nfVertical" required placeholder="aesthetics"></label><label>Country<input id="nfCountry" maxlength="2" placeholder="AE"></label><label>Language<input id="nfLang" value="en" maxlength="5"></label></div>
+        <label>They agree to hear about<input id="nfPurpose" required placeholder="offers and appointments for skin treatments"></label>
+        <fieldset style="border:1px solid var(--line);border-radius:8px;padding:8px 10px"><legend class="muted" style="font-size:12px">Contact channels offered</legend>
+          <div class="row" id="nfChannels"></div></fieldset>
+        <label>Also named in the consent (optional)<select id="nfPartners" multiple size="3"></select></label>
+        <button class="primary" type="submit">Create form</button>
+      </div></form>
+    </div>
+  </div>
+
+  <div class="page" id="pRules" hidden>
+    <div class="card"><h2>Country rules <span class="muted" style="font-weight:400">· what may be sent, per channel (research of 7 Nov 2026, not legal advice)</span></h2>
+      <div style="overflow:auto"><table style="min-width:900px"><thead><tr><th>Country</th><th>Email</th><th>SMS</th><th>WhatsApp</th><th>Call</th><th>AI call</th><th>Hours</th><th>Limit</th><th>Registries</th><th>Cold email</th></tr></thead><tbody id="ruleRows"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dName" hidden></aside>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const api = async (url, body, method) => { const r = await fetch(url, { method: method || (body ? 'POST' : 'GET'), credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    if (r.status === 401) { location.href = '/login.html'; throw new Error('Sign in'); } const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Error ' + r.status); return d; };
+  const toast = m => { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2400); };
+  const flag = () => ''; // flag emoji do not render on Windows; the country code is shown as text instead
+  const ago = d => { const s = (Date.now() - new Date(d)) / 1000; return s < 3600 ? Math.max(1, Math.round(s / 60)) + 'm' : s < 86400 ? Math.round(s / 3600) + 'h' : s < 2592000 ? Math.round(s / 86400) + 'd' : new Date(d).toLocaleDateString(); };
+  const initials = n => (String(n || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '?').toUpperCase();
+  const CH = { email: '@', sms: 'S', whatsapp: 'W', call: '☎', ai_call: 'AI' };
+  const CHN = { email: 'Email', sms: 'SMS', whatsapp: 'WhatsApp', call: 'Call', ai_call: 'AI call' };
+
+  // ---------- state ----------
+  let filters = {}, sort = 'score', offset = 0, total = 0, rows = [], selected = new Set(), facets = null;
+  const LIMIT = 50;
+  const FSECS = [
+    ['countries', 'Country', f => f.countries], ['cities', 'City', f => f.cities], ['verticals', 'Wants (sector)', f => f.verticals],
+    ['timings', 'Timing', f => f.timings], ['genders', 'Gender (stated)', f => f.genders], ['ages', 'Age range (stated)', f => f.ages],
+    ['consent', 'Consented channel', f => (f.channels || []).map(c => ({ v: c, n: '' })), v => CHN[v] || v], ['sources', 'Source', f => f.sources], ['statuses', 'Status', f => f.statuses],
+  ];
+  const open = new Set(['countries', 'verticals', 'consent']);
+
+  function renderFilters() {
+    const f = facets || {};
+    $('#filters').innerHTML = FSECS.map(([key, title, get, label]) => {
+      const list = get(f) || [], on = filters[key] || [];
+      return `<div class="fsec ${open.has(key) ? 'open' : ''}" data-sec="${key}"><button type="button" aria-expanded="${open.has(key)}"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m4 2 4 4-4 4"/></svg>${title}${on.length ? `<span class="n">${on.length}</span>` : ''}</button>
+        <div class="opts">${list.length ? list.map(o => `<label class="opt"><input type="checkbox" data-f="${key}" value="${esc(o.v)}" ${on.includes(String(o.v)) ? 'checked' : ''}><span>${esc(label ? label(o.v) : o.v)}</span><span class="c">${o.n === '' ? '' : o.n}</span></label>`).join('') : '<div class="faint" style="padding:4px">Nothing yet</div>'}</div></div>`;
+    }).join('') + `<div class="fsec open"><button type="button"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m4 2 4 4-4 4"/></svg>Lead score${filters.minScore ? `<span class="n">≥${filters.minScore}</span>` : ''}</button>
+      <div class="opts"><div class="range"><input type="range" min="0" max="100" step="5" value="${filters.minScore || 0}" id="minScore" aria-label="Minimum lead score"><span class="mono" id="msv">${filters.minScore || 0}</span></div>
+      <label class="toggle"><input type="checkbox" id="hasEmail" ${filters.hasEmail ? 'checked' : ''}> Has email</label><label class="toggle"><input type="checkbox" id="hasPhone" ${filters.hasPhone ? 'checked' : ''}> Has phone</label>
+      <label class="toggle"><input type="checkbox" id="includeOptedOut" ${filters.includeOptedOut ? 'checked' : ''}> Include people who opted out</label></div></div>`;
+  }
+  function renderChips() {
+    const chips = [];
+    for (const [key, title] of FSECS) for (const v of filters[key] || []) chips.push(`<span class="chip">${esc(title.replace(/ \(.*\)/, ''))}: ${esc(key === 'consent' ? CHN[v] || v : v)}<button data-unf="${key}" data-v="${esc(v)}" aria-label="Remove">×</button></span>`);
+    if (filters.minScore) chips.push(`<span class="chip">Score ≥ ${filters.minScore}<button data-unf="minScore" aria-label="Remove">×</button></span>`);
+    if (filters.q) chips.push(`<span class="chip">“${esc(filters.q)}”<button data-unf="q" aria-label="Remove">×</button></span>`);
+    $('#chips').innerHTML = chips.join('') || '<span class="muted">All people</span>';
+  }
+  async function loadFacets() {
+    facets = await api('/api/pool/facets');
+    const t = facets.totals || {};
+    $('#kpis').innerHTML = [['People', t.people], ['New · 7 days', t.new_7d], ['Consented', t.consented], ['Opted out', t.opted_out], ['Avg score', t.avg_score ?? '–']]
+      .map(([l, v]) => `<div class="kpi"><b>${v ?? 0}</b><span>${l}</span></div>`).join('');
+    renderFilters();
+  }
+  async function loadPeople() {
+    const d = await api('/api/pool/people', { filters, sort, offset, limit: LIMIT });
+    rows = d.rows; total = d.total;
+    $('#rows').innerHTML = rows.map(row).join('');
+    $('#empty').hidden = rows.length > 0;
+    $('#range').textContent = total ? `${offset + 1}–${Math.min(offset + LIMIT, total)} of ${total.toLocaleString()}` : '0 people';
+    $('#prev').disabled = offset === 0; $('#next').disabled = offset + LIMIT >= total;
+    $('#all').checked = rows.length > 0 && rows.every(r => selected.has(r.id));
+    renderChips(); bulk();
+  }
+  function row(p) {
+    const a = p.attrs || {}, i = (p.interests || [])[0] || {}, cons = new Set(p.consent_channels || []);
+    const prof = [a.age_range, a.gender].filter(Boolean).join(' · ');
+    return `<tr data-id="${p.id}" class="${selected.has(p.id) ? 'sel' : ''}">
+      <td class="cb"><input type="checkbox" data-sel="${p.id}" ${selected.has(p.id) ? 'checked' : ''} aria-label="Select ${esc(p.full_name || 'person')}"></td>
+      <td><div class="who"><span class="av">${esc(initials(p.full_name))}</span><div><b>${esc(p.full_name || 'Unnamed')}</b><small>${esc(p.language ? p.language.toUpperCase() : '')}</small></div></div></td>
+      <td><div>${esc(p.email || '')}</div><small class="muted mono">${esc(p.phone || '')}</small></td>
+      <td>${flag(p.country)} ${esc([p.city, p.country].filter(Boolean).join(', ') || '–')}</td>
+      <td>${i.vertical ? `<span class="tag">${esc(i.vertical)}</span>` : '–'} <small class="muted">${esc(i.timing || '')}</small></td>
+      <td class="muted">${esc(prof || '–')}</td>
+      <td>${['email', 'whatsapp', 'sms', 'call'].map(c => `<span class="ch ${cons.has(c) ? 'on' : ''}" title="${CHN[c]}: ${cons.has(c) ? 'consented' : 'no consent'}">${CH[c]}</span>`).join('')}</td>
+      <td><div class="score ${p.score >= 70 ? 'hi' : ''}"><i><b style="width:${p.score}%"></b></i><span class="mono">${p.score}</span></div></td>
+      <td><span class="pill st-${esc(p.status)}">${esc(p.status)}</span></td>
+      <td class="muted">${esc(p.first_source || '')}</td>
+      <td class="muted">${ago(p.created_at)}</td></tr>`;
+  }
+  function bulk() { $('#bulk').hidden = !selected.size; $('#bulkN').textContent = `${selected.size} selected`; }
+  const refresh = () => { offset = 0; loadPeople().catch(e => toast(e.message)); };
+
+  // ---------- drawer ----------
+  async function openPerson(id) {
+    const d = await api('/api/pool/people/' + id), p = d.person;
+    $$('#rows tr').forEach(tr => tr.classList.toggle('open', +tr.dataset.id === id));
+    const attr = d.attributes.map(a => `<dt>${esc(a.key.replace(/^q_/, '').replace(/_/g, ' '))}</dt><dd>${esc(a.value)}<span class="src">${esc(a.source)}${a.confidence < 1 ? ' · ' + Math.round(a.confidence * 100) + '%' : ''}</span></dd>`).join('');
+    const can = Object.entries(d.allowed_now).map(([ch, r]) => `<div><span>${CHN[ch]}</span><span class="${r.allowed ? 'ok' : 'no'}">${r.allowed ? 'Allowed' : 'Blocked'}</span><span class="muted">${esc(r.reason)}</span></div>`).join('');
+    $('#drawer').innerHTML = `<div class="dh">
+        <div class="row1"><span class="av">${esc(initials(p.full_name))}</span><div><h2 id="dName">${esc(p.full_name || 'Unnamed')}</h2><div class="muted">${flag(p.country)} ${esc([p.city, d.rule.name].filter(Boolean).join(', '))} · added ${ago(p.created_at)} ago</div></div>
+          <button class="iconbtn close" id="dClose" aria-label="Close">✕</button></div>
+        <div class="row1"><div class="score ${p.score >= 70 ? 'hi' : ''}"><i><b style="width:${p.score}%"></b></i><span class="mono">${p.score}</span></div><span class="muted">lead score</span>
+          <select id="dStatus" style="margin-left:auto;height:30px;border:1px solid var(--line2);border-radius:7px;background:var(--surface)">${['new', 'qualified', 'contacted', 'booked', 'won', 'lost'].map(s => `<option ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+      </div>
+      <div class="db">
+        <div class="sec"><h3>Contact</h3><dl class="kv">${d.identities.map(i => `<dt>${esc(i.kind)}</dt><dd class="mono">${esc(i.value)}${i.verified_at ? ' <span class="ok">verified</span>' : ''}</dd>`).join('')}</dl></div>
+        <div class="sec"><h3>What they want</h3>${d.interests.map(i => `<div style="margin-bottom:8px"><span class="tag">${esc(i.vertical)}</span> <span class="muted">${esc([i.timing, i.budget].filter(Boolean).join(' · '))}</span>${i.intent ? `<div style="margin-top:4px">${esc(i.intent)}</div>` : ''}</div>`).join('') || '<span class="muted">Nothing stated</span>'}</div>
+        <div class="sec"><h3>Details · each with its source</h3>${attr ? `<dl class="kv">${attr}</dl>` : '<span class="muted">No other details</span>'}</div>
+        <div class="sec"><h3>Can we contact them now? · ${esc(d.rule.name)} rules</h3><div class="can">${can}</div>${d.rule.note ? `<p class="muted" style="margin:8px 0 0">${esc(d.rule.note)}</p>` : ''}</div>
+        <div class="sec"><h3>Consent and proof</h3>${d.consents.map(c => `<div class="consent">
+            <div><b>${CHN[c.channel] || c.channel}</b> · ${esc(c.purpose)} · ${c.withdrawn_at ? `<span class="no">withdrawn ${ago(c.withdrawn_at)} ago</span>` : c.awaiting_confirm ? '<span class="no">waiting for the confirmation click</span>' : c.confirmed_at ? '<span class="ok">confirmed</span>' : '<span class="ok">active</span>'}</div>
+            <q>${esc(c.text || '')}</q>
+            <div class="muted">For: ${esc((c.buyer_names || []).join(', '))} · ${esc(c.method)} · ${new Date(c.captured_at).toLocaleString()} · ${esc(c.jurisdiction || '')}${c.ip ? ' · ' + esc(c.ip) : ''}</div>
+            <div class="cert">${c.certificate_valid ? '<span class="ok">✓ Certificate valid</span>' : '<span class="no">✕ Certificate does not match the record</span>'} · ${esc(c.certificate.slice(0, 32))}…</div></div>`).join('') || '<span class="muted">No consent recorded</span>'}
+          <div class="row1" style="margin-top:8px"><button class="iconbtn" id="dCopyU">Copy unsubscribe link</button><button class="iconbtn" id="dOptOut" style="color:var(--bad)">Opt out of all marketing</button></div></div>
+        <div class="sec"><h3>Timeline</h3><div class="tl">${d.events.map(e => `<div><time>${new Date(e.at).toLocaleString()}</time><span>${esc(e.type.replace(/_/g, ' '))} <span class="faint">${esc(e.source || '')}</span></span></div>`).join('')}
+          ${d.decisions.map(x => `<div><time>${new Date(x.at).toLocaleString()}</time><span>${x.allowed ? '<span class="ok">sent</span>' : '<span class="no">blocked</span>'} ${esc(CHN[x.channel] || x.channel)} · <span class="muted">${esc(x.reason)}</span></span></div>`).join('')}</div></div>
+      </div>`;
+    $('#scrim').hidden = false; $('#drawer').hidden = false; $('#dClose').focus();
+    $('#dClose').onclick = closeDrawer;
+    $('#dStatus').onchange = async e => { await api(`/api/pool/people/${id}/status`, { status: e.target.value }); toast('Status updated'); loadPeople(); };
+    $('#dCopyU').onclick = async () => { const u = location.origin + d.unsubscribe_url; try { await navigator.clipboard.writeText(u); toast('Unsubscribe link copied'); } catch { prompt('Unsubscribe link', u); } };
+    $('#dOptOut').onclick = async () => { if (!confirm('Withdraw all marketing consent for this person and suppress them everywhere?')) return; await api(`/api/pool/people/${id}/opt-out`, {}); toast('Opted out everywhere'); openPerson(id); loadPeople(); loadFacets(); };
+  }
+  function closeDrawer() { $('#scrim').hidden = true; $('#drawer').hidden = true; $$('#rows tr.open').forEach(tr => tr.classList.remove('open')); }
+
+  // ---------- views ----------
+  async function loadViews() {
+    const v = await api('/api/pool/views');
+    $('#views').innerHTML = `<button class="view ${Object.keys(filters).length ? '' : 'on'}" data-view="all">All people</button>` +
+      v.map(x => `<div class="view" data-view="${x.id}" role="button" tabindex="0">${esc(x.name)}<button class="x" data-delview="${x.id}" aria-label="Delete view">×</button></div>`).join('');
+    loadViews.list = v;
+  }
+
+  // ---------- events ----------
+  document.addEventListener('click', async e => {
+    const t = e.target;
+    const sec = t.closest('.fsec > button'); if (sec) { const s = sec.parentElement; s.classList.toggle('open'); const k = s.dataset.sec; k && (s.classList.contains('open') ? open.add(k) : open.delete(k)); return; }
+    const un = t.closest('[data-unf]'); if (un) { const k = un.dataset.unf; if (k === 'minScore' || k === 'q') { delete filters[k]; if (k === 'q') $('#q').value = ''; } else filters[k] = (filters[k] || []).filter(v => v !== un.dataset.v); renderFilters(); refresh(); return; }
+    const del = t.closest('[data-delview]'); if (del) { e.stopPropagation(); await api('/api/pool/views/' + del.dataset.delview, null, 'DELETE'); loadViews(); return; }
+    const vw = t.closest('[data-view]'); if (vw) { const id = vw.dataset.view; filters = id === 'all' ? {} : { ...(loadViews.list.find(x => String(x.id) === id)?.filters || {}) }; $('#q').value = filters.q || '';
+      $$('.view').forEach(x => x.classList.toggle('on', x === vw)); renderFilters(); refresh(); return; }
+    const cb = t.closest('[data-sel]'); if (cb) { e.stopPropagation(); const id = +cb.dataset.sel; cb.checked ? selected.add(id) : selected.delete(id); cb.closest('tr').classList.toggle('sel', cb.checked); bulk(); return; }
+    const tr = t.closest('#rows tr'); if (tr && !t.closest('td.cb')) { openPerson(+tr.dataset.id).catch(err => toast(err.message)); return; }
+  });
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.dataset.f) { const k = t.dataset.f, set = new Set(filters[k] || []); t.checked ? set.add(t.value) : set.delete(t.value); filters[k] = [...set]; if (!filters[k].length) delete filters[k]; renderFilters(); refresh(); }
+    if (t.id === 'minScore') { filters.minScore = +t.value || undefined; if (!filters.minScore) delete filters.minScore; refresh(); }
+    if (['hasEmail', 'hasPhone', 'includeOptedOut'].includes(t.id)) { t.checked ? filters[t.id] = true : delete filters[t.id]; refresh(); }
+  });
+  document.addEventListener('input', e => { if (e.target.id === 'minScore') $('#msv').textContent = e.target.value; });
+  let qt; $('#q').addEventListener('input', e => { clearTimeout(qt); qt = setTimeout(() => { const v = e.target.value.trim(); v ? filters.q = v : delete filters.q; refresh(); }, 250); });
+  $('#sort').onchange = e => { sort = e.target.value; refresh(); };
+  $('#prev').onclick = () => { offset = Math.max(0, offset - LIMIT); loadPeople(); };
+  $('#next').onclick = () => { offset += LIMIT; loadPeople(); };
+  $('#all').onchange = e => { rows.forEach(r => e.target.checked ? selected.add(r.id) : selected.delete(r.id)); loadPeople(); };
+  $('#clearSel').onclick = () => { selected.clear(); loadPeople(); };
+  $('#clearAll').onclick = () => { filters = {}; $('#q').value = ''; renderFilters(); refresh(); };
+  $('#saveView').onclick = async () => { const name = prompt('Name this view'); if (!name) return; await api('/api/pool/views', { name, filters }); toast('View saved'); loadViews(); };
+  $('#scrim').onclick = closeDrawer;
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#drawer').hidden) closeDrawer(); });
+  $('#railBtn').onclick = () => $('#rail').classList.toggle('open');
+  $('#logout').onclick = async () => { await api('/api/logout', {}); location.href = '/login.html'; };
+  $('#exportSel').onclick = () => {
+    const pick = rows.filter(r => selected.has(r.id));
+    const head = ['name', 'email', 'phone', 'country', 'city', 'wants', 'timing', 'age_range', 'gender', 'consented_channels', 'score', 'status'];
+    const lines = [head.join(',')].concat(pick.map(r => [r.full_name, r.email, r.phone, r.country, r.city, (r.interests || [])[0]?.vertical, (r.interests || [])[0]?.timing, r.attrs?.age_range, r.attrs?.gender, (r.consent_channels || []).join(' '), r.score, r.status]
+      .map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })); a.download = 'mxai-leads.csv'; a.click(); toast(`${pick.length} people exported (this page)`);
+  };
+
+  // ---------- pages ----------
+  $$('.tab[data-page]').forEach(b => b.onclick = () => { $$('.tab[data-page]').forEach(x => x.setAttribute('aria-selected', String(x === b))); const p = b.dataset.page;
+    $('#pPeople').hidden = p !== 'people'; $('#pForms').hidden = p !== 'forms'; $('#pRules').hidden = p !== 'rules'; if (p === 'forms') loadForms(); if (p === 'rules') loadRules(); });
+
+  async function loadForms() {
+    const [forms, clients] = await Promise.all([api('/api/pool/forms'), api('/api/eng/clients')]);
+    $('#nfClient').innerHTML = clients.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    $('#nfPartners').innerHTML = clients.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    $('#nfChannels').innerHTML = Object.entries(CHN).map(([k, v]) => `<label class="toggle" style="flex:0 0 auto;font-weight:500"><input type="checkbox" value="${k}" ${k === 'email' || k === 'whatsapp' ? 'checked' : ''}> ${v}</label>`).join('');
+    $('#formList').innerHTML = forms.length ? forms.map(f => `<div style="display:grid;gap:4px;padding:10px 0;border-bottom:1px solid var(--line)">
+        <div style="display:flex;gap:8px;align-items:center"><b>${esc(f.title)}</b><span class="tag">${esc(f.vertical)}</span>${f.country ? `<span class="muted">${flag(f.country)} ${esc(f.country)}</span>` : ''}<span class="mono" style="margin-left:auto">${f.leads} leads</span></div>
+        <div class="muted">${esc(f.client_name || '')} · channels: ${esc(f.channels.map(c => CHN[c]).join(', '))} · v${f.version}</div>
+        <div><a href="/f/${esc(f.slug)}" target="_blank" rel="noopener">Open form</a> · <button class="iconbtn" style="height:24px" data-copyform="${esc(f.slug)}">Copy embed code</button></div></div>`).join('') : '<p class="muted">No forms yet. Create one on the right: it gets its own link and can be placed on any website.</p>';
+  }
+  document.addEventListener('click', async e => { const b = e.target.closest('[data-copyform]'); if (!b) return; const code = `<iframe src="${location.origin}/f/${b.dataset.copyform}" style="width:100%;min-height:760px;border:0" title="Contact form"></iframe>`;
+    try { await navigator.clipboard.writeText(code); toast('Embed code copied'); } catch { prompt('Embed code', code); } });
+  $('#newForm').addEventListener('submit', async e => { e.preventDefault();
+    try { await api('/api/pool/forms', { client_id: +$('#nfClient').value, title: $('#nfTitle').value, intro: $('#nfIntro').value, vertical: $('#nfVertical').value, country: $('#nfCountry').value, language: $('#nfLang').value,
+        purpose: $('#nfPurpose').value, channels: $$('#nfChannels input:checked').map(i => i.value), partners: [...$('#nfPartners').selectedOptions].map(o => +o.value).filter(v => v !== +$('#nfClient').value) });
+      toast('Form created'); e.target.reset(); loadForms(); } catch (err) { toast(err.message); } });
+
+  async function loadRules() {
+    const r = await api('/api/pool/rules');
+    $('#ruleRows').innerHTML = r.map(x => { const c = x.rules.channels || {}; const code = k => `<span class="code c-${esc(c[k])}">${esc(String(c[k] || '').replace('_', '-').toLowerCase())}</span>`;
+      return `<tr><td>${flag(x.country)} <b>${esc(x.name)}</b>${x.rules.note ? `<div class="muted" style="white-space:normal;max-width:280px">${esc(x.rules.note)}</div>` : ''}</td><td>${code('email')}</td><td>${code('sms')}</td><td>${code('whatsapp')}</td><td>${code('call')}</td><td>${code('ai_call')}</td>
+        <td class="mono">${x.rules.quiet[0]}–${x.rules.quiet[1]}</td><td class="mono">${x.rules.cap.day}/day · ${x.rules.cap.week}/wk</td><td class="muted" style="white-space:normal;max-width:180px">${esc((x.rules.registries || []).join(', ') || '–')}</td>
+        <td>${['OPT_OUT', 'OK'].includes(c.email) ? `<button class="sw" role="switch" aria-checked="${x.cold_allowed}" data-cold="${esc(x.country)}" aria-label="Cold email in ${esc(x.name)}"></button>` : '<span class="faint">not allowed</span>'}</td></tr>`; }).join('');
+  }
+  document.addEventListener('click', async e => { const s = e.target.closest('[data-cold]'); if (!s) return; const on = s.getAttribute('aria-checked') !== 'true';
+    if (on && !confirm('Allow email to people in this country who have not consented (the law there allows it until they object)? Opt-out links and suppression still apply.')) return;
+    await api(`/api/pool/rules/${s.dataset.cold}/cold`, { on }); s.setAttribute('aria-checked', String(on)); toast(on ? 'Cold email switched on' : 'Cold email switched off'); });
+
+  Promise.all([loadFacets(), loadViews(), loadPeople()]).catch(e => toast(e.message));
+})();
+</script>
+</body>
+</html>

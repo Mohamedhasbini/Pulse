@@ -62,7 +62,7 @@ sender rules (Spain 400 prefix, India DLT, Saudi sender ids) → AI disclosure a
 **Default:** B2C outbound off everywhere; replies to a person who wrote first are always allowed.
 
 ## 8. Phases
-- **A — now, $0/month:** data model, MXAi consent certificate, own forms and quizzes, Meta/Google/WhatsApp lead webhooks, the pool
+- **A — BUILT 2026-11-07, $0/month:** data model, MXAi consent certificate, own forms and quizzes, Meta/Google/WhatsApp lead webhooks, the pool
   filter screen, country rules table with the decision check, global suppression and opt-out in any language, tests.
 - **B — first clients:** WhatsApp/SMS one-time codes, Twilio Lookup, nightly duplicate matching (Splink), consent expiry jobs.
 - **C — US:** TrustedForm certificates on US forms (~$0.15 each), licensed appends, data broker registration if MXAi sells data about

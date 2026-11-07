@@ -4,14 +4,15 @@ import express from 'express';
 import crypto from 'node:crypto';
 import { migrate, pool } from './db.js';
 import { mountEngine, startEngine } from './engine/index.js';
+import { mountPool, startPool } from './pool/routes.js';
 
 const PORT = 3200;
 const KEY = process.env.V2_ADMIN_TOKEN || '';
-if (KEY.length < 24) { console.error('V2_ADMIN_TOKEN is missing or too short in v2/.env'); process.exit(1); }
+for (const k of ['V2_ADMIN_TOKEN', 'HASH_PEPPER', 'CERT_KEY', 'ALTCHA_KEY']) if ((process.env[k] || '').length < 24) { console.error(`${k} is missing or too short in v2/.env`); process.exit(1); }
 
 const app = express();
 app.disable('x-powered-by');
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '1mb', verify: (req, _res, buf) => { if (req.url.startsWith('/hooks/')) req.rawBody = buf; } }));
 app.use((_req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }); next(); });
 
 // changes must come from this site's own pages (no cross-site requests)
@@ -47,12 +48,16 @@ const adminOnly = (req, res, next) => (signedIn(req) ? next() : res.status(401).
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 
 app.get('/health', wrap(async (_req, res) => { await pool.query('SELECT 1'); res.json({ ok: true, app: 'mxai-v2' }); }));
-app.get('/', (req, res) => res.redirect(signedIn(req) ? '/eng-lab.html' : '/login.html'));
+app.get('/', (req, res) => res.redirect(signedIn(req) ? '/pool.html' : '/login.html'));
 app.get('/eng-lab.html', (req, res, next) => (signedIn(req) ? next() : res.redirect('/login.html')));
 mountEngine(app, { adminOnly, wrap });
+mountPool(app, { adminOnly, wrap });
+app.get('/vendor/altcha.js', (_req, res) => res.type('js').sendFile(new URL('../node_modules/altcha/dist/main/altcha.min.js', import.meta.url).pathname));
+app.get('/pool.html', (req, res, next) => (signedIn(req) ? next() : res.redirect('/login.html')));
 app.use(express.static(new URL('../public', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')));
 app.use((err, _req, res, _next) => { console.error(err); res.status(500).json({ error: 'Something went wrong.' }); });
 
 await migrate();
+await startPool(); // seeds the country rules
 app.listen(PORT, () => console.log(`MXAi v2 running on http://localhost:${PORT}`));
 startEngine().catch(e => console.error('Growth engine did not start:', e.message));
