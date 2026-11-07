@@ -28,8 +28,9 @@
   h.addEventListener('pointerdown', e => {
     if (!wide.matches || e.button !== 0) return;
     e.preventDefault(); h.setPointerCapture(e.pointerId); root.classList.add('sb-dragging');
-    const move = ev => set(ev.clientX, false);
-    const up = ev => { h.releasePointerCapture(ev.pointerId); root.classList.remove('sb-dragging'); set(ev.clientX); h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); };
+    const z = () => parseFloat(getComputedStyle(root).zoom) || 1; // density.css draws the page smaller on laptops
+    const move = ev => set(ev.clientX / z(), false);
+    const up = ev => { h.releasePointerCapture(ev.pointerId); root.classList.remove('sb-dragging'); set(ev.clientX / z()); h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); };
     h.addEventListener('pointermove', move); h.addEventListener('pointerup', up);
   });
   const toggle = () => set(root.classList.contains('sb-rail') ? last : MIN);

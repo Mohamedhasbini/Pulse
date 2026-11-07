@@ -170,7 +170,8 @@ window.PulseCal = (() => {
     if (!drag) return;
     const dx = ev.clientX - drag.sx, dy = ev.clientY - drag.sy;
     if (!drag.on && Math.hypot(dx, dy) < 6) return;
-    drag.on = true; drag.el.classList.add('gc-drag'); drag.el.style.transform = `translate(${dx}px,${dy}px)`;
+    const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1; // density.css zoom: move in page pixels
+    drag.on = true; drag.el.classList.add('gc-drag'); drag.el.style.transform = `translate(${dx / z}px,${dy / z}px)`;
   }
   async function dragEnd(ev) {
     if (!drag) return; const d = drag; drag = null;

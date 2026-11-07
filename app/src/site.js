@@ -47,7 +47,7 @@ export function mountSite(app) {
     res.type('html').send(fs.readFileSync(PUBLIC + '/privacy.html', 'utf8').replace(/\{\{COMPANY\}\}/g, esc(company)).replace('{{CONTACT}}', contact));
   });
   // Brand files are public: the sign-in page and the website use them before anyone signs in
-  app.get(['/brand.css', '/pulse-logo.svg', '/manifest.webmanifest', '/stream.js', '/site-i18n.js'], (req, res) => res.set('Cache-Control', 'public, max-age=3600').sendFile(PUBLIC + req.path));
+  app.get(['/brand.css', '/pulse-logo.svg', '/manifest.webmanifest', '/stream.js', '/site-i18n.js', '/density.css'], (req, res) => res.set('Cache-Control', 'public, max-age=3600').sendFile(PUBLIC + req.path));
   // fonts are public too: the sign-in page uses them, and the browser may keep them for a month
   app.get(['/fonts.css', /^\/fonts\/[\w.-]+\.woff2$/], (req, res) => res.set('Cache-Control', 'public, max-age=2592000').sendFile(PUBLIC + req.path));
   // real dashboard screenshots for the website's templates and tools (public, cached a day)

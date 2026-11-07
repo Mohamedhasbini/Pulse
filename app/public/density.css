@@ -1,0 +1,6 @@
+/* Laptop screens (7 Nov 2026). Most Windows laptops run at 125-150% display scaling, so at 100% browser zoom the
+   browser reports only about 1,100-1,440 CSS pixels of width: the dashboard and the Lab, laid out for wider screens,
+   looked oversized ("zoomed in"). In that range the whole page is drawn at 88%, so it reads like a normal desktop.
+   Phones and tablets (1,000px and under) and big screens are unchanged. Drag code divides by this zoom
+   (sidebar-resize.js, gcal.js) so things still follow the pointer. */
+@media (min-width:1001px) and (max-width:1440px){html{zoom:.88}}

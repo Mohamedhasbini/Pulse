@@ -727,6 +727,8 @@ html[data-theme="light"] .vz-chat .c,html[data-theme="light"] .vz-rules span,htm
 html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;font-style:italic!important;font-weight:400!important;letter-spacing:-.01em;
   background:none!important;-webkit-text-fill-color:currentColor!important;color:#f4f6ef!important}
 .hero .screen{box-shadow:0 0 0 1px rgba(200,247,81,.10),0 40px 120px -40px rgba(200,247,81,.25)}
+/* laptops at 125-150% Windows scaling: draw at 88% so the page reads like a normal desktop (see density.css) */
+@media (min-width:1001px) and (max-width:1440px){html{zoom:.88}}
 </style>
 </head>
 <body>
