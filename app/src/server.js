@@ -49,6 +49,8 @@ import { setSenders, startAutopilot, offerWaitlist } from './autopilot.js';
 import { mountHQ } from './hq.js';
 import { mountUpgrades, pendingFor } from './upgrades.js';
 import { mountControls } from './controls.js';
+import { mountPersona } from './mxai/persona.js';
+import { mountTraces } from './mxai/trace.js';
 import { surfaceOf, doorAllows } from './hosts.js';
 import { mountSupport, activeSupport, READ_ONLY_OK } from './support.js';
 import { accessOf, stopped, forgetAccess, STILL_ALLOWED, mountBilling } from './billing.js';
@@ -749,6 +751,8 @@ mountLab(app, () => BIZ());
 mountHQ(app, adminOnly, wrap, audit, aiHealth);
 mountUpgrades(app, { adminOnly, wrap, audit, BIZ });
 mountControls(app, { adminOnly, wrap, audit });
+mountPersona(app, { wrap, BIZ }); // MXAi: roles, guidelines, competitors (mxai/persona.js)
+mountTraces(app, { adminOnly, wrap, BIZ }); // MXAi: the trace of every answer (mxai/trace.js)
 mountSupport(app, { adminOnly, wrap, audit, secureCookie });
 mountBilling(app, { adminOnly, wrap, audit });
 mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });

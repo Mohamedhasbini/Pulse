@@ -366,48 +366,14 @@ ${results.length ? `\nTOOL RESULTS (real data)\n${results.map(r => `${r.name}(${
 
 Your JSON:`;
 }
-// The team thinks with a stronger model than the receptionist (TEAM_MODEL); Gemini counts its free quota separately.
-// If that model fails or is out of quota, the receptionist's model answers instead.
-const TEAM_MODEL = () => process.env.TEAM_MODEL || 'models/gemini-3.5-flash';
-// Claude for MXAi Assistant: only for a business the admin switched "AI Assistant Pro" on for, inside its monthly budget
-// (aibudget.js; PULSE_MODEL picks the model). The receptionist keeps its own model; only the owner's assistant moves.
-// Everyone else, and anyone over budget, gets the free AI below. Never a paid fallback.
-const claudes = new Map(); // one client per API key
-async function askClaude(text, use, bizId) {
-  const key = use.key;
-  if (!claudes.has(key)) claudes.set(key, new (await import('@anthropic-ai/sdk')).default({ apiKey: key }));
-  const r = await claudes.get(key).beta.messages.create({
-    model: use.model || process.env.PULSE_MODEL || 'claude-opus-5-5', max_tokens: 16000,
-    output_config: { effort: process.env.PULSE_EFFORT || 'medium' },
-    // a safety decline is re-run on a suitable model inside the same call
-    betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
-    messages: [{ role: 'user', content: text }],
-  });
-  await recordSpend(bizId, r.model || use.model || process.env.PULSE_MODEL || 'claude-opus-5-5', r.usage, use.own);
-  if (r.stop_reason === 'refusal') return readReply('{"answer":"I can\'t help with that one. Ask me about your business."}');
-  return readReply(r.content.filter(b => b.type === 'text').map(b => b.text).join(''));
-}
+// Every AI call of MXAi in the dashboard goes through the model layer (mxai/model.js): Claude only where the admin
+// switched AI Assistant Pro on and inside its monthly budget, otherwise the free providers. No n8n or SDK calls here.
 async function ask(text, B) {
-  const own = B ? await credentials(B.id, 'anthropic').catch(() => null) : null;
-  const use = B ? await claudeFor(B.id, own) : null;
-  if (use) {
-    try { return await askClaude(text, use, B.id); }
-    catch (e) { console.warn('Claude call failed, falling back to the default model:', e.status || '', e.message); }
-  }
-  // the per-minute allowance is shared with the receptionist: wait a little for a free slot before giving up
-  let slot = false;
-  for (let i = 0; i < 3 && !(slot = await takeAiSlot()); i++) await new Promise(r => setTimeout(r, 2500));
-  let r;
-  if (slot) for (const model of [TEAM_MODEL(), process.env.AI_MODEL].filter(Boolean)) {
-    r = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: text, model }), signal: AbortSignal.timeout(20000) }).catch(() => null);
-    if (r && r.ok) break;
-  }
-  // busy or out of quota: the AI router tries the other free providers
-  if ((!r || !r.ok) && await hasBackup(B?.id)) return readReply((await complete(text, { business: B?.id })).text);
-  if (!slot) throw Object.assign(new Error('The AI is busy right now. Try again in a minute.'), { status: 429 });
-  if (!r || !r.ok) throw new Error(`The AI didn't respond (${r ? r.status : 'no connection'}).`);
-  const body = await r.json();
-  return readReply(typeof body === 'string' ? body : body.output ?? body.text ?? '');
+  const { think } = await import('./mxai/model.js');
+  try {
+    const r = await think({ businessId: B?.id, role: 'mxai', audience: 'owner', system: '', messages: [{ role: 'user', content: text }], json: false, size: 'large' });
+    return readReply(r.text);
+  } catch (e) { throw e.busy ? Object.assign(new Error('The AI is busy right now. Try again in a minute.'), { status: 429 }) : e; }
 }
 // The model answers in JSON, but not always perfectly. Repair what can be repaired; a reply that is still
 // broken JSON is marked so the loop asks again instead of showing it to the owner.

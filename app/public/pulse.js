@@ -64,6 +64,7 @@
       ['Finance', { own: 'finance' }]]],
     ['pulse', 'AI Control', 'Your receptionist: check, teach and test Nora', [
       ['To review', { own: 'approvals' }],
+      ['Roles & guidelines', { own: 'airoles' }],
       ['Ask', { own: 'ask', hidden: true }],
       ['Brief', { own: 'brief', hidden: true }],
       ['Teach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach', 'tchRules', 'tchQuestions'] }],
@@ -373,6 +374,7 @@
   function hideOwn() { Object.values(own).forEach(s => s.hidden = true) }
   function showOwn(key, spec = {}) {
     $$('main > section.wrap').forEach(s => s.hidden = true);
+    if (key === 'airoles') { const s = page('airoles', 'Roles & guidelines', 'Who answers your clients, and the rules they always follow.', '<div id="mxaiSettings"></div>'); s.hidden = false; window.MXAiSettings?.mount(s.querySelector('#mxaiSettings')); }
     if (key === 'locked') { const s = page('locked', spec.title, '', '<div class="lkRoot"></div>'); s.hidden = false; s.querySelector('h1').textContent = spec.title; window.MXLockCard?.(s.querySelector('.lkRoot'), spec.feature); }
     if (key === 'calendar') { const s = page('calendar', 'Calendar', '', '<div id="gcRoot"></div>'); s.hidden = false; window.PulseCal?.mount(s); }
     if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }

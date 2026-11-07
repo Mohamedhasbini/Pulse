@@ -15,6 +15,7 @@ export async function purge() {
   out.audit_ips = (await q(`UPDATE audit_log SET ip=NULL WHERE ip IS NOT NULL AND at < now() - interval '12 months' RETURNING id`)).length;
   out.inbound = (await q(`DELETE FROM inbound WHERE status <> 'done' AND created_at < now() - interval '7 days' RETURNING id`)).length;
   out.revoked = (await q(`DELETE FROM revoked_sessions WHERE until < now() RETURNING sig`)).length;
+  out.traces = (await q(`DELETE FROM ai_traces WHERE at < now() - interval '90 days' RETURNING id`)).length; // AI traces: 90 days
   // copies of closed clients are kept 30 days
   try { const dir = (process.env.BACKUPS_DIR || '/backups') + '/closed';
     for (const f of fs.existsSync(dir) ? fs.readdirSync(dir) : []) { const p = path.join(dir, f); if (Date.now() - fs.statSync(p).mtimeMs > 30 * 86400e3) { fs.unlinkSync(p); out.closed = (out.closed || 0) + 1; } } } catch {}
