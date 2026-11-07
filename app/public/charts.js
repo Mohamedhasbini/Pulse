@@ -5,6 +5,7 @@
   const money = v => (window.money ? window.money(v) : '$' + Math.round(+v || 0).toLocaleString());
   const day = d => d.toISOString().slice(0, 10);
   const cache = {};
+  let RP = 30; // the report's period in days (7, 30 or 90), chosen at the top of Insights
   const get = (u, ttl = 60000) => { const c = cache[u]; if (c && Date.now() - c.t < ttl) return c.p; const p = fetch(u).then(r => r.ok ? r.json() : null).catch(() => null); cache[u] = { t: Date.now(), p }; return p; };
   const L = 'var(--pv-lime)', S = 'var(--pv-silver)';
   const a = (hex, o) => `color-mix(in srgb,${L} ${Math.round(o * 100)}%,transparent)`;
@@ -17,22 +18,24 @@
     const now = new Date(), from = new Date(now - 180 * 864e5), to = new Date(+now + 14 * 864e5);
     const [cal, live, cust, conv, stats, mk, biz] = await Promise.all([get(`/api/calendar?from=${day(from)}T00:00&to=${day(to)}T00:00`), get('/api/live?days=30'), get('/api/customers'), get('/api/conversations'), get('/api/stats?days=30'), get('/api/marketing/overview?days=90'), get('/api/business')]);
     const raw = cal?.bookings || [], all = raw.filter(b => b.status !== 'cancelled');
-    const T = Date.now(), past = all.filter(b => new Date(b.start) <= T);
+    const T = Date.now(), past = all.filter(b => new Date(b.start) <= T && b.status !== 'no_show');
     return { raw, all, past, live: live || {}, cust: Array.isArray(cust) ? cust : cust?.rows || [], conv: Array.isArray(conv) ? conv : [], stats: stats || {}, mk: mk || {}, biz: biz || {} };
   }
+  // a key under a chart: each line drawn the way it appears (solid, dashed or a shaded band) with what it means
+  const key = items => `<div class="pv-key">${items.map(([kind, col, label]) => `<span><svg viewBox="0 0 22 10" aria-hidden="true">${kind === 'band' ? `<rect x="1" y="1" width="20" height="8" rx="2" fill="color-mix(in srgb,${col} 22%,transparent)"/>` : `<line x1="1" y1="5" x2="21" y2="5" stroke="${col}" stroke-width="2.5" stroke-linecap="round"${kind === 'dash' ? ' stroke-dasharray="4 3"' : ''}/>`}</svg>${esc(label)}</span>`).join('')}</div>`;
   const sumIn = (list, d0, d1) => list.filter(b => { const t = new Date(b.start); return t >= d0 && t < d1; });
   const rev = l => l.reduce((s, b) => s + (+b.price || 0), 0);
 
   // ---- 1 revenue area + ghost period
   function c1({ past }) {
-    const D = 30, now = new Date(new Date().toDateString()), cur = [], prev = [];
+    const D = RP, now = new Date(new Date().toDateString()), cur = [], prev = [];
     for (let i = D - 1; i >= 0; i--) { const d0 = new Date(+now - i * 864e5), d1 = new Date(+d0 + 864e5); cur.push(rev(sumIn(past, d0, d1))); prev.push(rev(sumIn(past, new Date(+d0 - D * 864e5), new Date(+d1 - D * 864e5)))); }
     const tc = cur.reduce((a, b) => a + b, 0), tp = prev.reduce((a, b) => a + b, 0), mx = Math.max(1, ...cur, ...prev);
     const pts = arr => arr.map((v, i) => `${(i / (D - 1) * 600).toFixed(1)},${(150 - v / mx * 130).toFixed(1)}`).join(' ');
     const pct = tp ? Math.round((tc - tp) / tp * 100) : null;
-    return card(1, 'Revenue, last 30 days', 'Lime is now, the dashed line is the 30 days before', `<div class="pv-big">${money(tc)} <em class="${pct < 0 ? 'dn' : ''}">${pct == null ? 'first period' : (pct >= 0 ? '+' : '') + pct + '%'}</em></div>
+    return card(1, `Revenue, last ${RP} days`, 'Each day, against the same day in the period before', `<div class="pv-big">${money(tc)} <em class="${pct < 0 ? 'dn' : ''}">${pct == null ? 'first period' : (pct >= 0 ? '+' : '') + pct + '%'}</em></div>
       <svg viewBox="0 0 600 160" preserveAspectRatio="none" class="pv-area"><defs><linearGradient id="pvA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--pv-lime)" stop-opacity=".45"/><stop offset="1" stop-color="var(--pv-lime)" stop-opacity="0"/></linearGradient></defs>
-      <polygon points="0,160 ${pts(cur)} 600,160" fill="url(#pvA)"/><polyline points="${pts(prev)}" fill="none" stroke="${S}" stroke-dasharray="5 5" opacity=".6" stroke-width="2" vector-effect="non-scaling-stroke"/><polyline points="${pts(cur)}" fill="none" stroke="${L}" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>`, 1);
+      <polygon points="0,160 ${pts(cur)} 600,160" fill="url(#pvA)"/><polyline points="${pts(prev)}" fill="none" stroke="${S}" stroke-dasharray="5 5" opacity=".6" stroke-width="2" vector-effect="non-scaling-stroke"/><polyline points="${pts(cur)}" fill="none" stroke="${L}" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>${key([['line', L, `Last ${RP} days`], ['dash', S, `The ${RP} days before`]])}`, 1);
   }
   // ---- 2 pivot: service x weekday
   function c2({ past }) {
@@ -62,13 +65,13 @@
   }
   // ---- 5 donut by service
   function c5({ past }) {
-    const l = past.filter(b => new Date(b.start) > Date.now() - 30 * 864e5), by = {};
+    const l = past.filter(b => new Date(b.start) > Date.now() - RP * 864e5), by = {};
     l.forEach(b => by[b.service] = (by[b.service] || 0) + (+b.price || 0));
     const rows = Object.entries(by).sort((x, y) => y[1] - x[1]), tot = rows.reduce((s, r) => s + r[1], 0);
-    if (!tot) return card(5, 'Revenue by service', 'Last 30 days', empty('No revenue yet'));
+    if (!tot) return card(5, 'Revenue by service', `Last ${RP} days`, empty('No revenue yet'));
     const top = rows.slice(0, 4); if (rows.length > 4) top.push(['Other', rows.slice(4).reduce((s, r) => s + r[1], 0)]);
     const cols = [L, S, '#8a9096', '#5d6369', '#3f4448'], C = 2 * Math.PI * 45; let off = 0;
-    return card(5, 'Revenue by service', 'Last 30 days', `<div class="pv-donut"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)" fill="none" stroke-width="20">${top.map((r, i) => { const s = `<circle cx="60" cy="60" r="45" stroke="${cols[i]}" stroke-dasharray="${C * r[1] / tot - 1.5} ${C}" stroke-dashoffset="${-off}"/>`; off += C * r[1] / tot; return s; }).join('')}</g><text x="60" y="66" text-anchor="middle" class="pv-dv">${money(tot)}</text></svg>
+    return card(5, 'Revenue by service', `Last ${RP} days`, `<div class="pv-donut"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)" fill="none" stroke-width="20">${top.map((r, i) => { const s = `<circle cx="60" cy="60" r="45" stroke="${cols[i]}" stroke-dasharray="${C * r[1] / tot - 1.5} ${C}" stroke-dashoffset="${-off}"/>`; off += C * r[1] / tot; return s; }).join('')}</g><text x="60" y="66" text-anchor="middle" class="pv-dv">${money(tot)}</text></svg>
       <ul>${top.map((r, i) => `<li><i style="background:${cols[i]}"></i>${esc(r[0])}<b>${Math.round(r[1] / tot * 100)}%</b></li>`).join('')}</ul></div>`);
   }
   // ---- 6 leaderboard
@@ -331,6 +334,7 @@
     const total = fut.reduce((a, x) => a + x.f, 0), booked = fut.reduce((a, x) => a + x.booked, 0), dir = slope > ym * .02 ? 'rising' : slope < -ym * .02 ? 'slowing' : 'steady';
     return card(45, 'Expected revenue in the next 4 weeks', 'From your last 12 weeks and what is already booked', `<div class="pv-big">${money(total)} <em>${dir}</em></div>
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="pv-area"><polygon points="${band}" fill="color-mix(in srgb,var(--pv-lime) 16%,transparent)"/><polyline points="${line}" fill="none" stroke="${S}" stroke-width="2.4" vector-effect="non-scaling-stroke"/><polyline points="${fl}" fill="none" stroke="${L}" stroke-width="3" stroke-dasharray="6 6" vector-effect="non-scaling-stroke"/><line x1="${X(11.5)}" y1="8" x2="${X(11.5)}" y2="${H - 8}" stroke="var(--pv-line)" stroke-dasharray="3 4"/></svg>
+      ${key([['line', S, 'Last 12 weeks'], ['dash', L, 'Expected next 4 weeks'], ['band', L, 'Likely range']])}
       <ul class="pv-feed"><li><span>Why</span>Trend over 12 weeks is ${dir} (${slope >= 0 ? '+' : ''}${money(slope)} a week).</li><li><span>Booked</span>${money(booked)} of it is already in the calendar.</li><li><span>Range</span>${money(fut.reduce((a, x) => a + x.lo, 0))} to ${money(fut.reduce((a, x) => a + x.hi, 0))} for the 4 weeks.</li></ul>`, 1);
   }
 
@@ -420,7 +424,7 @@
   const stateOf = (ch, lowerIsBetter) => ch == null ? 'neutral' : (lowerIsBetter ? -ch : ch) >= 5 ? 'improving' : (lowerIsBetter ? -ch : ch) <= -10 ? 'warning' : 'neutral';
   // the headline row: four plain figures for the last 30 days against the 30 before, each with why it moved
   function headline(d) {
-    const U = window.MXUI, T = Date.now(), D = 30 * 864e5;
+    const U = window.MXUI, T = Date.now(), D = RP * 864e5, M = 30 * 864e5;
     const cur = d.past.filter(b => T - new Date(b.start) < D), prev = d.past.filter(b => { const a = T - new Date(b.start); return a >= D && a < 2 * D; });
     const r1 = rev(cur), r0 = rev(prev), rc = pctCh(r1, r0);
     // which service moved revenue most
@@ -433,12 +437,12 @@
     // clients who came back: of those whose first visit was 31 to 120 days ago, how many visited again
     const first = {}, count = {};
     d.past.forEach(x => { const k = x.customer || x.phone; if (!k) return; const t = +new Date(x.start); first[k] = Math.min(first[k] ?? t, t); count[k] = (count[k] || 0) + 1; });
-    const cohort = Object.keys(first).filter(k => { const age = T - first[k]; return age > D && age <= 4 * D; }), back = cohort.filter(k => count[k] > 1).length;
+    const cohort = Object.keys(first).filter(k => { const age = T - first[k]; return age > M && age <= 4 * M; }), back = cohort.filter(k => count[k] > 1).length;
     const ret = cohort.length ? back / cohort.length * 100 : null;
     return [
-      U.kpi({ title: 'Revenue', value: money(r1), ctx: `last 30 days · ${cur.length} visits`, change: rc, vs: 'vs 30 days before', why: why1, state: stateOf(rc) }),
-      U.kpi({ title: 'Bookings', value: String(cur.length), ctx: 'visits in the last 30 days', change: pctCh(cur.length, prev.length), vs: 'vs 30 days before', why: top ? `${DN[top[0]]} is your busiest day (${top[1]} visits)` : 'No visits yet', state: stateOf(pctCh(cur.length, prev.length)) }),
-      U.kpi({ title: 'Average visit value', value: money(v1), ctx: 'per visit', change: pctCh(v1, v0), vs: 'vs 30 days before', why: v1 > v0 && v0 ? 'Clients are choosing bigger services' : v0 && v1 < v0 ? 'Smaller services more often' : 'Steady', state: stateOf(pctCh(v1, v0)) }),
+      U.kpi({ title: 'Revenue', value: money(r1), ctx: `last ${RP} days · ${cur.length} visits`, change: rc, vs: `vs the ${RP} days before`, why: why1, state: stateOf(rc) }),
+      U.kpi({ title: 'Bookings', value: String(cur.length), ctx: `visits in the last ${RP} days`, change: pctCh(cur.length, prev.length), vs: `vs the ${RP} days before`, why: top ? `${DN[top[0]]} is your busiest day (${top[1]} visits)` : 'No visits yet', state: stateOf(pctCh(cur.length, prev.length)) }),
+      U.kpi({ title: 'Average visit value', value: money(v1), ctx: 'per visit', change: pctCh(v1, v0), vs: `vs the ${RP} days before`, why: v1 > v0 && v0 ? 'Clients are choosing bigger services' : v0 && v1 < v0 ? 'Smaller services more often' : 'Steady', state: stateOf(pctCh(v1, v0)) }),
       U.kpi({ title: 'Clients who came back', value: ret == null ? '–' : `${Math.round(ret)}%`, ctx: ret == null ? 'not enough history yet' : `${back} of ${cohort.length} newer clients`, why: ret == null ? 'Shows once clients are 1 to 4 months old' : ret < 40 ? 'A win-back offer at day 45 usually helps' : 'Good loyalty for a service business', state: ret == null ? 'empty' : ret >= 55 ? 'healthy' : ret < 40 ? 'warning' : 'neutral' })].join('');
   }
   // the month against its goal (last month + 10%), with the pace it is on
@@ -448,60 +452,230 @@
     const target = Math.max(1, Math.round(last * 1.1)), dayN = n.getDate(), dim = (m1 - m0) / 864e5, pace = Math.round(done / Math.max(1, dayN) * dim);
     const pct = done / target * 100, ahead = pace >= target;
     if (!last && !done) return '';
-    return U.meter({ title: 'This month against your goal', pct, span: 12, ctx: `${money(done)} of ${money(target)} · day ${dayN} of ${Math.round(dim)} · ${money(booked)} more already booked`,
+    return U.meter({ title: 'This month against your goal', pct, span: 6, ctx: `${money(done)} of ${money(target)} · day ${dayN} of ${Math.round(dim)} · ${money(booked)} more already booked`,
       why: dayN < 7 ? 'Too early in the month to judge the pace' : ahead ? `On pace for ${money(pace)}, ahead of the goal` : `On pace for ${money(pace)}, ${money(target - pace)} short. Fill the quiet days ahead to close the gap.`,
       state: dayN < 7 ? 'neutral' : ahead ? 'healthy' : pace >= target * .85 ? 'neutral' : 'warning', action: ahead || dayN < 7 ? '' : '<button type="button" class="mx-btn" data-rp-go="growth">Open Win back</button>' });
   }
   window.PVReport = async root => {
-    if (!root) return; root.innerHTML = `<div class="mx-grid">${window.MXUI ? [3, 3, 3, 3].map(() => window.MXUI.card({ title: ' ', size: 'compact', span: 3, body: window.MXUI.loading(2) })).join('') : ''}</div>`;
+    if (!root) return;
+    if (!root.dataset.rpOn) { root.dataset.rpOn = 1; root.addEventListener('click', ev => { const s = ev.target.closest('.rp-period [data-seg]'); if (s) { RP = +s.dataset.seg; window.PVReport(root); } }); } root.innerHTML = `<div class="mx-grid">${window.MXUI ? [3, 3, 3, 3].map(() => window.MXUI.card({ title: ' ', size: 'compact', span: 3, body: window.MXUI.loading(2) })).join('') : ''}</div>`;
     const d = await data();
     const named = window.P10?.named || (x => x); // charts say Nora; the owner may have renamed the assistant
-    let top = ''; try { top = `<div class="mx-grid">${headline(d)}${goal(d)}</div>`; } catch (e) { console.warn('report headline', e); }
+    // the period switch leads the report; changing it redraws the figures and the charts that follow it
+    let top = `<div class="rp-period">${window.MXUI.segmented([['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days']], String(RP), 'Period')}</div>`, g2 = '', head = ''; try { head = `<div class="mx-grid">${headline(d)}</div>`; g2 = goal(d); } catch (e) { console.warn('report headline', e); }
+    // what to do next: the three most valuable moves, one line each, each with where to act
+    try { const br = await get('/api/briefing'), items = (br?.items || []).slice(0, 3), U = window.MXUI;
+      top += `<div class="mx-grid">${g2}${items.length && U ? U.card({ title: 'What to do next', span: g2 ? 6 : 12, size: 'compact', body: `<div class="mx-list rp-next">${items.map(x => U.row({ dot: x.value ? 'healthy' : 'warning', title: x.text, sub: x.why, value: x.value ? money(x.value) : '' })).join('')}</div>` }) : ''}</div>`; } catch { top += `<div class="mx-grid">${g2}</div>`; }
+    top += head; // actions and the month's goal first, then the period's figures
     root.innerHTML = top + named(REPORT.map(([t, sub, list]) => `<section class="rp-g"><header class="rp-h"><h2>${esc(t)}</h2><p>${esc(sub)}</p></header>
       <div class="mx-grid rp-board">${list.map(([n, span]) => { try { const h = F[n](d); return h ? `<div class="mx-c${span} rp-cell">${h}</div>` : ''; } catch (e) { console.warn('chart', n, e); return ''; } }).join('')}</div></section>`).join(''));
     root.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i));
     root.querySelector('[data-rp-go]')?.addEventListener('click', () => window.P10?.go('growth', 1));
     countUp(root);
   };
-  // Growth overview: what offers brought back, who to invite back, and the latest campaigns
+  // Growth overview, compact and read top to bottom: four figures; what offers won back each week beside the next best
+  // moves; who can be reached beside how the recent offers did. Everything comes from one call (last 90 days)
   window.PVGrowth = async root => {
     const U = window.MXUI; if (!root || !U) return;
     root.innerHTML = `<div class="mx-grid">${[3, 3, 3, 3].map(() => U.card({ title: ' ', size: 'compact', span: 3, body: U.loading(2) })).join('')}</div>`;
-    const d = await data(), k = d.mk.kpis || {}, camps = d.mk.campaigns || [];
-    const none = !k.sent;
+    const m = await get('/api/marketing/overview?days=90') || {}, k = m.kpis || {}, camps = m.campaigns || [], seg = m.segments || {}, none = !k.sent;
+    const go = (label, tab) => U.button(label, 'g:' + tab);
     const kpis = [
-      U.kpi({ title: 'Won back, last 90 days', value: money(k.revenue || 0), ctx: `${k.won || 0} booking${k.won === 1 ? '' : 's'} from offers`, why: none ? 'No offers sent yet' : `${k.conversion || 0}% of reached clients booked`, state: none ? 'empty' : k.revenue ? 'improving' : 'neutral' }),
-      U.kpi({ title: 'Offers sent', value: String(k.sent || 0), ctx: `${k.reached || 0} clients reached`, why: none ? 'Prepared offers wait for your OK before anything is sent' : `${camps.length} campaign${camps.length === 1 ? '' : 's'} in 90 days`, state: none ? 'empty' : 'neutral', action: none ? U.button('Create an offer', 'g:2') : '' }),
-      U.kpi({ title: 'Clients who agreed to offers', value: `${k.optin_rate || 0}%`, ctx: `${k.opted_in || 0} of ${k.customers || 0} clients`, why: (k.optin_rate || 0) < 20 ? 'Ask for permission when clients book; offers can only go to them' : 'A healthy audience for offers', state: (k.optin_rate || 0) < 20 ? 'warning' : 'healthy' }),
-      U.kpi({ title: 'Revenue per $1 of discount', value: k.roi == null ? '–' : `$${(+k.roi).toFixed(2)}`, ctx: `${money(k.discounts || 0)} given in discounts`, why: k.roi == null ? 'Shows after the first offer brings a booking' : k.roi >= 3 ? 'Offers are paying for themselves' : 'Try smaller discounts or better timing', state: k.roi == null ? 'empty' : k.roi >= 3 ? 'healthy' : 'warning' })].join('');
-    const rows = camps.slice(0, 4).map(c => U.row({ dot: c.revenue ? 'healthy' : c.result === 'not sent' ? 'warning' : '', title: c.name.trim() || 'Offer', sub: `${c.date} · ${c.result}${c.sent ? ` · ${c.sent} sent` : ''}`, value: c.revenue ? money(c.revenue) : '', go: 'g:2' }));
-    const camp = U.list({ title: 'Recent campaigns', span: 4, size: 'wide', go: 'g:2', rows, emptyTitle: 'No campaigns yet', emptySub: 'Your first offer will show here with what it brought back.' });
-    let win = '', res = ''; try { win = F[24](d); } catch {} try { res = F[34](d); } catch {}
-    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${win ? `<div class="mx-c8 rp-cell">${win}</div>` : ''}${camp}</div>${res ? `<div class="mx-grid"><div class="mx-c12 rp-cell">${res}</div></div>` : ''}`;
-    root.addEventListener('click', ev => { const b = ev.target.closest('[data-go^="g:"]'); if (b) window.P10?.go('growth', +b.dataset.go.slice(2)); });
+      U.kpi({ title: 'Won back, last 90 days', value: money(k.revenue || 0), ctx: `${k.won || 0} bookings after an offer`, state: none ? 'empty' : k.revenue ? 'improving' : 'neutral' }),
+      U.kpi({ title: 'Offers sent', value: String(k.sent || 0), ctx: `${k.reached || 0} clients reached · ${k.conversion || 0}% booked`, state: none ? 'empty' : 'neutral' }),
+      U.kpi({ title: 'Clients who agreed to offers', value: `${k.optin_rate || 0}%`, ctx: `${k.opted_in || 0} of ${k.customers || 0} can be messaged`, state: (k.optin_rate || 0) < 20 ? 'warning' : 'healthy' }),
+      U.kpi({ title: 'Revenue per $1 of discount', value: k.roi == null ? '–' : `$${(+k.roi).toFixed(2)}`, ctx: `${money(k.discounts || 0)} given in discounts`, state: k.roi == null ? 'empty' : k.roi >= 3 ? 'healthy' : 'warning' })].join('');
+    // won back each week: the last 12 weeks of revenue that followed an offer
+    const wk = (m.weekly || []).slice(-12).map((w, i, a) => { const d = new Date(w.week + 'T12:00'); return { l: i === a.length - 1 ? 'This wk' : `${d.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()]}`, v: +w.revenue || 0 }; });
+    const wkTot = wk.reduce((s, x) => s + x.v, 0);
+    const howTo = `<ol class="gw-steps"><li><b>Pick who</b><span>Clients drifting away, regulars or new ones. MXAi counts who agreed to hear from you.</span></li><li><b>MXAi writes it</b><span>A short message with a code and a deadline, in each client's language.</span></li><li><b>See it pay</b><span>Every booking within 14 days is counted here, offer by offer.</span></li></ol>`;
+    const weekly = U.card({ title: 'Won back each week', span: 8, size: 'wide', meta: 'last 12 weeks',
+      body: `<div class="mx-big"><b>${money(wkTot)}</b><span class="mx-ctx">from ${(m.weekly || []).slice(-12).reduce((s, w) => s + (w.sent || 0), 0)} messages · a booking counts when it comes within 14 days</span></div>${wkTot || (m.weekly || []).some(w => w.sent) ? U.columns(wk, { pre: '$', h: 170 }) : `<p class="mx-ctx">Nothing won back yet. This is how it works:</p>${howTo}`}` });
+    // next best moves: the prepared ideas, each one button away, then what has worked so far
+    const ideas = (m.ideas || []).slice(0, 3).map(x => U.row({ dot: 'healthy', title: x.title, sub: x.why, action: go('Prepare', 2) }));
+    const lesson = (m.lessons || [])[0];
+    const moves = U.card({ title: 'Next best moves', span: 4, size: 'wide', body: `<div class="mx-list">${ideas.length ? ideas.join('') : U.empty('No ideas right now', 'They appear as clients drift away or new ones arrive.')}</div>${lesson ? `<p class="mx-why">${esc(lesson)}</p>` : ''}` });
+    // who can be reached: each group of clients, how many there are and how many agreed to offers
+    const NAMES = { active: 'Active clients', new: 'New clients', vip: 'Best clients', regular: 'Regulars', occasional: 'Occasional', lapsed: 'Drifting away (45–120 days)', lost: 'Lost (120+ days)', never: 'Never booked' };
+    const groups = Object.values(seg).filter(s => s.n).sort((a, b) => b.n - a.n);
+    const reach = U.card({ title: 'Who you can reach', span: 4, size: 'wide', meta: `${k.opted_in || 0} agreed`,
+      body: groups.length ? (() => { const tot = groups.reduce((a, s) => a + s.n, 0), can = groups.reduce((a, s) => a + (+s.reachable || 0), 0);
+        return U.rings([{ label: 'Can be messaged now', value: can }, { label: 'Not reachable yet', value: Math.max(0, tot - can) }]) +
+          U.barList(groups.map(s => ({ label: `${NAMES[s.seg] || s.seg} · ${s.reachable || 0} can be messaged`, value: s.n }))) +
+          `<div class="er-k" style="grid-template-columns:repeat(3,1fr)"><div><small>Clients</small><b>${tot}</b></div><div><small>Reachable</small><b>${tot ? Math.round(can / tot * 100) : 0}%</b></div><div><small>Biggest group</small><b>${groups[0].n}</b><span>${esc(NAMES[groups[0].seg] || groups[0].seg)}</span></div></div>`; })() : U.empty('No client groups yet') });
+    // how the recent offers did
+    const res = c => c.result === 'success' ? U.chip('Worked', 'healthy') : c.result === 'some' ? U.chip('Some bookings', 'healthy') : c.result === 'not sent' ? U.chip('Not sent', 'warning') : c.result === 'too early' ? U.chip('Too early') : U.chip('No bookings', 'critical');
+    const offers = U.card({ title: 'Recent offers', span: 8, size: 'wide', link: U.link('All offers', 'g:2'),
+      body: U.table(['Offer', 'Sent on', 'Messages', 'Booked', 'Result', 'Won back'], camps.slice(0, 6).map(c => ({ go: 'g:2', cells: [c.name.trim() || 'Offer', c.date, String(c.sent || 0), String(c.booked || 0), { html: res(c) }, money(c.revenue || 0)] })), 'No offers yet.') + (camps.length ? '' : `<div class="gw-empty"><p class="mx-ctx">What a client receives (example):</p><div class="gw-msg"><span class="c">Hi Sara! We haven't seen you in a while. Here's 15% off your next visit with code BACK15, until Sunday. Reply BOOK and we'll find you a time.</span><span class="a">BOOK 🙌</span><span class="c">Booked for Friday 17:00. See you then!</span></div><p class="mx-ctx">You pick the audience and approve the text. Nothing is sent without you.</p>${go('Prepare your first offer', 2)}</div>`) });
+    root.innerHTML = `<div class="mx-grid">${moves}${offers}</div><div class="mx-grid">${kpis}</div><div class="mx-grid">${weekly}${reach}</div>`;
+    root.onclick = ev => { const b = ev.target.closest('[data-go^="g:"]'); if (b) window.P10?.go('growth', +b.dataset.go.slice(2)); };
   };
   // AI Control › Performance: is the receptionist doing a good job? Last 15 days against the 15 before
   window.PVAIPerf = async root => {
     const U = window.MXUI; if (!root || !U) return;
     root.innerHTML = `<div class="mx-grid">${[3, 3, 3, 3].map(() => U.card({ title: ' ', size: 'compact', span: 3, body: U.loading(2) })).join('')}</div>`;
-    const [d, k, w] = await Promise.all([data(), get('/api/kpis?days=30'), get('/api/pulse/waiting')]);
-    const days = Array.isArray(k) ? k : [], a = days.slice(-15), b = days.slice(0, -15);
-    const S = (l, f) => l.reduce((s, x) => s + (f(x) || 0), 0), avgMs = l => { const m = l.filter(x => x.reply_ms != null); return m.length ? S(m, x => x.reply_ms) / m.length : null; };
-    const share = l => S(l, x => x.chats) ? S(l, x => x.handled) / S(l, x => x.chats) * 100 : null;
-    const sa = share(a), sb = share(b), ra = avgMs(a), rb = avgMs(b);
-    // same funnel as the chart below: conversations against bookings the AI made (30 days)
-    const nw = d.live.now || {}, chats30 = Math.max(d.conv.length, nw.conversations || 0), booked30 = nw.ai_count ?? d.conv.filter(c => c.outcome === 'booked').length;
-    const ca = chats30 ? Math.min(100, booked30 / chats30 * 100) : null, cb = null;
-    const q = (w?.items || []).filter(x => x.kind === 'question').length || d.live.now?.unsure || 0, nm = window.P10?.named?.('Nora') || 'Nora';
+    const [s, k, w] = await Promise.all([get('/api/stats?days=30'), get('/api/kpis?days=30'), get('/api/pulse/waiting')]);
+    const st = s || {}, days = Array.isArray(k) ? k : [], nm = window.P10?.named?.('Nora') || 'Nora', pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+    const conv = st.conv || 0, answered = st.answered || 0, hand = st.handoff || 0, booked = st.booked_conv || 0, ai = st.ai || {};
+    const alone = Math.max(0, answered - hand), q = (w?.items || []).filter(x => x.kind === 'question').length;
+    const avg = ai.avg_ms || null, delivered = ai.replies ? pct(ai.replies - (ai.failures || 0), ai.replies) : null;
+    // 1 · four figures
     const kpis = [
-      U.kpi({ title: 'Chats answered alone', value: sa == null ? '–' : `${Math.round(sa)}%`, ctx: `${S(a, x => x.chats)} chats in 15 days`, change: sa != null && sb != null ? sa - sb : null, vs: 'pts', why: sa == null ? 'No chats yet' : sa >= 85 ? `${nm} rarely needs you` : 'Teach the questions that come to you most', state: sa == null ? 'empty' : sa >= 85 ? 'healthy' : sa >= 70 ? 'neutral' : 'warning' }),
-      U.kpi({ title: 'Average reply', value: ra == null ? '–' : `${(ra / 1000).toFixed(1)}s`, ctx: 'from message to answer', change: ra && rb ? (ra - rb) / rb * 100 : null, lowerIsBetter: true, vs: 'vs 15 days before', why: ra == null ? 'No replies yet' : ra <= 5000 ? 'Faster than any person can type' : 'Slower than usual; check AI health', state: ra == null ? 'empty' : ra <= 5000 ? 'healthy' : 'warning' }),
-      U.kpi({ title: 'Chats that became bookings', value: ca == null ? '–' : `${Math.round(ca)}%`, ctx: `${booked30} of ${chats30} chats in 30 days`, why: ca == null ? 'No chats yet' : ca >= 30 ? 'Strong for a front desk' : 'Offering times earlier in the chat usually helps', state: ca == null ? 'empty' : ca >= 30 ? 'healthy' : 'neutral' }),
-      U.kpi({ title: 'Questions to teach', value: String(q), ctx: q ? `${nm} couldn't answer these` : 'nothing waiting', why: q ? 'Answer once and it remembers for every client' : 'Every question had an answer', state: q ? 'warning' : 'healthy', action: q ? U.button('Teach now', 'a:3') : '' })].join('');
-    const cell = (n, span) => { try { const h = F[n](d); return h ? `<div class="mx-c${span} rp-cell">${h}</div>` : ''; } catch { return ''; } };
-    root.innerHTML = (window.P10?.named || (x => x))(`<div class="mx-grid">${kpis}</div><div class="mx-grid">${cell(39, 4)}${cell(15, 4)}${cell(7, 4)}</div><div class="mx-grid">${cell(18, 12)}</div><div class="mx-grid">${cell(29, 6)}${cell(26, 6)}</div>`);
-    root.querySelectorAll('.pv-c').forEach((c, i) => c.style.setProperty('--i', i)); countUp(root);
-    root.addEventListener('click', ev => { const t = ev.target.closest('[data-go^="a:"]'); if (t) window.P10?.go('pulse', +t.dataset.go.slice(2)); });
+      U.kpi({ title: 'Answered alone', value: `${pct(alone, conv)}%`, ctx: `${alone} of ${conv} chats, last 30 days`, state: pct(alone, conv) >= 80 ? 'healthy' : 'warning' }),
+      U.kpi({ title: 'Average reply', value: avg ? `${(avg / 1000).toFixed(1)}s` : '–', ctx: 'from message to answer', state: !avg ? 'empty' : avg <= 5000 ? 'healthy' : 'warning' }),
+      U.kpi({ title: 'Booked by ' + nm, value: money(st.ai_value || 0), ctx: `${st.ai_bookings || 0} bookings from chats`, state: st.ai_value ? 'improving' : 'neutral' }),
+      q ? U.kpi({ title: 'Handed to you', value: `${pct(hand, conv)}%`, ctx: `${hand} of ${conv} chats`, state: pct(hand, conv) > 20 ? 'warning' : 'neutral' }) // the questions have their own card above
+        : U.kpi({ title: 'Questions to teach', value: '0', ctx: 'nothing waiting', state: 'healthy' })].join('');
+    // 2 · chats and bookings per day: one bar per day, the booked part in green inside it
+    const daily = (st.daily || []).slice(-21), top = Math.max(1, ...daily.map(d => d.conv || 0));
+    const bars = daily.length ? `<div class="ap-pair">${daily.map((d, i) => { const dt = new Date(d.day + 'T12:00');
+      return `<div class="ap-day" title="${dt.getDate()}/${dt.getMonth() + 1}: ${d.conv || 0} chats, ${d.booked || 0} booked"><div class="ap-bar"><i style="height:${(d.conv || 0) / top * 100}%"><u style="height:${d.conv ? (d.booked || 0) / d.conv * 100 : 0}%"></u></i></div><span>${i % 3 === 0 || i === daily.length - 1 ? dt.getDate() : ''}</span></div>`; }).join('')}</div>
+      <div class="pv-key"><span><i class="ap-k a"></i>Chats</span><span><i class="ap-k b"></i>Became a booking</span></div>` : U.empty('No chats in the last 30 days');
+    const perDay = U.card({ title: `${pct(booked, conv)}% of chats became bookings`, span: 7, size: 'wide', meta: 'per day, last 3 weeks', body: bars });
+    // how chats end: four outcomes as rings, the title says the share handled alone
+    const ends = [{ label: `Booked by ${nm}`, value: booked }, { label: 'Answered, no booking', value: Math.max(0, alone - booked) }, { label: 'Handed to you', value: hand }, { label: 'Not answered', value: Math.max(0, conv - answered) }].filter(x => x.value);
+    const howEnd = U.card({ title: `${nm} handles ${pct(alone, conv)}% of chats alone`, span: 5, size: 'wide', meta: `${conv} chats`, body: ends.length ? U.rings(ends) + `<div class="er-k" style="grid-template-columns:repeat(3,1fr)"><div><small>Booked alone</small><b>${pct(booked, conv)}%</b></div><div><small>Handed to you</small><b>${pct(hand, conv)}%</b></div><div><small>Not answered</small><b>${pct(Math.max(0, conv - answered), conv)}%</b></div></div>` : U.empty('No chats yet') });
+    // 3 · three small checks: speed against a target, delivery, chat to visit
+    const speed = U.card({ title: avg ? (avg <= 5000 ? 'Replies are fast' : 'Replies are slow') : 'Reply speed', span: 4, size: 'compact',
+      body: avg ? `<div class="ap-big"><b>${(avg / 1000).toFixed(1)}s</b><span>average reply · target under 5s</span></div><div class="mx-meter"><u style="width:${Math.min(100, avg / 50)}%;background:${avg <= 5000 ? 'var(--mx-ok)' : 'var(--mx-warn)'}"></u></div><div class="er-k" style="grid-template-columns:repeat(3,1fr)"><div><small>Replies</small><b>${ai.replies || 0}</b><span>last 30 days</span></div><div><small>Target</small><b>5s</b><span>${avg <= 5000 ? 'met' : 'missed'}</span></div><div><small>Margin</small><b>${Math.abs(5 - avg / 1000).toFixed(1)}s</b><span>${avg <= 5000 ? 'to spare' : 'over'}</span></div></div>` : `<div class="ap-big"><b>Not measured yet</b><span>${ai.replies ? `${ai.replies} replies sent, but their timing wasn't recorded. It starts with the next live reply.` : 'Starts with the first reply to a client.'}</span></div><div class="er-k" style="grid-template-columns:repeat(3,1fr)"><div><small>Replies</small><b>${ai.replies || 0}</b><span>last 30 days</span></div><div><small>Answered alone</small><b>${pct(alone, conv)}%</b><span>of ${conv} chats</span></div><div><small>Target</small><b>5s</b><span>per reply</span></div></div>` });
+    const deliv = U.card({ title: delivered == null ? 'Delivery' : delivered >= 95 ? 'Messages are delivered' : 'Some messages fail to deliver', span: 4, size: 'compact',
+      body: delivered == null ? U.empty('No replies yet') : `<div class="ap-big"><b>${delivered}%</b><span>of ${ai.replies} replies reached the client · ${ai.failures || 0} failed</span></div><div class="mx-meter"><u style="width:${delivered}%;background:${delivered >= 95 ? 'var(--mx-ok)' : 'var(--mx-warn)'}"></u></div><div class="er-k" style="grid-template-columns:repeat(3,1fr)"><div><small>Sent</small><b>${ai.replies}</b></div><div><small>Delivered</small><b>${ai.replies - (ai.failures || 0)}</b></div><div><small>Failed</small><b>${ai.failures || 0}</b></div></div>` });
+    const steps = [{ label: 'Chats', value: conv }, { label: 'Answered', value: answered }, { label: 'Booked', value: booked }];
+    const funnel = U.card({ title: 'From chat to booking', span: 4, size: 'compact', body: conv ? U.flowFunnel(steps) : U.empty('No chats yet') });
+    const teach = q ? U.card({ title: `${q} question${q > 1 ? 's' : ''} ${nm} couldn't answer`, span: 12, size: 'compact', body: U.row({ dot: 'warning', title: 'Teach the answers once', sub: `${nm} uses them in every future chat`, action: U.button('Teach now', 'a:3') }) }) : '';
+    root.innerHTML = `${teach ? `<div class="mx-grid">${teach}</div>` : ''}<div class="mx-grid">${kpis}</div><div class="mx-grid">${perDay}${howEnd}</div><div class="mx-grid">${speed}${deliv}${funnel}</div>`;
+    root.onclick = ev => { const t = ev.target.closest('[data-go^="a:"]'); if (t) window.P10?.go('pulse', +t.dataset.go.slice(2)); };
+  };
+  // Customers › Clients: the list is the job, so the summary is one line; figures and charts open on demand. Test entries are left out, as in the list's default
+  window.PVCustomers = async sec => {
+    const U = window.MXUI, spane = sec?.querySelector('.spane'); if (!U || !spane) return;
+    let box = spane.querySelector('#cuSum'); if (!box) { box = document.createElement('div'); box.id = 'cuSum'; box.className = 'mx-page'; spane.prepend(box); }
+    const raw = await get('/api/customers'), all = (Array.isArray(raw) ? raw : raw?.rows || []).filter(c => !/^(test|e2e)/i.test(c.phone || '') && !/^test /i.test(c.name || ''));
+    const T = Date.now(), ago = c => c.last_booking ? (T - new Date(c.last_booking)) / 864e5 : null;
+    const regulars = all.filter(c => c.visits >= 2), spent = all.reduce((s, c) => s + (+c.spent || 0), 0), opted = all.filter(c => c.marketing_ok).length;
+    const newM = all.filter(c => c.since && T - new Date(c.since) < 30 * 864e5).length;
+    const kpis = [
+      U.kpi({ title: 'Clients', value: String(all.length), ctx: `${newM} joined in the last 30 days`, state: 'neutral' }),
+      U.kpi({ title: 'Regulars', value: String(regulars.length), ctx: `${all.length ? Math.round(regulars.length / all.length * 100) : 0}% came twice or more`, state: 'neutral' }),
+      U.kpi({ title: 'Lifetime spend', value: money(spent), ctx: `${money(all.length ? spent / all.length : 0)} per client`, state: 'neutral' }),
+      U.kpi({ title: 'Agreed to offers', value: `${all.length ? Math.round(opted / all.length * 100) : 0}%`, ctx: `${opted} can receive offers`, state: opted / Math.max(1, all.length) < .2 ? 'warning' : 'healthy' })].join('');
+    // groups: by how recently and how often they come
+    const g = { 'Regulars (2+ visits, seen in 45 days)': 0, 'New (1 visit)': 0, 'Drifting away (45–120 days)': 0, 'Lost (120+ days)': 0, 'Booked, not come yet': 0 };
+    all.forEach(c => { const d = ago(c); if (!c.visits) g['Booked, not come yet']++; else if (d != null && d > 120) g['Lost (120+ days)']++; else if (d != null && d > 45) g['Drifting away (45–120 days)']++; else if (c.visits >= 2) g['Regulars (2+ visits, seen in 45 days)']++; else g['New (1 visit)']++; });
+    const visitors = all.filter(c => c.visits), avgV = visitors.length ? visitors.reduce((a, c) => a + (+c.visits || 0), 0) / visitors.length : 0;
+    const back = visitors.length ? Math.round(visitors.filter(c => c.visits >= 2).length / visitors.length * 100) : 0;
+    const fig = xs => `<div class="er-k" style="grid-template-columns:repeat(${xs.length},1fr)">${xs.map(([l, v, n]) => `<div><small>${esc(l)}</small><b>${v}</b><span>${esc(n)}</span></div>`).join('')}</div>`;
+    const groups = U.card({ title: 'Client groups', span: 5, size: 'wide', body: U.rings(Object.entries(g).filter(([, v]) => v).map(([label, value]) => ({ label, value }))) +
+      fig([['Came back', `${back}%`, 'visited twice or more'], ['Visits per client', avgV.toFixed(1), 'on average'], ['Drifting', String(g['Drifting away (45–120 days)']), 'worth a win-back offer']]) });
+    const top = [...all].sort((a, b) => (b.spent || 0) - (a.spent || 0)).slice(0, 6);
+    const best = U.card({ title: 'Top clients by spend', span: 4, size: 'wide', body: top.length ? U.barList(top.map(c => ({ label: c.name || c.phone, value: +c.spent || 0 })), money) : U.empty('No visits yet') });
+    const months = []; for (let i = 5; i >= 0; i--) { const a = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1), z = new Date(a.getFullYear(), a.getMonth() + 1, 1);
+      months.push({ l: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][a.getMonth()], v: all.filter(c => c.since && new Date(c.since) >= a && new Date(c.since) < z).length }); }
+    const bestM = months.reduce((m, x) => x.v > m.v ? x : m, { v: 0, l: '–' }), thisM = months.at(-1)?.v || 0, lastM = months.at(-2)?.v || 0;
+    const joined = U.card({ title: 'New clients per month', span: 3, size: 'wide', body: U.columns(months, { h: 170 }) +
+      `<div class="er-k" style="grid-template-columns:1fr 1fr"><div><small>This month</small><b>${thisM}</b><span>${thisM >= lastM ? '+' : ''}${thisM - lastM} vs last</span></div><div><small>Best month</small><b>${bestM.v}</b><span>${esc(bestM.l)}</span></div></div>` });
+    box.innerHTML = `<p class="cu-strip"><b>${all.length}</b> clients · <b>${regulars.length}</b> regulars · <b>${money(spent)}</b> lifetime · <b>${opted}</b> can receive offers${g['Drifting away (45–120 days)'] ? ` · <b>${g['Drifting away (45–120 days)']}</b> drifting away` : ''}</p>
+      <details class="cu-more"><summary>Client breakdown</summary><div class="mx-grid">${kpis}</div><div class="mx-grid">${groups}${best}${joined}</div></details>`;
+  };
+  // ── the agent team: each specialist's read of their area and their tasks, from /api/team/status, with Lina's
+  // prepared growth ideas and Sam's briefing added as tasks. Every task knows where it is done
+  const TEAM_TONE = { need: ['Needs you', 'warning', 2], bad: ['Problem', 'critical', 3] };
+  const TEAM_COL = { maya: 'var(--mx-s2)', omar: 'var(--mx-s3)', lina: 'var(--mx-s1)', sam: 'var(--mx-s5)' };
+  // older links name pages from before the redesign; each lands on the page that does that job now
+  const route = g => { if (!g) return ['today', 0]; const p = g.page || g.view, t = g.tab || '';
+    if (p === 'calendar') return ['calendar', t === 'requests' ? 'Requests' : 'Schedule'];
+    if (p === 'inbox') return ['inbox', 0];
+    if (p === 'support') return t === 'gaps' ? ['pulse', 'Answers'] : ['insights', 'AI performance'];
+    if (p === 'people' || p === 'customers') return ['customers', 0];
+    if (p === 'growth' || p === 'marketing') return ['growth', 0];
+    if (p === 'analytics' || p === 'performance') return ['insights', 0];
+    return [p, 0]; };
+  window.PVTeam = async () => {
+    const [st, mk, br] = await Promise.all([get('/api/team/status'), get('/api/marketing/overview?days=90'), get('/api/briefing')]);
+    const team = (st?.team || []).map(a => ({ ...a, color: TEAM_COL[a.id] || 'var(--mx-s2)',
+      tasks: (a.items || []).filter(x => x.tone || /\d/.test(x.text)).map(x => ({ title: x.text, tone: x.tone, go: route(x.go) })) }));
+    const lina = team.find(a => a.id === 'lina'), sam = team.find(a => a.id === 'sam');
+    (mk?.ideas || []).forEach(x => lina?.tasks.push({ title: x.title, sub: x.why, tone: 'need', go: ['growth', 2], value: x.value }));
+    // her read follows her tasks: prepared ideas replace "no one to contact"
+    if (lina && mk?.ideas?.length && /^no one/i.test(lina.advice || '')) lina.advice = `${mk.ideas.length} growth idea${mk.ideas.length > 1 ? 's' : ''} ready. Best first: ${mk.ideas[0].title.toLowerCase()}.`;
+    (br?.items || []).filter(x => !/chat|teach|question/i.test(x.text)).slice(0, 3).forEach(x => sam?.tasks.push({ title: x.text, sub: x.why, go: ['insights', 0], value: x.value }));
+    team.forEach(a => { a.tasks.sort((x, y) => (TEAM_TONE[y.tone]?.[2] || 1) - (TEAM_TONE[x.tone]?.[2] || 1)); a.open = a.tasks.filter(t => t.tone).length; });
+    return team;
+  };
+  window.PVTeam.tone = TEAM_TONE;
+  // Automations › the board: one column per agent, a card per task (priority, area, what, why); a card opens its page
+  window.PVBoardTeam = async root => {
+    const U = window.MXUI; if (!root || !U) return;
+    root.innerHTML = `<div class="tb-board">${[1, 2, 3, 4].map(() => `<div class="tb-col">${U.loading(4)}</div>`).join('')}</div>`;
+    const team = await window.PVTeam(); window.PVBoardTeam.last = team;
+    root.innerHTML = `<div class="tb-board">${team.map(a => `<section class="tb-col" aria-label="${esc(a.name)}">
+      <header><i style="background:${a.color}">${esc(a.name[0])}</i><div><b>${esc(a.name)}</b><small>${esc(a.role)}</small></div><span>${a.open}/${a.tasks.length}</span></header>
+      <p class="tb-say">${esc(a.advice || '')}</p>
+      <div class="tb-cards">${a.tasks.length ? a.tasks.map((t, k) => { const tn = TEAM_TONE[t.tone] || ['Info', 'neutral'];
+        return `<button type="button" class="tb-card" data-tb="${esc(a.id)}:${k}"><div class="tb-tags">${U.chip(tn[0], tn[1])}<span class="tb-area">${esc(a.role)}</span>${t.value ? `<span class="tb-val">${money(t.value)}</span>` : ''}</div>
+          <b>${esc(t.title)}</b>${t.sub ? `<small>${esc(t.sub)}</small>` : ''}</button>`; }).join('') : `<div class="tb-empty">${U.empty('All clear', 'Nothing for you here right now.')}</div>`}</div>
+      <button type="button" class="tb-ask" data-ask="${esc(a.ask || '')}">Ask ${esc(a.name)} for advice →</button></section>`).join('')}</div>`;
+    root.onclick = ev => { const c = ev.target.closest('[data-tb]'); if (c) { const [id, k] = c.dataset.tb.split(':'), t = team.find(a => a.id === id)?.tasks[+k]; if (t) window.P10?.go(...t.go); return; }
+      const q = ev.target.closest('[data-ask]'); if (q) window.PulseCommand?.open(q.dataset.ask); };
+  };
+  // Insights › Finance: revenue, costs, profit and margin; where the money goes; the funnel; costs by category with
+  // fixed against variable; revenue by channel or service; then every cost line. Costs come from Settings › Costs
+  let finDays = 30;
+  window.PVFinance = async root => {
+    const U = window.MXUI; if (!root || !U) return;
+    if (!root.innerHTML) root.innerHTML = `<div class="mx-grid">${[3, 3, 3, 3].map(() => U.card({ title: ' ', size: 'compact', span: 3, body: U.loading(2) })).join('')}</div>`;
+    const r = await fetch(`/api/finance/summary?days=${finDays}`).then(x => x.ok ? x.json() : null).catch(() => null);
+    if (!r) { root.innerHTML = U.card({ title: 'Finance', span: 12, state: 'critical', body: U.error('your finance figures') }); return; }
+    const ch = (a, b) => b ? (a - b) / Math.abs(b) * 100 : null, per = { 7: 'last 7 days', 30: 'last 30 days', 90: 'last 90 days', 365: 'last 12 months' }[finDays];
+    const pick = U.segmented([['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['365', '12 months']], String(finDays), 'Period');
+    const noCosts = !r.has_costs, addCosts = U.button('Add your costs', 'fin:costs', 'pri');
+    const kpis = [
+      U.kpi({ title: 'Revenue', value: money(r.revenue), ctx: `${r.bookings} visits · ${per}`, change: ch(r.revenue, r.revenue_prev), vs: 'vs the period before', state: 'neutral' }),
+      U.kpi({ title: 'Costs', value: noCosts ? '–' : money(r.spend), ctx: noCosts ? 'none entered yet' : `${money(r.fixed)} fixed · ${money(r.variable)} variable`, change: noCosts ? null : ch(r.spend, r.spend_prev), lowerIsBetter: true, vs: 'vs the period before', state: noCosts ? 'empty' : 'neutral', action: noCosts ? addCosts : '' }),
+      U.kpi({ title: 'Profit', value: noCosts ? '–' : money(r.profit), ctx: noCosts ? 'needs your costs' : 'revenue after costs', change: noCosts ? null : ch(r.profit, r.profit_prev), vs: 'vs the period before', state: noCosts ? 'empty' : r.profit >= 0 ? 'healthy' : 'critical' }),
+      U.kpi({ title: 'Margin', value: noCosts || r.margin == null ? '–' : `${Math.round(r.margin)}%`, ctx: noCosts ? 'needs your costs' : 'of every $1 you keep', state: noCosts ? 'empty' : r.margin >= 20 ? 'healthy' : r.margin >= 0 ? 'warning' : 'critical' })].join('');
+    const flow = U.card({ title: 'Cash flow', span: 12, link: pick, body: `<div class="mx-big"><b>${money(r.revenue)}</b>${U.trend(ch(r.revenue, r.revenue_prev), { vs: 'vs the period before' })}<span class="mx-ctx">from your services, ${per}</span></div>
+      ${r.flow.in.length ? U.sankey({ ins: r.flow.in, outs: r.flow.out.length ? r.flow.out : [{ label: 'Kept', value: r.revenue }], links: r.flow.links.length ? r.flow.links : r.flow.in.map(x => ({ from: x.label, to: 'Kept', value: x.value })) }, { fmt: money }) : U.empty('No revenue in this period')}
+      ${noCosts ? `<p class="mx-why">Add your rent, salaries, products and other costs in Settings to see where the money goes. ${U.button('Add your costs', 'fin:costs')}</p>` : ''}` });
+    const f = r.funnel || {}, steps = [{ label: 'Chats', value: f.chats || 0 }, { label: 'Answered', value: f.talked || 0 }, { label: 'Booked', value: f.booked || 0 }, { label: 'Came', value: f.came || 0 }];
+    const funnel = U.card({ title: 'From chat to visit', span: 5, size: 'wide', meta: per, body: f.chats ? U.flowFunnel(steps) + `<div class="er-k" style="grid-template-columns:repeat(3,1fr)"><div><small>Chats that booked</small><b>${Math.round((f.booked || 0) / f.chats * 100)}%</b><span>${f.booked || 0} of ${f.chats}</span></div><div><small>Booked who came</small><b>${f.booked ? Math.round((f.came || 0) / f.booked * 100) : 0}%</b><span>${f.came || 0} visits</span></div><div><small>Revenue per chat</small><b>${money(f.chats ? r.revenue / f.chats : 0)}</b><span>${per}</span></div></div><p class="mx-ctx" style="margin:12px 0 6px">Where chats are lost</p>${U.barList([{ label: 'Not answered', value: Math.max(0, (f.chats || 0) - (f.talked || 0)) }, { label: 'Answered, no booking', value: Math.max(0, (f.talked || 0) - (f.booked || 0)) }, { label: 'Booked, did not come', value: Math.max(0, (f.booked || 0) - (f.came || 0)) }])}` : U.empty('No chats in this period') });
+    const cats = U.card({ title: 'Costs by category', span: 4, size: 'wide', meta: noCosts ? '' : `${Math.round(r.fixed / Math.max(1, r.spend) * 100)}% fixed`,
+      body: noCosts ? U.empty('No costs entered', 'Fixed costs (rent, salaries) and variable ones (products, card fees) go in Settings › Costs.') + `<div class="mx-foot">${addCosts}</div>` : U.gauge(r.by_category, { fmt: money }) + `<div style="margin-top:12px">${U.barList(r.by_category.slice(0, 7), money)}</div>` });
+    const chans = U.card({ title: 'Revenue by channel', span: 3, size: 'wide', body: U.barList(r.by_channel.slice(0, 6).map(x => ({ label: x.label, value: x.value })), money) + `<p class="mx-ctx" style="margin-top:10px">By service</p>` + U.barList(r.by_service.slice(0, 6), money) });
+    const KIND = { month: 'per month', percent: '% of revenue', booking: 'per booking' };
+    const table = U.card({ title: 'Every cost', span: 12, link: U.link('Edit in Settings', 'fin:costs'), body: U.table(['Cost', 'Category', 'Type', 'Basis', 'This period', 'Share'],
+      [...r.costs].sort((a, b) => b.total - a.total).map(c => ({ go: 'fin:costs', cells: [c.name, c.category, { html: U.chip(c.kind === 'fixed' ? 'Fixed' : 'Variable', c.kind === 'fixed' ? 'neutral' : 'healthy') }, `${c.basis === 'percent' ? c.amount + '%' : money(c.amount)} ${KIND[c.basis]}`, money(c.total), r.spend ? `${Math.round(c.total / r.spend * 100)}%` : '–'] })),
+      'No costs yet. Add them in Settings › Costs.') });
+    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${flow}</div><div class="mx-grid">${funnel}${cats}${chans}</div><div class="mx-grid">${table}</div>`;
+    root.onclick = ev => { const s = ev.target.closest('[data-seg]'); if (s) { finDays = +s.dataset.seg; window.PVFinance(root); return; }
+      if (ev.target.closest('[data-go="fin:costs"]')) { window.P10?.go('settings', 0); setTimeout(() => window.P10setPart?.('costs'), 300); } };
+  };
+
+  // Settings › Costs: the owner's running costs, one row each — what, category, fixed or variable, amount
+  const CATS = ['Rent', 'Salaries', 'Products', 'Marketing', 'Software', 'Utilities', 'Card fees', 'Other'];
+  window.PVCosts = async box => {
+    const U = window.MXUI; if (!box || !U) return;
+    let list = await fetch('/api/finance/costs').then(x => x.ok ? x.json() : []).catch(() => []);
+    const row = (c, i) => `<div class="cst-row" data-i="${i}">
+      <input aria-label="Cost name" placeholder="e.g. Rent" value="${esc(c.name || '')}" data-k="name">
+      <select aria-label="Category" data-k="category">${CATS.map(x => `<option${x === c.category ? ' selected' : ''}>${x}</option>`).join('')}</select>
+      <select aria-label="Type" data-k="basis"><option value="month"${c.basis === 'month' ? ' selected' : ''}>Fixed, per month</option><option value="percent"${c.basis === 'percent' ? ' selected' : ''}>Variable, % of revenue</option><option value="booking"${c.basis === 'booking' ? ' selected' : ''}>Variable, per booking</option></select>
+      <input aria-label="Amount" type="number" min="0" step="0.01" value="${c.amount ?? ''}" data-k="amount" placeholder="${c.basis === 'percent' ? '%' : '$'}">
+      <input aria-label="Paid through (optional)" placeholder="Channel (optional)" value="${esc(c.channel || '')}" data-k="channel">
+      <button type="button" class="cst-del" data-del="${i}" aria-label="Remove this cost">✕</button></div>`;
+    const draw = () => { box.innerHTML = `<div class="set-card"><div class="set-card-h"><div><b>Running costs</b><small>Fixed costs are counted per month; variable ones follow your revenue or your bookings. Finance uses these for profit, margin and cash flow.</small></div></div>
+      <div class="cst-head"><span>Cost</span><span>Category</span><span>Type</span><span>Amount</span><span>Channel</span><span></span></div>
+      <div class="cst-list">${list.length ? list.map(row).join('') : `<p class="mx-ctx" style="padding:8px 0">No costs yet. Add your rent, salaries, products and card fees.</p>`}</div>
+      <div class="cst-foot"><button type="button" class="mx-btn" data-add>+ Add a cost</button><button type="button" class="mx-btn pri" data-save>Save costs</button><span class="cst-msg" role="status"></span></div></div>`; };
+    draw();
+    const read = () => { list = [...box.querySelectorAll('.cst-row')].map(r => Object.fromEntries([...r.querySelectorAll('[data-k]')].map(f => [f.dataset.k, f.dataset.k === 'amount' ? +f.value || 0 : f.value]))); };
+    box.onclick = async ev => {
+      if (ev.target.closest('[data-add]')) { read(); list.push({ name: '', category: 'Other', basis: 'month', amount: '' }); draw(); box.querySelector('.cst-row:last-child input')?.focus(); return; }
+      const d = ev.target.closest('[data-del]'); if (d) { read(); list.splice(+d.dataset.del, 1); draw(); return; }
+      if (ev.target.closest('[data-save]')) { read(); const msg = box.querySelector('.cst-msg'); msg.textContent = 'Saving…';
+        const r = await fetch('/api/finance/costs', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ costs: list }) }).catch(() => null);
+        if (r?.ok) { list = await r.json(); draw(); box.querySelector('.cst-msg').textContent = `Saved ${list.length} cost${list.length === 1 ? '' : 's'}.`; } else msg.textContent = "Couldn't save. Try again."; }
+    };
   };
   window.PVData = data; // Studio builds its widgets from the same live data
   const F = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8, 9: c9, 10: c10, 11: c11, 12: c12, 13: c13, 14: c14, 15: c15, 16: c16, 17: c17, 18: c18, 19: c19, 20: c20, 21: c21, 22: c22, 23: c23, 24: c24, 25: c25, 26: c26, 27: c27, 28: c28, 29: c29, 30: c30, 31: c31, 32: c32, 33: c33, 34: c34, 35: c35, 36: c36, 37: c37, 38: c38, 39: c39, 40: c40, 41: c41, 42: c42, 43: c43, 44: c44, 45: c45 };
@@ -534,7 +708,7 @@
       requestAnimationFrame(step);
     });
   }
-  const WORK = ['inbox', 'calendar', 'customers', 'growth', 'pulse', 'settings'];
+  const WORK = ['inbox', 'calendar', 'customers', 'growth', 'pulse', 'settings', 'insights'];
   window.PVBoard = async (id, after) => {
     ambient();
     const sub = ($('.p10-bar [aria-selected="true"]')?.textContent || '').replace(/\s*\d+$/, '').trim();
@@ -568,3 +742,39 @@
     window.MXStudio?.decorate(box, id, sub); // edit or hide any built-in chart
   };
 })();
+
+// Customers › Memberships: who pays every month, who renews soon, and who stopped coming (likely to cancel)
+window.PVMembers = async root => {
+  const U = window.MXUI; if (!root || !U) return;
+  const e = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const money = n => '$' + Math.round(n || 0).toLocaleString('en-US');
+  const day = d => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '–';
+  const ago = d => { if (!d) return 'never'; const n = Math.floor((Date.now() - new Date(d)) / 864e5); return n < 1 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`; };
+  const draw = async () => {
+    const r = await fetch('/api/memberships').then(x => x.ok ? x.json() : null).catch(() => null);
+    if (!r) { root.innerHTML = U.error('memberships', 'm:retry'); return; }
+    const s = r.summary, items = r.items, risk = m => m.status === 'active' && (!m.last_visit || Date.now() - new Date(m.last_visit) > 14 * 864e5);
+    const kpis = [
+      U.kpi({ title: 'Active members', value: String(s.active), ctx: `${s.paused} paused · ${s.cancelled_30} cancelled this month`, state: 'healthy' }),
+      U.kpi({ title: 'Monthly recurring', value: money(s.monthly), ctx: `${money(s.paid_30)} paid in the last 30 days`, state: 'improving' }),
+      U.kpi({ title: 'Renewing this week', value: String(s.renewing_7), ctx: 'payments due in 7 days', state: 'neutral' }),
+      U.kpi({ title: 'At risk', value: String(s.at_risk), ctx: 'active, but no visit in 14 days', state: s.at_risk ? 'warning' : 'healthy' })].join('');
+    const st = m => risk(m) ? '<span class="mb-st risk">At risk</span>' : `<span class="mb-st ${m.status}">${m.status[0].toUpperCase() + m.status.slice(1)}</span>`;
+    const act = m => m.status === 'cancelled' ? '' : `<span class="mb-act"><button type="button" data-pay="${m.id}">Record payment</button><button type="button" data-st="${m.id}" data-to="${m.status === 'paused' ? 'active' : 'paused'}">${m.status === 'paused' ? 'Resume' : 'Pause'}</button></span>`;
+    const rows = items.map(m => ({ cells: [{ html: `<b>${e(m.name || m.phone)}</b>` }, m.plan, money(m.price), day(m.renews_at), ago(m.last_visit), String(m.visits_30), { html: st(m) }, { html: act(m) }] }));
+    root.innerHTML = `<div class="mx-grid">${kpis}</div><div class="mx-grid">${U.card({ title: `${items.length} memberships`, span: 12, size: 'wide', meta: 'sorted by next renewal',
+      body: U.table(['Member', 'Plan', 'Price', 'Renews', 'Last visit', 'Visits (30d)', 'Status', ''], rows, 'No memberships yet. They appear here when a member signs up.') })}</div>`;
+  };
+  root.onclick = async ev => {
+    const p = ev.target.closest('[data-pay]'), t = ev.target.closest('[data-st]');
+    if (ev.target.closest('[data-go="m:retry"]')) return draw();
+    if (!p && !t) return;
+    (p || t).disabled = true;
+    const ok = p ? await fetch(`/api/memberships/${p.dataset.pay}/pay`, { method: 'POST' }).then(x => x.ok)
+      : await fetch(`/api/memberships/${t.dataset.st}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: t.dataset.to }) }).then(x => x.ok);
+    U.toast?.(ok ? (p ? 'Payment recorded, renewal moved on' : 'Membership updated') : 'Could not save, try again');
+    draw();
+  };
+  root.innerHTML = `<div class="mx-grid">${[1, 2, 3, 4].map(() => U.card({ title: ' ', size: 'compact', span: 3, body: U.loading(2) })).join('')}</div>`;
+  draw();
+};

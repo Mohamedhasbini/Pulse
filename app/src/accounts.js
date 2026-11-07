@@ -17,7 +17,8 @@ export function checkPassword(pw, stored) {
 // Easy to read out: no 0/O or 1/l. Always contains a number so it passes the password rule.
 export const newPassword = () => Array.from(crypto.randomBytes(11), b => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('') + (crypto.randomInt(8) + 2);
 
-const KEY = crypto.createHmac('sha256', process.env.ADMIN_PASSWORD || 'ringback').update('ringback-user-session').digest();
+// SESSION_SECRET (random, in .env) signs sessions; the admin password is only the fallback for old setups
+const KEY = crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.ADMIN_PASSWORD || 'ringback').update('ringback-user-session').digest();
 const sig = s => crypto.createHmac('sha256', KEY).update(s).digest('hex');
 const safeEq = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 // Session = user id + session version (raised by "sign out everywhere" and password changes) + expiry, signed.

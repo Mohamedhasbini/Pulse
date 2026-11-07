@@ -119,7 +119,7 @@ html body :is(#p10-studio,#p10-studiolib)>.pv-ov:not(#_):not(#__):not(#___){disp
 .st-head.lib p{margin:0;justify-self:end;max-width:420px;color:var(--pv-meta);font-size:14.5px;line-height:1.5}
 .st-jump{position:sticky;top:0;z-index:4;display:flex;gap:8px;flex-wrap:wrap;padding:12px 0;margin-bottom:6px;background:linear-gradient(var(--pv-bg,transparent) 70%,transparent);backdrop-filter:blur(8px)}
 .st-jump a{padding:7px 14px;border-radius:999px;border:1px solid var(--pv-line);font-size:13.5px;font-weight:500;color:var(--pv-ink);text-decoration:none}
-.st-jump a:hover{border-color:var(--pv-ink)}.st-jump a small{color:var(--pv-meta);margin-left:4px}
+.st-jump a:hover{border-color:var(--pv-ink);transition:border-color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1)),background var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1)),color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}.st-jump a small{color:var(--pv-meta);margin-left:4px}
 .st-g{scroll-margin-top:64px}
 html body .st-grid.lib:not(#_):not(#__){grid-template-columns:repeat(auto-fill,minmax(290px,1fr))!important;grid-auto-rows:auto!important;gap:16px!important}
 html body .st-w.lib:not(#_):not(#__){height:auto!important;min-height:0!important;display:flex;flex-direction:column}
@@ -140,7 +140,7 @@ html body .hx.hx-compact .hx-folders:not(#_):not(#__){display:none!important}
 html body .hx.hx-compact h1:not(#_):not(#__){font-size:clamp(28px,2.4vw,40px)!important}
 
 /* findable quotes and names: a quiet underline on hover says "this opens something" */
-[data-findable]:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--pv-meta)}
+[data-findable]:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--pv-meta);transition:text-decoration-color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 /* the overview strip is a frame, not a button: only its cards are */
 html body .pv-ov:not(#_):not(#__){cursor:default}
 /* the short answer under the Ask bar: numbers in bold stay readable on the graphite card */

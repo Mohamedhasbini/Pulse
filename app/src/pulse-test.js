@@ -17,6 +17,22 @@ try {
   made.push(A.id, B.id);
   const OA = await owner(A.id), OB = await owner(B.id);
 
+  // The Assistant's "any question" query: other businesses' tables can't be reached through any function or cast
+  const { fenceSql, safeQuery } = await import('./team.js');
+  const attacks = ["SELECT schema_to_xml('public',true,false,'')", "SELECT 'users'::regclass", "SELECT table_to_xml('us'||'ers',true,false,'')",
+    "SELECT * FROM bookings WHERE xmlparse(document '<a/>') IS NOT NULL", 'select current_user', "SELECT pg_catalog.lower('x')",
+    "SELECT cast('users' as regclass)", 'SELECT $$x$$', 'select * from users', "SELECT database_to_xml(true,false,'')"];
+  const leaks = []; for (const s of attacks) if (!(await safeQuery({ id: A.id, tz: 'Asia/Beirut' }, s)).error) leaks.push(s);
+  check('Assistant query fence refuses every way to reach other tables', !leaks.length, leaks.join(' | '));
+  const everyday = ["SELECT count(*) FROM bookings WHERE status='confirmed'", "SELECT to_char(starts_at,'Dy') AS d, count(*)::int AS n FROM bookings b GROUP BY 1 ORDER BY 2 DESC",
+    'WITH x AS (SELECT customer_id, sum(price) AS v FROM bookings GROUP BY 1) SELECT c.name, x.v FROM x JOIN customers c ON c.id=x.customer_id ORDER BY x.v DESC LIMIT 5',
+    "SELECT extract(hour FROM starts_at)::int AS h, count(*) FROM bookings WHERE starts_at > now() - interval '30 days' GROUP BY 1", "SELECT name FROM services WHERE name ILIKE '%users(%'"];
+  const refused = everyday.filter(s => fenceSql(s).error);
+  check('Everyday Assistant questions still run', !refused.length, refused.map(s => fenceSql(s).error).join(' | '));
+  const own = await safeQuery({ id: A.id, tz: 'Asia/Beirut' }, 'SELECT count(*)::int AS n FROM services');
+  const xml = await safeQuery({ id: A.id, tz: 'Asia/Beirut' }, "SELECT schema_to_xml('public',true,false,'') AS x");
+  check('Assistant query answers for its own business and refuses the database dump', Array.isArray(own.rows) && own.rows[0].n > 0 && !!xml.error, own.error || xml.rows?.length);
+
   check('A new rule is added', (await addRule(A.id, 'Never use emojis.')).added);
   check('The same rule in other words is not added twice', (await addRule(A.id, 'Do not use emojis')).reason === 'known');
   const r = await post('/api/team/act', { type: 'add_rule', text: 'never use emojis' }, OA);

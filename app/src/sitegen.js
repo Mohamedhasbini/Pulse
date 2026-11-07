@@ -17,7 +17,7 @@ export const STYLES = {
 };
 export const SECTIONS = ['hero', 'about', 'services', 'booking', 'gallery', 'team', 'reviews', 'hours', 'faq', 'contact'];
 export const LANGS = { en: 'English' }; // client websites are English only
-const RESERVED = new Set(['app', 'www', 'api', 'admin', 'jarvis', 'mail', 'webook', 'pulse', 'static', 'media', 'cdn', 'status', 'help', 'support']);
+const RESERVED = new Set(['app', 'lab', 'www', 'api', 'admin', 'jarvis', 'mail', 'webook', 'pulse', 'static', 'media', 'cdn', 'status', 'help', 'support']);
 export const validSubdomain = s => /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/.test(s) && !RESERVED.has(s);
 export const validDomain = d => /^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/.test(d);
 

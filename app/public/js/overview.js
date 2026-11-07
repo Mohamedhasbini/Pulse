@@ -18,7 +18,7 @@ function render(s){
   else if(s.ai.replies)setPill(s.ai.failures?"bad":"ok",s.ai.failures?`AI · ${s.ai.failures} failed`:`AI online · ${(s.ai.avg_ms/1000).toFixed(1)}s`,"Average reply time this period");
   else setPill("idle","AI: no messages yet");
   tween($("#kVal"),s.ai_value,fmt);
-  const plan=s.business.plan_price||79;
+  const plan=s.business.plan_price||0;
   $("#kValSub").textContent=s.ai_bookings?`${s.chat_bookings} by chat · ${s.web_bookings} online · ${(s.ai_value/plan).toFixed(1)}× the ${fmt(plan)} plan`:"No chat or online bookings yet";
   if(s.booking_url&&$("#blUrl")&&!$("#blUrl").dataset.set){$("#blUrl").dataset.set=1;setBookingLink(s.booking_url)}
   tween($("#kConv"),s.conv);$("#kConvSub").textContent=s.conv?`${s.answered} answered · ${s.handoff} sent to staff`:"—";

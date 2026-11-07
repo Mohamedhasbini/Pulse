@@ -1,3 +1,4 @@
+import './startup-check.js'; // first: refuse unsafe secrets on a public deployment
 import * as metrics from './metrics.js';
 import express from 'express';
 import { fileURLToPath } from 'node:url';
@@ -6,11 +7,15 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 const ctx = new AsyncLocalStorage();
 import { hashPassword, checkPassword, newPassword, signSession, readSession, signTicket, readTicket, newTotpSecret, checkTotp, totpUrl, newEmailCode, hashCode, weakPassword, ensureAdmin, createBusiness } from './accounts.js';
 import { MODULES, FEATURES, MODULE_FEATURE, featuresOf, hasFeature, canOpen, moduleOf, seedPlans } from './features.js';
-import { q, one, migrate, withBusinessLock } from './db.js';
+import { q, one, pool, migrate, withBusinessLock } from './db.js';
 import { mountLab } from './lab.js';
 import { mountAgents } from './agents.js';
 import { mountTeam } from './team.js';
 import { mountPulse } from './pulse.js';
+import { mountFinance } from './finance.js';
+import { mountMemberships } from './memberships.js';
+import { mountLiveDemo, demoGuard } from './livedemo.js';
+import { mountConnectors, mountPublicCatalog, NAV, TODAY } from './connectors.js';
 import { mountMarketing } from './marketing.js';
 import { mountIntegrations, mountPublicApi } from './integrations.js';
 import { mountShortcuts } from './shortcuts.js';
@@ -18,6 +23,10 @@ import { mountInbox } from './inbox.js';
 import { handleMessage, loadBusiness, aiHealth, startAiQueue, aiQueueStatus, aiQueueList } from './brain.js';
 import { mountLive, emit } from './live.js';
 import { isFree, bufferOf, parseLocal, localStamp, localDate } from './slots.js';
+import { receive, work, resume as resumeInbound, inFlight, markUndelivered } from './inbound.js';
+import { answerTelegram } from './telegram.js';
+import { answerInstagram } from './instagram.js';
+import { inZone, currentTz, wall, dayStart, fmtStamp, fmtDate } from './clock.js';
 import { sendWhatsApp, validSignature, parseIncoming, validKapsoSignature, parseKapso, whatsappReady } from './whatsapp.js';
 import { mountPublic } from './public.js';
 import { sendEmail, emailEnabled } from './email.js';
@@ -28,6 +37,7 @@ import { mountCoach } from './coach.js';
 import { mountClientSites, siteOf, mergeSite, STYLES, SECTIONS, LANGS, validSubdomain, validDomain } from './sitegen.js';
 import { seedDemo, removeDemo } from './demo.js';
 import { startTelegram, sendTelegram, telegramStatus, connectTelegram, stopBot } from './telegram.js';
+import { mountInstagram, sendInstagram } from './instagram.js';
 import { notify, KINDS, ownerLinkCode } from './notify.js';
 import { unify, unifyAll } from './customers.js';
 import { insights } from './insights.js';
@@ -35,6 +45,13 @@ import { VERTICALS, listVerticals, termsOf } from './verticals.js';
 import { startReminders, runReminders, fill } from './reminders.js';
 import { setSenders, startAutopilot, offerWaitlist } from './autopilot.js';
 import { mountHQ } from './hq.js';
+import { mountUpgrades, pendingFor } from './upgrades.js';
+import { mountControls } from './controls.js';
+import { surfaceOf, doorAllows } from './hosts.js';
+import { mountSupport, activeSupport, READ_ONLY_OK } from './support.js';
+import { accessOf, stopped, forgetAccess, STILL_ALLOWED, mountBilling } from './billing.js';
+import { startPrivacy } from './privacy.js';
+import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
 import { compress, fingerprint, rememberUser, recallUser, forgetUser, requestLog, CSP } from './web.js';
 
 const app = express();
@@ -51,37 +68,60 @@ app.get('/webhook/whatsapp', (req, res) => {
 app.post('/webhook/whatsapp', async (req, res) => {
   if (!process.env.WA_APP_SECRET) return res.status(503).send('Set WA_APP_SECRET in .env first');
   if (!validSignature(req.rawBody, req.get('x-hub-signature-256'))) return res.sendStatus(401);
+  let ids;
+  try { ids = await receive('whatsapp', parseIncoming(req.body)); } // written down first (inbound.js)
+  catch (e) { console.error('Could not store incoming WhatsApp messages:', e.message); return res.sendStatus(500); } // Meta retries
   res.sendStatus(200); // answer Meta fast, then work
-  for (const m of parseIncoming(req.body)) {
-    try {
-      const biz = await one('SELECT id FROM businesses WHERE wa_phone_number_id=$1', [m.phoneNumberId]);
-      if (!biz) { console.warn('No business for phone number id', m.phoneNumberId); continue; }
-      const text = m.text || '(The customer sent a ' + m.type + ' message that cannot be read.)';
-      const r = await handleMessage({ businessId: biz.id, phone: m.from, name: m.name, text, waId: m.id });
-      if (!r.duplicate && r.reply) await sendWhatsApp(m.phoneNumberId, m.from, r.reply, r.options);
-    } catch (e) { console.error('Failed to handle WhatsApp message', e); }
-  }
+  for (const id of ids) await work(id, answerWhatsApp);
 });
+// One stored WhatsApp message (Meta or Kapso): the receptionist answers on the number it came to.
+async function answerWhatsApp(m) {
+  const biz = await one('SELECT id FROM businesses WHERE wa_phone_number_id=$1', [m.phoneNumberId]);
+  if (!biz) { console.warn('No business for phone number id', m.phoneNumberId); return; }
+  const text = m.text || '(The customer sent a ' + m.type + ' message that cannot be read.)';
+  const r = await handleMessage({ businessId: biz.id, phone: m.from, name: m.name, text, waId: m.id });
+  if (!r.duplicate && r.reply) { const s = await sendWhatsApp(m.phoneNumberId, m.from, r.reply, r.options); if (!s.ok) await markUndelivered(r.conversationId, s.reason); }
+}
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
+
+// ---------- Instagram DMs (public, protected by each business's Meta app signature) ----------
+mountInstagram(app, handleMessage);
 
 // ---------- WhatsApp through Kapso (public, protected by Kapso's signature) ----------
 app.post('/webhook/kapso', async (req, res) => {
   if (!validKapsoSignature(req.rawBody, req.get('x-webhook-signature'))) return res.sendStatus(401);
+  if (!/message\.received/.test(req.get('x-webhook-event') || 'whatsapp.message.received')) return res.sendStatus(200);
+  let ids;
+  try { ids = await receive('kapso', parseKapso(req.body)); } // written down first (inbound.js)
+  catch (e) { console.error('Could not store incoming Kapso messages:', e.message); return res.sendStatus(500); }
   res.sendStatus(200); // Kapso expects 200 within 10 seconds; the AI answers after
-  if (!/message\.received/.test(req.get('x-webhook-event') || 'whatsapp.message.received')) return;
-  for (const m of parseKapso(req.body)) {
-    try {
-      const biz = await one('SELECT id FROM businesses WHERE wa_phone_number_id=$1', [m.phoneNumberId]);
-      if (!biz) { console.warn('Kapso: no business for phone number id', m.phoneNumberId); continue; }
-      const text = m.text || '(The customer sent a ' + m.type + ' message that cannot be read.)';
-      const r = await handleMessage({ businessId: biz.id, phone: m.from, name: m.name, text, waId: m.id });
-      if (!r.duplicate && r.reply) await sendWhatsApp(m.phoneNumberId, m.from, r.reply, r.options);
-    } catch (e) { console.error('Failed to handle Kapso message', e); }
-  }
+  for (const id of ids) await work(id, answerWhatsApp);
 });
 
-app.get('/health', (_req, res) => res.json({ ok: true }));
+// for uptime monitors: 200 only when the database answers too (within 3 s); 503 otherwise. No details leak out
+app.get('/health', async (_req, res) => {
+  try { await Promise.race([one('SELECT 1'), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 3000))]); res.set('Cache-Control', 'no-store').json({ ok: true, db: true }); }
+  catch (e) { console.error('Health check:', e.message); res.status(503).set('Cache-Control', 'no-store').json({ ok: false, db: false }); }
+});
+
+// (runs first, so the public site, booking page and client websites get the same headers)
+// ---------- Security basics for every response ----------
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+app.use((req, res, next) => {
+  res.set({ 'X-Frame-Options': 'SAMEORIGIN', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' });
+  // the app pages (dashboard, sign-in) and every Lab page: client websites and the public site have their own needs
+  if (surfaceOf(req) === 'lab' || (surfaceOf(req) !== 'site' && (req.path === '/' || req.path === '/index.html' || req.path === '/login'))) res.set('Content-Security-Policy', CSP);
+  // Requests that change something must come from our own pages, so another website can't act with a signed-in owner's cookie.
+  if (req.method !== 'GET' && req.path.startsWith('/api/') && !req.path.startsWith('/api/public/') && !req.path.startsWith('/api/webook/')) {
+    const origin = req.get('origin');
+    let host = null; try { host = origin && new URL(origin).host; } catch { /* 'null' or malformed origin */ }
+    if (origin && host !== req.get('host')) return res.status(403).json({ error: 'Blocked: request from another website.' });
+  }
+  next();
+});
 
 // Client websites answer on their own domain or subdomain before anything else
 mountClientSites(app, readSession);
@@ -92,25 +132,12 @@ mountWeBook(app);
 mountSite(app);
 mountMedia(app);
 
-// ---------- Security basics for every response ----------
-app.disable('x-powered-by');
-app.set('trust proxy', 1);
-app.use((req, res, next) => {
-  res.set({ 'X-Frame-Options': 'SAMEORIGIN', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' });
-  // the app pages (dashboard, sign-in) only: client websites and the public site have their own needs
-  if (req.path === '/' || req.path === '/index.html' || req.path === '/login') res.set('Content-Security-Policy', CSP);
-  // Requests that change something must come from our own pages, so another website can't act with a signed-in owner's cookie.
-  if (req.method !== 'GET' && req.path.startsWith('/api/') && !req.path.startsWith('/api/public/') && !req.path.startsWith('/api/webook/')) {
-    const origin = req.get('origin');
-    if (origin && new URL(origin).host !== req.get('host')) return res.status(403).json({ error: 'Blocked: request from another website.' });
-  }
-  next();
-});
 
 // ---------- Login: each user has their own account; everything below needs it ----------
 const PUBLIC = fileURLToPath(new URL('../public', import.meta.url));
 const attempts = new Map(); // ip -> { n, until }
+// forget old entries every 10 minutes so a flood of addresses can't grow this map without limit
+setInterval(() => { const now = Date.now(); for (const [k, v] of attempts) if (v.until < now && !(v.n > 0 && now - (v.at || 0) < 15 * 60000)) attempts.delete(k); }, 10 * 60000).unref();
 const secureCookie = req => req.get('x-forwarded-proto') === 'https' || !!req.get('cf-ray') ? '; Secure' : '';
 const ipOf = req => req.get('cf-connecting-ip') || req.ip;
 async function audit(req, action, detail = null, bizId = null, who = req.user) {
@@ -149,8 +176,9 @@ app.post('/api/login', wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE email=$1', [email]);
   if (u?.locked_until && new Date(u.locked_until) > new Date())
     return res.status(423).json({ error: 'This account is locked for 15 minutes after too many wrong passwords. Ask your administrator if you need help.' });
-  if (!u || u.disabled || !checkPassword(req.body.password, u.password_hash)) {
-    a.n++; if (a.n >= 10) { a.n = 0; a.until = Date.now() + 15 * 60000; }
+  // each login has one door: the admin signs in at the Lab address, everyone else at the app address (any door on this PC)
+  if (!u || u.disabled || !doorAllows(surfaceOf(req), u.role) || !checkPassword(req.body.password, u.password_hash)) {
+    a.n++; a.at = Date.now(); if (a.n >= 10) { a.n = 0; a.until = Date.now() + 15 * 60000; }
     attempts.set(ip, a);
     if (u) {
       const n = u.failed_logins + 1;
@@ -177,15 +205,17 @@ app.post('/api/login/code', wrap(async (req, res) => {
   const uid = readTicket(req.body.ticket);
   if (!uid) return res.status(401).json({ error: 'That took too long. Sign in again.' });
   const u = await one('SELECT * FROM users WHERE id=$1 AND NOT disabled', [uid]);
-  const ip = ipOf(req), a = attempts.get('code' + ip) || { n: 0, until: 0 };
-  if (a.until > Date.now()) return res.status(429).json({ error: 'Too many wrong codes. Wait 15 minutes and sign in again.' });
+  // wrong codes count per address AND per login: the address can be faked (a forwarded-for header), the login can't,
+  // so someone holding a stolen password can't keep guessing codes by changing their apparent address
+  const ip = ipOf(req), a = attempts.get('code' + ip) || { n: 0, until: 0 }, au = attempts.get('codeu' + uid) || { n: 0, until: 0 };
+  if (a.until > Date.now() || au.until > Date.now()) return res.status(429).json({ error: 'Too many wrong codes. Wait 15 minutes and sign in again.' });
   if (!u || !((u.totp_enabled && checkTotp(u.totp_secret, req.body.code)) || (u.email_2fa && await emailCodeOk(u, req.body.code)))) {
-    a.n++; if (a.n >= 6) { a.n = 0; a.until = Date.now() + 15 * 60000; }
-    attempts.set('code' + ip, a);
+    for (const x of [a, au]) { x.n++; x.at = Date.now(); if (x.n >= 6) { x.n = 0; x.until = Date.now() + 15 * 60000; } }
+    attempts.set('code' + ip, a); attempts.set('codeu' + uid, au);
     if (u) await audit(req, 'code_failed', null, u.business_id, u);
     return res.status(401).json({ error: 'Wrong code. Use the newest 6-digit code from your authenticator app.' });
   }
-  attempts.delete('code' + ip);
+  attempts.delete('code' + ip); attempts.delete('codeu' + uid);
   await q('UPDATE users SET last_login_at=now() WHERE id=$1', [u.id]);
   await audit(req, 'login', '2FA', u.business_id, u);
   startSession(req, res, u);
@@ -201,38 +231,59 @@ app.post('/api/login/email-code', wrap(async (req, res) => {
   if (!r.ok) return res.status(400).json({ error: r.reason });
   res.json({ ok: true, email: maskEmail(u.email) });
 }));
-app.post('/api/logout', (_req, res) => { res.set('Set-Cookie', 'rb_session=; Path=/; Max-Age=0').json({ ok: true }); });
+app.post('/api/logout', (req, res) => { res.set('Set-Cookie', `rb_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`).json({ ok: true }); });
 
 // The public API authenticates with a business API key, so it sits before the session check.
 mountPublicApi(app);
+mountPublicCatalog(app);
+// live demos are off: the website shows real screenshots instead (mountLiveDemo(app) turns /demo/<template> back on)
 
 // Who is signed in, and which business this request is about. Owners and staff only ever get their own business;
-// the admin works on whichever business they switched to (rb_biz cookie).
+// the admin works on the business opened with support access (support.js), read-only unless changes were allowed.
 const BIZ = () => ctx.getStore().biz;
+// each business's time zone, read at most once a minute (changing it is an admin action, rare)
+const tzCache = new Map();
+async function bizTz(id) {
+  const c = tzCache.get(id);
+  if (c && Date.now() - c.at < 60000) return c.tz;
+  const tz = (await one('SELECT timezone FROM businesses WHERE id=$1', [id]))?.timezone || null;
+  tzCache.set(id, { tz, at: Date.now() });
+  return tz;
+}
 app.use(wrap(async (req, res, next) => {
   const s = readSession(req.get('cookie'));
   let user = s && recallUser(s.uid);
   if (s && !user) { user = await one('SELECT id, email, name, role, business_id, permissions, totp_enabled, email_2fa, session_version FROM users WHERE id=$1 AND NOT disabled', [s.uid]); if (user) rememberUser(s.uid, user); }
-  if (!user || user.session_version !== s.version) {
+  if (!user || user.session_version !== s.version || !doorAllows(surfaceOf(req), user.role)) {
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Please sign in again.' });
     return res.redirect('/login');
   }
   let biz = user.business_id;
   if (user.role === 'admin') {
-    const want = +(/(?:^|;\s*)rb_biz=(\d+)/.exec(req.get('cookie') || '')?.[1]);
-    biz = (want && await one('SELECT id FROM businesses WHERE id=$1', [want]))?.id || null;
+    // the admin is inside a business only through support access (support.js): time-limited, read-only by default
+    const sup = await activeSupport(user.id, req.get('cookie'));
+    biz = sup?.business_id || null; req.support = sup;
     // In the Lab (no business opened) only platform pages work; business pages wait until a business is opened.
     if (!biz && req.path.startsWith('/api/') && !/^\/api\/(me(\/|$)|admin\/|logout$|verticals$)/.test(req.path))
       return res.status(409).json({ error: 'Open a business first.', lab: true });
+    if (sup && !sup.can_edit && req.method !== 'GET' && req.method !== 'HEAD' && req.path.startsWith('/api/') && !READ_ONLY_OK.test(req.path))
+      return res.status(403).json({ error: 'Read-only support access. Press Allow changes (with a reason) to change something.', support: 'read-only' });
   }
   req.user = user;
+  if (demoGuard(req, res)) return;
   // Plan / add-on and permission checks for the section this request belongs to.
   const mod = moduleOf(req.method, req.path);
   if (mod && user.role !== 'admin') {
     if (!canOpen(user, mod)) { await audit(req, 'denied', `${req.method} ${req.path}`, biz); return res.status(403).json({ error: "You don't have access to this section. Ask the account owner.", locked: 'permission' }); }
   }
-  // The platform admin is never blocked by a plan: they test and set up every business.
-  if (user.role === 'admin') return ctx.run({ biz }, next);
+  // The platform admin is never blocked by a plan: they test and set up every business. With "view as" (a plan key in
+  // rb_viewas) the admin gets exactly that plan's locks, to see a business the way its owner would.
+  const viewAs = user.role === 'admin' && biz && /(?:^|;\s*)rb_viewas=([a-z0-9_-]{1,40})/.exec(req.get('cookie') || '')?.[1] || null;
+  if (user.role === 'admin' && !viewAs) { const tz = biz && await bizTz(biz); return ctx.run({ biz }, () => inZone(tz, next)); }
+  const F = await featuresOf(biz, viewAs), hasFeature = (_b, f) => F.has(f); // one lookup for every check below
+  // a plan that has ended (or is paused): everything can be read and clients can be answered, nothing else changes
+  if (!viewAs && biz && req.method !== 'GET' && req.method !== 'HEAD' && req.path.startsWith('/api/') && !STILL_ALLOWED.test(req.path) && stopped(await accessOf(biz)))
+    return res.status(402).json({ error: 'Your MXAi plan has ended. You can still read everything and reply to clients. Contact MXAi to continue.', billing: 'ended' });
   if (mod && MODULE_FEATURE[mod] && !(await hasFeature(biz, MODULE_FEATURE[mod])))
     return res.status(402).json({ error: `${FEATURES[MODULE_FEATURE[mod]]} is not in your plan. Upgrade or add it to unlock it.`, locked: 'plan', feature: MODULE_FEATURE[mod] });
   if (/^\/api\/marketing/.test(req.path) && !(await hasFeature(biz, 'marketing')))
@@ -241,13 +292,14 @@ app.use(wrap(async (req, res, next) => {
     return res.status(402).json({ error: 'Discount codes are not in your plan.', locked: 'plan', feature: 'coupons' });
   if (req.method === 'PUT' && req.path === '/api/channels/telegram' && req.body.token && !(await hasFeature(biz, 'telegram')))
     return res.status(402).json({ error: 'A Telegram bot is not in your plan.', locked: 'plan', feature: 'telegram' });
-  ctx.run({ biz }, next);
+  const tz = biz && await bizTz(biz); // the rest of this request runs on the business's own clock (clock.js)
+  ctx.run({ biz, viewAs }, () => inZone(tz, next));
 }));
 const assets = fingerprint(PUBLIC);
 app.get(['/', '/index.html'], assets.page);
 app.get('/app.css', assets.css);
 app.use(express.static(PUBLIC, { setHeaders: assets.headers }));
-const adminOnly = (req, res, next) => req.user.role === 'admin' ? next() : res.status(403).json({ error: 'Only the platform admin can do this.' });
+const adminOnly = (req, res, next) => req.user.role === 'admin' && ['lab', 'dev'].includes(surfaceOf(req)) ? next() : res.status(403).json({ error: 'Only the platform admin can do this.' });
 mountSiteAdmin(app, adminOnly);
 mountUploads(app, () => BIZ(), audit);
 mountCoach(app, () => BIZ(), audit, wrap);
@@ -300,13 +352,21 @@ app.delete('/api/admin/businesses/:id', adminOnly, wrap(async (req, res) => {
 
 // ---------- Me: account, plan, what I can open, security ----------
 // Leave the business you opened and go back to the Lab
-app.post('/api/admin/lab', adminOnly, (req, res) => res.set('Set-Cookie', `rb_biz=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`).json({ ok: true }));
+// /api/admin/lab (back to the Lab) lives in support.js: it ends support access
+// "View as": see the business you opened with exactly one plan's features and locks (empty plan = back to admin view)
+app.post('/api/admin/view-as', adminOnly, wrap(async (req, res) => {
+  const p = req.body.plan ? await one('SELECT key FROM plans WHERE key=$1', [String(req.body.plan)]) : null;
+  if (req.body.plan && !p) return res.status(404).json({ error: 'No such plan.' });
+  res.set('Set-Cookie', `rb_viewas=${p ? p.key : ''}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${p ? 86400 : 0}${secureCookie(req)}`).json({ ok: true, view_as: p?.key || null });
+}));
 app.get('/api/me', wrap(async (req, res) => {
   const b = await one(`SELECT b.id, b.name, b.plan_status, b.trial_ends_at, b.country, b.currency, b.timezone, b.plan_key, p.name AS plan_name,
       GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left FROM businesses b LEFT JOIN plans p ON p.key=b.plan_key WHERE b.id=$1`, [BIZ()]);
   const u = req.user;
   res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, totp_enabled: u.totp_enabled, email_2fa: u.email_2fa }, email_ready: emailEnabled(), business: b,
-    features: [...await featuresOf(BIZ())], modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE,
+    features: [...await featuresOf(BIZ(), ctx.getStore().viewAs)], view_as: ctx.getStore().viewAs || null, feature_names: FEATURES, surface: surfaceOf(req), billing: BIZ() ? await accessOf(BIZ()) : null,
+    support: req.support ? { business: req.support.business, can_edit: req.support.can_edit, seconds_left: req.support.seconds_left, reason: req.support.reason, test: req.support.is_demo } : null, requested: BIZ() ? await pendingFor(BIZ()) : [],
+    plans: u.role === 'admin' ? await q('SELECT key, name FROM plans ORDER BY sort') : undefined, playground: BIZ() ? await isPlayground(BIZ()) : false, modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE,
     edition: process.env.EDITION === 'product' ? 'product' : 'lab', lab: u.role === 'admin' && !BIZ(),
     // links we show or share must work outside this computer, even when the dashboard is opened on localhost
     public_url: (process.env.PUBLIC_URL || '').replace(/\/$/, '') || null });
@@ -373,6 +433,22 @@ app.post('/api/me/2fa/disable', wrap(async (req, res) => {
   await audit(req, '2fa_off');
   res.json({ ok: true });
 }));
+// Today › since you last checked. A visit more than 30 minutes after the last one starts a new window, so a reload
+// doesn't wipe what the owner hasn't read yet. First visit: the last 24 hours. Counts only, from this business
+app.get('/api/changes', wrap(async (req, res) => {
+  const u = await one(`UPDATE users SET
+      today_from = CASE WHEN today_seen_at IS NULL THEN now() - interval '24 hours' WHEN today_seen_at < now() - interval '30 minutes' THEN today_seen_at ELSE COALESCE(today_from, today_seen_at) END,
+      today_seen_at = CASE WHEN today_seen_at IS NULL OR today_seen_at < now() - interval '30 minutes' THEN now() ELSE today_seen_at END
+    WHERE id=$1 RETURNING today_from`, [req.user.id]);
+  const from = u.today_from, B = BIZ();
+  const c = await one(`SELECT
+      (SELECT count(*) FROM bookings WHERE business_id=$1 AND created_at > $2)::int AS bookings,
+      (SELECT count(*) FROM bookings WHERE business_id=$1 AND created_at > $2 AND source='ai')::int AS by_ai,
+      (SELECT count(*) FROM customers WHERE business_id=$1 AND created_at > $2 AND phone !~ '^(test|e2e)' AND COALESCE(name,'') !~* '^test ')::int AS clients,
+      (SELECT count(*) FROM messages m JOIN conversations cv ON cv.id=m.conversation_id WHERE cv.business_id=$1 AND cv.channel<>'test' AND m.role='customer' AND m.created_at > $2)::int AS messages,
+      (SELECT count(*) FROM reviews WHERE business_id=$1 AND created_at > $2)::int AS reviews`, [B, from]);
+  res.set('Cache-Control', 'no-store').json({ since: from, ...c });
+}));
 app.get('/api/me/activity', wrap(async (req, res) => res.json(await q(`SELECT action, detail, ip, ${"to_char(at,'YYYY-MM-DD HH24:MI')"} AS at FROM audit_log WHERE user_id=$1 ORDER BY id DESC LIMIT 30`, [req.user.id]))));
 
 // ---------- Command center (admin only): businesses, plans, add-ons, logins, audit ----------
@@ -383,6 +459,7 @@ app.put('/api/admin/plans/:key', adminOnly, wrap(async (req, res) => {
   const table = req.query.kind === 'addon' ? 'addons' : 'plans', key = String(req.params.key).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 40);
   const name = String(req.body.name || '').trim().slice(0, 60);
   if (!key || !name) return res.status(400).json({ error: 'Add a name.' });
+  if (req.body.create && await one(`SELECT 1 FROM ${table} WHERE key=$1`, [key])) return res.status(409).json({ error: `"${name}" already exists. Edit it in the list instead.` });
   const features = (Array.isArray(req.body.features) ? req.body.features : []).filter(f => FEATURES[f]);
   await q(`INSERT INTO ${table} (key, name, price, currency, features) VALUES ($1,$2,$3,$4,$5)
       ON CONFLICT (key) DO UPDATE SET name=EXCLUDED.name, price=EXCLUDED.price, currency=EXCLUDED.currency, features=EXCLUDED.features`,
@@ -398,7 +475,7 @@ app.delete('/api/admin/plans/:key', adminOnly, wrap(async (req, res) => {
   await audit(req, table === 'plans' ? 'plan_deleted' : 'addon_deleted', req.params.key, 0);
   res.json({ ok: true });
 }));
-app.get('/api/admin/businesses', adminOnly, wrap(async (_req, res) => res.json(await q(`SELECT b.id, b.name, b.vertical, b.country, b.city, b.currency, b.timezone, b.is_demo,
+app.get('/api/admin/businesses', adminOnly, wrap(async (_req, res) => res.json(await q(`SELECT b.id, b.name, b.vertical, b.country, b.city, b.currency, b.timezone, b.is_demo, b.ai_budget::float AS ai_budget, to_char(b.paid_until,'YYYY-MM-DD') AS paid_until, b.retention_months,
     b.plan_status, b.plan_key, b.addons, b.feature_overrides, to_char(b.trial_ends_at,'YYYY-MM-DD') AS trial_ends, GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left,
     (SELECT string_agg(u.email, ', ') FROM users u WHERE u.business_id=b.id AND u.role='owner') AS owners,
     (SELECT count(*) FROM users u WHERE u.business_id=b.id)::int AS logins,
@@ -421,12 +498,7 @@ app.post('/api/admin/businesses', adminOnly, wrap(async (req, res) => {
   await audit(req, 'business_created', `${req.body.name} (${r.email})${addons.length ? ' + ' + addons.join(', ') : ''}`, r.id);
   res.json(r);
 }));
-app.post('/api/admin/switch', adminOnly, wrap(async (req, res) => {
-  const b = await one('SELECT id, name FROM businesses WHERE id=$1', [+req.body.id]);
-  if (!b) return res.status(404).json({ error: 'Business not found.' });
-  await audit(req, 'opened_business', b.name, b.id);
-  res.set('Set-Cookie', `rb_biz=${b.id}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${365 * 86400}${secureCookie(req)}`).json(b);
-}));
+// /api/admin/switch (open a business) lives in support.js: support access
 // Plan, add-ons, per-business feature switches, status and trial: all take effect on the business's next click.
 app.post('/api/admin/businesses/:id/plan', adminOnly, wrap(async (req, res) => {
   const id = +req.params.id, b = await one('SELECT * FROM businesses WHERE id=$1', [id]);
@@ -436,9 +508,13 @@ app.post('/api/admin/businesses/:id/plan', adminOnly, wrap(async (req, res) => {
   const addons = Array.isArray(req.body.addons) ? (await q('SELECT key FROM addons WHERE key = ANY($1)', [req.body.addons])).map(a => a.key) : b.addons;
   const overrides = req.body.feature_overrides && typeof req.body.feature_overrides === 'object'
     ? Object.fromEntries(Object.entries(req.body.feature_overrides).filter(([k, v]) => FEATURES[k] && typeof v === 'boolean')) : b.feature_overrides;
-  await q(`UPDATE businesses SET plan_status=$1, plan_key=$2, addons=$3, feature_overrides=$4, trial_ends_at = trial_ends_at + make_interval(days => $5) WHERE id=$6`,
-    [status, plan, JSON.stringify(addons), JSON.stringify(overrides), Math.min(Math.max(+req.body.extend_days || 0, 0), 365), id]);
-  await audit(req, 'plan_changed', `${b.name}: ${status}, ${plan}, add-ons [${addons}], switches ${JSON.stringify(overrides)}${req.body.extend_days ? `, +${req.body.extend_days}d` : ''}`, id);
+  const keep = req.body.retention_months === undefined ? b.retention_months : (+req.body.retention_months > 0 ? Math.min(Math.round(+req.body.retention_months), 120) : null);
+  await q('UPDATE businesses SET retention_months=$2 WHERE id=$1', [id, keep]);
+  const budget = req.body.ai_budget != null && req.body.ai_budget !== '' && isFinite(+req.body.ai_budget) ? Math.min(Math.max(+req.body.ai_budget, 0), 1000) : +(b.ai_budget ?? 5);
+  await q(`UPDATE businesses SET plan_status=$1, plan_key=$2, addons=$3, feature_overrides=$4, trial_ends_at = trial_ends_at + make_interval(days => $5), ai_budget=$7 WHERE id=$6`,
+    [status, plan, JSON.stringify(addons), JSON.stringify(overrides), Math.min(Math.max(+req.body.extend_days || 0, 0), 365), id, budget]);
+  forgetAccess(id);
+  await audit(req, 'plan_changed', `${b.name}: ${status}, ${plan}, add-ons [${addons}], switches ${JSON.stringify(overrides)}, Claude budget $${budget}${req.body.extend_days ? `, +${req.body.extend_days}d` : ''}`, id);
   res.json({ ok: true });
 }));
 
@@ -493,7 +569,7 @@ app.get('/api/admin/audit', adminOnly, wrap(async (req, res) => res.json(await q
     FROM audit_log a LEFT JOIN businesses b ON b.id=a.business_id WHERE ($1 = '' OR a.action ILIKE $1 || '%' OR a.user_email ILIKE '%' || $1 || '%' OR b.name ILIKE '%' || $1 || '%')
     ORDER BY a.id DESC LIMIT 200`, [String(req.query.q || '').trim()]))));
 
-app.get('/api/business', wrap(async (_req, res) => { const b = await loadBusiness(BIZ()); delete b.telegram_token; delete b.telegram_token_hash; res.json({ ...b, terms: termsOf(b.vertical) }); }));
+app.get('/api/business', wrap(async (_req, res) => { const b = await loadBusiness(BIZ()); delete b.telegram_token; delete b.telegram_token_hash; res.json({ ...b, terms: termsOf(b.vertical), nav: NAV[b.template] || null, today: TODAY[b.template] || null }); }));
 app.get('/api/verticals', (_req, res) => res.json(listVerticals()));
 
 // Switch business type. With template=true it also loads that type's starter services, FAQs and policies
@@ -534,7 +610,8 @@ app.put('/api/business', wrap(async (req, res) => {
       reminders_enabled=$13, reminder_hours=$14, reminder_text=$15, booking_enabled=$16, booking_title=$17, booking_intro=$18,
       booking_color=$19, booking_show_prices=$20, booking_min_notice_hours=$21, booking_days_ahead=$22,
       description=$23, website=$24, instagram=$25, maps_url=$26, languages=$27, tone=$28, team=$29, policies=$30, ai_instructions=$31, faqs=$32, ask_email=$33, assistant_name=$34 WHERE id=$8`,
-    [b.name, b.address, b.faq, b.wa_phone_number_id || '', JSON.stringify(cleanHours(b.hours)), Math.max(1, +b.capacity || 1), [15, 30, 60].includes(+b.slot_step) ? +b.slot_step : 30, BIZ(), b.payment_methods || '', b.booking_note || '', String(b.phone || '').trim(), Math.min(Math.max(+b.cancel_hours || 0, 0), 168),
+    // the WhatsApp number id is sent with the platform's own token: only the platform admin sets it, digits only
+    [b.name, b.address, b.faq, req.user.role === 'admin' ? String(b.wa_phone_number_id || '').replace(/\D/g, '') : (await one('SELECT wa_phone_number_id FROM businesses WHERE id=$1', [BIZ()]))?.wa_phone_number_id || '', JSON.stringify(cleanHours(b.hours)), Math.max(1, +b.capacity || 1), [15, 30, 60].includes(+b.slot_step) ? +b.slot_step : 30, BIZ(), b.payment_methods || '', b.booking_note || '', String(b.phone || '').trim(), Math.min(Math.max(+b.cancel_hours || 0, 0), 168),
      b.reminders_enabled !== false, [2, 12, 24, 48].includes(+b.reminder_hours) ? +b.reminder_hours : 24, String(b.reminder_text || '').trim() || null,
      b.booking_enabled !== false, String(b.booking_title || '').trim(), String(b.booking_intro || '').trim(),
      /^#[0-9a-f]{6}$/i.test(b.booking_color) ? b.booking_color : '#10a35a', b.booking_show_prices !== false,
@@ -543,7 +620,7 @@ app.put('/api/business', wrap(async (req, res) => {
      ['warm', 'professional', 'playful'].includes(b.tone) ? b.tone : 'warm',
      ...['team', 'policies', 'ai_instructions'].map(k => String(b[k] || '').trim().slice(0, 4000)),
      JSON.stringify((Array.isArray(b.faqs) ? b.faqs : []).map(f => ({ q: String(f.q || '').trim().slice(0, 300), a: String(f.a || '').trim().slice(0, 1500) })).filter(f => f.q && f.a).slice(0, 60)),
-     b.ask_email !== false, String(b.assistant_name || '').trim().slice(0, 40) || 'Nora']);
+     b.ask_email !== false, String(b.assistant_name || '').replace(/[<>"&]/g, '').trim().slice(0, 40) || 'Nora']); // a name, never markup
   const keep = (b.services || []).filter(s => s.id).map(s => s.id);
   // Services that already have bookings are kept so past bookings stay intact.
   await q(`DELETE FROM services s WHERE s.business_id=$1 AND s.id <> ALL($2::int[]) AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.service_id=s.id)`, [BIZ(), keep]);
@@ -567,7 +644,7 @@ app.get('/api/calendar', wrap(async (req, res) => {
   const from = parseLocal(req.query.from), to = parseLocal(req.query.to);
   if (isNaN(from) || isNaN(to)) return res.status(400).json({ error: 'Pick a date range.' });
   const bookings = await q(`SELECT b.id, ${LOCAL('b.starts_at')} AS start, ${LOCAL('b.ends_at')} AS "end", b.price::float, b.status, b.source,
-      b.service_id, b.conversation_id, b.notes, b.coupon_code, b.reminder_status, s.name service, cu.name customer, cu.phone
+      b.service_id, b.conversation_id, b.notes, b.coupon_code, b.reminder_status, s.name service, s.capacity spots, cu.name customer, cu.phone
       FROM bookings b JOIN services s ON s.id=b.service_id JOIN customers cu ON cu.id=b.customer_id
       WHERE b.business_id=$1 AND b.starts_at < $3 AND b.ends_at > $2 ORDER BY b.starts_at`, [BIZ(), from, to]);
   const timeOff = await q(`SELECT id, ${LOCAL('starts_at')} AS start, ${LOCAL('ends_at')} AS "end", reason FROM time_off
@@ -651,10 +728,18 @@ app.get('/api/ai-queue/list', wrap(async (req, res) => res.json(await aiQueueLis
 mountLive(app, () => BIZ());
 mountLab(app, () => BIZ());
 mountHQ(app, adminOnly, wrap, audit, aiHealth);
+mountUpgrades(app, { adminOnly, wrap, audit, BIZ });
+mountControls(app, { adminOnly, wrap, audit });
+mountSupport(app, { adminOnly, wrap, audit, secureCookie });
+mountBilling(app, { adminOnly, wrap, audit });
 mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
-setSenders({ sendWhatsApp, sendTelegram }); startAutopilot();
+// a PREVIEW_ONLY copy on the real data must never send: Autopilot only runs in the live app
+setSenders({ sendWhatsApp, sendTelegram }); if (!process.env.PREVIEW_ONLY) startAutopilot();
 mountTeam(app, () => BIZ(), { sendWhatsApp, sendTelegram, audit });
 mountPulse(app, () => BIZ());
+mountFinance(app, () => BIZ());
+mountMemberships(app, () => BIZ());
+mountConnectors(app, () => BIZ());
 mountMarketing(app, () => BIZ());
 mountIntegrations(app, () => BIZ());
 mountShortcuts(app, () => BIZ());
@@ -731,9 +816,10 @@ app.get('/api/stats', wrap(async (req, res) => {
       WHERE c.business_id=$1 AND c.needs_attention ${convF} ORDER BY c.updated_at DESC LIMIT 10`, [BIZ()]),
     q(`SELECT count(*)::int AS n FROM requests WHERE business_id=$1 AND status='pending'`, [BIZ()]),
     q(`SELECT count(*)::int AS n FROM learning WHERE business_id=$1 AND status='open'`, [BIZ()]),
-    one('SELECT name, plan_price::float FROM businesses WHERE id=$1', [BIZ()])]);
+    one(`SELECT b.name, (COALESCE(p.price,0) + COALESCE((SELECT sum(a.price) FROM addons a WHERE COALESCE(b.addons,'[]'::jsonb) ? a.key),0))::float AS plan_price
+      FROM businesses b LEFT JOIN plans p ON p.key=b.plan_key WHERE b.id=$1`, [BIZ()])]);
   res.json({ ...t, ...bk, approvals: pend.n, to_learn: learn.n, ai: { ...ai, last: aiHealth }, outcomes, daily, heat, channels, services, today, upcoming, attention,
-    business: biz, now: localStamp(new Date()), tz: process.env.TZ,
+    business: biz, now: localStamp(new Date()), tz: currentTz(),
     booking_url: (process.env.PUBLIC_URL || 'https://app.nexfoyz.dev').replace(/\/$/, '') + '/book?b=' + BIZ() });
 }));
 
@@ -752,7 +838,7 @@ app.get('/api/conversations/:id/messages', wrap(async (req, res) => {
 
 // ---------- Approvals: late cancellations, late time changes, extra requests ----------
 const REF = id => 'RB-' + String(id).padStart(4, '0');
-const nice = d => new Date(d).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const nice = d => fmtStamp(d, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 // Tells the customer the decision in their chat (and on WhatsApp when that's where they wrote from).
 async function notifyCustomer(conversationId, text) {
@@ -761,8 +847,10 @@ async function notifyCustomer(conversationId, text) {
   if (!c) return;
   await q(`INSERT INTO messages (conversation_id, role, text) VALUES ($1,'assistant',$2)`, [c.id, text]);
   await q('UPDATE conversations SET updated_at=now() WHERE id=$1', [c.id]);
+  if (await isPlayground(c.business_id)) return; // test business: the chat shows it, nobody real receives it
   if (c.channel === 'whatsapp') await sendWhatsApp(c.wa_phone_number_id, c.phone, text);
   if (c.channel === 'telegram') await sendTelegram(c.telegram_chat_id, text, c.business_id);
+  if (c.channel === 'instagram') await sendInstagram(c.business_id, c.phone, text);
 }
 
 app.get('/api/requests', wrap(async (req, res) => {
@@ -835,8 +923,10 @@ async function staffReply(conversationId, text) {
       JOIN customers cu ON cu.id=c.customer_id JOIN businesses b ON b.id=c.business_id WHERE c.id=$1 AND c.business_id=$2`, [conversationId, BIZ()]);
   if (!c) return { error: 'Conversation not found.' };
   let sent = { ok: true };
+  if (await isPlayground(c.business_id) && ['whatsapp', 'telegram', 'instagram'].includes(c.channel)) c.channel = 'playground'; // saved, not sent
   if (c.channel === 'whatsapp') sent = await sendWhatsApp(c.wa_phone_number_id, c.phone, text);
   if (c.channel === 'telegram') sent = await sendTelegram(c.telegram_chat_id, text, c.business_id);
+  if (c.channel === 'instagram') sent = await sendInstagram(c.business_id, c.phone, text);
   await q(`INSERT INTO messages (conversation_id, role, text, failed) VALUES ($1,'staff',$2,$3)`, [c.id, text, !sent.ok]);
   await q(`UPDATE conversations SET updated_at=now(), needs_attention=false WHERE id=$1`, [c.id]);
   return { ok: sent.ok, warning: sent.ok ? null : `Saved, but not delivered: ${sent.reason}` };
@@ -979,7 +1069,7 @@ app.post('/api/conversations/:id/resolve', wrap(async (req, res) => {
 }));
 
 // ---------- Customers ----------
-const realPhone = "cu.phone NOT LIKE 'test-%' AND cu.phone NOT LIKE 'e2e-%'";
+const realPhone = "cu.phone NOT LIKE 'test-%' AND cu.phone NOT LIKE 'e2e-%' AND COALESCE(cu.name,'') !~* '^test '"; // same rule as the Clients summary
 app.get('/api/customers', wrap(async (req, res) => {
   const s = String(req.query.q || '').trim(), test = req.query.test === '1';
   res.json(await q(`SELECT cu.id, cu.name, cu.marketing_ok, CASE WHEN cu.phone ~ '^(test|e2e|walk-in|tg-)' THEN cu.contact_phone ELSE cu.phone END AS phone, cu.email, cu.reminder_channel, cu.staff_notes,
@@ -988,7 +1078,9 @@ app.get('/api/customers', wrap(async (req, res) => {
       count(b.id) FILTER (WHERE b.status='confirmed' AND b.starts_at >= now())::int AS upcoming,
       count(b.id) FILTER (WHERE b.status='no_show')::int AS no_shows,
       COALESCE(sum(b.price) FILTER (WHERE b.status IN ('completed','confirmed')),0)::float AS spent,
-      to_char(max(b.starts_at) FILTER (WHERE b.status <> 'cancelled'),'YYYY-MM-DD') AS last_booking
+      to_char(max(b.starts_at) FILTER (WHERE b.status <> 'cancelled'),'YYYY-MM-DD') AS last_booking,
+      to_char(max(b.starts_at) FILTER (WHERE b.status IN ('completed','confirmed') AND b.starts_at < now()),'YYYY-MM-DD') AS last_visit,
+      to_char(min(b.starts_at) FILTER (WHERE b.status='confirmed' AND b.starts_at >= now()),'YYYY-MM-DD"T"HH24:MI') AS next_visit
       FROM customers cu LEFT JOIN bookings b ON b.customer_id=cu.id
       WHERE cu.business_id=$1 ${test ? '' : 'AND ' + realPhone}
         AND ($2 = '' OR cu.name ILIKE '%'||$2||'%' OR cu.phone LIKE '%'||$2||'%' OR cu.contact_phone LIKE '%'||$2||'%' OR cu.email ILIKE '%'||$2||'%')
@@ -1101,14 +1193,14 @@ app.get('/api/live', wrap(async (req, res) => {
   // ---- richer desk data ----
   // Micro charts: last 24 hours of messages (and failed replies), last 14 days of bookings and booked value.
   // This week, Monday to Sunday: booked minutes against open minutes per day (capsule bars) and today's capacity (gauge).
-  const mon = new Date(); mon.setHours(0, 0, 0, 0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+  const mon = dayStart(new Date(), -((wall(new Date()).wd + 6) % 7)); // this Monday, local midnight
   const wk = await q(`SELECT starts_at, ends_at FROM bookings WHERE business_id=$1 AND status <> 'cancelled' AND starts_at >= $2 AND starts_at < $2::timestamptz + interval '7 days'`, [B, mon]);
   const toMin = t => { const [h, m] = String(t).split(':').map(Number); return h * 60 + (m || 0); };
   const week = [...Array(7)].map((_, i) => {
-    const day = new Date(mon); day.setDate(mon.getDate() + i);
-    const open = (biz.hours?.[day.getDay()] || []).reduce((a, [x, y]) => a + toMin(y) - toMin(x), 0) * (biz.capacity || 1);
-    const booked = wk.filter(b => new Date(b.starts_at).toDateString() === day.toDateString()).reduce((a, b) => a + (new Date(b.ends_at) - new Date(b.starts_at)) / 60000, 0);
-    return { d: localDate(day), open, booked: Math.round(booked), pct: open ? Math.min(100, Math.round(booked / open * 100)) : null, today: day.toDateString() === new Date().toDateString() };
+    const day = dayStart(mon, i), dayKey = localDate(day), todayKey = localDate(new Date());
+    const open = (biz.hours?.[wall(day).wd] || []).reduce((a, [x, y]) => a + toMin(y) - toMin(x), 0) * (biz.capacity || 1);
+    const booked = wk.filter(b => localDate(new Date(b.starts_at)) === dayKey).reduce((a, b) => a + (new Date(b.ends_at) - new Date(b.starts_at)) / 60000, 0);
+    return { d: dayKey, open, booked: Math.round(booked), pct: open ? Math.min(100, Math.round(booked / open * 100)) : null, today: dayKey === todayKey };
   });
   // From channel to result, last 30 days (flow chart).
   // Busiest moments: messages by weekday and hour, last 30 days (heat grid).
@@ -1142,12 +1234,14 @@ app.get('/api/notifications/settings', wrap(async (_req, res) => {
   res.json({ kinds: KINDS, on: b.alert_kinds || [], telegram_linked: b.linked, bot: telegramStatus(BIZ()).bot || null });
 }));
 app.put('/api/notifications/settings', wrap(async (req, res) => {
+  if (req.user.role === 'staff') return res.status(403).json({ error: 'Only the account owner can change alerts.' });
   const on = (Array.isArray(req.body.on) ? req.body.on : []).filter(k => KINDS[k]);
   await q('UPDATE businesses SET alert_kinds=$1 WHERE id=$2', [JSON.stringify(on), BIZ()]);
   if (req.body.unlink) await q('UPDATE businesses SET owner_telegram_chat=NULL WHERE id=$1', [BIZ()]);
   res.json({ ok: true });
 }));
-app.post('/api/notifications/link-telegram', wrap(async (_req, res) => {
+app.post('/api/notifications/link-telegram', wrap(async (req, res) => {
+  if (req.user.role === 'staff') return res.status(403).json({ error: 'Only the account owner can link alerts.' });
   const bot = telegramStatus(BIZ()).bot;
   if (!bot) return res.status(400).json({ error: "Connect this business's Telegram bot first (Setup, Channels)." });
   res.json({ code: await ownerLinkCode(BIZ()), bot });
@@ -1198,7 +1292,7 @@ async function segmentOf(seg = {}, everyone = false) {
 function marketingRoute(c) {
   if (c.channel === 'telegram' && c.telegram_chat_id) return 'telegram';
   if (c.channel === 'webook') return 'webook';
-  if (c.channel === 'whatsapp') return c.last_msg && Date.now() - new Date(c.last_msg) < 23.5 * 3600e3 ? 'whatsapp' : null;
+  if (c.channel === 'whatsapp' || c.channel === 'instagram') return c.last_msg && Date.now() - new Date(c.last_msg) < 23.5 * 3600e3 ? c.channel : null;
   return null;
 }
 // Campaign studio: five ready-to-send drafts built from this business's own numbers. Each has its audience (the same
@@ -1213,7 +1307,7 @@ app.get('/api/marketing/studio', wrap(async (_req, res) => {
       (SELECT count(*) FROM customers WHERE business_id=$1 AND marketing_ok AND phone !~ '^(test|e2e|walk-in)')::int AS opted
       FROM bookings WHERE business_id=$1 AND status IN ('confirmed','completed') AND starts_at > now() - interval '90 days'`, [BIZ()]);
   const svc = biz.services.find(s => s.id === st.top_service) || biz.services[0], DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const end = new Date(Date.now() + 7 * 864e5).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const end = fmtDate(Date.now() + 7 * 864e5, { weekday: 'long', day: 'numeric', month: 'long' });
   const quiet = st.quiet_dow != null ? DAY[st.quiet_dow] : 'Tuesday', t = st.ticket || svc?.price || 0;
   const drafts = [
     { id: 'winback', name: 'We miss you', goal: 'Bring back clients who stopped coming', segment: { type: 'inactive', days: 60 }, audience: 'Clients with no visit in 60 days', pct: 15, code: 'BACK15', rate: 0.15,
@@ -1252,13 +1346,15 @@ app.post('/api/marketing/send', wrap(async (req, res) => {
   const camp = await one(`INSERT INTO campaigns (business_id, name, message, segment, created_by) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
     [BIZ(), String(req.body.name || 'Offer').slice(0, 80), message, JSON.stringify(req.body.segment || {}), req.user.email]);
   let sent = 0, skipped = 0;
+  const play = await isPlayground(BIZ());
   for (const c of list) {
     // Never more than one offer per client per 24 hours.
     const recent = await one(`SELECT 1 FROM campaign_sends s JOIN campaigns k ON k.id=s.campaign_id WHERE s.customer_id=$1 AND s.status='sent' AND s.at > now() - interval '24 hours'`, [c.id]);
-    const route = recent ? null : marketingRoute(c);
-    let status = recent ? 'skipped: had an offer today' : route ? 'sent' : 'skipped: not reachable now';
+    const route = recent || play ? null : marketingRoute(c);
+    let status = play ? PLAYGROUND_SKIP : recent ? 'skipped: had an offer today' : route ? 'sent' : 'skipped: not reachable now';
     if (route === 'telegram') { const r = await sendTelegram(c.telegram_chat_id, text, BIZ()); if (!r.ok) status = 'failed: ' + r.reason; }
     if (route === 'whatsapp') { const r = await sendWhatsApp(biz.wa_phone_number_id, c.phone, text); if (!r.ok) status = 'failed: ' + r.reason; }
+    if (route === 'instagram') { const r = await sendInstagram(BIZ(), c.phone, text); if (!r.ok) status = 'failed: ' + r.reason; }
     if (route && status === 'sent') {
       await q(`INSERT INTO messages (conversation_id, role, text, source) VALUES ($1,'staff',$2,'campaign')`, [c.conv_id, text]);
       await q('UPDATE conversations SET updated_at=now() WHERE id=$1', [c.conv_id]);
@@ -1272,8 +1368,8 @@ app.post('/api/marketing/send', wrap(async (req, res) => {
   res.json({ sent, skipped });
 }));
 app.get('/api/marketing/campaigns', wrap(async (_req, res) => res.json(await q(`SELECT id, name, message, sent, skipped, created_by, ${LOCAL('created_at')} AS at,
-    (SELECT count(DISTINCT b.customer_id) FROM campaign_sends cs JOIN bookings b ON b.customer_id=cs.customer_id AND b.status IN ('confirmed','completed') AND b.created_at BETWEEN cs.at AND cs.at + interval '14 days' WHERE cs.campaign_id=campaigns.id)::int AS booked,
-    (SELECT COALESCE(sum(b.price),0) FROM campaign_sends cs JOIN bookings b ON b.customer_id=cs.customer_id AND b.status IN ('confirmed','completed') AND b.created_at BETWEEN cs.at AND cs.at + interval '14 days' WHERE cs.campaign_id=campaigns.id)::float AS revenue
+    (SELECT count(DISTINCT b.customer_id) FROM campaign_sends cs JOIN bookings b ON b.customer_id=cs.customer_id AND b.status IN ('confirmed','completed') AND b.created_at > cs.at AND b.created_at <= cs.at + interval '14 days' WHERE cs.campaign_id=campaigns.id AND cs.status='sent')::int AS booked,
+    (SELECT COALESCE(sum(b.price),0) FROM campaign_sends cs JOIN bookings b ON b.customer_id=cs.customer_id AND b.status IN ('confirmed','completed') AND b.created_at > cs.at AND b.created_at <= cs.at + interval '14 days' WHERE cs.campaign_id=campaigns.id AND cs.status='sent')::float AS revenue
     FROM campaigns WHERE business_id=$1 ORDER BY id DESC LIMIT 30`, [BIZ()]))));
 app.post('/api/customers/:id/offers', wrap(async (req, res) => {
   await q('UPDATE customers SET marketing_ok=$1, marketing_at=now() WHERE id=$2 AND business_id=$3', [!!req.body.on, +req.params.id, BIZ()]);
@@ -1281,6 +1377,47 @@ app.post('/api/customers/:id/offers', wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// ---------- A client's own data (GDPR: access and erasure on request) ----------
+// Export: everything this business holds about one client, as a file the owner can send them.
+app.get('/api/customers/:id/export', wrap(async (req, res) => {
+  const c = await one('SELECT * FROM customers WHERE id=$1 AND business_id=$2', [req.params.id, BIZ()]);
+  if (!c) return res.sendStatus(404);
+  const [bookings, conversations, reviews, memberships] = await Promise.all([
+    q(`SELECT b.id, b.starts_at, b.ends_at, b.status, b.price::float, b.source, b.notes, s.name AS service FROM bookings b LEFT JOIN services s ON s.id=b.service_id WHERE b.customer_id=$1 ORDER BY b.starts_at`, [c.id]),
+    q(`SELECT c.id, c.channel, c.created_at, (SELECT json_agg(json_build_object('at', m.created_at, 'from', m.role, 'text', m.text) ORDER BY m.id) FROM messages m WHERE m.conversation_id=c.id) AS messages
+       FROM conversations c WHERE c.customer_id=$1 ORDER BY c.created_at`, [c.id]),
+    q(`SELECT stars, text, author, created_at FROM reviews WHERE customer_id=$1`, [c.id]),
+    q(`SELECT plan, price::float, status, started_at, renews_at FROM memberships WHERE customer_id=$1`, [c.id])]);
+  const { staff_notes, ...client } = c; // the team's private notes are included: the client is entitled to them under GDPR
+  await audit(req, 'client_export', `client ${c.id}`);
+  res.set('Content-Disposition', `attachment; filename="client-${c.id}-data.json"`)
+    .json({ exported_at: new Date().toISOString(), client: { ...client, staff_notes }, bookings, conversations, reviews, memberships });
+}));
+// Erase: the client's personal details and chats are deleted; bookings and payments stay (the business must keep
+// its accounts) but no longer say who they were. Owners only, with the word ERASE typed as confirmation.
+app.post('/api/customers/:id/erase', wrap(async (req, res) => {
+  if (req.user.role === 'staff') return res.status(403).json({ error: 'Only the account owner can erase a client.' });
+  if (req.body?.confirm !== 'ERASE') return res.status(400).json({ error: 'Type ERASE to confirm. This cannot be undone.' });
+  const c = await one('SELECT id FROM customers WHERE id=$1 AND business_id=$2', [req.params.id, BIZ()]);
+  if (!c) return res.sendStatus(404);
+  const cl = await pool.connect();
+  try {
+    await cl.query('BEGIN');
+    await cl.query('UPDATE bookings SET conversation_id=NULL, notes=NULL WHERE customer_id=$1', [c.id]);
+    await cl.query('UPDATE bookings SET conversation_id=NULL WHERE conversation_id IN (SELECT id FROM conversations WHERE customer_id=$1)', [c.id]);
+    await cl.query('DELETE FROM ai_queue WHERE conversation_id IN (SELECT id FROM conversations WHERE customer_id=$1)', [c.id]);
+    await cl.query(`UPDATE learning SET question='(question from an erased client)' WHERE conversation_id IN (SELECT id FROM conversations WHERE customer_id=$1)`, [c.id]);
+    await cl.query('UPDATE agent_actions SET message=NULL WHERE customer_id=$1', [c.id]);
+    await cl.query('DELETE FROM conversations WHERE customer_id=$1', [c.id]); // messages go with them
+    await cl.query(`UPDATE reviews SET text=NULL, author=NULL WHERE customer_id=$1`, [c.id]); // stars stay (the rating average), words and name go
+    await cl.query('DELETE FROM waitlist WHERE customer_id=$1', [c.id]);
+    await cl.query(`UPDATE customers SET name='Erased client', phone='erased-'||id, email=NULL, contact_phone=NULL, telegram_chat_id=NULL,
+        staff_notes=NULL, birthday=NULL, marketing_ok=false, language=NULL WHERE id=$1`, [c.id]);
+    await cl.query('COMMIT');
+  } catch (e) { await cl.query('ROLLBACK').catch(() => {}); throw e; } finally { cl.release(); }
+  await audit(req, 'client_erase', `client ${c.id}`);
+  res.json({ ok: true });
+}));
 app.put('/api/customers/:id', wrap(async (req, res) => {
   const b = req.body, email = String(b.email || '').trim().toLowerCase();
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Check the email address.' });
@@ -1288,7 +1425,7 @@ app.put('/api/customers/:id', wrap(async (req, res) => {
   const bday = /^\d{4}-\d{2}-\d{2}$/.test(b.birthday || '') ? b.birthday.slice(5) : null;
   await q(`UPDATE customers SET name=$1, email=NULLIF($2,''), reminder_channel=$3, staff_notes=NULLIF($4,''), birthday=$7 WHERE id=$5 AND business_id=$6`,
     [String(b.name).trim(), email, ['whatsapp', 'sms', 'email'].includes(b.reminder_channel) ? b.reminder_channel : 'whatsapp', String(b.staff_notes || '').trim(), req.params.id, BIZ(), bday]);
-  const u = await unify(BIZ(), +req.params.id);
+  const u = await unify(BIZ(), +req.params.id, { manual: true }); // the owner chose to merge: email and typed numbers count too
   res.json({ ok: true, merged_into: u && u.id !== +req.params.id ? u.id : null });
 }));
 
@@ -1303,8 +1440,8 @@ app.put('/api/channels/telegram', wrap(async (req, res) => {
   r.ok ? res.json(r) : res.status(400).json({ error: r.error || 'Could not connect the bot.' });
 }));
 app.get('/api/webook-demo', wrap(async (_req, res) => res.json(await one('SELECT count(*)::int AS n FROM businesses WHERE is_demo'))));
-app.post('/api/webook-demo/remove', wrap(async (_req, res) => res.json({ removed: await removeDemo() })));
-app.post('/api/webook-demo/add', wrap(async (_req, res) => res.json({ added: await seedDemo({ force: true }) })));
+app.post('/api/webook-demo/remove', adminOnly, wrap(async (_req, res) => res.json({ removed: await removeDemo() })));
+app.post('/api/webook-demo/add', adminOnly, wrap(async (_req, res) => res.json({ added: await seedDemo({ force: true }) })));
 
 // ---------- Insights ----------
 app.put('/api/insights/goal', wrap(async (req, res) => {
@@ -1313,7 +1450,7 @@ app.put('/api/insights/goal', wrap(async (req, res) => {
 app.get('/api/insights', wrap(async (req, res) => res.json(await insights(BIZ(), Math.min(Math.max(+req.query.days || 30, 1), 365)))));
 
 // ---------- Reminders ----------
-app.post('/api/reminders/run', wrap(async (_req, res) => res.json({ checked: await runReminders() })));
+app.post('/api/reminders/run', adminOnly, wrap(async (_req, res) => res.json({ checked: await runReminders() })));
 app.post('/api/reminders/preview', wrap(async (req, res) => {
   const b = await loadBusiness(BIZ());
   res.json({ text: fill(String(req.body.text || b.reminder_text), { id: 42, customer: 'Rana Khalil', service: b.services[0]?.name || 'Haircut', business: b.name,
@@ -1330,9 +1467,25 @@ unifyAll().catch(e => console.error('Client merge:', e.message));
 backfillMedia().catch(e => console.error('Media backfill:', e.message));
 if (process.env.WEBOOK_DEMO !== '0') seedDemo().then(n => n && console.log(`Added ${n} demo businesses to WeBook`)).catch(e => console.error('Demo seed:', e.message));
 const PORT = process.env.PORT || 3100;
-app.listen(PORT, () => console.log(`Ringback running on http://localhost:${PORT}`));
+const server = app.listen(PORT, () => console.log(`MXAi running on http://localhost:${PORT}`));
 // PREVIEW_ONLY: a second copy for checking changes against the real data; it sends nothing and runs no background jobs
 const LIVE = !process.env.PREVIEW_ONLY;
+if (LIVE) startPrivacy(); // privacy.js: retention clean-up every 6 hours
+// A clean stop (docker compose restart / rebuild sends SIGTERM): take no new requests, let messages being answered
+// finish (up to 15 s, inside Docker's 20 s grace), close the database, exit. Anything still unfinished is picked up
+// again on start-up from the inbound table.
+let stopping = false;
+const stop = sig => {
+  if (stopping) return; stopping = true;
+  console.log(`${sig}: finishing ${inFlight()} message(s) in progress, then stopping`);
+  server.close();
+  const t0 = Date.now();
+  const wait = () => inFlight() && Date.now() - t0 < 15000 ? setTimeout(wait, 200) : pool.end().catch(() => {}).finally(() => process.exit(0));
+  wait();
+};
+process.on('SIGTERM', () => stop('SIGTERM'));
+process.on('SIGINT', () => stop('SIGINT'));
+if (LIVE) resumeInbound({ whatsapp: answerWhatsApp, kapso: answerWhatsApp, telegram: answerTelegram, instagram: answerInstagram }).catch(e => console.error('Resume incoming messages:', e.message));
 if (LIVE) startReminders();
 if (LIVE) startAiQueue(async ({ channel, businessId, phone, reply, options }) => {
   if (channel === 'whatsapp') {
@@ -1341,6 +1494,8 @@ if (LIVE) startAiQueue(async ({ channel, businessId, phone, reply, options }) =>
   } else if (channel === 'telegram') {
     const c = await one('SELECT telegram_chat_id FROM customers WHERE business_id=$1 AND phone=$2', [businessId, phone]);
     if (c?.telegram_chat_id) await sendTelegram(c.telegram_chat_id, reply, businessId, options);
+  } else if (channel === 'instagram') {
+    await sendInstagram(businessId, phone, reply, options);
   }
 });
 await sealExistingSecrets().catch(e => console.error('Encrypt secrets:', e.message));

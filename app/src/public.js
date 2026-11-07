@@ -3,11 +3,14 @@
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { hasFeature } from './features.js';
+import { accessOf, stopped } from './billing.js';
 import { notify } from './notify.js';
 import { unify } from './customers.js';
 import { q, one, withBusinessLock } from './db.js';
 import { loadBusiness, checkCoupon } from './brain.js';
-import { dayRanges, isFree, bufferOf, parseLocal, localStamp, localDate, label } from './slots.js';
+import { dayRanges, isFree, bufferOf, parseLocal, localStamp, localDate, label, localDays } from './slots.js';
+import { inZone, tzOf } from './clock.js';
+import { offerWaitlist } from './autopilot.js';
 import { termsOf } from './verticals.js';
 
 const PUBLIC = fileURLToPath(new URL('../public', import.meta.url));
@@ -32,11 +35,11 @@ async function snapshot(biz) {
 // Every start time on `day` where the whole service fits.
 function startsOn(biz, day, minutes, bookings, timeOff, buffer = biz.buffer_minutes || 0, serviceId = null) {
   const out = [], step = biz.slot_step || 30, earliest = Date.now() + Math.max(30, (biz.booking_min_notice_hours ?? 2) * 60) * 60000;
-  const d0 = new Date(day); d0.setHours(0, 0, 0, 0);
-  for (const [a, b] of dayRanges(biz, d0)) {
+  const [d0] = localDays(biz, day, 1); // the business's local day that `day` falls on
+  for (const [a, b] of dayRanges(biz, d0.noon)) {
     for (let m = a; m + minutes <= b; m += step) {
-      const s = new Date(d0.getTime() + m * 60000);
-      if (s.getTime() >= earliest && isFree(biz, bookings, timeOff, s, new Date(s.getTime() + minutes * 60000), buffer, serviceId)) out.push(localStamp(s).slice(11));
+      const s = d0.time(m);
+      if (s.getTime() >= earliest && isFree(biz, bookings, timeOff, s, new Date(s.getTime() + minutes * 60000), buffer, serviceId)) out.push(localStamp(s, tzOf(biz)).slice(11));
     }
   }
   return out;
@@ -46,11 +49,20 @@ export function mountPublic(app, DEFAULT_BIZ) {
   // Works for any business: ?b=<id> (WeBook passes it); the website link defaults to the main business.
   const pick = req => +(req.query.b || req.body?.b) || DEFAULT_BIZ;
   const wrap = fn => (req, res, next) => fn(req, res).catch(next);
+  // Every public request runs on its business's clock (clock.js): the booking link's business, else ?b=
+  const tzs = new Map();
+  app.use('/api/public', (req, res, next) => (async () => {
+    const token = /^\/booking\/([^/]+)/.exec(req.path)?.[1];
+    const id = token ? (await one('SELECT business_id FROM bookings WHERE manage_token=$1', [token]))?.business_id : pick(req);
+    let c = tzs.get(id);
+    if (!c || Date.now() - c.at > 60000) tzs.set(id, c = { tz: (await one('SELECT timezone FROM businesses WHERE id=$1', [id]))?.timezone, at: Date.now() });
+    inZone(c.tz, next);
+  })().catch(next));
 
   app.get('/book', (_req, res) => res.sendFile(PUBLIC + '/book.html'));
   // The booking page is an optional add-on; when it's off only existing booking links keep working.
   // Needs the owner's switch on and the booking-page feature in the business's plan.
-  const enabled = async BIZ => (await one('SELECT booking_enabled FROM businesses WHERE id=$1', [BIZ]))?.booking_enabled !== false && await hasFeature(BIZ, 'booking_page');
+  const enabled = async BIZ => (await one('SELECT booking_enabled FROM businesses WHERE id=$1', [BIZ]))?.booking_enabled !== false && await hasFeature(BIZ, 'booking_page') && !stopped(await accessOf(BIZ));
   app.get('/booking/:token', (_req, res) => res.sendFile(PUBLIC + '/book.html'));
 
   app.get('/api/public/info', wrap(async (req, res) => {
@@ -64,19 +76,19 @@ export function mountPublic(app, DEFAULT_BIZ) {
 
   // Which of the next 30 days have at least one free time for this service.
   app.get('/api/public/days', wrap(async (req, res) => {
-    const biz = await loadBusiness(pick(req)), svc = biz.services.find(s => s.id === +req.query.service_id);
+    const biz = await loadBusiness(pick(req)); if (!biz) return res.status(404).json({ error: 'Business not found.' });
+    const svc = biz.services.find(s => s.id === +req.query.service_id);
     if (!svc) return res.status(400).json({ error: 'Pick a service.' });
     const { bookings, timeOff } = await snapshot(biz);
     const out = [];
-    for (let i = 0; i < (biz.booking_days_ahead || DAYS_AHEAD); i++) {
-      const d = new Date(); d.setDate(d.getDate() + i);
-      out.push({ date: localDate(d), open: dayRanges(biz, d).length > 0, free: startsOn(biz, d, svc.minutes, bookings, timeOff, bufferOf(biz, svc.id), svc.id).length });
-    }
+    for (const d of localDays(biz, new Date(), biz.booking_days_ahead || DAYS_AHEAD))
+      out.push({ date: d.date, open: dayRanges(biz, d.noon).length > 0, free: startsOn(biz, d.noon, svc.minutes, bookings, timeOff, bufferOf(biz, svc.id), svc.id).length });
     res.json(out);
   }));
 
   app.get('/api/public/slots', wrap(async (req, res) => {
-    const biz = await loadBusiness(pick(req)), svc = biz.services.find(s => s.id === +req.query.service_id);
+    const biz = await loadBusiness(pick(req)); if (!biz) return res.status(404).json({ error: 'Business not found.' });
+    const svc = biz.services.find(s => s.id === +req.query.service_id);
     const day = parseLocal(`${req.query.date}T00:00`);
     if (!svc || isNaN(day)) return res.status(400).json({ error: 'Pick a service and a day.' });
     const { bookings, timeOff } = await snapshot(biz);
@@ -101,6 +113,7 @@ export function mountPublic(app, DEFAULT_BIZ) {
     if (website) return res.status(400).json({ error: 'Something went wrong.' }); // hidden field only bots fill in
     if (!(await enabled(BIZ))) return res.status(403).json({ error: 'Online booking is not available right now. Please contact us directly.' });
     const nm = String(name || '').trim(), ph = String(phone || '').replace(/[^\d+]/g, '');
+    if (nm.length > 60 || String(email || '').length > 160 || ph.replace(/\D/g, '').length > 20 || String(notes || '').length > 500) return res.status(400).json({ error: 'Please shorten your details.' });
     if (nm.length < 2) return res.status(400).json({ error: 'Please enter your name.' });
     if (ph.replace(/\D/g, '').length < 7) return res.status(400).json({ error: 'Please enter a valid phone number.' });
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Please check your email address.' });
@@ -108,7 +121,9 @@ export function mountPublic(app, DEFAULT_BIZ) {
     if (isNaN(st) || st < new Date()) return res.status(400).json({ error: 'Please pick a time.' });
     const nb = await loadBusiness(BIZ);
     if (!nb) return res.status(404).json({ error: 'Business not found.' });
-    if (st - Date.now() < (nb.booking_min_notice_hours ?? 2) * 3600e3) return res.status(400).json({ error: `Please book at least ${nb.booking_min_notice_hours} hours ahead.` });
+    const notice = Math.max(0.5, nb.booking_min_notice_hours ?? 2);
+    if (st - Date.now() < notice * 3600e3) return res.status(400).json({ error: `Please book at least ${notice >= 1 ? notice + ' hours' : '30 minutes'} ahead.` });
+    if (st - Date.now() > (nb.booking_days_ahead || DAYS_AHEAD) * 86400e3 + 86400e3) return res.status(400).json({ error: 'That date is too far ahead. Please pick a closer day.' });
 
     const result = await withBusinessLock(BIZ, async () => {
       const biz = await loadBusiness(BIZ), svc = biz.services.find(s => s.id === +service_id);
@@ -125,13 +140,13 @@ export function mountPublic(app, DEFAULT_BIZ) {
         price = Math.max(0, Math.round((price - off) * 100) / 100);
       }
       const cust = await one(`INSERT INTO customers (business_id, phone, name, email, reminder_channel) VALUES ($1,$2,$3,$4,$5)
-          ON CONFLICT (business_id, phone) DO UPDATE SET name = EXCLUDED.name, email = COALESCE(EXCLUDED.email, customers.email), reminder_channel = EXCLUDED.reminder_channel RETURNING id`,
+          ON CONFLICT (business_id, phone) DO UPDATE SET name = COALESCE(customers.name, EXCLUDED.name), email = COALESCE(customers.email, EXCLUDED.email), reminder_channel = COALESCE(customers.reminder_channel, EXCLUDED.reminder_channel) RETURNING id`, // a typed phone may be anyone's: fill blanks, never overwrite
         [BIZ, ph, nm, email || null, channel]);
       Object.assign(cust, await unify(BIZ, cust.id) || {});
       const token = crypto.randomBytes(18).toString('base64url');
       const note = String(notes || '').trim().slice(0, 500) || null;
-      const b = await one(`INSERT INTO bookings (business_id, customer_id, service_id, starts_at, ends_at, price, list_price, coupon_code, source, notes, manage_token)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'web',$9,$10) RETURNING id`, [BIZ, cust.id, svc.id, st, end, price, svc.price, code, note, token]);
+      const b = await one(`INSERT INTO bookings (business_id, customer_id, service_id, starts_at, ends_at, price, list_price, coupon_code, source, notes, manage_token, booked_name)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'web',$9,$10,$11) RETURNING id`, [BIZ, cust.id, svc.id, st, end, price, svc.price, code, note, token, nm]);
       if (cp) await q('UPDATE coupons SET uses = uses + 1 WHERE id=$1', [cp.id]);
       if (note) await q(`INSERT INTO requests (business_id, booking_id, type, details) VALUES ($1,$2,'extra',$3)`, [BIZ, b.id, note]);
       // Offers only with the client's explicit tick on the form.
@@ -147,7 +162,7 @@ export function mountPublic(app, DEFAULT_BIZ) {
   app.get('/api/public/booking/:token', wrap(async (req, res) => {
     const b = await one(`SELECT b.id, b.business_id, b.status, b.price::float, b.list_price::float, b.coupon_code, b.notes, b.starts_at,
         to_char(b.starts_at,'YYYY-MM-DD"T"HH24:MI') AS start, to_char(b.ends_at,'YYYY-MM-DD"T"HH24:MI') AS "end",
-        s.name service, s.minutes, cu.name, cu.phone,
+        s.name service, s.minutes, COALESCE(b.booked_name, cu.name) AS name, cu.phone,
         (SELECT status FROM requests r WHERE r.booking_id=b.id AND r.type='cancel' ORDER BY id DESC LIMIT 1) AS cancel_request
         FROM bookings b JOIN services s ON s.id=b.service_id JOIN customers cu ON cu.id=b.customer_id WHERE b.manage_token=$1`, [req.params.token]);
     if (!b) return res.status(404).json({ error: 'We could not find this booking.' });
@@ -157,7 +172,9 @@ export function mountPublic(app, DEFAULT_BIZ) {
     res.json({ ...b, ref: REF(b.id), can_cancel: b.status === 'confirmed' && hoursLeft >= (biz.cancel_hours ?? 24), past: hoursLeft < 0 });
   }));
 
-  app.post('/api/public/booking/:token/cancel', wrap(async (req, res) => withBusinessLock('cancel', async () => {
+  // the same per-business lock as every other booking change (it was one shared 'cancel' lock that did not
+  // guard against a chat or the owner changing the same booking at the same moment)
+  app.post('/api/public/booking/:token/cancel', wrap(async (req, res) => withBusinessLock((await one('SELECT business_id FROM bookings WHERE manage_token=$1', [req.params.token]))?.business_id ?? 'none', async () => {
     const b = await one(`SELECT b.*, s.name service FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.manage_token=$1`, [req.params.token]);
     if (!b) return res.status(404).json({ error: 'We could not find this booking.' });
     if (b.status !== 'confirmed') return res.status(409).json({ error: 'This booking is not active any more.' });
@@ -166,6 +183,7 @@ export function mountPublic(app, DEFAULT_BIZ) {
     if ((new Date(b.starts_at) - Date.now()) / 3600000 >= h) {
       await q("UPDATE bookings SET status='cancelled', cancelled_by='customer' WHERE id=$1", [b.id]);
       await notify(BIZ, 'cancel', 'A customer cancelled online', `${b.service}, ${label(new Date(b.starts_at))}`, { bookingId: b.id });
+      offerWaitlist(b.id).catch(e => console.error('Waitlist:', e.message)); // the freed slot goes to whoever waits for it, as on chat
       return res.json({ result: 'cancelled' });
     }
     const pending = await one(`SELECT id FROM requests WHERE booking_id=$1 AND type='cancel' AND status='pending'`, [b.id]);

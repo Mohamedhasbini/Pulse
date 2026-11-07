@@ -11,7 +11,9 @@ import { notify } from './notify.js';
 import { emit } from './live.js';
 import { unify } from './customers.js';
 import { hasFeature } from './features.js';
+import { accessOf, stopped } from './billing.js';
 import { availability, isFree, freeSlots, bufferOf, label, hoursText, localDate, parseLocal } from './slots.js';
+import { inZone, wall, daysBetween, fmtDate, fmtTime } from './clock.js';
 
 const looksLikeQuestion = t => /[?؟]/.test(t) || /^\s*(how|what|when|where|which|who|why|do|does|did|is|are|can|could|will|would|should|have|has|shu|sho|kif|wen|ade|qué|cómo|cuándo|dónde|cuánto|tienen|hay|هل|كم|شو|كيف|وين|متى|ماذا|ما)(?=\s|$)/iu.test(t);
 const FALLBACK = 'Thanks for your message! A team member will get back to you shortly.';
@@ -52,7 +54,31 @@ async function openConversation(bizId, customerId, channel) {
 }
 
 // queued: a second pass from the AI queue; the customer's message is already saved and acknowledged.
-export async function handleMessage({ businessId, phone, name, text, channel = 'whatsapp', waId = null, queued = false }) {
+// Every message is handled on its business's clock (clock.js): days, hours and labels in that business's time zone.
+export async function handleMessage(args) {
+  const z = await one('SELECT timezone, name, assistant_name FROM businesses WHERE id=$1', [args.businessId]);
+  const r = await inZone(z?.timezone, () => handle(args));
+  if (r?.reply && !r.duplicate && r.conversationId && args.channel !== 'test') r.reply = await disclose(r.conversationId, r.reply, z);
+  return r;
+}
+// People must be told they are talking to an AI (EU AI Act, art. 50). The first reply of each chat starts with one
+// short line in the customer's language, unless the reply already says it. The stored copy matches what was sent.
+const AI_LINE = {
+  en: (n, b) => `I'm ${n}, the AI assistant of ${b}.`,
+  ar: (n, b) => `أنا ${n}، المساعد الذكي (ذكاء اصطناعي) لـ ${b}.`,
+  es: (n, b) => `Soy ${n}, el asistente de IA de ${b}.`,
+  fr: (n, b) => `Je suis ${n}, l'assistant IA de ${b}.`,
+};
+async function disclose(conversationId, reply, biz) {
+  if (/\b(AI|IA)\b|ذكاء اصطناعي|virtual assistant|asistente virtual|assistant virtuel/i.test(reply)) return reply;
+  const n = await one(`SELECT count(*)::int AS n, max(id) AS last FROM messages WHERE conversation_id=$1 AND role='assistant'`, [conversationId]);
+  if (!n || n.n !== 1) return reply; // not the first reply of this chat
+  const line = (AI_LINE[langOf(reply)] || AI_LINE.en)(biz?.assistant_name || 'Nora', biz?.name || 'this business');
+  const out = `${line}\n${reply}`;
+  await q('UPDATE messages SET text=$2 WHERE id=$1', [n.last, out]);
+  return out;
+}
+async function handle({ businessId, phone, name, text, channel = 'whatsapp', waId = null, queued = false }) {
   const biz = await loadBusiness(businessId);
   const customer = await one(
     `INSERT INTO customers (business_id, phone, name) VALUES ($1,$2,$3)
@@ -62,8 +88,12 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   Object.assign(customer, await unify(businessId, customer.id) || {});
   const conv = await openConversation(businessId, customer.id, channel);
   if (!queued) {
-    if (waId && await one('SELECT 1 FROM messages WHERE wa_id=$1', [waId])) return { duplicate: true };
-    await q('INSERT INTO messages (conversation_id, role, text, wa_id) VALUES ($1,$2,$3,$4)', [conv.id, 'customer', text, waId]);
+    const prev = waId && await one('SELECT id, conversation_id FROM messages WHERE wa_id=$1', [waId]);
+    if (prev) {
+      const answered = await one(`SELECT 1 FROM messages WHERE conversation_id=$1 AND id>$2 AND role IN ('assistant','staff')`, [prev.conversation_id, prev.id]);
+      if (answered) return { duplicate: true }; // a true repeat from the channel
+      // saved before a restart but never answered: carry on and answer it now
+    } else await q('INSERT INTO messages (conversation_id, role, text, wa_id) VALUES ($1,$2,$3,$4)', [conv.id, 'customer', text, waId]);
   }
 
   // Staff took over this chat: the AI stays quiet and the owner is alerted.
@@ -78,6 +108,12 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     await q(`UPDATE conversations SET updated_at=now(), needs_attention=true, attention_reason='AI is off: answer from your Inbox' WHERE id=$1`, [conv.id]);
     await notify(businessId, 'handoff', `${customer.name || 'A customer'} is waiting for a reply (AI is off)`, text.slice(0, 200), { conversationId: conv.id });
     return { reply: null, paused: true, aiOff: true, outcome: conv.outcome, conversationId: conv.id };
+  }
+
+  // MXAi plan ended or paused (billing.js): the AI stops, every chat waits for the owner, nothing is lost
+  if (stopped(await accessOf(businessId))) {
+    await q(`UPDATE conversations SET updated_at=now(), needs_attention=true, attention_reason='Your MXAi plan has ended: answer from your Inbox' WHERE id=$1`, [conv.id]);
+    return { reply: null, paused: true, aiOff: true, billing: 'ended', outcome: conv.outcome, conversationId: conv.id };
   }
 
   // Satisfaction: the chat asked "how did I do? 1-5"; a bare number or stars is the answer, not a new question.
@@ -107,8 +143,8 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
   const kw = text.trim().toLowerCase().replace(/[.!]+$/, '');
   const lastBot = (await q("SELECT text FROM messages WHERE conversation_id=$1 AND role='assistant' ORDER BY id DESC LIMIT 1", [conv.id]))[0]?.text || '';
   const yesToOffers = /Reply OFFERS|"العروض"/.test(lastBot) && /^(yes|yes please|yeah|sure|ok|okay|sí|si|claro|oui|نعم|اي|إي|أكيد|ايه)[.! ]*$/.test(kw);
-  if (yesToOffers || /^(stop|unsubscribe|stop offers|no more offers|ستوب|الغاء العروض|إلغاء العروض)$/.test(kw) || /^(offers|yes offers|subscribe|العروض|اشترك)$/.test(kw)) {
-    const on = !/^(stop|unsubscribe|stop offers|no more offers|ستوب|الغاء العروض|إلغاء العروض)$/.test(kw), ar = AR.test(text);
+  if (yesToOffers || STOP_WORDS.test(kw) || /^(offers|yes offers|subscribe|ofertas|offres|العروض|اشترك)$/.test(kw)) {
+    const on = !STOP_WORDS.test(kw), ar = AR.test(text);
     await q('UPDATE customers SET marketing_ok=$1, marketing_at=now() WHERE id=$2', [on, customer.id]);
     const reply = on ? (ar ? 'تم! سنرسل لك عروضنا الخاصة. أرسل STOP في أي وقت لإيقافها.' : "Done! You'll get our special offers. Send STOP anytime to stop them.")
       : (ar ? 'تم إيقاف العروض. لن نرسل لك رسائل تسويقية بعد الآن. ستبقى تذكيرات مواعيدك كما هي.' : "You won't get offers from us anymore. Appointment reminders still arrive as usual.");
@@ -164,7 +200,7 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
       channels_used: (await q('SELECT DISTINCT channel FROM conversations WHERE customer_id=$1', [customer.id])).map(r => r.channel),
       returning: hist.visits > 0, visits: hist.visits, last_visit: hist.last_visit, favourite_service: hist.favourite_service,
       name: customer.name, phone_known: phoneKnown, email: customer.email || (emailAsked && !/@/.test(text) ? 'SKIPPED: the client did not give one; never ask for an email again, go on to confirm the booking' : null), reminder_channel_set: !!customer.reminder_channel && hist.visits + theirs.length > 0,
-      reminder_channel: customer.reminder_channel, staff_notes: customer.staff_notes || undefined,
+      reminder_channel: customer.reminder_channel, // staff_notes are the owner's private notes: never given to the AI
       reminder_options: options,
       missing_for_booking: [!customer.name && 'name', !phoneKnown && 'phone',
         needEmail ? 'email (REQUIRED: they chose email reminders; ask for it now)' : biz.ask_email && emailEnabled() && !customer.email && !emailAsked && 'email (optional, they may skip)',
@@ -273,7 +309,7 @@ export async function handleMessage({ businessId, phone, name, text, channel = '
     const r = await withBusinessLock(biz.id, () => changeBooking(biz, customer, conv, theirs, decision, timeOff));
     reply = r.message;
     if (r.booking) { outcome = 'booked'; bookedNow = true; }
-  } else if (/cancel|الغ|إلغاء|بلغي/i.test(text) && theirs.length
+  } else if (asksToCancel(text) && theirs.length
       && theirs.every(b => hoursUntil(b.starts_at) < (biz.cancel_hours ?? 24)) && decision.action !== 'book') {
     // Policy is enforced by the app, not left to the AI: a late cancellation always becomes an approval request.
     const r = await changeBooking(biz, customer, conv, theirs, { ...decision, action: 'cancel' }, timeOff);
@@ -391,10 +427,14 @@ function parseJson(text) {
   try { return JSON.parse(m ? m[0] : text); } catch { return { reply: text.trim(), action: 'none' }; }
 }
 
-function findService(biz, name) {
+export function findService(biz, name) {
   const n = String(name || '').toLowerCase().trim();
-  return biz.services.find(s => s.name.toLowerCase() === n)
-    || biz.services.find(s => n && (s.name.toLowerCase().includes(n) || n.includes(s.name.toLowerCase().split(/[ &]/)[0])));
+  // exact name, else the one service whose name contains (or is contained in) what was asked; two candidates =
+  // ask which (never book "hair colouring" as "Hair cut" because both start with "hair")
+  const exact = biz.services.find(s => s.name.toLowerCase() === n);
+  if (exact || !n) return exact || null;
+  const near = biz.services.filter(s => { const m = s.name.toLowerCase(); return m.includes(n) || n.includes(m); });
+  return near.length === 1 ? near[0] : null;
 }
 
 async function createBooking(biz, customer, conv, req, bookings, timeOff) {
@@ -432,14 +472,33 @@ async function createBooking(biz, customer, conv, req, bookings, timeOff) {
 }
 
 export async function checkCoupon(bizId, code) {
-  const c = await one('SELECT * FROM coupons WHERE business_id=$1 AND upper(code)=upper($2)', [bizId, code]);
+  const c = await one('SELECT *, (expires_on IS NOT NULL AND expires_on < $3::date) AS expired FROM coupons WHERE business_id=$1 AND upper(code)=upper($2)', [bizId, code, localDate(new Date())]);
   if (!c || !c.active) return { ok: false, reason: `Sorry, the code ${code} isn't valid.` };
-  if (c.expires_on && new Date(c.expires_on) < new Date(localDate(new Date()))) return { ok: false, reason: `Sorry, the code ${code} has expired.` };
+  if (c.expired) return { ok: false, reason: `Sorry, the code ${code} has expired.` };
   if (c.max_uses && c.uses >= c.max_uses) return { ok: false, reason: `Sorry, the code ${code} has already been fully used.` };
   return { ok: true, coupon: c };
 }
 
 const AR = /[\u0600-\u06FF]/;
+// Opt-out words for offers, in every language a client may write (Spain: baja; France: désabonner)
+const STOP_WORDS = /^(stop|unsubscribe|stop offers|no more offers|baja|darme de baja|parar|no más ofertas|désabonner|desabonner|arrêter|ستوب|الغاء العروض|إلغاء العروض)$/;
+// The client asks to cancel: English cancel (not "don't cancel"), or an Arabic cancel word (إلغاء، الغي، ألغيه، بلغي...).
+// Arabic is matched as whole words: الغداء (lunch) or بالغ (adult) contain the same letters and are not a cancellation.
+export function asksToCancel(text) {
+  const t = String(text || '');
+  // whole English words only: "cancelar" is Spanish and has its own check (with "no quiero cancelar")
+  if (/\bcancel(l?ing|l?ed|s|lation)?\b/i.test(t) && !/\b(don'?t|do not|not|never|no need to|won'?t)\s+(to\s+)?cancel/i.test(t)) return true;
+  if (/\b(anular|cancelar|annuler)\b/i.test(t) && !/\bno\s+(quiero\s+)?(anular|cancelar)|\bne\s+pas\s+annuler/i.test(t)) return true;
+  return t.split(/[\s،,.!?؟]+/).some(w => /^[وف]?(ب|ل)?[اأإ]?لغ(ي|ى|يه|يها|يلي|ا|اء|و|وا)$/.test(w));
+}
+// The client's language from what they wrote: Arabic script, else Spanish or French by their words, else English.
+export function langOf(text) {
+  const t = String(text || '');
+  if (AR.test(t)) return 'ar';
+  if (/[ñ¿¡]|\b(hola|gracias|cita|quiero|quisiera|por favor|mañana|buenas|reservar|cuánto|cuesta|vale)\b/i.test(t)) return 'es';
+  if (/\b(bonjour|bonsoir|merci|rendez-vous|je voudrais|s'il vous pla[iî]t|demain|réserver|combien)\b|[çœ]/i.test(t)) return 'fr';
+  return 'en';
+}
 const ref = id => 'RB-' + String(id).padStart(4, '0');
 const hoursUntil = t => (new Date(t) - Date.now()) / 3600000;
 function policyText(biz) {
@@ -494,7 +553,7 @@ async function changeBooking(biz, customer, conv, theirs, decision, timeOff) {
       ? `*⏳ تم إرسال طلب تغيير الموعد للموافقة*\n\n• رقم الحجز: ${ref(full.id)}\n• الموعد الحالي: ${label(new Date(full.starts_at))}\n• الموعد المطلوب: ${label(start)}\n\nلأن الموعد بعد أقل من ${h} ساعة، يحتاج التغيير إلى موافقة الإدارة. سنرسل لك الرد هنا.`
       : `*⏳ Time change sent for approval*\n\n• Booking ref: ${ref(full.id)}\n• Current: ${label(new Date(full.starts_at))}\n• Requested: ${label(start)}\n\nBecause it's less than ${h} hours away, the manager needs to approve this. We'll message you here with their answer.` };
   }
-  await q('UPDATE bookings SET starts_at=$1, ends_at=$2 WHERE id=$3', [start, end, full.id]);
+  await q('UPDATE bookings SET starts_at=$1, ends_at=$2, reminder_sent_at=NULL, reminder_status=NULL WHERE id=$3', [start, end, full.id]);
   const booking = { id: full.id, start, end, service: svc, price: Number(full.price), name: customer.name, notes: full.notes };
   return { booking, message: confirmation(biz, booking, decision.reply, true) };
 }
@@ -606,7 +665,10 @@ async function saveProfile(customer, decision, text, conversationChannel) {
   if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) && email !== customer.email) set('email', email);
   if (phone.replace(/\D/g, '').length >= 7 && /^(test|e2e|walk-in|tg-)/.test(customer.phone)) set('contact_phone', phone);
   if (channel && channel !== customer.reminder_channel) set('reminder_channel', channel);
-  set('language', AR.test(text) ? 'ar' : 'en');
+  // a short "ok" or a number says nothing about the language: keep what we knew
+  const lg = langOf(text);
+  if (lg !== 'en' || /[a-z]{3,}\s+[a-z]{3,}/i.test(text)) set('language', lg);
+  if (!sets.length) return; // nothing new to save (a short "Thanks!" used to crash the reply here)
   vals.push(customer.id);
   await q(`UPDATE customers SET ${sets.join(', ')} WHERE id=$${vals.length}`, vals);
   Object.assign(customer, await one('SELECT * FROM customers WHERE id=$1', [customer.id]));
@@ -614,16 +676,19 @@ async function saveProfile(customer, decision, text, conversationChannel) {
 
 const SITE = (process.env.PUBLIC_URL || 'https://app.nexfoyz.dev').replace(/\/$/, '');
 function confirmation(biz, b, aiReply, moved = false) {
-  const ar = AR.test(aiReply || '');
-  const lang = ar ? 'ar' : 'en-GB';
-  const date = b.start.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const t = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  // in the language the receptionist is answering in: Arabic, Spanish, French or English
+  const lg = langOf(aiReply), ar = lg === 'ar', es = lg === 'es', fr = lg === 'fr';
+  const lang = { ar: 'ar', es: 'es-ES', fr: 'fr-FR' }[lg] || 'en-GB';
+  const date = fmtDate(b.start, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }, lang);
+  const t = d => fmtTime(d);
   const cur = biz.currency || 'USD';
   const money = b.coupon && b.listPrice !== b.price
-    ? `${b.price} ${cur} (${ar ? 'بدلاً من' : 'was'} ${b.listPrice}, ${ar ? 'كود' : 'code'} ${b.coupon})` : `${b.price} ${cur}`;
+    ? `${b.price} ${cur} (${ar ? 'بدلاً من' : es ? 'antes' : fr ? 'au lieu de' : 'was'} ${b.listPrice}, ${ar ? 'كود' : es ? 'código' : 'code'} ${b.coupon})` : `${b.price} ${cur}`;
   const ref = 'RB-' + String(b.id).padStart(4, '0');
   const L = ar
     ? [moved ? '🔄 تم تغيير موعدك' : '✅ تم تأكيد حجزك', 'التاريخ', 'الوقت', 'الاسم', 'الخدمة', 'المدة', 'السعر', 'الدفع', 'العنوان', 'رقم الحجز', 'طلب إضافي', 'بانتظار موافقة المدير', 'دقيقة']
+    : es ? [moved ? '🔄 Tu cita ha cambiado' : '✅ Tu cita está confirmada', 'Fecha', 'Hora', 'Nombre', 'Servicio', 'Duración', 'Precio', 'Pago', 'Dirección', 'Referencia', 'Petición', 'pendiente de aprobación', 'min']
+    : fr ? [moved ? '🔄 Votre rendez-vous a été déplacé' : '✅ Votre rendez-vous est confirmé', 'Date', 'Heure', 'Nom', 'Prestation', 'Durée', 'Prix', 'Paiement', 'Adresse', 'Référence', 'Demande', 'en attente de validation', 'min']
     : [moved ? '🔄 Your booking has been moved' : '✅ Your booking is confirmed', 'Date', 'Time', 'Name', 'Service', 'Duration', 'Price', 'Payment', 'Address', 'Booking ref', 'Extra request', 'waiting for manager approval', 'min'];
   const lines = [
     `*${L[0]}*`, '',
@@ -641,10 +706,13 @@ function confirmation(biz, b, aiReply, moved = false) {
     b.deposit && (ar ? `• عربون لتثبيت الحجز: ${b.deposit} ${cur} عبر ${biz.payment_link}` : `• Reservation fee: ${b.deposit} ${cur} to hold your booking, pay here: ${biz.payment_link}`),
     ...contactLines(biz, b.contact, ar),
     '', ar ? `يمكنك الإلغاء أو التغيير هنا حتى ${biz.cancel_hours ?? 24} ساعة قبل الموعد. بعد ذلك يحتاج أي تغيير إلى موافقة الإدارة.`
+      : es ? `Puedes cancelar o cambiar esta cita aquí hasta ${biz.cancel_hours ?? 24} horas antes. Después, los cambios necesitan la aprobación del responsable.`
+      : fr ? `Vous pouvez annuler ou modifier ce rendez-vous ici jusqu'à ${biz.cancel_hours ?? 24} heures avant. Ensuite, tout changement doit être validé par le responsable.`
       : `You can cancel or change this booking here up to ${biz.cancel_hours ?? 24} hours before. After that, changes need the manager's approval.`,
     biz.booking_note,
-    b.askOffers && (ar ? 'هل تريد عروضنا الخاصة أحياناً؟ أرسل كلمة "العروض".' : 'Want our occasional special offers? Reply OFFERS.'),
-    biz.show_branding !== false && '', biz.show_branding !== false && `_Powered by Pulse_ · ${SITE}/go?b=${biz.id}&s=confirm`,
+    b.askOffers && (ar ? 'هل تريد عروضنا الخاصة أحياناً؟ أرسل كلمة "العروض".' : es ? '¿Quieres nuestras ofertas especiales de vez en cuando? Responde OFERTAS.'
+      : fr ? 'Envie de nos offres spéciales de temps en temps ? Répondez OFFRES.' : 'Want our occasional special offers? Reply OFFERS.'),
+    biz.show_branding !== false && '', biz.show_branding !== false && `_Powered by MXAi_ · ${SITE}/go?b=${biz.id}&s=confirm`,
   ].filter(x => x !== null && x !== undefined && x !== false);
   return lines.join('\n');
 }
@@ -663,34 +731,29 @@ function quickSlots(biz, bookings, timeOff) {
     const days = [...byDay.values()].slice(0, 3), pick = [];
     days.forEach((list, i) => {
       const want = target[i];
-      pick.push(list.reduce((best, t) => Math.abs(t.getHours() * 60 + t.getMinutes() - want) < Math.abs(best.getHours() * 60 + best.getMinutes() - want) ? t : best, list[0]));
+      pick.push(list.reduce((best, t) => Math.abs(wall(t).min - want) < Math.abs(wall(best).min - want) ? t : best, list[0]));
     });
     // fewer than 3 open days ahead: fill with other times on those days
     for (const list of days) for (const t of list) { if (pick.length >= 3) break; if (pick.every(p => Math.abs(t - p) >= 120 * 60000)) pick.push(t); }
     pick.sort((a, b) => a - b);
-    out[s.name] = pick.map(t => ({ label: slotLabel(t), slot: `${localDate(t)} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}` }));
+    out[s.name] = pick.map(t => ({ label: slotLabel(t), slot: `${localDate(t)} ${wall(t).hm}` }));
   }
   return out;
 }
 // The next open days, for "Another day": short labels the customer can tap.
 function openDays(biz, bookings, timeOff) {
   const days = [];
-  for (const a of availability(biz, bookings, timeOff, 21)) { if (a.free && !/closed|fully booked/.test(a.free) && days.length < 10) days.push(dayLabel(new Date(a.date + 'T12:00'))); }
+  for (const a of availability(biz, bookings, timeOff, 21)) { if (a.free && !/closed|fully booked/.test(a.free) && days.length < 10) days.push(dayLabel(parseLocal(a.date + 'T12:00'))); }
   return days;
 }
+// "Today", "Tomorrow", "Mon 26 Oct" on the business's calendar
 function dayLabel(t) {
-  const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d = new Date(t); d.setHours(0, 0, 0, 0);
-  const n = Math.round((d - d0) / 864e5);
-  return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${t.toLocaleDateString('en-GB', { weekday: 'short' })} ${t.getDate()} ${t.toLocaleDateString('en-GB', { month: 'short' })}`;
+  const n = daysBetween(new Date(), t);
+  return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${fmtDate(t, { weekday: 'short' })} ${wall(t).d} ${fmtDate(t, { month: 'short' })}`;
 }
 // "Today 14:00", "Tomorrow 10:30", "Mon 26 Oct 17:00": short enough for a WhatsApp button.
 function slotLabel(t) {
-  const hm = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
-  const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d = new Date(t); d.setHours(0, 0, 0, 0);
-  const days = Math.round((d - d0) / 864e5);
-  if (days === 0) return `Today ${hm}`;
-  if (days === 1) return `Tomorrow ${hm}`;
-  return `${t.toLocaleDateString('en-GB', { weekday: 'short' })} ${t.getDate()} ${t.toLocaleDateString('en-GB', { month: 'short' })} ${hm}`;
+  return `${dayLabel(t)} ${wall(t).hm}`;
 }
 // Choices the customer can tap: short, unique, at most 10; none once a booking is confirmed.
 export function cleanOptions(list) {
@@ -729,6 +792,11 @@ export function startAiQueue(deliver) {
             await q(`UPDATE ai_queue SET status='failed', error=$2 WHERE id=$1`, [job.id, e.message.slice(0, 300)]);
             await q(`UPDATE conversations SET needs_attention=true, attention_reason='The AI could not answer this customer. Please reply yourself.' WHERE id=$1`, [job.conversation_id]);
             await notify(job.business_id, 'handoff', 'A customer is waiting for a reply', job.text.slice(0, 200), { conversationId: job.conversation_id }).catch(() => {});
+            // the client was told "one moment": tell them a person will answer, in their language, instead of silence
+            const wait = { ar: 'شكراً لصبرك. سيرد عليك أحد أعضاء فريقنا قريباً.', es: 'Gracias por tu paciencia. Una persona del equipo te responderá en breve.',
+              fr: 'Merci de votre patience. Un membre de l\'équipe vous répondra très bientôt.' }[langOf(job.text)] || 'Thank you for waiting. A member of our team will reply to you shortly.';
+            await q(`INSERT INTO messages (conversation_id, role, text, source) VALUES ($1,'assistant',$2,'quick')`, [job.conversation_id, wait]).catch(() => {});
+            await deliver({ channel: job.channel, businessId: job.business_id, phone: job.phone, reply: wait, options: [] }).catch(e => console.error('Queue delivery:', e.message));
             emit(job.business_id, 'queue');
           } else {
             // not answered: wait 20 s, 40 s, 80 s... (rate limits clear within a minute)

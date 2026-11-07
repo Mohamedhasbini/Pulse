@@ -33,7 +33,7 @@
 .hq-empty{display:grid;gap:8px;justify-items:start;padding:12px 0}.hq-empty b{font-size:17px}.hq-empty p{margin:0;color:var(--pv-meta);font-size:14px}
 .hq-note{color:var(--pv-meta);font-size:14px;margin:6px 0}
 .hq-btn{border:1px solid var(--pv-line);background:transparent;color:var(--pv-ink);font:600 13px/1 inherit;padding:9px 14px;border-radius:999px;cursor:pointer}
-.hq-btn:hover{border-color:var(--pv-ink)}.hq-btn.sm{padding:7px 12px}
+.hq-btn:hover{border-color:var(--pv-ink);transition:border-color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}.hq-btn.sm{padding:7px 12px}
 /* client table */
 .hq-tools{display:flex;gap:10px;margin-bottom:12px}
 .hq-tools input{flex:1;min-width:0;border:1px solid var(--pv-line);background:transparent;color:var(--pv-ink);border-radius:12px;padding:10px 14px;font:inherit;font-size:14px}
@@ -44,7 +44,7 @@
 .hq-t td{padding:12px 10px;border-bottom:1px solid var(--pv-line);vertical-align:middle}
 .hq-t td small{display:block;color:var(--pv-meta);font-size:12.5px;margin-top:2px}
 .hq-t .r{text-align:right;font-variant-numeric:tabular-nums}
-.hq-t tbody tr:hover{background:color-mix(in srgb,var(--pv-ink) 4%,transparent)}
+.hq-t tbody tr:hover{background:color-mix(in srgb,var(--pv-ink) 4%,transparent);transition:background var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 .hq-none{text-align:center;color:var(--pv-meta);padding:24px!important}
 .hq-st{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid var(--pv-line)}
 .hq-st.ok{background:var(--pv-ink)}:root[data-theme="dark"] .hq-st.ok{color:#15181a}:root[data-theme="light"] .hq-st.ok{color:#eef0f2}
@@ -64,7 +64,7 @@
 /* control */
 .hq-ctl{display:grid;gap:12px}
 .hq-big{display:grid;gap:4px;text-align:left;border:1px solid var(--pv-line);border-radius:16px;padding:16px 18px;background:transparent;color:var(--pv-ink);cursor:pointer;font:inherit}
-.hq-big b{font-size:16px}.hq-big small{color:var(--pv-meta);font-size:13px}.hq-big.danger{border-color:color-mix(in srgb,#d0553a 60%,var(--pv-line))}.hq-big:hover{border-color:var(--pv-ink)}
+.hq-big b{font-size:16px}.hq-big small{color:var(--pv-meta);font-size:13px}.hq-big.danger{border-color:color-mix(in srgb,#d0553a 60%,var(--pv-line))}.hq-big:hover{border-color:var(--pv-ink);transition:border-color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 .hq-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .hq-links button{display:grid;gap:3px;text-align:left;border:1px solid var(--pv-line);border-radius:14px;padding:12px 14px;background:transparent;color:var(--pv-ink);font:inherit;cursor:pointer}
 .hq-links button:hover{border-color:var(--pv-ink)}.hq-links b{font-size:14px}.hq-links small{color:var(--pv-meta);font-size:12.5px}
@@ -168,9 +168,9 @@ html body .pl-t:not(#_) tbody tr:hover{background:color-mix(in srgb,var(--pv-ink
 /* ===== Future Utility light mode (chosen 2026-11-03). Loaded last so it is the one source of truth for light.
    Mist canvas, crisp near-white surfaces, graphite as the accent; lime only inside graphite pieces. ===== */
 :root[data-theme="light"]:not(#_),:root[data-theme="light"]:not(#_) body{
-  --fu-canvas:#d9dee2;--fu-side:#cfd5da;--fu-surf:#f3f5f6;--fu-raise:#e6eaed;--fu-line:#c2c9cf;--fu-line2:#a9b3bb;
-  --fu-ink:#0f1418;--fu-ink2:#3c464e;--fu-mute:#5c666e;--fu-chip:#14181b;--fu-lime:#c6f432;
-  --fu-ok:#1f7a4a;--fu-warn:#9a5a00;--fu-crit:#b42318;--fu-c2:#8fa3b1;--fu-c3:#2f6fd6;
+  --fu-canvas:#ffffff;--fu-side:#ffffff;--fu-surf:#f7f7f7;--fu-raise:#ffffff;--fu-line:#ebebeb;--fu-line2:#d4d4d4;
+  --fu-ink:#0a0a0a;--fu-ink2:#404040;--fu-mute:#6b6b6b; /* 5:1 on light cards (was #737373, 4.4:1, below WCAG AA for small text) */--fu-chip:#0a0a0a;--fu-lime:#c6f432;
+  --fu-ok:#15803d;--fu-warn:#b45309;--fu-crit:#dc2626;--fu-c2:#a1a1a1;--fu-c3:#525252;
   --bg:var(--fu-canvas);--ground:var(--fu-canvas);--gp-ground:var(--fu-canvas);--gl-ground:var(--fu-canvas);--st-ground:var(--fu-canvas);
   --glass:var(--fu-surf);--s1:var(--fu-surf);--gp-card:var(--fu-surf);--gl-card:var(--fu-surf);--gl-frame:var(--fu-surf);--glass-bg:var(--fu-surf);--st-panel:var(--fu-surf);--st-raise:var(--fu-surf);--ai:var(--fu-surf);--pv-card:var(--fu-surf);--tb-card:var(--fu-surf);
   --glass2:var(--fu-raise);--s2:var(--fu-raise);--s3:var(--fu-raise);--chat:var(--fu-raise);--gp-nest:var(--fu-raise);--gp-nest2:#dce1e5;--gl-card2:var(--fu-raise);--glass-bg2:var(--fu-raise);--st-nest:var(--fu-raise);--tb-nest:var(--fu-raise);
@@ -187,7 +187,76 @@ html body .pl-t:not(#_) tbody tr:hover{background:color-mix(in srgb,var(--pv-ink
 :root[data-theme="light"]:not(#_) nav[aria-label="Main"]{background:var(--fu-side)!important;border-color:var(--fu-line)!important}
 /* cards: crisp surface, hairline, soft two-layer shadow; hover lifts the border */
 :root[data-theme="light"]:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.kpi,.td-stat,.cc-card){background:var(--fu-surf)!important;border:1px solid var(--fu-line)!important;box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 1px 2px rgba(15,20,24,.06),0 8px 24px -16px rgba(15,20,24,.18)!important}
-:root[data-theme="light"]:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card):hover{border-color:var(--fu-line2)!important}
+:root[data-theme="light"]:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card):hover{border-color:var(--fu-line2)!important;transition:border-color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 /* "now" markers are graphite chips with the lime inside, never lime on the light canvas */
 :root[data-theme="light"]:not(#_):not(#__):not(#___) main .td-day.now{background:var(--fu-chip)!important;color:var(--fu-lime)!important;animation:none!important}
 :root[data-theme="light"]:not(#_):not(#__):not(#___) main .td-day.now b{color:#fff!important}
+
+/* ===== Neutral system (Nov 2026, after BoardUI): one neutral scale, inverted for dark. Light = white tiles on a
+   near-white canvas with a hairline ring; dark = #171717 tiles on #0a0a0a with a #262626 ring. Same structure both ways. ===== */
+:root:not([data-theme="light"]):not(#_),:root:not([data-theme="light"]):not(#_) body{
+  --fu-canvas:#0a0a0a;--fu-side:#0a0a0a;--fu-surf:#171717;--fu-raise:#262626;--fu-line:#262626;--fu-line2:#404040;
+  --fu-ink:#fafafa;--fu-ink2:#d4d4d4;--fu-mute:#a1a1a1;--fu-chip:#fafafa;--fu-lime:#c6f432;
+  --fu-ok:#4ade80;--fu-warn:#fbbf24;--fu-crit:#f87171;--fu-c2:#737373;--fu-c3:#a3a3a3;
+  --bg:var(--fu-canvas);--ground:var(--fu-canvas);--gp-ground:var(--fu-canvas);--gl-ground:var(--fu-canvas);--st-ground:var(--fu-canvas);
+  --glass:var(--fu-surf);--s1:var(--fu-surf);--gp-card:var(--fu-surf);--gl-card:var(--fu-surf);--gl-frame:var(--fu-surf);--glass-bg:var(--fu-surf);--st-panel:var(--fu-surf);--st-raise:var(--fu-surf);--ai:var(--fu-surf);--pv-card:var(--fu-surf);--tb-card:var(--fu-surf);
+  --glass2:var(--fu-raise);--s2:var(--fu-raise);--s3:var(--fu-raise);--chat:var(--fu-raise);--gp-nest:var(--fu-raise);--gp-nest2:#2e2e2e;--gl-card2:var(--fu-raise);--glass-bg2:var(--fu-raise);--st-nest:var(--fu-raise);--tb-nest:var(--fu-raise);
+  --edge:var(--fu-line);--line:var(--fu-line);--grid:rgba(255,255,255,.07);--gp-edge:var(--fu-line);--gl-edge:var(--fu-line);--gl-edge2:var(--fu-line);--gl-rim:var(--fu-line);--gl-rim-hi:var(--fu-line);--gl-grid:rgba(255,255,255,.07);--glass-edge:var(--fu-line);--glass-line:var(--fu-line);--st-line:var(--fu-line);--st-line2:var(--fu-line2);--pv-line:var(--fu-line);--pv-track:rgba(15,20,24,.10);--line2:rgba(255,255,255,.6);
+  --ink:var(--fu-ink);--gp-text:var(--fu-ink);--gl-text:var(--fu-ink);--st-ink:var(--fu-ink);--pv-ink:var(--fu-ink);--pl-ink:var(--fu-ink);--tb-text:var(--fu-ink);
+  --ink2:var(--fu-ink2);--gp-2:var(--fu-ink2);--gl-2:var(--fu-ink2);--st-2:var(--fu-ink2);--tb-2:var(--fu-ink2);--pv-silver:var(--fu-ink2);
+  --muted:var(--fu-mute);--gp-meta:var(--fu-mute);--gl-meta:var(--fu-mute);--st-meta:var(--fu-mute);--pv-meta:var(--fu-mute);--tb-meta:var(--fu-mute);
+  --accent:var(--fu-chip);--blue:var(--fu-chip);--pg:var(--fu-chip);--x-head:var(--fu-chip);--st-acc:var(--fu-chip);--pc-acc:var(--fu-chip);--rev:var(--fu-chip);--rev-ink:#0a0a0a;--pv-lime:var(--fu-chip);--gp-on:#0a0a0a;--accent-ink:#0a0a0a;--accent-text:var(--fu-chip);
+  --good:var(--fu-ok);--p-green:var(--fu-ok);--warn:var(--fu-warn);--need:var(--fu-warn);--p-orange:var(--fu-warn);--bad:var(--fu-crit);--d3:var(--fu-warn);
+  --d1:var(--fu-chip);--d2:var(--fu-c3);--d4:var(--fu-c2);--pg2:var(--fu-c3);--aic:var(--fu-c3);--p-violet:var(--fu-c3);
+  color-scheme:dark}
+:root:not([data-theme="light"]):not(#_) body{background:var(--fu-canvas)!important;background-image:none!important}
+:root:not(#_) nav[aria-label="Main"]{background:var(--fu-side)!important;border-color:var(--fu-line)!important}
+:root:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.kpi,.td-stat,.cc-card,.mx-card){background:var(--fu-surf)!important;border:0!important;
+  box-shadow:0 0 0 1px var(--fu-line),0 1px 2px rgba(0,0,0,.05)!important}
+:root:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.mx-card):hover{border:0!important;box-shadow:0 0 0 1px var(--fu-line2),0 1px 2px rgba(0,0,0,.05)!important;transition:box-shadow var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
+:root[data-theme="light"]:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.kpi,.td-stat,.cc-card,.mx-card){box-shadow:none!important;border-radius:16px!important}
+:root[data-theme="light"]:not(#_):not(#__):not(#___) main :is(.card,.pv-c,.td-card,.mk-card,.mx-card):hover{box-shadow:none!important;transition:box-shadow var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
+/* light = BoardUI marketing: a plain white page, #f7f7f7 cards with no edge, white pieces inside them */
+:root[data-theme="light"]:not(#_):not(#__) body{background:#fff!important;background-image:none!important}
+:root:not([data-theme="light"]):not(#_):not(#__):not(#___) main .td-day.now{background:var(--fu-lime)!important;color:#0a0a0a!important}
+/* the theme switch: instant swap, no element transitions fighting it */
+.theme-switching,.theme-switching *{transition:none!important}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+::view-transition-new(root){z-index:2}
+:root[data-theme="light"] body:not(#_):not(#__):not(#___):not(#____){background:#fff!important;background-image:none!important}
+/* light top bar like the template's chrome: white, a hairline under it, dark text; the active place is a soft grey pill */
+:root[data-theme="light"]:not(#_):not(#__) :is(.topbar,header.top,#top,.p10-top,body>header,body>nav){background:#fff!important;color:#0a0a0a!important;border-bottom:1px solid #ebebeb!important;box-shadow:none!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____){background:#fff!important;border-bottom:1px solid #ebebeb!important;box-shadow:none!important;backdrop-filter:none!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) :is(button,a,span,kbd,b,small):not([class*="badge"]):not([class*="count"]):not(.n){color:#404040!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) :is(button,a){background-color:transparent!important;border-color:#ebebeb!important;box-shadow:none!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) :is(button,a):hover{background-color:#f5f5f5!important;color:#0a0a0a!important;transition:background-color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1)),color var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) :is(.p10.on,[aria-current="page"],[aria-current="true"],.on){background-color:#f5f5f5!important;color:#0a0a0a!important;font-weight:600}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) :is(input,[class*="search"],[class*="ask"],[class*="cmd"]){background-color:#f5f5f5!important;color:#404040!important;border-color:transparent!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____) svg{color:#404040;stroke:currentColor}
+/* upgrade requests (owners ask, the admin approves) */
+.hq-ups{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.hq-ups li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--pv-line);border-radius:12px}
+.hq-ups li>div:first-child{display:flex;flex-direction:column;gap:2px;min-width:0}.hq-ups span{font-size:13px}.hq-ups small{color:var(--pv-muted,var(--muted));font-size:12px}
+.hq-upb{display:flex;gap:6px;flex-shrink:0}
+@media (max-width:560px){.hq-ups li{flex-direction:column;align-items:stretch}}
+/* admin "view as" a plan, under Back to Lab */
+.viewAs{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--fu-muted,var(--muted));margin:8px 0 4px}
+.viewAs select{width:100%;min-height:30px;font-size:13px}
+.viewAs.on select{outline:2px solid var(--fu-lime,#c8f751);outline-offset:1px}
+html.sb-rail .viewAs{display:none}
+/* sidebar: pages and tabs the plan doesn't include are greyed (they open the lock card with Request) */
+nav button.p10.locked,.p10-sub button.locked{opacity:.5}
+/* Lab › Controls */
+.ccmain.ctl-on>*:not(#ccCtl){display:none!important}
+.ctl-bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin:0 0 14px}.ctl-bar label{display:flex;gap:8px;align-items:center;font-weight:600}
+.ctl-c{margin-bottom:14px}.ctl-t td small{display:block;color:var(--pv-muted,var(--muted));font-size:12px;margin-top:2px;max-width:46ch}
+.ctl-t select{min-height:30px}
+.ig-c.locked{opacity:.75}.ig-c.locked .ig-st{border-style:dashed}
+/* support access banner: the admin inside a client's dashboard */
+.sup-bar{position:sticky;top:0;z-index:60;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px;padding:10px 14px;border-radius:12px;background:var(--fu-surf,#1b1f22);box-shadow:0 0 0 1px var(--fu-line,rgba(255,255,255,.12));font-size:13px}
+.sup-bar .sup-dot{width:9px;height:9px;border-radius:50%;background:var(--fu-muted,#8a9096)}
+.sup-bar.edit .sup-dot{background:#e8a33d}
+.sup-bar .sup-act{margin-left:auto;display:flex;gap:6px}
+.sup-bar button{min-height:30px;padding:4px 12px;border-radius:999px;border:1px solid var(--fu-line,rgba(255,255,255,.18));background:transparent;color:inherit;font:600 12.5px/1 inherit;cursor:pointer}
+/* the owner's plan notice (billing.js): amber when ending soon, red once ended */
+.bill-bar .sup-dot{background:#e8a33d}.bill-bar.ended .sup-dot{background:#dc2626}

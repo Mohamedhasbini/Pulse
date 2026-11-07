@@ -3,6 +3,8 @@
 // from the dashboard (TELEGRAM_BOT_TOKEN in .env is only used once, to connect TELEGRAM_BUSINESS_ID).
 import { seal, unseal, fingerprint } from './ops.js';
 import { q, one } from './db.js';
+import { receive, work, markUndelivered } from './inbound.js';
+import { allowedFor } from './switches.js';
 import { handleMessage } from './brain.js';
 import { unify } from './customers.js';
 
@@ -16,6 +18,7 @@ export const telegramStatus = bizId => { const b = bots.get(+bizId); return b ? 
 const plain = t => String(t || '').replace(/\*([^*\n]+)\*/g, '$1');
 
 export async function sendTelegram(chatId, text, bizId, options = []) {
+  if (!(await allowedFor(bizId || null, 'channel:telegram'))) return { ok: false, reason: 'Telegram is switched off in the Lab' };
   const token = bots.get(+bizId)?.token;
   if (!token || !chatId) return { ok: false, reason: 'Telegram not connected' };
   try {
@@ -27,7 +30,14 @@ export async function sendTelegram(chatId, text, bizId, options = []) {
   } catch (e) { return { ok: false, reason: 'Telegram: ' + e.message }; }
 }
 
-async function onMessage(bizId, m) {
+const chains = new Map(); // chat id -> the last message being answered, so one chat's replies stay in order
+// One stored Telegram message: also used after a restart (server.js resume)
+export async function answerTelegram(p) {
+  for (let i = 0; i < 20 && !bots.get(+p.bizId); i++) await new Promise(z => setTimeout(z, 500)); // the bot may still be starting
+  if (!bots.get(+p.bizId)) throw new Error('Telegram bot not running');
+  return onMessage(+p.bizId, p.message, p.updateId);
+}
+async function onMessage(bizId, m, updateId = null) {
   const chatId = String(m.chat.id);
   const name = [m.from?.first_name, m.from?.last_name].filter(Boolean).join(' ') || null;
   let text = m.text || (m.contact ? `My phone number is ${m.contact.phone_number}` : null);
@@ -48,12 +58,16 @@ async function onMessage(bizId, m) {
   await q(`INSERT INTO customers (business_id, phone, name, telegram_chat_id) VALUES ($1,$2,$3,$4)
       ON CONFLICT (business_id, phone) DO UPDATE SET telegram_chat_id=EXCLUDED.telegram_chat_id, name=COALESCE(customers.name, EXCLUDED.name)`, [bizId, phoneKey, name, chatId]);
   if (m.contact?.phone_number) {
-    const c = await one(`UPDATE customers SET contact_phone=$1 WHERE business_id=$2 AND phone=$3 RETURNING id`, [m.contact.phone_number.replace(/[^\d+]/g, ''), bizId, phoneKey]);
-    if (c) await unify(bizId, c.id);
+    const shared = m.contact.phone_number.replace(/[^\d+]/g, '');
+    const c = await one(`UPDATE customers SET contact_phone=$1 WHERE business_id=$2 AND phone=$3 RETURNING id`, [shared, bizId, phoneKey]);
+    // Telegram vouches for the number only when the card is the sender's own; anyone else's card is just a note
+    if (c && m.contact.user_id && m.contact.user_id === m.from?.id) await unify(bizId, c.id, { phones: [shared] });
   }
   call(bots.get(bizId).token, 'sendChatAction', { chat_id: chatId, action: 'typing' }).catch(() => {});
-  const r = await handleMessage({ businessId: bizId, phone: phoneKey, name, text, channel: 'telegram' });
-  if (r.reply) await sendTelegram(chatId, r.reply, bizId, r.options);
+  // Telegram resends updates not yet confirmed when the app restarts: its update id makes a repeat a no-op
+  const r = await handleMessage({ businessId: bizId, phone: phoneKey, name, text, channel: 'telegram', waId: updateId == null ? null : `tg${bizId}:${updateId}` });
+  if (r.duplicate) return;
+  if (r.reply) { const sent = await sendTelegram(chatId, r.reply, bizId, r.options); if (!sent.ok) await markUndelivered(r.conversationId, sent.reason); }
 }
 
 export function stopBot(bizId) { const b = bots.get(bizId); if (b) b.stopped = true; bots.delete(bizId); }
@@ -77,8 +91,12 @@ async function runBot(bizId, token) {
         const r = await (await fetch(API(token, `getUpdates?timeout=30&offset=${offset}&allowed_updates=["message"]`), { signal: AbortSignal.timeout(40000) })).json();
         if (!r.ok && r.error_code === 409) throw new Error('This bot is being used by another program. Give each business its own bot.');
         for (const u of r.result || []) {
-          offset = u.update_id + 1;
-          if (u.message && !s.stopped) onMessage(bizId, u.message).catch(e => console.error('Telegram message failed:', e.message));
+          if (u.message && !s.stopped) {
+            const [id] = await receive('telegram', [{ bizId, message: u.message, updateId: u.update_id }]); // stored before it is confirmed
+            const chat = String(u.message.chat?.id), next = (chains.get(chat) || Promise.resolve()).then(() => work(id, answerTelegram));
+            chains.set(chat, next); next.finally(() => { if (chains.get(chat) === next) chains.delete(chat); });
+          }
+          offset = u.update_id + 1; // only after the update is safely stored
         }
         s.last = new Date(); s.error = null;
       } catch (e) { s.error = e.message; await new Promise(z => setTimeout(z, 5000)); }

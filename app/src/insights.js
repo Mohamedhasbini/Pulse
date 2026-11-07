@@ -2,6 +2,7 @@
 import { q, one } from './db.js';
 import { loadBusiness } from './brain.js';
 import { dayRanges } from './slots.js';
+import { tzOf, dayStart } from './clock.js';
 
 // Groups customer messages into topics (English + Arabic + Lebanese chat spelling). First match wins.
 const TOPICS = [
@@ -20,31 +21,33 @@ export const topicOf = t => (TOPICS.find(([, , re]) => re.test(t)) || ['other', 
 export async function insights(BIZ, days) {
   const P = [BIZ, days], since = `now() - make_interval(days => $2::int)`;
   const live = `b.status <> 'cancelled'`;
+  // revenue: one rule with metrics.js (EARNS): appointments that pay, no cancellations or no-shows; 'the last N days' ends now
+  const earns = `b.status NOT IN ('cancelled','no_show')`, past = `b.starts_at <= now()`;
 
-  const [totals] = await q(`SELECT count(*) FILTER (WHERE ${live})::int AS bookings, COALESCE(sum(b.price) FILTER (WHERE ${live}),0)::float AS revenue,
-      COALESCE(avg(b.price) FILTER (WHERE ${live}),0)::float AS avg_ticket,
+  const [totals] = await q(`SELECT count(*) FILTER (WHERE ${live})::int AS bookings, COALESCE(sum(b.price) FILTER (WHERE ${earns}),0)::float AS revenue,
+      COALESCE(avg(b.price) FILTER (WHERE ${earns}),0)::float AS avg_ticket,
       count(*) FILTER (WHERE b.status='cancelled')::int AS cancelled, count(*) FILTER (WHERE b.status='no_show')::int AS no_show,
       count(*) FILTER (WHERE b.status='completed')::int AS completed, count(DISTINCT b.customer_id) FILTER (WHERE ${live})::int AS customers,
       COALESCE(sum(b.list_price - b.price) FILTER (WHERE ${live} AND b.coupon_code IS NOT NULL),0)::float AS discounts
-      FROM bookings b WHERE b.business_id=$1 AND b.starts_at > ${since}`, P);
+      FROM bookings b WHERE b.business_id=$1 AND b.starts_at > ${since} AND ${past}`, P);
 
-  const services = await q(`SELECT s.name, count(b.id) FILTER (WHERE ${live})::int AS n, COALESCE(sum(b.price) FILTER (WHERE ${live}),0)::float AS revenue,
+  const services = await q(`SELECT s.name, count(b.id) FILTER (WHERE ${live})::int AS n, COALESCE(sum(b.price) FILTER (WHERE ${earns}),0)::float AS revenue,
       count(b.id) FILTER (WHERE b.status='cancelled')::int AS cancelled, count(b.id) FILTER (WHERE b.status='no_show')::int AS no_show
-      FROM services s LEFT JOIN bookings b ON b.service_id=s.id AND b.starts_at > ${since}
+      FROM services s LEFT JOIN bookings b ON b.service_id=s.id AND b.starts_at > ${since} AND ${past}
       WHERE s.business_id=$1 AND (s.active OR b.id IS NOT NULL) GROUP BY s.id ORDER BY revenue DESC, n DESC`, P);
 
-  const weekday = await q(`SELECT extract(dow FROM b.starts_at)::int AS dow, count(*)::int AS n, COALESCE(sum(b.price),0)::float AS revenue,
+  const weekday = await q(`SELECT extract(dow FROM b.starts_at)::int AS dow, count(*)::int AS n, COALESCE(sum(b.price) FILTER (WHERE ${earns}),0)::float AS revenue,
       count(*) FILTER (WHERE b.status='no_show')::int AS no_show
-      FROM bookings b WHERE b.business_id=$1 AND b.starts_at > ${since} AND ${live} GROUP BY 1`, P);
-  const hours = await q(`SELECT extract(hour FROM b.starts_at)::int AS hour, count(*)::int AS n, COALESCE(sum(b.price),0)::float AS revenue
-      FROM bookings b WHERE b.business_id=$1 AND b.starts_at > ${since} AND ${live} GROUP BY 1 ORDER BY 1`, P);
+      FROM bookings b WHERE b.business_id=$1 AND b.starts_at > ${since} AND ${past} AND ${live} GROUP BY 1`, P);
+  const hours = await q(`SELECT extract(hour FROM b.starts_at)::int AS hour, count(*)::int AS n, COALESCE(sum(b.price) FILTER (WHERE ${earns}),0)::float AS revenue
+      FROM bookings b WHERE b.business_id=$1 AND b.starts_at > ${since} AND ${past} AND ${live} GROUP BY 1 ORDER BY 1`, P);
 
   const lead = await q(`SELECT CASE WHEN b.starts_at::date = b.created_at::date THEN 'Same day'
         WHEN b.starts_at - b.created_at < interval '3 days' THEN '1–2 days ahead'
         WHEN b.starts_at - b.created_at < interval '8 days' THEN '3–7 days ahead' ELSE 'More than a week ahead' END AS bucket, count(*)::int AS n
       FROM bookings b WHERE b.business_id=$1 AND b.created_at > ${since} AND ${live} GROUP BY 1`, P);
 
-  const channels = await q(`SELECT b.source, count(*)::int AS n, COALESCE(sum(b.price),0)::float AS revenue
+  const channels = await q(`SELECT b.source, count(*)::int AS n, COALESCE(sum(b.price) FILTER (WHERE ${earns}),0)::float AS revenue
       FROM bookings b WHERE b.business_id=$1 AND b.created_at > ${since} AND ${live} GROUP BY 1`, P);
 
   // Customers: new = first ever booking in this period; returning = booked before too.
@@ -52,11 +55,11 @@ export async function insights(BIZ, days) {
       SELECT count(DISTINCT b.customer_id) FILTER (WHERE f.first > ${since})::int AS new,
              count(DISTINCT b.customer_id) FILTER (WHERE f.first <= ${since})::int AS returning
       FROM bookings b JOIN firsts f ON f.customer_id=b.customer_id WHERE b.business_id=$1 AND b.created_at > ${since} AND ${live}`, P);
-  const top = await q(`SELECT cu.name, cu.phone, count(*)::int AS visits, sum(b.price)::float AS spent, to_char(max(b.starts_at),'YYYY-MM-DD') AS last
-      FROM bookings b JOIN customers cu ON cu.id=b.customer_id WHERE b.business_id=$1 AND ${live} AND cu.phone NOT LIKE 'test-%'
+  const top = await q(`SELECT cu.name, cu.phone, count(*)::int AS visits, COALESCE(sum(b.price) FILTER (WHERE ${earns}),0)::float AS spent, to_char(max(b.starts_at),'YYYY-MM-DD') AS last
+      FROM bookings b JOIN customers cu ON cu.id=b.customer_id WHERE b.business_id=$1 AND ${live} AND cu.phone NOT LIKE 'test-%' AND cu.phone NOT LIKE 'e2e-%' AND COALESCE(cu.name,'') !~* '^test '
       GROUP BY cu.id ORDER BY spent DESC LIMIT 6`, [BIZ]);
   const atRisk = await q(`SELECT cu.name, cu.phone, count(*)::int AS visits, to_char(max(b.starts_at),'YYYY-MM-DD') AS last
-      FROM bookings b JOIN customers cu ON cu.id=b.customer_id WHERE b.business_id=$1 AND b.status IN ('completed','confirmed') AND cu.phone NOT LIKE 'test-%'
+      FROM bookings b JOIN customers cu ON cu.id=b.customer_id WHERE b.business_id=$1 AND b.status IN ('completed','confirmed') AND cu.phone NOT LIKE 'test-%' AND cu.phone NOT LIKE 'e2e-%' AND COALESCE(cu.name,'') !~* '^test '
       GROUP BY cu.id HAVING count(*) >= 2 AND max(b.starts_at) < now() - interval '45 days' ORDER BY max(b.starts_at) LIMIT 6`, [BIZ]);
   const repeatNoShow = await q(`SELECT cu.name, cu.phone, count(*)::int AS n FROM bookings b JOIN customers cu ON cu.id=b.customer_id
       WHERE b.business_id=$1 AND b.status='no_show' GROUP BY cu.id HAVING count(*) >= 2 ORDER BY n DESC LIMIT 6`, [BIZ]);
@@ -88,8 +91,8 @@ export async function insights(BIZ, days) {
   const biz = await loadBusiness(BIZ);
 
   // Same numbers for the period before, so every KPI can show ↑ / ↓.
-  const [prev] = await q(`SELECT count(*) FILTER (WHERE ${live})::int AS bookings, COALESCE(sum(b.price) FILTER (WHERE ${live}),0)::float AS revenue,
-      COALESCE(avg(b.price) FILTER (WHERE ${live}),0)::float AS avg_ticket, count(*) FILTER (WHERE b.status='no_show')::int AS no_show,
+  const [prev] = await q(`SELECT count(*) FILTER (WHERE ${live})::int AS bookings, COALESCE(sum(b.price) FILTER (WHERE ${earns}),0)::float AS revenue,
+      COALESCE(avg(b.price) FILTER (WHERE ${earns}),0)::float AS avg_ticket, count(*) FILTER (WHERE b.status='no_show')::int AS no_show,
       count(*) FILTER (WHERE b.status='completed')::int AS completed
       FROM bookings b WHERE b.business_id=$1 AND b.starts_at > now() - make_interval(days => $2::int * 2) AND b.starts_at <= ${since}`, P);
   const [prevConv] = await q(`SELECT count(*)::int AS n FROM conversations WHERE business_id=$1 AND created_at > now() - make_interval(days => $2::int * 2) AND created_at <= ${since}`, P);
@@ -97,7 +100,7 @@ export async function insights(BIZ, days) {
   // Trend: daily up to 90 days, weekly for longer periods.
   const unit = days > 90 ? 'week' : 'day';
   const trend = await q(`SELECT to_char(g,'YYYY-MM-DD') AS d,
-      COALESCE((SELECT sum(price) FROM bookings b WHERE b.business_id=$1 AND ${live} AND date_trunc('${unit}', b.starts_at)=g),0)::float AS revenue,
+      COALESCE((SELECT sum(price) FROM bookings b WHERE b.business_id=$1 AND ${earns} AND date_trunc('${unit}', b.starts_at)=g),0)::float AS revenue,
       (SELECT count(*) FROM bookings b WHERE b.business_id=$1 AND ${live} AND date_trunc('${unit}', b.starts_at)=g)::int AS bookings,
       (SELECT count(*) FROM conversations c WHERE c.business_id=$1 AND date_trunc('${unit}', c.created_at)=g)::int AS chats
       FROM generate_series(date_trunc('${unit}', now() - make_interval(days => $2::int - 1)), date_trunc('${unit}', now()), '1 ${unit}') g`, P);
@@ -120,8 +123,8 @@ export async function insights(BIZ, days) {
 
   // Capacity used = booked minutes / (open minutes × customers at the same time), past part of the period and next 7 days.
   const openMinutes = (from, to) => {
-    let m = 0; const d = new Date(from); d.setHours(0, 0, 0, 0);
-    for (; d < to; d.setDate(d.getDate() + 1)) for (const [a, b] of dayRanges(biz, d)) m += b - a;
+    let m = 0; const tz = tzOf(biz); // the business's own days
+    for (let d = dayStart(from, 0, tz); d < to; d = dayStart(d, 1, tz)) for (const [a, b] of dayRanges(biz, d)) m += b - a;
     return m * (biz.capacity || 1);
   };
   const [bookedPast] = await q(`SELECT COALESCE(sum(extract(epoch FROM ends_at - starts_at)/60),0)::float AS m FROM bookings b

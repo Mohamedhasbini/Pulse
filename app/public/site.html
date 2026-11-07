@@ -9,7 +9,9 @@
 <meta property="og:description" content="See every customer, booking and dollar live. An AI front desk and support team keep it all moving, day and night.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23c6f432'/%3E%3Cpath d='M9 22V10l7 7 7-7v12' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- display=optional: the headline never re-wraps when the font arrives late (that jump was most of the page's layout shift) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=optional">
 <style>
 :root{--bg:#0f1113;--s1:rgba(255,255,255,.035);--s2:rgba(255,255,255,.07);--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
   --ink:#f5f4fa;--ink2:#b3b8bd;--muted:#7d838a;--v:#c6f432;--v2:#d9ff6a;--v3:#a6d11c;--glow:rgba(198,244,50,.32);--r:22px;color-scheme:dark}
@@ -542,6 +544,9 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 #inside .sh{margin-bottom:10px}
 @media (max-width:900px){.see{grid-template-columns:1fr}.does{grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.does{grid-template-columns:1fr}.see-chat{min-height:0;padding:16px}.see-chat .sm{font-size:14px}}
+/* the dashboard pictures use invented numbers: say so, so nobody reads them as real results */
+.screen{position:relative}
+.screen::before{content:"Example data";position:absolute;top:-12px;right:22px;z-index:3;padding:3px 10px;border-radius:999px;font:600 11px/1.4 inherit;letter-spacing:.02em;color:var(--ink,#f1f2f2);background:var(--bg,#111);border:1px solid var(--line2,rgba(255,255,255,.18))}
 </style>
 
 <style id="phone-layer">
@@ -582,17 +587,167 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 @media (max-width:380px){
   .vals>*,.bento>*,.core-feats>*,.boards>*,.gcols>*,.tiers>*{flex-basis:90%!important;max-width:90%!important}
 }
+
+/* ── pages: one file, each address shows its own sections (the sections themselves are unchanged) */
+body[data-page] main>section{display:none}
+body[data-page="home"] main>:is(#see,#does,#core,#tools,#industries,#reviews:not([hidden]),#faq,#start),
+body[data-page="product"] main>:is(#dashboard,#value,#agents,#features,#inside,#start),
+body[data-page="how"] main>:is(#problem,#how,#architecture,#demo,#start),
+body[data-page="pricing"] main>:is(#pricing,#faq,#start),
+body[data-page="templates"] main>:is(#templates,#tools,#start){display:block}
+body[data-page]:not([data-page="home"]) main>.hero{display:none}
+body[data-page]:not([data-page="home"]) main{padding-top:110px}
+body[data-page="templates"] main{display:flex;flex-direction:column}body[data-page="templates"] #pageH{order:-2}body[data-page="templates"] #templates{order:-1}
+.page-h{text-align:center;max-width:760px;margin:0 auto 10px;padding-top:10px}.page-h h1{font-size:clamp(36px,5vw,64px);margin:12px 0}.page-h p{color:var(--ink2);font-size:18px;margin:0 auto;max-width:600px}
+body[data-page="home"] .page-h{display:none}
+.inds{grid-template-columns:repeat(4,1fr)}.revs{grid-template-columns:repeat(3,1fr)}.revs blockquote{margin:0;padding:24px}.revs p{font-size:17px;line-height:1.55;color:var(--ink)}.revs footer{margin-top:14px;color:var(--muted);font-size:14px}.revs footer b{color:var(--ink2);font-weight:600}.tpls{grid-template-columns:repeat(3,1fr)}
+.tpls .soon{opacity:.78}.tpls .soon i{color:var(--muted)}
+@media (max-width:900px){.inds,.tpls,.revs{grid-template-columns:1fr 1fr}}@media (max-width:560px){.inds,.tpls,.revs{grid-template-columns:1fr}}
+/* ── the menu: dropdown panels with a title and one line each */
+header nav.mn{display:flex;align-items:center;gap:2px}
+.mn-i{position:relative}
+.mn-t{all:unset;cursor:pointer;padding:8px 14px;border-radius:999px;color:var(--ink2);font-size:14.5px;display:inline-flex;align-items:center;gap:6px;transition:background .2s,color .2s}
+.mn-t::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px)}
+.mn-t:hover,.mn-i:focus-within .mn-t,.mn-t[aria-expanded="true"]{color:var(--ink);background:rgba(255,255,255,.06)}
+.mn-t:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.mn-p{position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%) translateY(4px);width:340px;padding:8px;border-radius:18px;background:rgba(18,20,22,.96);border:1px solid var(--line);
+  box-shadow:0 20px 50px -20px rgba(0,0,0,.6);display:grid;gap:2px;opacity:0;visibility:hidden;transition:opacity .16s,transform .16s,visibility .16s}
+.mn-i:hover .mn-p,.mn-i:focus-within .mn-p,.mn-t[aria-expanded="true"]+.mn-p{opacity:1;visibility:visible;transform:translateX(-50%)}
+.mn-p::before{content:"";position:absolute;inset:-14px 0 auto;height:14px}
+.mn-p a{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;text-decoration:none}
+.mn-p a:hover,.mn-p a:focus-visible{background:rgba(255,255,255,.06);outline:none}
+.mn-p b{font-size:14px;color:var(--ink);font-weight:600}.mn-p small{font-size:12.5px;color:var(--muted)}
+header nav.mn>a{text-decoration:none;padding:8px 14px;border-radius:999px;color:var(--ink2);font-size:14.5px}
+header nav.mn>a:hover,header nav.mn>a[aria-current="page"]{color:var(--ink);background:rgba(255,255,255,.06)}
+.demo-b{white-space:nowrap}
+@media (max-width:1100px){.demo-b{display:none}}
+@media (max-width:900px){header nav.mn{display:none}}
+@media (prefers-reduced-motion:reduce){.mn-p{transition:none}}
+.mn-burger{all:unset;display:none;cursor:pointer;width:42px;height:42px;border-radius:50%;place-items:center;align-content:center;gap:5px;margin-left:auto}
+.mn-burger i{display:block;width:18px;height:2px;border-radius:2px;background:var(--ink);transition:transform .2s}
+.mn-burger{position:relative}.mn-burger i{position:absolute;left:12px;top:20px}.mn-burger i:first-child{transform:translateY(-4px)}.mn-burger i:last-child{transform:translateY(4px)}.mn-burger[aria-expanded="true"] i:first-child{transform:rotate(45deg)}.mn-burger[aria-expanded="true"] i:last-child{transform:rotate(-45deg)}
+.mn-sheet{position:absolute;top:calc(100% + 10px);left:0;right:0;display:grid;gap:2px;padding:8px;border-radius:20px;background:rgba(18,20,22,.97);border:1px solid var(--line);box-shadow:0 20px 50px -20px rgba(0,0,0,.6)}
+.mn-sheet a{padding:14px 16px;border-radius:12px;text-decoration:none;color:var(--ink);font-size:16px}.mn-sheet a:hover{background:rgba(255,255,255,.06)}
+header .wrap{position:relative}
+.mn-sheet[hidden]{display:none}@media (min-width:901px){.mn-sheet{display:none!important}}
+@media (max-width:900px){.mn-burger{display:grid}header .signin{display:none}}
+
+/* value cards: each shows its result as a small piece of dashboard, not a paragraph */
+.val p{font-size:14px!important}.val .viz{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);min-height:112px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
+.vz-cap{font-size:12.5px;color:var(--muted)}.vz-cap b{color:var(--ink);font-size:18px;letter-spacing:-.02em;margin-right:4px}
+.vz-chat{display:flex;flex-direction:column;gap:6px;font-size:12.5px}.vz-chat span{padding:7px 11px;border-radius:14px;max-width:88%}
+.vz-chat .c{background:rgba(255,255,255,.07);align-self:flex-start;border-bottom-left-radius:4px}.vz-chat .a{background:#c6f432;color:#111;align-self:flex-end;border-bottom-right-radius:4px;font-weight:600}
+.vz-chat small{align-self:flex-end;color:var(--muted);font-size:11px}
+.vz-bars{display:flex;align-items:flex-end;gap:5px;height:64px}.vz-bars i{flex:1;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#c6f432,rgba(198,244,50,.35))}
+.vz-rules{display:flex;flex-direction:column;gap:6px}.vz-rules span{font-size:12.5px;padding:7px 11px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink2)}
+.vz-heat{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.vz-heat i{aspect-ratio:1.6;border-radius:4px;background:rgba(198,244,50,.12)}.vz-heat .h2{background:rgba(198,244,50,.45)}.vz-heat .h3{background:#c6f432}
+.vz-note{padding:12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink2)}.vz-note b{color:var(--ink);font-size:13.5px}
+.vz-note div{display:flex;gap:6px;margin-top:8px}.vz-note u{text-decoration:none;flex:1;text-align:center;padding:6px;border-radius:999px;background:#c6f432;color:#111;font-weight:600}.vz-note u+u{background:rgba(255,255,255,.08);color:var(--ink)}
+.vz-funnel{display:flex;flex-direction:column;gap:6px}.vz-funnel div{display:flex;justify-content:space-between;padding:7px 10px;border-radius:8px;background:rgba(198,244,50,.16);font-size:12.5px;color:var(--ink2);min-width:110px}.vz-funnel div:last-child{background:#c6f432;color:#111}.vz-funnel b{color:inherit}.vz-funnel div:not(:last-child) b{color:var(--ink)}
+.vz-line{width:100%;height:64px}.vz-line .ln{fill:none;stroke:#c6f432;stroke-width:2.5;vector-effect:non-scaling-stroke}.vz-line .ar{fill:rgba(198,244,50,.14)}
+.vz-hb{display:flex;flex-direction:column;gap:7px}.vz-hb div{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:12px;color:var(--ink2)}.vz-hb i{height:8px;border-radius:99px;background:#c6f432}
+html[data-theme="light"] .vz-chat .c,html[data-theme="light"] .vz-rules span,html[data-theme="light"] .vz-note,html[data-theme="light"] .vz-note u+u{background:rgba(0,0,0,.05)}
+
+/* templates gallery: each template is a live-looking preview of its dashboard, then name, pages and connectors */
+.tp-filter{display:flex;gap:6px;justify-content:center;margin:0 0 26px}
+.tp-filter button{all:unset;cursor:pointer;padding:8px 16px;border-radius:999px;font-size:14px;color:var(--ink2);border:1px solid var(--line)}
+.tp-filter button[aria-selected="true"]{background:var(--ink);color:#0b0c0d;border-color:var(--ink)}
+.tp-filter button:focus-visible{outline:2px solid #c6f432;outline-offset:2px}
+.tp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.tp{border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));overflow:hidden;transition:transform .3s,border-color .3s}
+.tp:hover{transform:translateY(-4px);border-color:rgba(198,244,50,.4)}
+.tp[hidden]{display:none}
+.tp-frame{position:relative;padding:18px 18px 0;background:radial-gradient(120% 90% at 50% 0%,rgba(198,244,50,.10),transparent 60%)}
+.tp-badge{position:absolute;top:28px;right:28px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:#c6f432;color:#111}
+.tp-badge.soon{background:#1d2124;color:#c9ced3;border:1px solid var(--line2)}
+.tp-shot{display:grid;grid-template-columns:34px 1fr;height:250px;border-radius:14px 14px 0 0;background:#f7f7f5;color:#141414;overflow:hidden;box-shadow:0 -1px 0 rgba(255,255,255,.2),0 20px 40px -20px rgba(0,0,0,.7)}
+.tp[data-st="soon"] .tp-shot{filter:saturate(.85);opacity:.92}
+.tp-sd{background:#fff;border-right:1px solid #ececec;display:flex;flex-direction:column;align-items:center;gap:9px;padding-top:12px}
+.tp-sd i{width:14px;height:14px;border-radius:5px;background:#ececec}.tp-sd i.on{background:#141414}
+.tp-main{padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.tp-k{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tp-k div{background:#fff;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.tp-k small{font-size:9.5px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tp-k b{font-size:17px;letter-spacing:-.02em}
+.tp-k em{font-style:normal;font-size:9px;font-weight:600;color:#888}.tp-k em.up{color:#3f7d0a}.tp-k em.warn{color:#b45309}
+.tp-2{display:grid;grid-template-columns:1.2fr 1fr;gap:8px;flex:1;min-height:0}
+.tp-2>*,.tp-chat,.tp-day,.tp-tables{background:#fff;border-radius:10px;padding:10px}
+.tp-bars{display:flex;align-items:flex-end;gap:5px}.tp-bars i{flex:1;border-radius:4px 4px 2px 2px;background:#a6d61f}.tp-bars.b i{background:#7cc4ff}.tp-bars.p i{background:#c4a5ff}
+.tp-rows,.tp-fill{display:flex;flex-direction:column;justify-content:center;gap:8px;font-size:11px}
+.tp-rows div{display:grid;grid-template-columns:10px 1fr auto;gap:6px;align-items:center}
+.d{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.tp-fill div{display:grid;grid-template-columns:72px 1fr 34px;white-space:nowrap;gap:6px;align-items:center}.tp-fill i{height:7px;border-radius:99px;background:#eee;overflow:hidden}.tp-fill u{display:block;height:100%;background:#a6d61f;border-radius:99px}.tp-fill b{text-align:right;font-size:10.5px}
+.tp-chat{display:flex;flex-direction:column;gap:2px;flex:1}.tp-chat div{display:grid;grid-template-columns:10px 76px 1fr;gap:6px;align-items:center;font-size:11px;padding:6px 2px;border-bottom:1px solid #f0f0f0}.tp-chat div span:last-child{color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp-day{display:flex;flex-direction:column;gap:6px;flex:1}.tp-day div{display:grid;grid-template-columns:38px 1fr;gap:8px;align-items:center;font-size:11px}.tp-day small{color:#888}
+.tp-day span{padding:6px 8px;border-radius:6px;background:color-mix(in srgb,var(--c) 22%,#fff);box-shadow:inset 3px 0 0 var(--c)}
+.tp-ln{width:100%;height:100%}.tp-ln .ln{fill:none;stroke:#7cb30f;stroke-width:2.5;vector-effect:non-scaling-stroke}.tp-ln .ar{fill:rgba(166,214,31,.18)}
+.tp-tables{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;flex:1;align-content:center}.tp-tables i{font-style:normal;aspect-ratio:1;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:600;background:#eee;color:#888}.tp-tables i.b{background:#a6d61f;color:#1a1a1a}
+.tp-info{padding:20px 22px 22px;display:flex;flex-direction:column;gap:8px}
+.tp-info small{font:700 11px ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tp-info h3{font-size:22px;letter-spacing:-.02em;margin:0}.tp-info p{margin:0;color:var(--ink2);font-size:15px}
+.tp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.tp-chips span{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--ink2)}
+.tp-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
+.tp-conn{display:flex}.tp-conn i{font-style:normal;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:#1d2124;border:2px solid #0b0c0d;color:var(--ink);margin-left:-6px}.tp-conn i:first-child{margin-left:0}
+.btn.sm{padding:9px 16px;font-size:14px}.tp-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:900px){.tp-grid{grid-template-columns:1fr}}
+@media (max-width:560px){.tp-shot{height:220px}.tp-k b{font-size:14px}.tp-2{grid-template-columns:1fr}.tp-2>:last-child{display:none}}
+
+/* real screenshots: template previews and the tools gallery */
+.tp-img{display:block;width:100%;height:250px;object-fit:cover;object-position:top left;border-radius:14px 14px 0 0;box-shadow:0 20px 40px -20px rgba(0,0,0,.7)}
+.tl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.tl{margin:0;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));transition:transform .3s,border-color .3s}
+.tl:hover{transform:translateY(-4px);border-color:rgba(198,244,50,.4)}
+.tl-img{padding:14px 14px 0;background:radial-gradient(120% 90% at 50% 0%,rgba(198,244,50,.10),transparent 60%)}
+.tl-img img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top left;border-radius:12px 12px 0 0}
+.tl figcaption{padding:16px 18px 20px;display:flex;flex-direction:column;gap:4px}
+.tl small{font:700 11px ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tl b{font-size:19px;letter-spacing:-.02em;color:var(--ink)}.tl span{color:var(--ink2);font-size:14.5px}
+@media (max-width:1000px){.tl-grid{grid-template-columns:1fr 1fr}}@media (max-width:600px){.tl-grid{grid-template-columns:1fr}.tp-img{height:200px}}
+
+/* screenshots are cropped in, so a visitor can read them at card size */
+.tp-crop{height:250px;overflow:hidden;border-radius:14px 14px 0 0;background:#fff;box-shadow:0 20px 40px -20px rgba(0,0,0,.7)}
+.tp-crop .tp-img{width:185%;max-width:none;height:auto!important;margin:-58px 0 0 -9%;border-radius:0;box-shadow:none;object-fit:initial}
+.tl-img{overflow:hidden}.tl-img img{width:230%!important;height:auto!important;max-width:none;aspect-ratio:auto!important;margin:-64px 0 0 -14%;object-fit:initial!important;border-radius:0!important}
+.tl-img{height:230px}
+@media (max-width:600px){.tp-crop{height:200px}.tl-img{height:200px}}
+</style>
+<link rel="stylesheet" href="/fonts.css">
+<style>
+/* hero light stream (Nov 2026): acid-lime strands over a fading dot grid, behind the hero; serif italic accent */
+.hero{isolation:isolate}
+.hero-fx{position:absolute;left:0;right:0;top:0;height:min(100%,1040px);z-index:-2;pointer-events:none}
+.hero-fx canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero-fx::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.09) 1px,transparent 1.3px);background-size:24px 24px;
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 0,transparent 75%);mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 0,transparent 75%)}
+html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;font-style:italic!important;font-weight:400!important;letter-spacing:-.01em;
+  background:none!important;-webkit-text-fill-color:currentColor!important;color:#f4f6ef!important}
+.hero .screen{box-shadow:0 0 0 1px rgba(200,247,81,.10),0 40px 120px -40px rgba(200,247,81,.25)}
 </style>
 </head>
 <body>
 <header><div class="wrap">
   <a class="logo" href="/pulse" aria-label="MXAi home"><i><svg viewBox="0 0 24 24"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i>MXAi</a>
-  <nav><a href="#see">See it work</a><a href="#does">What it does</a><a href="#dashboard">Dashboard</a><a href="#pricing">Pricing</a><a href="#faq">Questions</a></nav>
-  <a class="btn gho signin" href="/login">Sign in</a><a class="btn pri" href="#start" data-kind="signup">Get started</a>
+  <nav class="mn" aria-label="Site">
+    <div class="mn-i"><button type="button" class="mn-t" aria-expanded="false">Product</button><div class="mn-p">
+      <a href="/#see"><b>AI receptionist</b><small>Answers, books and reminds on WhatsApp, day and night</small></a>
+      <a href="/product#dashboard"><b>Command center</b><small>One dashboard for bookings, clients and money</small></a>
+      <a href="/product#agents"><b>AI team</b><small>Agents that win clients back and fill quiet days</small></a>
+      <a href="/product#value"><b>Insights and finance</b><small>Revenue, costs, profit and what to do next</small></a></div></div>
+    <div class="mn-i"><button type="button" class="mn-t" aria-expanded="false">Solutions</button><div class="mn-p">
+      <a href="/#industries"><b>Hair salons</b><small>Colour, cuts and bridal, booked by chat</small></a>
+      <a href="/#industries"><b>Barbers</b><small>Fast walk-in and chair booking</small></a>
+      <a href="/#industries"><b>Spas and clinics</b><small>Treatments, rooms and follow-ups</small></a>
+      <a href="/templates"><b>Any business</b><small>A dashboard built for how you work</small></a></div></div>
+    <a href="/templates">Templates</a><a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a>
+  </nav>
+  <button type="button" class="mn-burger" aria-label="Menu" aria-expanded="false" aria-controls="mnSheet"><i></i><i></i></button>
+  <div class="mn-sheet" id="mnSheet" hidden><a href="/pulse">Home</a><a href="/product">Product</a><a href="/templates">Templates</a><a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a><a href="/login">Sign in</a></div>
+  <a class="btn gho signin" href="/login">Sign in</a><a class="btn gho demo-b" href="/pricing#start" data-kind="demo">Book a demo</a><a class="btn pri" href="/pricing#start" data-kind="signup">Get started</a>
 </div></header>
 
 <main>
+<div class="page-h wrap" id="pageH"></div>
 <div class="hero">
+  <div class="hero-fx" aria-hidden="true"></div>
   <div class="ghost" aria-hidden="true">MXAi</div>
   <div class="wrap">
     <span class="pill"><b>24/7</b>Your AI front desk on WhatsApp</span>
@@ -602,7 +757,7 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
     <small>Live in a day · From $29 a month · Cancel any time</small>
   </div>
   <div class="wrap stage">
-    <div class="screen"><div class="ccw top" aria-label="The MXAi command center">
+    <div class="screen"><div class="ccw top" aria-label="The MXAi command center, with example data">
     <div class="cc-bar"><span class="cc-logo"><i></i>MXAi</span>
       <nav><b>Today</b><span>Inbox</span><span>Calendar</span><span>Customers</span><span>Insights</span><span>Marketing</span><span>Ask MXAi</span></nav>
       <span class="cc-ai"><i></i>AI on</span><span class="cc-ask">Ask anything about your business…<kbd>Ctrl K</kbd></span></div>
@@ -704,7 +859,7 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 
 <section id="dashboard"><div class="wrap">
   <div class="sh rv"><span class="k">Your dashboard</span><h2>This is your command center.</h2><p>Nothing hidden. Every chat your AI team has, every booking and every dollar lands here live, turned into numbers you can act on.</p></div>
-  <div class="screen live2 rv"><div class="app" aria-label="The MXAi dashboard">
+  <div class="screen live2 rv"><div class="app" aria-label="The MXAi dashboard, with example data">
       <aside><b><span class="logo"><i style="width:24px;height:24px;border-radius:7px"><svg viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></i></span>MXAi</b>
         <span class="on">Today</span><span>Inbox</span><span>Calendar</span><span>Customers</span><span>Insights</span><span>Marketing</span></aside>
       <div class="mid">
@@ -741,14 +896,14 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
   <div class="sh rv"><span class="k">Value</span><h2>A dashboard that makes you money.</h2><p>Most dashboards only show numbers. MXAi turns every conversation into data, every insight into an action, and every action into revenue. It is your command center, your marketing team and your data center in one.</p></div>
   <div class="flow rv"><div><b>Conversations</b><small>every channel</small></div><div><b>Data</b><small>one business memory</small></div><div><b>Insights</b><small>what is working</small></div><div><b>Actions</b><small>agents do the work</small></div><div><b>Revenue</b><small>more bookings, less loss</small></div></div>
   <div class="vals">
-    <div class="glass val rv"><div class="tg"><span>Front desk</span><em>Earns</em></div><h3>No customer slips away</h3><p>Every message answered in seconds, day and night, in the client's language, and turned into a booking.</p><div class="out"><b>+0 missed</b>chats that used to go unanswered after hours</div></div>
-    <div class="glass val rv"><div class="tg"><span>Teach</span><em class="k">Learns</em></div><h3>Answers it once, right forever</h3><p>When the AI is unsure, you teach the answer one time. It never asks again, and every client gets the same correct reply.</p><div class="out"><b>Fewer handoffs</b>less of your time on repeated questions</div></div>
-    <div class="glass val rv"><div class="tg"><span>Coach</span><em class="k">Learns</em></div><h3>Talks the way you want</h3><p>Tell it in plain words: "be more formal", "always offer the next free time", "never discount". It becomes a rule instantly.</p><div class="out"><b>Your brand voice</b>on every chat, without training staff</div></div>
-    <div class="glass val rv"><div class="tg"><span>Scheduler</span><em>Earns</em></div><h3>Fuller calendar</h3><p>Offers the free slots first, fills gaps, moves visits instead of losing them and never double-books.</p><div class="out"><b>Higher occupancy</b>chair time sold, not wasted</div></div>
-    <div class="glass val rv"><div class="tg"><span>Reminders</span><em>Saves</em></div><h3>Fewer no-shows</h3><p>Automatic reminders with one-tap confirm or reschedule. Every no-show prevented is money kept.</p><div class="out"><b>Less lost revenue</b>empty chairs refilled from the waitlist</div></div>
-    <div class="glass val rv"><div class="tg"><span>Marketing</span><em>Earns</em></div><h3>Brings clients back</h3><p>Finds clients drifting away, prepares the right offer and discount code, and sends it to the ones who agreed to hear from you.</p><div class="out"><b>Won-back revenue</b>tracked offer by offer, with return on spend</div></div>
-    <div class="glass val rv"><div class="tg"><span>Growth</span><em>Earns</em></div><h3>New customers find you</h3><p>Your own booking page and a listing in the WeBook app bring new clients who book without calling.</p><div class="out"><b>New bookings</b>from people who never messaged you</div></div>
-    <div class="glass val rv"><div class="tg"><span>Insights</span><em class="k">Decides</em></div><h3>Price and plan with data</h3><p>Earnings per chair hour, best services, busy and quiet hours, client value and who came back. Ask any question in plain words.</p><div class="out"><b>Better decisions</b>what to promote, when to open, what to charge</div></div>
+    <div class="glass val rv"><div class="tg"><span>Front desk</span><em>Earns</em></div><h3>No customer slips away</h3><p>Answered in seconds, day and night.</p><div class="viz"><div class="vz-chat"><span class="c">Any slot tonight?</span><span class="a">Yes, 7:00 pm with Rami. Booked ✓</span><small>replied in 3s · 2:14 am</small></div></div></div>
+    <div class="glass val rv"><div class="tg"><span>Teach</span><em class="k">Learns</em></div><h3>Answer once, right forever</h3><p>Teach it one time, it never asks again.</p><div class="viz"><div class="vz-bars dn"><i style="height:90%"></i><i style="height:72%"></i><i style="height:60%"></i><i style="height:44%"></i><i style="height:30%"></i><i style="height:22%"></i><i style="height:14%"></i></div><div class="vz-cap"><b>−84%</b> questions sent to you</div></div></div>
+    <div class="glass val rv"><div class="tg"><span>Coach</span><em class="k">Learns</em></div><h3>Talks the way you want</h3><p>Plain-word rules, live instantly.</p><div class="viz"><div class="vz-rules"><span>✓ Be more formal</span><span>✓ Offer the next free time</span><span>✓ Never discount</span></div></div></div>
+    <div class="glass val rv"><div class="tg"><span>Scheduler</span><em>Earns</em></div><h3>Fuller calendar</h3><p>Gaps filled first, never double-booked.</p><div class="viz"><div class="vz-heat"><i class="h3"></i><i class="h3"></i><i class="h2"></i><i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h3"></i><i class="h2"></i><i class="h3"></i><i class="h3"></i><i class="h2"></i><i class="h3"></i><i class="h3"></i><i class="h1"></i><i class="h3"></i><i class="h3"></i><i class="h2"></i><i class="h3"></i><i class="h3"></i><i class="h2"></i><i class="h3"></i><i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h3"></i><i class="h3"></i><i class="h2"></i><i class="h2"></i></div><div class="vz-cap"><b>87%</b> of hours booked</div></div></div>
+    <div class="glass val rv"><div class="tg"><span>Reminders</span><em>Saves</em></div><h3>Fewer no-shows</h3><p>One-tap confirm or move.</p><div class="viz"><div class="vz-note"><b>Tomorrow · 10:00</b><span>Haircut with Layla</span><div><u>Confirm</u><u>Move</u></div></div></div></div>
+    <div class="glass val rv"><div class="tg"><span>Marketing</span><em>Earns</em></div><h3>Brings clients back</h3><p>The right offer to clients drifting away.</p><div class="viz"><div class="vz-funnel"><div style="width:100%"><span>Drifting</span><b>48</b></div><div style="width:62%"><span>Offer sent</span><b>30</b></div><div style="width:34%"><span>Came back</span><b>16</b></div></div></div></div>
+    <div class="glass val rv"><div class="tg"><span>Growth</span><em>Earns</em></div><h3>New customers find you</h3><p>Your booking page and the WeBook app.</p><div class="viz"><svg class="vz-line" viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 52 L28 48 L56 44 L84 38 L112 34 L140 24 L168 18 L200 8 L200 60 L0 60Z" class="ar"/><path d="M0 52 L28 48 L56 44 L84 38 L112 34 L140 24 L168 18 L200 8" class="ln"/></svg><div class="vz-cap"><b>+38</b> new clients a month</div></div></div>
+    <div class="glass val rv"><div class="tg"><span>Insights</span><em class="k">Decides</em></div><h3>Price and plan with data</h3><p>Ask anything in plain words.</p><div class="viz"><div class="vz-hb"><div><span>Colour</span><i style="width:92%"></i></div><div><span>Haircut</span><i style="width:70%"></i></div><div><span>Nails</span><i style="width:48%"></i></div><div><span>Facial</span><i style="width:30%"></i></div></div><div class="vz-cap">earnings per chair hour</div></div></div>
   </div>
   <div class="money">
     <div class="glass rv"><span class="mono">Command center</span><h3 style="font-size:24px;margin:10px 0 6px">You stay in control</h3><p style="color:var(--ink2);margin:0">The agents work, you steer. Every conversation and booking is visible, requests wait for your approval, and you can take over any chat or switch the AI off entirely.</p>
@@ -858,10 +1013,92 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
   </div>
 </div></section>
 
+<section id="tools"><div class="wrap">
+  <div class="sh rv"><span class="k">Everything inside</span><h2>One dashboard. Every tool your business runs on.</h2><p>Each template is built from the same parts. Here they are, exactly as they look.</p></div>
+  <div class="tl-grid">
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/inbox.jpg" alt="MXAi Inbox screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Inbox</small><b>Every channel in one place</b><span>WhatsApp, Instagram, Telegram and email side by side. The AI answers in seconds; you step in with one tap.</span></figcaption></figure>
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/calendar.jpg" alt="MXAi Calendar screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Calendar</small><b>Bookings that fill themselves</b><span>Clients book by chat at any hour. Gaps fill first, nothing is double-booked, reminders cut no-shows.</span></figcaption></figure>
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/finance.jpg" alt="MXAi Finance screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Finance</small><b>Know what you keep</b><span>Revenue, costs and profit, and a cash flow from every service to every expense.</span></figcaption></figure>
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/growth.jpg" alt="MXAi Growth screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Growth</small><b>Bring clients back</b><span>MXAi finds who is drifting away and prepares the offer. You approve, it sends, you see what came back.</span></figcaption></figure>
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/memberships.jpg" alt="MXAi Memberships screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Memberships</small><b>Recurring income, visible</b><span>Plans, renewals and members at risk of leaving, for gyms, studios and subscriptions.</span></figcaption></figure>
+    <figure class="tl rv"><div class="tl-img"><img src="/shots/connectors.jpg" alt="MXAi Connectors screen" loading="lazy" width="1440" height="900"></div>
+      <figcaption><small>Connectors</small><b>Plugs into what you use</b><span>Channels, payments, CRMs and automation. One dashboard, fed from everything.</span></figcaption></figure>
+  </div>
+</div></section>
+
+<section id="industries"><div class="wrap">
+  <div class="sh rv"><span class="k">Who it's for</span><h2>Built for businesses that run on bookings.</h2><p>Your services, prices, hours and team, set up in a day. The AI speaks to your clients the way you would.</p></div>
+  <div class="does inds">
+    <div class="glass rv"><i>Hair</i><h3>Hair salons</h3><p>Colour, cuts, keratin and bridal. Books the right length of time and the right stylist.</p></div>
+    <div class="glass rv"><i>Barber</i><h3>Barbers</h3><p>Quick chair bookings, walk-in questions and regulars who come back every few weeks.</p></div>
+    <div class="glass rv"><i>Spa</i><h3>Spas and nails</h3><p>Treatments, packages and gift questions, answered at any hour.</p></div>
+    <div class="glass rv"><i>Clinic</i><h3>Clinics and medspas</h3><p>Consultations, follow-ups and reminders that keep the diary full.</p></div>
+  </div>
+</div></section>
+
+<section id="templates"><div class="wrap">
+  <div class="sh rv"><span class="k">Templates</span><h2>Pick a dashboard. It's ready in a minute.</h2><p>Each template comes with the pages, words and AI your business needs. Live ones run today.</p></div>
+  <div class="tp-filter" role="tablist"><button type="button" aria-selected="true" data-f="all">All</button><button type="button" aria-selected="false" data-f="live">Live now</button><button type="button" aria-selected="false" data-f="soon">Coming soon</button></div>
+  <div class="tp-grid">
+    <article class="tp rv" data-st="live">
+      <div class="tp-frame"><div class="tp-crop"><img class="tp-img" src="/shots/salon.jpg" alt="Salon dashboard: team, earnings, bookings and the AI front desk" loading="lazy" width="1440" height="900"></div><span class="tp-badge live">Live</span></div>
+      <div class="tp-info"><small>Hair, nails and beauty</small><h3>Salon and spa</h3><p>The full command center: AI front desk, calendar, clients, win-back offers and money.</p>
+        <div class="tp-chips"><span>Today</span><span>Inbox</span><span>Calendar</span><span>Clients</span><span>Growth</span><span>Finance</span></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Instagram">I</i><i title="Stripe">S</i></span><span class="tp-btns"><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
+    </article>
+    <article class="tp rv" data-st="live">
+      <div class="tp-frame"><div class="tp-crop"><img class="tp-img" src="/shots/memberships.jpg" alt="Gym dashboard: memberships, renewals and members at risk" loading="lazy" width="1440" height="900"></div><span class="tp-badge live">Live</span></div>
+      <div class="tp-info"><small>Classes, members and renewals</small><h3>Gym and fitness</h3><p>Memberships, class spots, at-risk members and income per class, with the AI booking classes.</p>
+        <div class="tp-chips"><span>Today</span><span>Members</span><span>Calendar</span><span>Memberships</span><span>Finance</span></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Instagram">I</i><i title="Stripe">S</i></span><span class="tp-btns"><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
+    </article>
+    <article class="tp rv" data-st="live">
+      <div class="tp-frame"><div class="tp-crop"><img class="tp-img" src="/shots/inbox.jpg" alt="AI receptionist: every chat answered and booked, in one inbox" loading="lazy" width="1440" height="900"></div><span class="tp-badge live">Live</span></div>
+      <div class="tp-info"><small>Just the front desk</small><h3>AI receptionist only</h3><p>Every chat answered and booked in seconds, on every channel, with a simple inbox.</p>
+        <div class="tp-chips"><span>Today</span><span>Inbox</span><span>Calendar</span><span>AI Control</span></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Instagram">I</i><i title="Telegram">T</i></span><span class="tp-btns"><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
+    </article>
+    <article class="tp rv" data-st="live">
+      <div class="tp-frame"><div class="tp-crop"><img class="tp-img" src="/shots/clinic.jpg" alt="Clinic dashboard: appointments, treatments and follow-ups" loading="lazy" width="1440" height="900"></div><span class="tp-badge live">Live</span></div>
+      <div class="tp-info"><small>Appointments and follow-ups</small><h3>Clinic and medspa</h3><p>Consultations, reminders and follow-ups that keep the diary full and no-shows low.</p>
+        <div class="tp-chips"><span>Today</span><span>Inbox</span><span>Calendar</span><span>Patients</span><span>AI Control</span></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Email">E</i></span><span class="tp-btns"><a class="btn pri sm" href="/pricing#start" data-kind="signup">Use this template</a></span></div></div>
+    </article>
+    <article class="tp rv" data-st="soon">
+      <div class="tp-frame"><div class="tp-shot" aria-hidden="true"><div class="tp-sd"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div><div class="tp-main"><div class="tp-k"><div><small>Orders</small><b>1,284</b><em class="up">+14%</em></div><div><small>Avg order</small><b>$46</b><em class="up">+$3</em></div><div><small>Questions answered</small><b>97%</b><em class="up">by AI</em></div></div><div class="tp-2"><svg class="tp-ln" viewBox="0 0 200 60" preserveAspectRatio="none"><path class="ar" d="M0 50 L25 44 L50 46 L75 34 L100 36 L125 24 L150 26 L175 14 L200 10 L200 60 L0 60Z"/><path class="ln" d="M0 50 L25 44 L50 46 L75 34 L100 36 L125 24 L150 26 L175 14 L200 10"/></svg><div class="tp-rows"><div><span class="d" style="--c:#c6f432"></span><span>Linen shirt</span><b>312</b></div><div><span class="d" style="--c:#7cc4ff"></span><span>Canvas tote</span><b>204</b></div><div><span class="d" style="--c:#c4a5ff"></span><span>Sun hat</span><b>151</b></div></div></div></div></div><span class="tp-badge soon">Coming soon</span></div>
+      <div class="tp-info"><small>Orders and customer questions</small><h3>Online store</h3><p>Orders, products and shop questions from Shopify or WooCommerce in one view.</p>
+        <div class="tp-chips"><span>Today</span><span>Inbox</span><span>Orders</span><span>Customers</span><span>Finance</span></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="Shopify">S</i><i title="Instagram">I</i><i title="Stripe">S</i></span><a class="btn gho sm" href="/pricing#start" data-kind="demo">Join the waitlist</a></div></div>
+    </article>
+    <article class="tp rv" data-st="soon">
+      <div class="tp-frame"><div class="tp-shot" aria-hidden="true"><div class="tp-sd"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div><div class="tp-main"><div class="tp-k"><div><small>Leads</small><b>846</b><em class="up">+32%</em></div><div><small>Cost per lead</small><b>$2.10</b><em class="up">−18%</em></div><div><small>Ad spend</small><b>$1,780</b><em class="">this month</em></div></div><div class="tp-2"><div class="tp-fill"><div><span>Instagram</span><i><u style="width:88%"></u></i><b>412</b></div><div><span>TikTok</span><i><u style="width:61%"></u></i><b>286</b></div><div><span>Messenger</span><i><u style="width:30%"></u></i><b>148</b></div></div><div class="tp-bars p"><i style="height:30%"></i><i style="height:45%"></i><i style="height:40%"></i><i style="height:62%"></i><i style="height:58%"></i><i style="height:75%"></i><i style="height:90%"></i></div></div></div></div><span class="tp-badge soon">Coming soon</span></div>
+      <div class="tp-info"><small>Leads from every channel</small><h3>Social media and ads</h3><p>Messages, leads and ad results from Instagram, TikTok and Meta Ads side by side.</p>
+        <div class="tp-chips"><span>Today</span><span>Inbox</span><span>Leads</span><span>Ads</span><span>Insights</span></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="Instagram">I</i><i title="TikTok">T</i><i title="Meta Ads">M</i></span><a class="btn gho sm" href="/pricing#start" data-kind="demo">Join the waitlist</a></div></div>
+    </article>
+    <article class="tp rv" data-st="soon">
+      <div class="tp-frame"><div class="tp-shot" aria-hidden="true"><div class="tp-sd"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div><div class="tp-main"><div class="tp-k"><div><small>Covers tonight</small><b>86</b><em class="up">of 110</em></div><div><small>Reservations</small><b>34</b><em class="up">+5</em></div><div><small>No-shows</small><b>1</b><em class="up">saved 3</em></div></div><div class="tp-tables"><i class="b">2</i><i class="b">4</i><i class="">2</i><i class="b">6</i><i class="b">4</i><i class="b">2</i><i class="">8</i><i class="b">4</i><i class="">2</i><i class="b">4</i><i class="b">6</i><i class="b">2</i></div></div></div><span class="tp-badge soon">Coming soon</span></div>
+      <div class="tp-info"><small>Tables and reservations</small><h3>Restaurants and cafés</h3><p>Table bookings, party sizes and reminders handled by chat, with covers per night.</p>
+        <div class="tp-chips"><span>Today</span><span>Inbox</span><span>Reservations</span><span>Guests</span></div>
+        <div class="tp-foot"><span class="tp-conn"><i title="WhatsApp">W</i><i title="Instagram">I</i></span><a class="btn gho sm" href="/pricing#start" data-kind="demo">Join the waitlist</a></div></div>
+    </article>
+  </div>
+</div></section>
+
 <section id="pricing"><div class="wrap">
   <div class="sh rv"><span class="k">Pricing</span><h2>Simple monthly plans.</h2><p>Priced below the value of one recovered booking a week. Your customers never pay anything.</p></div>
   <div class="plans" id="plans"></div>
   <div class="addons glass" id="addons" hidden></div>
+</div></section>
+
+<section id="reviews" hidden><div class="wrap">
+  <div class="sh rv"><span class="k">From owners</span><h2>What owners say.</h2></div>
+  <div class="does revs" id="revList"></div>
 </div></section>
 
 <section id="faq" class="faq"><div class="wrap" style="max-width:840px">
@@ -916,9 +1153,9 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 
 <footer><div class="wrap fcols">
   <div><a class="logo" href="/pulse"><i><svg viewBox="0 0 24 24"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i>MXAi</a><p style="margin:12px 0 0;max-width:280px">The AI command center for your business.</p></div>
-  <div><b>Product</b><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#demo">Walkthrough</a><a href="#start" data-kind="demo">Book a walkthrough</a></div>
+  <div><b>Product</b><a href="/product">Features</a><a href="/templates">Templates</a><a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a><a href="/pricing#start" data-kind="demo">Book a demo</a></div>
   <div><b>For customers</b><a href="/webook">WeBook marketplace</a><a href="/webook" data-install>Get the app</a></div>
-  <div><b>For businesses</b><a href="/login">Sign in</a><a href="#start" data-kind="signup">Get started</a><a href="/privacy">Privacy</a></div>
+  <div><b>For businesses</b><a href="/login">Sign in</a><a href="/pricing#start" data-kind="signup">Get started</a><a href="/privacy">Privacy</a></div>
   </div>
   <div class="big" aria-hidden="true">MXAi</div>
   <div class="wrap" style="border-top:1px solid var(--line);padding-top:18px"><span>© <span id="yr"></span> MXAi. Run your business from one place.</span></div></footer>
@@ -981,7 +1218,7 @@ function run(i){if(!document.getElementById("b"+i))wires();const j=JOURNEYS[i],b
   tick(f)}
 // runs while the diagram is on screen; checks its position instead of relying on an observer
 function cycle(){const el=document.querySelector(".arch");if(!el)return;const r=el.getBoundingClientRect();
-  if(document.hidden||r.bottom<0||r.top>innerHeight)return setTimeout(cycle,800);
+  if(!el.offsetParent||document.hidden||r.bottom<0||r.top>innerHeight)return setTimeout(cycle,800);
   wires();W.C[0]?.classList.add("pulse");JOURNEYS.forEach((_,i)=>setTimeout(()=>run(i),i*2400));setTimeout(cycle,JOURNEYS.length*2400+6000)}
 setTimeout(cycle,600);
 addEventListener("resize",()=>{clearTimeout(wires.t);wires.t=setTimeout(wires,150)});
@@ -1020,7 +1257,6 @@ $("#lead").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new 
     $("#formBox").innerHTML=`<div class="done"><b>${kind==="demo"?"Your walkthrough request is in.":"You're on your way."}</b><p style="color:var(--ink2);margin:0">We'll message you on ${f.phone?"WhatsApp":"email"} within one working day${kind==="demo"?" to pick a time":" to set everything up"}.</p></div>`}
   catch(err){$("#err").textContent=err.message;$("#go").disabled=false}};
 </script>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 
 
 <script id="phone-layer-js">
@@ -1040,5 +1276,36 @@ $("#lead").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new 
 })();
 </script>
 <script>(()=>{const el=document.querySelector(".see");if(!el)return;if(!("IntersectionObserver" in window)){el.classList.add("play");return}const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){el.classList.add("play");io.disconnect()}},{threshold:.35});io.observe(el)})()</script>
+<script>
+// which page this address is; the menu marks it, inner pages get a heading, and the menu's dropdowns open by tap too
+(()=>{const P={"/product":["product","Product","Everything MXAi does for your business","One command center for your AI front desk, bookings, clients and money."],
+  "/how-it-works":["how","How it works","From a missed message to a booked client","How MXAi answers, books and learns, and how it is built."],
+  "/pricing":["pricing","Pricing","Simple monthly plans","Start small and add what you need. No setup fee."],
+  "/templates":["templates","Templates","A dashboard for every business","Pick the template closest to your business. MXAi shapes it around your data."]};
+  const m=P[location.pathname.replace(/\/$/,"")];document.body.dataset.page=m?m[0]:"home";
+  if(m){document.getElementById("pageH").innerHTML=`<span class="k">${m[1]}</span><h1>${m[2]}</h1><p>${m[3]}</p>`;document.title=`${m[1]} · MXAi`;
+    document.querySelectorAll('header nav.mn>a').forEach(a=>{if(a.getAttribute("href")===location.pathname)a.setAttribute("aria-current","page")})}
+  document.querySelectorAll(".mn-t").forEach(t=>t.addEventListener("click",()=>{const o=t.getAttribute("aria-expanded")==="true";document.querySelectorAll(".mn-t").forEach(x=>x.setAttribute("aria-expanded","false"));t.setAttribute("aria-expanded",String(!o))}));
+  const bg=document.querySelector(".mn-burger"),sh=document.getElementById("mnSheet");bg?.addEventListener("click",()=>{const o=bg.getAttribute("aria-expanded")==="true";bg.setAttribute("aria-expanded",String(!o));sh.hidden=o});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sh&&!sh.hidden){sh.hidden=true;bg.setAttribute("aria-expanded","false");bg.focus()}});
+  document.addEventListener("click",e=>{if(!e.target.closest(".mn-i"))document.querySelectorAll(".mn-t").forEach(x=>x.setAttribute("aria-expanded","false"))});
+  // links to a section of this same page scroll instead of reloading
+  document.querySelectorAll('a[href^="/"][href*="#"]').forEach(a=>{const u=new URL(a.href);if(u.pathname===location.pathname||(u.pathname==="/"&&document.body.dataset.page==="home"&&location.pathname.match(/^\/(pulse)?$/)))a.setAttribute("href",u.hash)});
+})();
+</script>
+<script>
+// owner quotes: only real, consented, published ones from /api/public/testimonials; the section stays hidden without them
+fetch("/api/public/testimonials").then(r=>r.json()).then(({items})=>{if(!items||!items.length)return;const e=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  document.getElementById("revList").innerHTML=items.map(t=>`<blockquote class="glass"><p>“${e(t.quote)}”</p><footer><b>${e(t.name)}</b>${[t.role,t.business,t.city].filter(Boolean).map(x=>" · "+e(x)).join("")}</footer></blockquote>`).join("");
+  document.getElementById("reviews").hidden=false}).catch(()=>{});
+</script>
+<script>
+// templates gallery filter: all, live now, coming soon
+document.querySelector(".tp-filter")?.addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;
+  document.querySelectorAll(".tp-filter button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));
+  document.querySelectorAll(".tp").forEach(t=>t.hidden=b.dataset.f!=="all"&&t.dataset.st!==b.dataset.f)});
+</script>
+<script src="/stream.js"></script>
+<script>window.MXStream&&MXStream.mount(document.querySelector(".hero-fx"),{strength:1,origin:[-0.1,0.78],tip:[1.1,0.06]})</script>
 </body>
 </html>

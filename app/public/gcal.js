@@ -45,15 +45,17 @@ window.PulseCal = (() => {
   }
 
   async function load() {
-    const [s, t] = range();
+    const [s, t] = range(), tok = st.tok = (st.tok || 0) + 1;
     try {
       const [cal, rq] = await Promise.all([req(`/api/calendar?from=${key(s)}T00:00&to=${key(t)}T00:00`), req('/api/requests?status=pending').catch(() => [])]);
+      if (tok !== st.tok) return; // a newer week was asked for meanwhile
       st.data = cal; st.requests = rq;
     } catch { root.querySelector('#gcBody').innerHTML = '<p class="gc-none">Couldn\'t load the calendar. <button type="button" class="btn ghost" data-retry="1">Retry</button></p>'; return; }
     draw();
   }
 
-  const live = () => (st.data.bookings || []).filter(b => b.status !== 'cancelled');
+  const hidden = new Set();
+  const live = () => (st.data.bookings || []).filter(b => b.status !== 'cancelled' && !hidden.has(b.service));
   function hours() {
     let a = 24, b = 0;
     const h = (typeof biz !== 'undefined' && biz?.hours) || {};
@@ -71,7 +73,7 @@ window.PulseCal = (() => {
 
   function grid(days) {
     const body = root.querySelector('#gcBody'), [h0, h1] = hours(), [s] = range(), today = key(now());
-    const head = 40, rowH = Math.max(22, Math.floor((body.clientHeight - head - 6) / (h1 - h0)));
+    const head = 76, rowH = Math.max(44, Math.floor((body.clientHeight - head - 6) / (h1 - h0)));
     const reqDays = new Set(st.requests.map(r => (r.start || '').slice(0, 10)));
     let html = `<div class="gc-grid" style="--days:${days};--row:${rowH}px;--hours:${h1 - h0}"><div class="gc-corner"></div>`;
     for (let i = 0; i < days; i++) { const d = add(s, i), k = key(d);
@@ -79,10 +81,20 @@ window.PulseCal = (() => {
     html += `<div class="gc-times">${Array.from({ length: h1 - h0 }, (_, i) => `<span style="top:${i * rowH}px">${p2(h0 + i)}:00</span>`).join('')}</div>`;
     for (let i = 0; i < days; i++) {
       const d = add(s, i), k = key(d);
-      const blocks = live().filter(b => b.start.slice(0, 10) === k).map(b => {
-        const a = parse(b.start), z = parse(b.end), top = (a.getHours() - h0 + a.getMinutes() / 60) * rowH, h = Math.max(18, (z - a) / 36e5 * rowH - 2);
+      const groups = [], seen = {};
+      live().filter(b => b.start.slice(0, 10) === k).forEach(b => {
+        if (!(b.spots > 1)) return groups.push(b);
+        const g = seen[b.service + b.start]; if (g) { g.people.push(b); return; }
+        groups.push(seen[b.service + b.start] = { ...b, people: [b] });
+      });
+      const blocks = groups.map(b => {
+        const a = parse(b.start), z = parse(b.end);
+        if (b.people) { const top = (a.getHours() - h0 + a.getMinutes() / 60) * rowH, h = Math.max(18, (z - a) / 36e5 * rowH - 2), n = b.people.length, full = n >= b.spots;
+          return `<button type="button" class="gc-b gc-class${full ? ' full' : ''}" data-b="${b.id}" title="${e(b.people.map(p => p.customer).join(', '))}" style="top:${top}px;height:${h}px;--c:${svcColor(b.service)}">
+            <b>${e(b.service)}<small>, ${hm(a)}</small></b>${h >= 34 ? `<span class="gc-spots"><i style="width:${Math.min(100, n / b.spots * 100)}%"></i></span><small>${n}/${b.spots} ${full ? 'full' : 'booked'}</small>` : `<small>${n}/${b.spots}</small>`}</button>`; }
+        const top = (a.getHours() - h0 + a.getMinutes() / 60) * rowH, h = Math.max(18, (z - a) / 36e5 * rowH - 2);
         return `<button type="button" class="gc-b${b.status === 'no_show' ? ' faded' : ''}" data-b="${b.id}" style="top:${top}px;height:${h}px;--c:${svcColor(b.service)}">
-          <b>${e(b.customer)}</b>${h > 30 ? `<span>${e(b.service)}</span>` : ''}${h > 46 ? `<small>${hm(a)}–${hm(z)}</small>` : ''}</button>`;
+          ${h < 34 ? `<b>${e(b.customer)}<small>, ${hm(a)}</small></b>` : `<b>${e(b.customer)}</b><small>${hm(a)} – ${hm(z)}</small>${h > 50 ? `<span>${e(b.service)}</span>` : ''}`}</button>`;
       }).join('');
       const off = (st.data.timeOff || []).filter(t => t.start.slice(0, 10) <= k && t.end.slice(0, 10) >= k).map(t => {
         const a = parse(t.start), z = parse(t.end), from = t.start.slice(0, 10) < k ? h0 : a.getHours() + a.getMinutes() / 60, to = t.end.slice(0, 10) > k ? h1 : z.getHours() + z.getMinutes() / 60;
@@ -113,8 +125,9 @@ window.PulseCal = (() => {
         return `<button type="button" data-goday="${k}" class="${d.getMonth() !== a.getMonth() ? 'out' : ''}${k === today ? ' today' : ''}${d >= r0 && d < r1 && st.view !== 'month' ? ' inrange' : ''}${busy.has(k) ? ' busy' : ''}">${d.getDate()}</button>`; }).join('')}</div>`;
   }
   function legend() {
-    const used = [...new Set(live().map(b => b.service))].slice(0, 8);
-    root.querySelector('#gcLegend').innerHTML = used.map(n => `<span><i style="background:${svcColor(n)}"></i>${e(n)}</span>`).join('');
+    const used = [...new Set((st.data.bookings || []).filter(b => b.status !== 'cancelled').map(b => b.service))].slice(0, 8);
+    root.querySelector('#gcLegend').innerHTML = `<b class="gc-lh">My calendars</b>` + used.map(n => `<label class="gc-cal"><input type="checkbox" data-svc="${e(n)}"${hidden.has(n) ? '' : ' checked'} style="--c:${svcColor(n)}"><span>${e(n)}</span></label>`).join('');
+    const lg = root.querySelector('#gcLegend'); if (!lg.dataset.on) { lg.dataset.on = 1; lg.addEventListener('change', ev => { const c = ev.target.closest('[data-svc]'); if (!c) return; c.checked ? hidden.delete(c.dataset.svc) : hidden.add(c.dataset.svc); draw(); }); }
   }
   function requests() {
     const n = st.requests.length;
@@ -184,8 +197,9 @@ window.PulseCal = (() => {
       root = section.querySelector('#gcRoot');
       if (!root.dataset.on) { root.dataset.on = 1; st.at = now(); frame();
         root.addEventListener('pointerdown', dragStart); addEventListener('pointermove', dragMove); addEventListener('pointerup', dragEnd);
+        addEventListener('pointercancel', () => { if (drag) { drag.el.classList.remove('gc-drag'); drag.el.style.transform = ''; drag = null; } });
         root.addEventListener('click', ev => { if (dragged) { ev.stopImmediatePropagation(); ev.preventDefault(); } }, true); }
-      requestAnimationFrame(load);
+      setTimeout(load, 0); // not requestAnimationFrame: browsers pause it in background tabs, which left the calendar empty
     },
     refresh: () => root && load(),
   };

@@ -87,7 +87,14 @@ ALTER TABLE messages ADD COLUMN IF NOT EXISTS failed BOOLEAN DEFAULT false;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS needs_attention BOOLEAN DEFAULT false;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS attention_reason TEXT;
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'ai';   -- ai | manual
-UPDATE bookings SET source='manual' WHERE conversation_id IS NULL AND source='ai';
+-- one-time data fixes are recorded in schema_once and never run again
+CREATE TABLE IF NOT EXISTS schema_once (key text PRIMARY KEY, at timestamptz DEFAULT now());
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM schema_once WHERE key='bookings_source_manual') THEN
+    UPDATE bookings SET source='manual' WHERE conversation_id IS NULL AND source='ai';
+    INSERT INTO schema_once (key) VALUES ('bookings_source_manual');
+  END IF;
+END $$;
 
 -- Meta can deliver the same webhook twice; each WhatsApp message id is handled once.
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS wa_id TEXT;
@@ -150,7 +157,14 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS reminders_enabled BOOLEAN DEFAUL
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS reminder_hours INT DEFAULT 24;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS reminder_text TEXT DEFAULT 'Hi {name}, this is a reminder of your {service} at {business} tomorrow, {date} at {time} (ref {ref}). Reply here if you need to change anything. See you soon!';
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
-ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_status TEXT;   -- sent | skipped | not_sent: <reason>
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_status TEXT;
+-- the name typed on the public booking page (shown back to the booker instead of the name the business has on file)
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS booked_name TEXT;
+-- Billing (billing.js): payments recorded by the admin move "paid until" forward
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS paid_until DATE;
+CREATE TABLE IF NOT EXISTS payments (id serial PRIMARY KEY, business_id int REFERENCES businesses(id) ON DELETE CASCADE, amount numeric(10,2) NOT NULL,
+  currency text NOT NULL DEFAULT 'USD', method text, months int NOT NULL DEFAULT 1, note text, recorded_by text, at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS payments_biz ON payments (business_id, at DESC);   -- sent | skipped | not_sent: <reason>
 
 -- Online booking page is an optional add-on the business can switch on and customise
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS booking_enabled BOOLEAN DEFAULT true;
@@ -459,3 +473,61 @@ CREATE INDEX IF NOT EXISTS users_biz ON users (business_id);
 
 -- Decision trail: for each AI reply, which provider answered, the action it took and its stated reason
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS trail JSONB;
+
+-- Running costs the owner enters in Settings › Costs: fixed per month, or variable (share of revenue / per booking)
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS costs JSONB DEFAULT '[]'::jsonb;
+
+-- real owner quotes for the website, shown only when published (never invented)
+CREATE TABLE IF NOT EXISTS testimonials (id SERIAL PRIMARY KEY, quote TEXT NOT NULL, name TEXT NOT NULL, role TEXT, business TEXT, city TEXT,
+  consent BOOLEAN NOT NULL DEFAULT false, published BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (NOT published OR consent));
+
+-- which dashboard template a business runs (connectors.js TEMPLATES): decides the pages it sees
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS template TEXT;
+
+-- memberships: recurring plans; every payment is a row so Finance counts it when paid
+CREATE TABLE IF NOT EXISTS memberships (id SERIAL PRIMARY KEY, business_id INT REFERENCES businesses(id) ON DELETE CASCADE, customer_id INT REFERENCES customers(id) ON DELETE CASCADE,
+  plan TEXT NOT NULL, price NUMERIC NOT NULL DEFAULT 0, every_days INT NOT NULL DEFAULT 30, status TEXT NOT NULL DEFAULT 'active',
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(), renews_at TIMESTAMPTZ);
+CREATE TABLE IF NOT EXISTS membership_payments (id SERIAL PRIMARY KEY, membership_id INT REFERENCES memberships(id) ON DELETE CASCADE,
+  business_id INT REFERENCES businesses(id) ON DELETE CASCADE, amount NUMERIC NOT NULL, paid_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS membership_payments_biz ON membership_payments (business_id, paid_at);
+-- "Since you last checked" on Today: when the owner last looked, and the start of the window being shown
+ALTER TABLE users ADD COLUMN IF NOT EXISTS today_seen_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS today_from TIMESTAMPTZ;
+
+-- Incoming channel messages, written down before the channel is told "received" (inbound.js): nothing is lost on a restart
+CREATE TABLE IF NOT EXISTS inbound (id bigserial PRIMARY KEY, source text NOT NULL, payload jsonb NOT NULL, status text NOT NULL DEFAULT 'new',
+  attempts int NOT NULL DEFAULT 0, error text, created_at timestamptz NOT NULL DEFAULT now(), done_at timestamptz);
+CREATE INDEX IF NOT EXISTS inbound_open ON inbound (status, id) WHERE status <> 'done';
+-- Claude for MXAi Assistant: every answer's real tokens and cost, and each business's monthly budget (aibudget.js)
+CREATE TABLE IF NOT EXISTS ai_spend (id bigserial PRIMARY KEY, business_id int REFERENCES businesses(id) ON DELETE CASCADE, at timestamptz NOT NULL DEFAULT now(),
+  provider text NOT NULL, model text, input_tokens int DEFAULT 0, output_tokens int DEFAULT 0, cost_usd numeric(12,6) DEFAULT 0, own_key boolean DEFAULT false);
+CREATE INDEX IF NOT EXISTS ai_spend_month ON ai_spend (business_id, at);
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS ai_budget numeric(8,2) DEFAULT 5;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS ai_budget_warned text;
+-- Upgrades go through the admin: an owner asks, the admin approves or declines in the Lab (upgrades.js)
+CREATE TABLE IF NOT EXISTS upgrade_requests (id serial PRIMARY KEY, business_id int REFERENCES businesses(id) ON DELETE CASCADE, feature text NOT NULL, note text,
+  status text NOT NULL DEFAULT 'pending', requested_by int, at timestamptz NOT NULL DEFAULT now(), decided_at timestamptz, decided_by text);
+CREATE UNIQUE INDEX IF NOT EXISTS upgrade_requests_one_open ON upgrade_requests (business_id, feature) WHERE status='pending';
+-- The Lab's switches (switches.js): one per channel, connector and AI provider for the whole platform, and per business
+CREATE TABLE IF NOT EXISTS platform_switches (key text PRIMARY KEY, enabled boolean NOT NULL DEFAULT true, updated_at timestamptz DEFAULT now(), updated_by text);
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS connector_allow JSONB DEFAULT '{}';
+-- Support access (support.js): the admin's time-limited, read-only-by-default visits to a client's dashboard
+CREATE TABLE IF NOT EXISTS support_sessions (id serial PRIMARY KEY, admin_id int NOT NULL, business_id int REFERENCES businesses(id) ON DELETE CASCADE,
+  reason text, can_edit boolean NOT NULL DEFAULT false, edit_reason text, edit_at timestamptz,
+  started_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL, ended_at timestamptz, ended_by text);
+CREATE INDEX IF NOT EXISTS support_sessions_biz ON support_sessions (business_id, started_at DESC);
+-- Privacy (privacy.js): how many months each business keeps chats (empty = keep)
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS retention_months int;
+-- rows of businesses that no longer exist are removed, and these tables now follow their business when it is closed
+DO $$ BEGIN
+  DELETE FROM ai_queue WHERE business_id NOT IN (SELECT id FROM businesses);
+  DELETE FROM autopilot_runs WHERE business_id IS NOT NULL AND business_id NOT IN (SELECT id FROM businesses);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='ai_queue_business_fk') THEN
+    ALTER TABLE ai_queue ADD CONSTRAINT ai_queue_business_fk FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='autopilot_runs_business_fk') THEN
+    ALTER TABLE autopilot_runs ADD CONSTRAINT autopilot_runs_business_fk FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+  END IF;
+END $$;

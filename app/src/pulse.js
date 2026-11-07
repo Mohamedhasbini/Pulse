@@ -23,7 +23,7 @@ export async function waiting(B) {
   const items = [
     ...requests.map(r => ({ kind: 'request', id: r.id, title: `${r.name} wants to ${r.type === 'cancel' ? 'cancel' : r.type === 'reschedule' ? 'move' : 'change'} ${r.service}`, why: [r.start, r.details].filter(Boolean).join(' · ') })),
     ...lessons.filter(l => l.kind === 'rule').map(l => ({ kind: 'lesson', title: l.title, why: l.evidence, body: l.body })),
-    ...questions.map(x => ({ kind: 'question', id: x.id, title: `Answer “${x.question}”`, why: `asked ${x.n} time${x.n === 1 ? '' : 's'}, the AI couldn't answer` })),
+    ...questions.map(x => ({ kind: 'question', id: x.id, title: `Answer “${x.question}”`, why: `asked ${x.n} time${x.n === 1 ? '' : 's'}, no answer yet` })),
     ...agents.map(a => ({ kind: 'agent', id: a.id, title: `${a.name}: ${a.list.length} customer${a.list.length === 1 ? '' : 's'} to contact`, why: a.does }))];
   const [{ chats }] = await q(`SELECT count(*)::int AS chats FROM conversations WHERE business_id=$1 AND needs_attention AND channel<>'test'`, [B]);
   return { count: items.length, items, chats };
