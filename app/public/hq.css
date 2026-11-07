@@ -260,3 +260,10 @@ nav button.p10.locked,.p10-sub button.locked{opacity:.5}
 .sup-bar button{min-height:30px;padding:4px 12px;border-radius:999px;border:1px solid var(--fu-line,rgba(255,255,255,.18));background:transparent;color:inherit;font:600 12.5px/1 inherit;cursor:pointer}
 /* the owner's plan notice (billing.js): amber when ending soon, red once ended */
 .bill-bar .sup-dot{background:#e8a33d}.bill-bar.ended .sup-dot{background:#dc2626}
+
+/* the Lab: one menu only (its own). The dashboard sidebar and its resize handle are hidden, the page uses the full width */
+html body.labmode nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______),html body.labmode .sb-resize{display:none!important}
+html body.labmode main:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______){margin-left:0!important}
+.setnav-foot{display:flex;flex-direction:column;gap:4px;margin-top:18px;padding-top:12px;border-top:1px solid var(--fu-line,rgba(255,255,255,.1))}
+.setnav-foot button{min-height:34px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--fu-mute,#a1a1a1);font:500 13px/1.2 inherit;text-align:left;cursor:pointer}
+.setnav-foot button:hover,.setnav-foot button:focus-visible{background:var(--fu-raise,#262626);color:var(--fu-ink,#fafafa)}

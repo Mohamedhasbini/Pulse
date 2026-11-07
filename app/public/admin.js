@@ -13,6 +13,9 @@ const SECTIONS=[["Clients",[["biz","All businesses","Every client: plan, add-ons
 const PANE={biz:"#ccBiz",new:"#ccNew",users:"#ccUsers",leads:"#ccLeads",plans:"#ccPlans",platform:"#ccPlatform",audit:"#ccAudit"};
 const nav=document.createElement("nav");nav.className="setnav";nav.setAttribute("aria-label","Command center sections");
 nav.innerHTML=SECTIONS.map(([g,items])=>`<h3>${g}</h3>`+items.map(([k,l])=>`<button type="button" data-k="${k}"><i></i>${l}</button>`).join("")).join("");
+// the Lab has one menu: its own. Light/dark and Sign out live at the bottom of it (the dashboard sidebar is hidden here)
+{const foot=document.createElement("div");foot.className="setnav-foot";foot.innerHTML='<button type="button" data-lf="themeBtn">Light or dark</button><button type="button" data-lf="logoutBtn">Sign out</button>';nav.append(foot);
+ foot.addEventListener("click",e=>{const b=e.target.closest("[data-lf]");if(b)document.getElementById(b.dataset.lf)?.click()})}
 const main=document.createElement("div");main.className="ccmain";
 ad.classList.add("cclay");tabs.after(nav);nav.after(main);
 // move every section (and the "done" notice) into the main column, each with a one-line introduction
