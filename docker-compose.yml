@@ -66,6 +66,8 @@ services:
     command:
       - |
         while true; do
+          # a good backup (over 1 KB) from the last 23 hours means nothing to do this hour
+          if [ -n "$$(find /backups -name 'ringback-*.sql.gz' -size +1k -mmin -1380 2>/dev/null | head -1)" ]; then sleep 3600; continue; fi
           ts=$$(date +%Y-%m-%d_%H%M)
           # the dump's own exit code decides (a pipe would only report gzip's); the database may still be starting: retry
           ok=0; for try in 1 2 3 4 5 6; do
@@ -81,8 +83,10 @@ services:
             rm -f /backups/ringback-$$ts.sql.part /backups/ringback-$$ts.sql.gz.part; echo "backup FAILED $$ts"
           fi
           # old copies are removed only on a day the new backup worked: failing days never eat the good ones
-          if [ $$ok = 1 ] && [ -s /backups/ringback-$$ts.sql.gz ]; then find /backups -name '*.gz' -mtime +$$KEEP_DAYS -delete; fi
-          sleep 86400
+          if [ $$ok = 1 ] && [ -s /backups/ringback-$$ts.sql.gz ]; then
+            find /backups -maxdepth 1 \( -name 'ringback-*.sql.gz' -o -name 'uploads-*.tar.gz' \) -mtime +$$KEEP_DAYS -delete
+          fi
+          sleep 3600
         done
 
 volumes:

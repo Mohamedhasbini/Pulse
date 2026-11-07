@@ -80,7 +80,8 @@ Every bug fix gets a regression test (usually in `app/src/smoke-test.js`).
 - Be token-efficient: few screenshots, batch edits, no repeated full sweeps.
 
 ## Known open items
-- Backups exist only on this PC (no off-site copy); none are made while the PC is off.
+- Backups: hourly check (one a day), encrypted daily copy to OneDrive (scripts/offsite-backup.ps1, key BACKUP_KEY), weekly
+  restore test (scripts/restore-test.sh); none are made while the PC is off.
 - No type checking or linting in the project yet.
 - Bookings have no `updated_at`, so "cancelled since…" can't be counted.
 - Next business steps: self sign-up/login for new businesses, plans and billing (Stripe), staff accounts.

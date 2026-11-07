@@ -124,7 +124,8 @@ export async function usage(days = 30) {
 }
 
 /* ---------- export and close a client ---------- */
-const TENANT_TABLES = ['services', 'customers', 'conversations', 'bookings', 'time_off', 'requests', 'coupons', 'learning', 'reviews', 'notifications', 'campaigns'];
+const TENANT_TABLES = ['services', 'customers', 'conversations', 'bookings', 'time_off', 'requests', 'coupons', 'learning', 'reviews', 'notifications', 'campaigns',
+  'memberships', 'membership_payments', 'waitlist', 'agent_actions', 'pulse_memory', 'ai_lessons', 'test_runs', 'payments', 'support_sessions', 'upgrade_requests'];
 export async function exportBusiness(id) {
   const biz = await one('SELECT * FROM businesses WHERE id=$1', [id]);
   if (!biz) return null;
@@ -181,6 +182,11 @@ export async function health(aiHealth) {
   const b = lastBackup();
   checks.push({ name: 'Daily backup', ok: !!b && b.hours < 26 && !b.empty, detail: !b ? 'no backup found' : !b.count ? `${b.empty} empty backup files, none usable`
     : `last ${b.hours} h ago · ${b.size_kb} KB · ${b.count} kept${b.empty ? ` · ${b.empty} EMPTY` : ''}` });
+  const lastLine = f => { try { return fs.readFileSync(path.join(BACKUPS, f), 'utf8').trim().split(/\r?\n/).pop() || ''; } catch { return ''; } };
+  const off = lastLine('offsite.log'), offAt = Date.parse(off.split(' ')[0]);
+  checks.push({ name: 'Off-site copy', ok: / ok /.test(` ${off} `) && Date.now() - offAt < 50 * 3600e3, detail: off ? off.slice(0, 140) : 'none yet (the watchdog makes one a day, encrypted, in OneDrive)' });
+  const rt = lastLine('restore-test.log'), rtAt = Date.parse(rt.split(' ')[0]);
+  checks.push({ name: 'Restore test', ok: / ok /.test(` ${rt} `) && Date.now() - rtAt < 9 * 86400e3, detail: rt ? rt.slice(0, 160) : 'never run (the watchdog runs one every week)' });
   const failed = await one(`SELECT count(*)::int n FROM messages WHERE failed AND created_at > now() - interval '1 hour'`).catch(() => ({ n: 0 }));
   checks.push({ name: 'AI replies (last hour)', ok: failed.n < 5, detail: `${failed.n} failed` });
   try { const st = fs.statfsSync('/'); const freePct = Math.round(st.bavail / st.blocks * 100); checks.push({ name: 'Disk space', ok: freePct > 10, detail: `${freePct}% free` }); } catch {}

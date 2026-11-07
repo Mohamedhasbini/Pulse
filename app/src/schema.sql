@@ -87,7 +87,14 @@ ALTER TABLE messages ADD COLUMN IF NOT EXISTS failed BOOLEAN DEFAULT false;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS needs_attention BOOLEAN DEFAULT false;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS attention_reason TEXT;
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'ai';   -- ai | manual
-UPDATE bookings SET source='manual' WHERE conversation_id IS NULL AND source='ai';
+-- one-time data fixes are recorded in schema_once and never run again
+CREATE TABLE IF NOT EXISTS schema_once (key text PRIMARY KEY, at timestamptz DEFAULT now());
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM schema_once WHERE key='bookings_source_manual') THEN
+    UPDATE bookings SET source='manual' WHERE conversation_id IS NULL AND source='ai';
+    INSERT INTO schema_once (key) VALUES ('bookings_source_manual');
+  END IF;
+END $$;
 
 -- Meta can deliver the same webhook twice; each WhatsApp message id is handled once.
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS wa_id TEXT;
@@ -511,3 +518,16 @@ CREATE TABLE IF NOT EXISTS support_sessions (id serial PRIMARY KEY, admin_id int
   reason text, can_edit boolean NOT NULL DEFAULT false, edit_reason text, edit_at timestamptz,
   started_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL, ended_at timestamptz, ended_by text);
 CREATE INDEX IF NOT EXISTS support_sessions_biz ON support_sessions (business_id, started_at DESC);
+-- Privacy (privacy.js): how many months each business keeps chats (empty = keep)
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS retention_months int;
+-- rows of businesses that no longer exist are removed, and these tables now follow their business when it is closed
+DO $$ BEGIN
+  DELETE FROM ai_queue WHERE business_id NOT IN (SELECT id FROM businesses);
+  DELETE FROM autopilot_runs WHERE business_id IS NOT NULL AND business_id NOT IN (SELECT id FROM businesses);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='ai_queue_business_fk') THEN
+    ALTER TABLE ai_queue ADD CONSTRAINT ai_queue_business_fk FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='autopilot_runs_business_fk') THEN
+    ALTER TABLE autopilot_runs ADD CONSTRAINT autopilot_runs_business_fk FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+  END IF;
+END $$;

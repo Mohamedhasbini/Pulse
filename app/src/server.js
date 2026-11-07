@@ -50,6 +50,7 @@ import { mountControls } from './controls.js';
 import { surfaceOf, doorAllows } from './hosts.js';
 import { mountSupport, activeSupport, READ_ONLY_OK } from './support.js';
 import { accessOf, stopped, forgetAccess, STILL_ALLOWED, mountBilling } from './billing.js';
+import { startPrivacy } from './privacy.js';
 import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
 import { compress, fingerprint, rememberUser, recallUser, forgetUser, requestLog, CSP } from './web.js';
 
@@ -474,7 +475,7 @@ app.delete('/api/admin/plans/:key', adminOnly, wrap(async (req, res) => {
   await audit(req, table === 'plans' ? 'plan_deleted' : 'addon_deleted', req.params.key, 0);
   res.json({ ok: true });
 }));
-app.get('/api/admin/businesses', adminOnly, wrap(async (_req, res) => res.json(await q(`SELECT b.id, b.name, b.vertical, b.country, b.city, b.currency, b.timezone, b.is_demo, b.ai_budget::float AS ai_budget, to_char(b.paid_until,'YYYY-MM-DD') AS paid_until,
+app.get('/api/admin/businesses', adminOnly, wrap(async (_req, res) => res.json(await q(`SELECT b.id, b.name, b.vertical, b.country, b.city, b.currency, b.timezone, b.is_demo, b.ai_budget::float AS ai_budget, to_char(b.paid_until,'YYYY-MM-DD') AS paid_until, b.retention_months,
     b.plan_status, b.plan_key, b.addons, b.feature_overrides, to_char(b.trial_ends_at,'YYYY-MM-DD') AS trial_ends, GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left,
     (SELECT string_agg(u.email, ', ') FROM users u WHERE u.business_id=b.id AND u.role='owner') AS owners,
     (SELECT count(*) FROM users u WHERE u.business_id=b.id)::int AS logins,
@@ -507,6 +508,8 @@ app.post('/api/admin/businesses/:id/plan', adminOnly, wrap(async (req, res) => {
   const addons = Array.isArray(req.body.addons) ? (await q('SELECT key FROM addons WHERE key = ANY($1)', [req.body.addons])).map(a => a.key) : b.addons;
   const overrides = req.body.feature_overrides && typeof req.body.feature_overrides === 'object'
     ? Object.fromEntries(Object.entries(req.body.feature_overrides).filter(([k, v]) => FEATURES[k] && typeof v === 'boolean')) : b.feature_overrides;
+  const keep = req.body.retention_months === undefined ? b.retention_months : (+req.body.retention_months > 0 ? Math.min(Math.round(+req.body.retention_months), 120) : null);
+  await q('UPDATE businesses SET retention_months=$2 WHERE id=$1', [id, keep]);
   const budget = req.body.ai_budget != null && req.body.ai_budget !== '' && isFinite(+req.body.ai_budget) ? Math.min(Math.max(+req.body.ai_budget, 0), 1000) : +(b.ai_budget ?? 5);
   await q(`UPDATE businesses SET plan_status=$1, plan_key=$2, addons=$3, feature_overrides=$4, trial_ends_at = trial_ends_at + make_interval(days => $5), ai_budget=$7 WHERE id=$6`,
     [status, plan, JSON.stringify(addons), JSON.stringify(overrides), Math.min(Math.max(+req.body.extend_days || 0, 0), 365), id, budget]);
@@ -1403,6 +1406,8 @@ app.post('/api/customers/:id/erase', wrap(async (req, res) => {
     await cl.query('UPDATE bookings SET conversation_id=NULL, notes=NULL WHERE customer_id=$1', [c.id]);
     await cl.query('UPDATE bookings SET conversation_id=NULL WHERE conversation_id IN (SELECT id FROM conversations WHERE customer_id=$1)', [c.id]);
     await cl.query('DELETE FROM ai_queue WHERE conversation_id IN (SELECT id FROM conversations WHERE customer_id=$1)', [c.id]);
+    await cl.query(`UPDATE learning SET question='(question from an erased client)' WHERE conversation_id IN (SELECT id FROM conversations WHERE customer_id=$1)`, [c.id]);
+    await cl.query('UPDATE agent_actions SET message=NULL WHERE customer_id=$1', [c.id]);
     await cl.query('DELETE FROM conversations WHERE customer_id=$1', [c.id]); // messages go with them
     await cl.query(`UPDATE reviews SET text=NULL, author=NULL WHERE customer_id=$1`, [c.id]); // stars stay (the rating average), words and name go
     await cl.query('DELETE FROM waitlist WHERE customer_id=$1', [c.id]);
@@ -1465,6 +1470,7 @@ const PORT = process.env.PORT || 3100;
 const server = app.listen(PORT, () => console.log(`MXAi running on http://localhost:${PORT}`));
 // PREVIEW_ONLY: a second copy for checking changes against the real data; it sends nothing and runs no background jobs
 const LIVE = !process.env.PREVIEW_ONLY;
+if (LIVE) startPrivacy(); // privacy.js: retention clean-up every 6 hours
 // A clean stop (docker compose restart / rebuild sends SIGTERM): take no new requests, let messages being answered
 // finish (up to 15 s, inside Docker's 20 s grace), close the database, exit. Anything still unfinished is picked up
 // again on start-up from the inbound table.

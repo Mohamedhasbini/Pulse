@@ -17,6 +17,9 @@ function Note($m) { "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  $m" | Add-Conten
   if ((Get-Item $log).Length -gt 1MB) { Move-Item $log "$log.old" -Force } }
 function Up($url) { try { (Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 8).StatusCode -eq 200 } catch { $false } }
 
+$stateFile = Join-Path $root 'logs\watchdog-state.json'
+function State { try { Get-Content $stateFile -Raw | ConvertFrom-Json } catch { [pscustomobject]@{ offsite = ''; restore = '2000-01-01' } } }
+function SaveState($s) { $s | ConvertTo-Json | Set-Content $stateFile }
 Note 'watchdog started'
 while ($true) {
   # 1. Docker
@@ -41,7 +44,19 @@ while ($true) {
     else { $script:bad++; if ($script:bad -ge 2) { Note 'public address unreachable: restarting the tunnel'; $cf | Stop-Process -Force; Start-Sleep 2
       Start-Process $tunnel -ArgumentList 'tunnel', 'run', 'jarvis' -WindowStyle Hidden; $script:bad = 0 } }
   }
-  # 4. nexfoyz.dev home page
+  # 4. backups leave this PC once a day (encrypted, to OneDrive) and are test-restored once a week
+  if ($LASTEXITCODE -eq 0 -or (Up 'http://localhost:3100/health')) {
+    $st = State; $today = Get-Date -Format 'yyyy-MM-dd'
+    if ($st.offsite -ne $today) {
+      & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'offsite-backup.ps1')
+      if ($LASTEXITCODE -eq 0) { $st.offsite = $today; SaveState $st } else { Note 'off-site copy failed, see backups\offsite.log' }
+    }
+    if (((Get-Date) - [datetime]$st.restore).TotalDays -ge 7) {
+      Push-Location $root; docker compose cp scripts/restore-test.sh backup:/tmp/restore-test.sh *> $null; docker compose exec -T backup sh /tmp/restore-test.sh *> $null; $rc = $LASTEXITCODE; Pop-Location
+      if ($rc -eq 0) { $st.restore = (Get-Date -Format 's'); SaveState $st } else { Note 'restore test FAILED, see backups\restore-test.log' }
+    }
+  }
+  # 5. nexfoyz.dev home page
   if ((Test-Path $site) -and -not (Up 'http://localhost:8092/')) { Note 'home page down: starting it'; Start-Process $python -ArgumentList "`"$site`"" -WindowStyle Hidden }
   Start-Sleep 120
 }

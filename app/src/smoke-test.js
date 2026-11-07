@@ -316,6 +316,30 @@ try {
   forgetAccess(r.id);
   const firstReply = await handleMessage({ businessId: r.id, phone: 'test-disclose-1', name: 'Test Disclose', text: 'Thanks!', channel: 'whatsapp' });
   say('The first reply of a chat says it is an AI assistant', !firstReply.reply || /AI assistant|asistente de IA|ذكاء اصطناعي|assistant IA/.test(firstReply.reply), (firstReply.reply || 'no reply').slice(0, 60));
+  // ---- privacy and backups (privacy.js, ops.js)
+  const ec = await one(`INSERT INTO customers (business_id, phone, name) VALUES ($1, 'test-erase-1', 'Test Erase') RETURNING id`, [r.id]);
+  const econv = await one(`INSERT INTO conversations (business_id, customer_id, channel) VALUES ($1,$2,'test') RETURNING id`, [r.id, ec.id]);
+  await q(`INSERT INTO learning (business_id, conversation_id, question) VALUES ($1,$2,'My private question')`, [r.id, econv.id]);
+  await q(`INSERT INTO agent_actions (business_id, agent, customer_id, status, message) VALUES ($1,'winback',$2,'sent','Hi Test Erase, we miss you')`, [r.id, ec.id]);
+  const eraseRes = await fetch(BASE + `/api/customers/${ec.id}/erase`, { method: 'POST', headers: { ...as(owner), 'Content-Type': 'application/json' }, body: '{"confirm":"ERASE"}' });
+  const leftQ = await one(`SELECT count(*)::int AS n FROM learning WHERE business_id=$1 AND question='My private question'`, [r.id]);
+  const leftA = await one(`SELECT count(*)::int AS n FROM agent_actions WHERE customer_id=$1 AND message IS NOT NULL`, [ec.id]);
+  say("Erasing a client also removes their words from questions and sent messages", eraseRes.status === 200 && leftQ.n === 0 && leftA.n === 0);
+  const expRes = await fetch(BASE + `/api/admin/businesses/${r.id}/export`, { headers: as(admin) }).then(x => x.json()).catch(() => ({}));
+  const expT = expRes.tables || expRes;
+  say('The business export includes payments, memberships and support visits', ['payments', 'memberships', 'support_sessions'].every(k => k in expT));
+  const oconv = await one(`INSERT INTO conversations (business_id, customer_id, channel) VALUES ($1,$2,'test') RETURNING id`, [r.id, realC.id]);
+  await q(`INSERT INTO messages (conversation_id, role, text, created_at) VALUES ($1,'customer','old message', now() - interval '3 months'), ($1,'customer','new message', now())`, [oconv.id]);
+  await q('UPDATE businesses SET retention_months=1 WHERE id=$1', [r.id]);
+  const { purge } = await import('./privacy.js'); await purge();
+  const keptMsgs = await q(`SELECT text FROM messages WHERE conversation_id=$1 ORDER BY id`, [oconv.id]);
+  say('Chats older than the business keeps them are removed, newer ones stay', keptMsgs.length === 1 && keptMsgs[0].text === 'new message');
+  await q('UPDATE businesses SET retention_months=NULL WHERE id=$1', [r.id]);
+  say('Rows of closed businesses are removed with them (ai_queue)', !!(await one(`SELECT 1 FROM pg_constraint WHERE conname='ai_queue_business_fk'`)));
+  say('One-time data fixes are recorded and never repeated', !!(await one(`SELECT 1 FROM schema_once WHERE key='bookings_source_manual'`)));
+  const hcRes = await fetch(BASE + '/api/admin/health', { headers: as(admin) }).then(x => x.json()).catch(() => []);
+  const hl = Array.isArray(hcRes) ? hcRes : hcRes.checks || [];
+  say('Lab health checks the off-site copy and the restore test', ['Off-site copy', 'Restore test'].every(n => hl.some(c => c.name === n)));
   // the admin with no business opened is in the Lab: platform pages only
   const me0 = await fetch(BASE + '/api/me', { headers: as(admin) }).then(r => r.json());
   say('Admin signs in to the Lab, not a business', me0.lab === true && !me0.business);

@@ -70,6 +70,7 @@ function drawDetail(){const b=list.find(x=>x.id===sel),box=$("#cmDetail");if(!b)
 
     <section class="cm-sec"><h3>Plan and billing</h3>
       <div class="cm-grid2"><label>Plan<select class="bPlan">${(cat?.plans||[]).map(p=>`<option value="${p.key}" ${p.key===b.plan_key?"selected":""}>${esc(p.name)} · ${+p.price} ${esc(p.currency)}/mo</option>`).join("")}</select></label>
+        <label>Keep chats for<select class="bKeep">${[["","Always"],[6,"6 months"],[12,"12 months"],[24,"24 months"],[36,"36 months"]].map(([v,l])=>`<option value="${v}" ${String(b.retention_months??"")===String(v)?"selected":""}>${l}</option>`).join("")}</select></label>
         <label>Claude budget a month ($)<input class="bBudget" type="number" min="0" max="1000" step="1" value="${b.ai_budget??5}" title="Used only when AI Assistant Pro is on for this client"></label>
         <label>Status<select class="bStatus">${[["trial","Trial"],["active","Active (paying)"],["paused","Paused"]].map(([v,l])=>`<option value="${v}" ${v===b.plan_status?"selected":""}>${l}</option>`).join("")}</select></label></div>
       <div class="cm-note">${b.plan_status==="trial"?`Trial ends ${esc(b.trial_ends||"")} · `:""}Monthly total with add-ons: <b id="cmTotal">${money(total,cur)}</b></div></section>
@@ -94,11 +95,11 @@ function drawDetail(){const b=list.find(x=>x.id===sel),box=$("#cmDetail");if(!b)
         <button class="btn" type="button" data-act="pay">Record payment</button></div>
       <div class="list pList" style="margin-top:8px"></div></section>
     <section class="cm-sec danger"><h3>Danger zone</h3><div class="item"><div class="grow"><b>Close this client</b><small>Deletes customers, chats, bookings, logins and photos. Export first.</small></div><button class="btn ghost" type="button" data-act="close">Close…</button></div></section>`;
-  const body=()=>({plan_key:box.querySelector(".bPlan").value,status:box.querySelector(".bStatus").value,ai_budget:box.querySelector(".bBudget")?.value,addons:[...box.querySelectorAll(".bAdd:checked")].map(x=>x.value),
+  const body=()=>({plan_key:box.querySelector(".bPlan").value,status:box.querySelector(".bStatus").value,ai_budget:box.querySelector(".bBudget")?.value,retention_months:box.querySelector(".bKeep")?.value??undefined,addons:[...box.querySelectorAll(".bAdd:checked")].map(x=>x.value),
     feature_overrides:Object.fromEntries([...box.querySelectorAll(".seg3")].map(g=>[g.dataset.k,g.querySelector("[aria-pressed=true]")?.dataset.v||""]).filter(([,v])=>v).map(([k,v])=>[k,v==="on"]))});
   const recalc=()=>{const p=planOf(box.querySelector(".bPlan").value),t=(+p?.price||0)+[...box.querySelectorAll(".bAdd:checked")].reduce((s,x)=>s+(+(addons.find(a=>a.key===x.value)?.price)||0),0);
     $("#cmTotal").textContent=money(t,p?.currency||cur);$("#cmDirty").textContent="Unsaved changes"};
-  box.querySelectorAll(".bPlan,.bStatus,.bAdd,.bBudget").forEach(x=>x.addEventListener("change",recalc));
+  box.querySelectorAll(".bPlan,.bStatus,.bAdd,.bBudget,.bKeep").forEach(x=>x.addEventListener("change",recalc));
   // payments: the monthly total is the suggested amount; the list shows the last ones
   {const amt=box.querySelector(".pAmt"),mon=box.querySelector(".pMon"),fill=()=>{const p=planOf(box.querySelector(".bPlan").value),t=(+p?.price||0)+[...box.querySelectorAll(".bAdd:checked")].reduce((s,x)=>s+(+(addons.find(a=>a.key===x.value)?.price)||0),0);if(amt&&!amt.dataset.touched)amt.value=t*(+mon.value||1)};
    if(amt){fill();amt.addEventListener("input",()=>amt.dataset.touched="1");mon.addEventListener("change",fill);
