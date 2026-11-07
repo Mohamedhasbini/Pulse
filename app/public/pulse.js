@@ -161,6 +161,21 @@
   }
 
   // ---------- opening a page and tab ----------
+  // A page or tab the plan doesn't include (the server refuses its data anyway): greyed in the sidebar, and it opens
+  // the lock card with a Request button instead of an error. The admin sees everything unless "view as" is on.
+  function lockOf(id, name, spec = {}) {
+    const M = typeof me !== 'undefined' && me; if (!M || !M.features || (M.user?.role === 'admin' && !M.view_as)) return null;
+    const f = id === 'insights' ? 'insights' : spec.entry === 'training' ? 'teach' : spec.entry === 'website' ? 'website'
+      : id === 'growth' && /^(Offers|Sent offers)$/.test(name) ? 'marketing' : name === 'Discount codes' ? 'coupons' : null;
+    return f && !M.features.includes(f) ? f : null;
+  }
+  function markLocks() {
+    for (const [id, , , tabs] of PAGES) {
+      const all = tabs.every(([n, s]) => s.hidden || lockOf(id, n, s));
+      nav[id]?.classList.toggle('locked', all); if (nav[id]) nav[id].title = all ? 'Not in your plan' : nav[id].getAttribute('aria-label');
+      $$(`.p10-sub[data-for="${id}"] [data-k]`).forEach(b => { const t = tabs[+b.dataset.k]; b.classList.toggle('locked', !!(t && lockOf(id, t[0], t[1]))) });
+    }
+  }
   async function go(id, i) {
     if (MOVED[id]) [id, i] = MOVED[id](typeof i === 'string' && !/^\d+$/.test(i) ? i : +i || 0);
     const page = PAGES.find(p => p[0] === id); if (!page) return;
@@ -170,6 +185,8 @@
     // switching: the page area stays invisible while the section is assembled (an old page can show for ~0.3s while
     // it is borrowed and trimmed), then the finished page fades in. The sidebar marks the new place at once.
     const mainEl = $('main'); mainEl?.classList.add('p10-sw'); clearTimeout(go.veil); go.veil = setTimeout(() => mainEl?.classList.remove('p10-sw'), 1200);
+    const lockF = lockOf(id, t[0], spec);
+    if (lockF) { mark(id); hideOwn(); showOwn('locked', { feature: lockF, title: page[1] }); setTimeout(() => { if (current[0] === id) mainEl?.classList.remove('p10-sw') }, 30); return; }
     mark(id);
     hideOwn();
     $$('[data-p10hide]').forEach(c => delete c.dataset.p10hide); // the last tab's hiding never leaks into this one
@@ -328,6 +345,7 @@
   function hideOwn() { Object.values(own).forEach(s => s.hidden = true) }
   function showOwn(key, spec = {}) {
     $$('main > section.wrap').forEach(s => s.hidden = true);
+    if (key === 'locked') { const s = page('locked', spec.title, '', '<div class="lkRoot"></div>'); s.hidden = false; s.querySelector('h1').textContent = spec.title; window.MXLockCard?.(s.querySelector('.lkRoot'), spec.feature); }
     if (key === 'calendar') { const s = page('calendar', 'Calendar', '', '<div id="gcRoot"></div>'); s.hidden = false; window.PulseCal?.mount(s); }
     if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }
     if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything MXAi Assistant prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
@@ -469,7 +487,7 @@
   window.openPulse = k => go('pulse', ['approvals', 'ask', 'brief'].indexOf(k) < 0 ? 0 : ['approvals', 'ask', 'brief'].indexOf(k));
   window.openP10 = go;
   // for the search box (palette.js)
-  window.P10 = { pages: PAGES, icon: ICON, named, group: GROUP, shown, ask: x => window.PulseCommand ? window.PulseCommand.open(x) : ask(x), go: (id, t) => go(id, t), current: () => current?.[0], sub: () => current?.[1], shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts() };
+  window.P10 = { pages: PAGES, icon: ICON, named, group: GROUP, shown, ask: x => window.PulseCommand ? window.PulseCommand.open(x) : ask(x), go: (id, t) => go(id, t), current: () => current?.[0], sub: () => current?.[1], shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts(), markLocks: () => markLocks() };
   // any other way of opening a section (Today's buttons, notifications) drops our tab row so the page isn't mislabelled
   document.addEventListener('click', ev => {
     const n = ev.target.closest('nav button[data-view]'); if (!n || n.classList.contains('p10')) return;

@@ -15,6 +15,7 @@ export const FEATURES = {
   telegram: 'Own Telegram bot', staff_logins: 'Staff logins', marketing: 'Marketing campaigns to opted-in clients',
   remove_branding: 'Remove "Powered by MXAi" from confirmations and the booking page',
   website: 'Own website (one page, own domain or subdomain)',
+  assistant_pro: 'MXAi Assistant on Claude (monthly AI budget set in the Lab)',
 };
 
 // A section that needs a feature: without it the section shows an upgrade message instead.
@@ -32,6 +33,7 @@ export const DEFAULT_ADDONS = [
   { key: 'marketing_addon', name: 'Marketing', price: 19, features: ['marketing'] },
   { key: 'whitelabel_addon', name: 'Remove MXAi branding', price: 9, features: ['remove_branding'] },
   { key: 'website_addon', name: 'Own website', price: 15, features: ['website'] },
+  { key: 'assistant_pro_addon', name: 'AI Assistant Pro', price: 19, features: ['assistant_pro'] },
 ];
 
 export async function seedPlans() {
@@ -46,7 +48,9 @@ export async function seedPlans() {
 }
 
 // Plan features, plus add-on features, then the admin's per-business switches (on or off) win.
-export async function featuresOf(bizId) {
+// viewAs (a plan key): the admin's "view as" in a playground: exactly that plan, nothing added.
+export async function featuresOf(bizId, viewAs = null) {
+  if (viewAs) return new Set((await one('SELECT features FROM plans WHERE key=$1', [viewAs]))?.features || []);
   const b = await one(`SELECT b.addons, b.feature_overrides, p.features FROM businesses b LEFT JOIN plans p ON p.key=b.plan_key WHERE b.id=$1`, [bizId]);
   if (!b) return new Set();
   const set = new Set(b.features || []);

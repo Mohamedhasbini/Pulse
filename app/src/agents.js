@@ -5,6 +5,7 @@
 // Clients who can't be reached by the app get a ready WhatsApp link the owner can send from their own phone.
 import { q, one } from './db.js';
 import { tzOf, wall, dayStart } from './clock.js';
+import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const first = n => String(n || '').trim().split(/\s+/)[0] || 'there';
@@ -111,12 +112,12 @@ export const AGENTS = {
 // sends one agent's messages to the chosen clients (manual Send and the 11:00 autopilot share this)
 export async function sendAgent(B, agentId, ids, edits, manual, { sendWhatsApp, sendTelegram }) {
   const a = AGENTS[agentId], found = await a.find(B.id, B), list = Array.isArray(found) ? found : [];
-  const pick = new Set(ids.map(Number)); let sent = 0, skipped = 0;
+  const pick = new Set(ids.map(Number)), play = await isPlayground(B.id); let sent = 0, skipped = 0;
     for (const c of list.filter(x => pick.has(x.id))) {
       let text = String(edits[c.id] || c.message).slice(0, 900);
       if (a.promo) text += `\n\n${B.name}. Reply STOP to stop offers.`;
-      let status = manual ? 'sent manually' : 'skipped: not reachable now';
-      const r = manual ? null : route(c);
+      let status = manual ? 'sent manually' : play ? PLAYGROUND_SKIP : 'skipped: not reachable now';
+      const r = manual || play ? null : route(c);
       if (r === 'telegram') { const x = await sendTelegram(c.telegram_chat_id, text, B.id); status = x.ok ? 'sent' : 'failed: ' + x.reason; }
       if (r === 'whatsapp') { const x = await sendWhatsApp(B.wa_phone_number_id, c.phone, text); status = x.ok ? 'sent' : 'failed: ' + x.reason; }
       if (status.startsWith('sent') && c.conv_id) {

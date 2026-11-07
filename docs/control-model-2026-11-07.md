@@ -75,6 +75,19 @@ updated, client told) or decline. Recorded in the audit log. Self-serve upgrades
 | Connector catalogue (`connectors.js`) | **Playground**: "view as plan", channels sandboxed |
 | | Lab on its own address with a Cloudflare gate |
 
+## 6b. Built on 7 November
+
+- **AI Assistant Pro (Claude)**: an add-on ($19). Claude answers the MXAi Assistant only where it is switched on, on
+  MXAi's own key, inside a monthly budget per business (default $5, set in Lab › Businesses). Every Claude answer is
+  logged with real tokens and cost (`ai_spend`). Over budget it goes back to the free AI and your phone is told once.
+- **Cost vs revenue**: Lab › HQ › Clients shows each client's AI cost this month and margin; a client that costs more
+  than it pays is flagged, and the Running cost figure counts it.
+- **Locked features with Request**: pages a plan doesn't include are greyed in the sidebar and open a card with
+  "Request this upgrade". Requests wait in Lab › HQ › Upgrade requests; Approve adds the matching add-on (or switches
+  the feature on) and notifies the owner.
+- **Playgrounds**: in any business you open, "View as" (under Back to Lab) shows it as a Starter, Pro or Business owner
+  would see it. Test businesses never send anything to real people (reminders, campaigns, agents, Inbox replies).
+
 ## 7. Build order
 
 | Phase | What | Size |

@@ -43,6 +43,8 @@ import { VERTICALS, listVerticals, termsOf } from './verticals.js';
 import { startReminders, runReminders, fill } from './reminders.js';
 import { setSenders, startAutopilot, offerWaitlist } from './autopilot.js';
 import { mountHQ } from './hq.js';
+import { mountUpgrades, pendingFor } from './upgrades.js';
+import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
 import { compress, fingerprint, rememberUser, recallUser, forgetUser, requestLog, CSP } from './web.js';
 
 const app = express();
@@ -261,8 +263,11 @@ app.use(wrap(async (req, res, next) => {
   if (mod && user.role !== 'admin') {
     if (!canOpen(user, mod)) { await audit(req, 'denied', `${req.method} ${req.path}`, biz); return res.status(403).json({ error: "You don't have access to this section. Ask the account owner.", locked: 'permission' }); }
   }
-  // The platform admin is never blocked by a plan: they test and set up every business.
-  if (user.role === 'admin') { const tz = biz && await bizTz(biz); return ctx.run({ biz }, () => inZone(tz, next)); }
+  // The platform admin is never blocked by a plan: they test and set up every business. With "view as" (a plan key in
+  // rb_viewas) the admin gets exactly that plan's locks, to see a business the way its owner would.
+  const viewAs = user.role === 'admin' && biz && /(?:^|;\s*)rb_viewas=([a-z0-9_-]{1,40})/.exec(req.get('cookie') || '')?.[1] || null;
+  if (user.role === 'admin' && !viewAs) { const tz = biz && await bizTz(biz); return ctx.run({ biz }, () => inZone(tz, next)); }
+  const F = await featuresOf(biz, viewAs), hasFeature = (_b, f) => F.has(f); // one lookup for every check below
   if (mod && MODULE_FEATURE[mod] && !(await hasFeature(biz, MODULE_FEATURE[mod])))
     return res.status(402).json({ error: `${FEATURES[MODULE_FEATURE[mod]]} is not in your plan. Upgrade or add it to unlock it.`, locked: 'plan', feature: MODULE_FEATURE[mod] });
   if (/^\/api\/marketing/.test(req.path) && !(await hasFeature(biz, 'marketing')))
@@ -272,7 +277,7 @@ app.use(wrap(async (req, res, next) => {
   if (req.method === 'PUT' && req.path === '/api/channels/telegram' && req.body.token && !(await hasFeature(biz, 'telegram')))
     return res.status(402).json({ error: 'A Telegram bot is not in your plan.', locked: 'plan', feature: 'telegram' });
   const tz = biz && await bizTz(biz); // the rest of this request runs on the business's own clock (clock.js)
-  ctx.run({ biz }, () => inZone(tz, next));
+  ctx.run({ biz, viewAs }, () => inZone(tz, next));
 }));
 const assets = fingerprint(PUBLIC);
 app.get(['/', '/index.html'], assets.page);
@@ -331,13 +336,20 @@ app.delete('/api/admin/businesses/:id', adminOnly, wrap(async (req, res) => {
 
 // ---------- Me: account, plan, what I can open, security ----------
 // Leave the business you opened and go back to the Lab
-app.post('/api/admin/lab', adminOnly, (req, res) => res.set('Set-Cookie', `rb_biz=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`).json({ ok: true }));
+app.post('/api/admin/lab', adminOnly, (req, res) => res.set('Set-Cookie', [`rb_biz=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`, `rb_viewas=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`]).json({ ok: true }));
+// "View as": see the business you opened with exactly one plan's features and locks (empty plan = back to admin view)
+app.post('/api/admin/view-as', adminOnly, wrap(async (req, res) => {
+  const p = req.body.plan ? await one('SELECT key FROM plans WHERE key=$1', [String(req.body.plan)]) : null;
+  if (req.body.plan && !p) return res.status(404).json({ error: 'No such plan.' });
+  res.set('Set-Cookie', `rb_viewas=${p ? p.key : ''}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${p ? 86400 : 0}${secureCookie(req)}`).json({ ok: true, view_as: p?.key || null });
+}));
 app.get('/api/me', wrap(async (req, res) => {
   const b = await one(`SELECT b.id, b.name, b.plan_status, b.trial_ends_at, b.country, b.currency, b.timezone, b.plan_key, p.name AS plan_name,
       GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left FROM businesses b LEFT JOIN plans p ON p.key=b.plan_key WHERE b.id=$1`, [BIZ()]);
   const u = req.user;
   res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, totp_enabled: u.totp_enabled, email_2fa: u.email_2fa }, email_ready: emailEnabled(), business: b,
-    features: [...await featuresOf(BIZ())], modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE,
+    features: [...await featuresOf(BIZ(), ctx.getStore().viewAs)], view_as: ctx.getStore().viewAs || null, feature_names: FEATURES, requested: BIZ() ? await pendingFor(BIZ()) : [],
+    plans: u.role === 'admin' ? await q('SELECT key, name FROM plans ORDER BY sort') : undefined, playground: BIZ() ? await isPlayground(BIZ()) : false, modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE,
     edition: process.env.EDITION === 'product' ? 'product' : 'lab', lab: u.role === 'admin' && !BIZ(),
     // links we show or share must work outside this computer, even when the dashboard is opened on localhost
     public_url: (process.env.PUBLIC_URL || '').replace(/\/$/, '') || null });
@@ -445,7 +457,7 @@ app.delete('/api/admin/plans/:key', adminOnly, wrap(async (req, res) => {
   await audit(req, table === 'plans' ? 'plan_deleted' : 'addon_deleted', req.params.key, 0);
   res.json({ ok: true });
 }));
-app.get('/api/admin/businesses', adminOnly, wrap(async (_req, res) => res.json(await q(`SELECT b.id, b.name, b.vertical, b.country, b.city, b.currency, b.timezone, b.is_demo,
+app.get('/api/admin/businesses', adminOnly, wrap(async (_req, res) => res.json(await q(`SELECT b.id, b.name, b.vertical, b.country, b.city, b.currency, b.timezone, b.is_demo, b.ai_budget::float AS ai_budget,
     b.plan_status, b.plan_key, b.addons, b.feature_overrides, to_char(b.trial_ends_at,'YYYY-MM-DD') AS trial_ends, GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left,
     (SELECT string_agg(u.email, ', ') FROM users u WHERE u.business_id=b.id AND u.role='owner') AS owners,
     (SELECT count(*) FROM users u WHERE u.business_id=b.id)::int AS logins,
@@ -472,7 +484,7 @@ app.post('/api/admin/switch', adminOnly, wrap(async (req, res) => {
   const b = await one('SELECT id, name FROM businesses WHERE id=$1', [+req.body.id]);
   if (!b) return res.status(404).json({ error: 'Business not found.' });
   await audit(req, 'opened_business', b.name, b.id);
-  res.set('Set-Cookie', `rb_biz=${b.id}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${365 * 86400}${secureCookie(req)}`).json(b);
+  res.set('Set-Cookie', [`rb_biz=${b.id}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${365 * 86400}${secureCookie(req)}`, `rb_viewas=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`]).json(b);
 }));
 // Plan, add-ons, per-business feature switches, status and trial: all take effect on the business's next click.
 app.post('/api/admin/businesses/:id/plan', adminOnly, wrap(async (req, res) => {
@@ -483,9 +495,10 @@ app.post('/api/admin/businesses/:id/plan', adminOnly, wrap(async (req, res) => {
   const addons = Array.isArray(req.body.addons) ? (await q('SELECT key FROM addons WHERE key = ANY($1)', [req.body.addons])).map(a => a.key) : b.addons;
   const overrides = req.body.feature_overrides && typeof req.body.feature_overrides === 'object'
     ? Object.fromEntries(Object.entries(req.body.feature_overrides).filter(([k, v]) => FEATURES[k] && typeof v === 'boolean')) : b.feature_overrides;
-  await q(`UPDATE businesses SET plan_status=$1, plan_key=$2, addons=$3, feature_overrides=$4, trial_ends_at = trial_ends_at + make_interval(days => $5) WHERE id=$6`,
-    [status, plan, JSON.stringify(addons), JSON.stringify(overrides), Math.min(Math.max(+req.body.extend_days || 0, 0), 365), id]);
-  await audit(req, 'plan_changed', `${b.name}: ${status}, ${plan}, add-ons [${addons}], switches ${JSON.stringify(overrides)}${req.body.extend_days ? `, +${req.body.extend_days}d` : ''}`, id);
+  const budget = req.body.ai_budget != null && req.body.ai_budget !== '' && isFinite(+req.body.ai_budget) ? Math.min(Math.max(+req.body.ai_budget, 0), 1000) : +(b.ai_budget ?? 5);
+  await q(`UPDATE businesses SET plan_status=$1, plan_key=$2, addons=$3, feature_overrides=$4, trial_ends_at = trial_ends_at + make_interval(days => $5), ai_budget=$7 WHERE id=$6`,
+    [status, plan, JSON.stringify(addons), JSON.stringify(overrides), Math.min(Math.max(+req.body.extend_days || 0, 0), 365), id, budget]);
+  await audit(req, 'plan_changed', `${b.name}: ${status}, ${plan}, add-ons [${addons}], switches ${JSON.stringify(overrides)}, Claude budget $${budget}${req.body.extend_days ? `, +${req.body.extend_days}d` : ''}`, id);
   res.json({ ok: true });
 }));
 
@@ -699,6 +712,7 @@ app.get('/api/ai-queue/list', wrap(async (req, res) => res.json(await aiQueueLis
 mountLive(app, () => BIZ());
 mountLab(app, () => BIZ());
 mountHQ(app, adminOnly, wrap, audit, aiHealth);
+mountUpgrades(app, { adminOnly, wrap, audit, BIZ });
 mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
 // a PREVIEW_ONLY copy on the real data must never send: Autopilot only runs in the live app
 setSenders({ sendWhatsApp, sendTelegram }); if (!process.env.PREVIEW_ONLY) startAutopilot();
@@ -813,6 +827,7 @@ async function notifyCustomer(conversationId, text) {
   if (!c) return;
   await q(`INSERT INTO messages (conversation_id, role, text) VALUES ($1,'assistant',$2)`, [c.id, text]);
   await q('UPDATE conversations SET updated_at=now() WHERE id=$1', [c.id]);
+  if (await isPlayground(c.business_id)) return; // test business: the chat shows it, nobody real receives it
   if (c.channel === 'whatsapp') await sendWhatsApp(c.wa_phone_number_id, c.phone, text);
   if (c.channel === 'telegram') await sendTelegram(c.telegram_chat_id, text, c.business_id);
   if (c.channel === 'instagram') await sendInstagram(c.business_id, c.phone, text);
@@ -888,6 +903,7 @@ async function staffReply(conversationId, text) {
       JOIN customers cu ON cu.id=c.customer_id JOIN businesses b ON b.id=c.business_id WHERE c.id=$1 AND c.business_id=$2`, [conversationId, BIZ()]);
   if (!c) return { error: 'Conversation not found.' };
   let sent = { ok: true };
+  if (await isPlayground(c.business_id) && ['whatsapp', 'telegram', 'instagram'].includes(c.channel)) c.channel = 'playground'; // saved, not sent
   if (c.channel === 'whatsapp') sent = await sendWhatsApp(c.wa_phone_number_id, c.phone, text);
   if (c.channel === 'telegram') sent = await sendTelegram(c.telegram_chat_id, text, c.business_id);
   if (c.channel === 'instagram') sent = await sendInstagram(c.business_id, c.phone, text);
@@ -1308,11 +1324,12 @@ app.post('/api/marketing/send', wrap(async (req, res) => {
   const camp = await one(`INSERT INTO campaigns (business_id, name, message, segment, created_by) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
     [BIZ(), String(req.body.name || 'Offer').slice(0, 80), message, JSON.stringify(req.body.segment || {}), req.user.email]);
   let sent = 0, skipped = 0;
+  const play = await isPlayground(BIZ());
   for (const c of list) {
     // Never more than one offer per client per 24 hours.
     const recent = await one(`SELECT 1 FROM campaign_sends s JOIN campaigns k ON k.id=s.campaign_id WHERE s.customer_id=$1 AND s.status='sent' AND s.at > now() - interval '24 hours'`, [c.id]);
-    const route = recent ? null : marketingRoute(c);
-    let status = recent ? 'skipped: had an offer today' : route ? 'sent' : 'skipped: not reachable now';
+    const route = recent || play ? null : marketingRoute(c);
+    let status = play ? PLAYGROUND_SKIP : recent ? 'skipped: had an offer today' : route ? 'sent' : 'skipped: not reachable now';
     if (route === 'telegram') { const r = await sendTelegram(c.telegram_chat_id, text, BIZ()); if (!r.ok) status = 'failed: ' + r.reason; }
     if (route === 'whatsapp') { const r = await sendWhatsApp(biz.wa_phone_number_id, c.phone, text); if (!r.ok) status = 'failed: ' + r.reason; }
     if (route === 'instagram') { const r = await sendInstagram(BIZ(), c.phone, text); if (!r.ok) status = 'failed: ' + r.reason; }

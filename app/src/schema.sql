@@ -486,3 +486,13 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS today_from TIMESTAMPTZ;
 CREATE TABLE IF NOT EXISTS inbound (id bigserial PRIMARY KEY, source text NOT NULL, payload jsonb NOT NULL, status text NOT NULL DEFAULT 'new',
   attempts int NOT NULL DEFAULT 0, error text, created_at timestamptz NOT NULL DEFAULT now(), done_at timestamptz);
 CREATE INDEX IF NOT EXISTS inbound_open ON inbound (status, id) WHERE status <> 'done';
+-- Claude for MXAi Assistant: every answer's real tokens and cost, and each business's monthly budget (aibudget.js)
+CREATE TABLE IF NOT EXISTS ai_spend (id bigserial PRIMARY KEY, business_id int REFERENCES businesses(id) ON DELETE CASCADE, at timestamptz NOT NULL DEFAULT now(),
+  provider text NOT NULL, model text, input_tokens int DEFAULT 0, output_tokens int DEFAULT 0, cost_usd numeric(12,6) DEFAULT 0, own_key boolean DEFAULT false);
+CREATE INDEX IF NOT EXISTS ai_spend_month ON ai_spend (business_id, at);
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS ai_budget numeric(8,2) DEFAULT 5;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS ai_budget_warned text;
+-- Upgrades go through the admin: an owner asks, the admin approves or declines in the Lab (upgrades.js)
+CREATE TABLE IF NOT EXISTS upgrade_requests (id serial PRIMARY KEY, business_id int REFERENCES businesses(id) ON DELETE CASCADE, feature text NOT NULL, note text,
+  status text NOT NULL DEFAULT 'pending', requested_by int, at timestamptz NOT NULL DEFAULT now(), decided_at timestamptz, decided_by text);
+CREATE UNIQUE INDEX IF NOT EXISTS upgrade_requests_one_open ON upgrade_requests (business_id, feature) WHERE status='pending';

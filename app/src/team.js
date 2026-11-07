@@ -14,6 +14,8 @@ import * as metrics from './metrics.js';
 import { addShortcut } from './shortcuts.js';
 import { addRule } from './rules.js';
 import { complete, hasBackup } from './ai-router.js';
+import { claudeFor, recordSpend } from './aibudget.js';
+import { isPlayground } from './playground.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 // The daily limit counts questions the owner asked (one row per question, however many AI steps it took),
@@ -367,26 +369,29 @@ Your JSON:`;
 // The team thinks with a stronger model than the receptionist (TEAM_MODEL); Gemini counts its free quota separately.
 // If that model fails or is out of quota, the receptionist's model answers instead.
 const TEAM_MODEL = () => process.env.TEAM_MODEL || 'models/gemini-3.5-flash';
-// Claude for MXAi Assistant: used when ANTHROPIC_API_KEY is set (PULSE_MODEL picks the model). The receptionist keeps its
-// own model; only the owner's assistant moves. Without a key, the n8n workflow below answers as before.
+// Claude for MXAi Assistant: only for a business the admin switched "AI Assistant Pro" on for, inside its monthly budget
+// (aibudget.js; PULSE_MODEL picks the model). The receptionist keeps its own model; only the owner's assistant moves.
+// Everyone else, and anyone over budget, gets the free AI below. Never a paid fallback.
 const claudes = new Map(); // one client per API key
-async function askClaude(text, own) {
-  const key = own?.api_key || process.env.ANTHROPIC_API_KEY;
+async function askClaude(text, use, bizId) {
+  const key = use.key;
   if (!claudes.has(key)) claudes.set(key, new (await import('@anthropic-ai/sdk')).default({ apiKey: key }));
   const r = await claudes.get(key).beta.messages.create({
-    model: own?.model || process.env.PULSE_MODEL || 'claude-opus-5-5', max_tokens: 16000,
+    model: use.model || process.env.PULSE_MODEL || 'claude-opus-5-5', max_tokens: 16000,
     output_config: { effort: process.env.PULSE_EFFORT || 'medium' },
     // a safety decline is re-run on a suitable model inside the same call
     betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
     messages: [{ role: 'user', content: text }],
   });
+  await recordSpend(bizId, r.model || use.model || process.env.PULSE_MODEL || 'claude-opus-5-5', r.usage, use.own);
   if (r.stop_reason === 'refusal') return readReply('{"answer":"I can\'t help with that one. Ask me about your business."}');
   return readReply(r.content.filter(b => b.type === 'text').map(b => b.text).join(''));
 }
 async function ask(text, B) {
   const own = B ? await credentials(B.id, 'anthropic').catch(() => null) : null;
-  if (own?.api_key || process.env.ANTHROPIC_API_KEY) {
-    try { return await askClaude(text, own); }
+  const use = B ? await claudeFor(B.id, own) : null;
+  if (use) {
+    try { return await askClaude(text, use, B.id); }
     catch (e) { console.warn('Claude call failed, falling back to the default model:', e.status || '', e.message); }
   }
   // the per-minute allowance is shared with the receptionist: wait a little for a free slot before giving up
@@ -570,6 +575,7 @@ export function mountTeam(app, BIZ, { sendWhatsApp, sendTelegram, audit }) {
           FROM customers cu WHERE cu.id=$1 AND cu.business_id=$2`, [+a.customer_id, B.id]);
       if (!c) return res.sendStatus(404);
       const text = String(a.text || '').trim().slice(0, 900); if (!text) return res.status(400).json({ error: 'Empty message.' });
+      if (await isPlayground(B.id)) return res.json({ ok: false, done: 'Not sent: this is a test business, so nothing goes to real people.' });
       const wa = c.channel === 'whatsapp' && c.last_msg && Date.now() - new Date(c.last_msg) < 23.5 * 3600e3, tg = c.channel === 'telegram' && c.telegram_chat_id;
       if (!wa && !tg) return res.json({ ok: false, link: /^\+?\d{7,15}$/.test(String(c.phone).replace(/[\s-]/g, '')) ? `https://wa.me/${String(c.phone).replace(/\D/g, '')}?text=${encodeURIComponent(text)}` : null,
         done: `${c.name} can’t be reached by the app right now (WhatsApp allows it only within 24 hours of their last message).` });

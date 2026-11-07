@@ -7,7 +7,7 @@ import { sendTelegram } from './telegram.js';
 
 export const KINDS = {
   booking: 'New booking', cancel: 'Cancellation', approval: 'Needs your approval', handoff: 'A customer needs you',
-  unsure: 'The AI was not sure', review: 'New review', marketing: 'Campaign sent',
+  unsure: 'The AI was not sure', review: 'New review', marketing: 'Campaign sent', upgrade: 'Upgrade approved',
 };
 
 export async function notify(bizId, kind, title, body = null, refs = {}) {

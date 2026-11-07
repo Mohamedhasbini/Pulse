@@ -67,11 +67,11 @@ window.PUB=()=>(typeof me!=="undefined"&&me&&me.public_url)||location.origin;
 // the two-factor reminder can be hidden for good with its ×
 document.addEventListener("click",e=>{if(!e.target.closest("#tfNudgeX"))return;try{localStorage.setItem("rb-2fa-nudge","off")}catch{}$("#tfNudge")?.remove();$("#tfNudgeX")?.remove();if(!$("#planText").textContent.trim())$("#planBar").hidden=true});
 const nudgeOff=()=>{try{return localStorage.getItem("rb-2fa-nudge")==="off"}catch{return false}};
-async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();const b=me.business,admin=me.user.role==="admin";
-  $("#adminNav").hidden=true;$("#labBtn")&&($("#labBtn").hidden=!admin);$("#planBar").hidden=false;
+async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();const b=me.business,admin=me.user.role==="admin",asOwner=!admin||!!me.view_as;
+  $("#adminNav").hidden=true;$("#labBtn")&&($("#labBtn").hidden=!admin);viewAsBar(admin);window.P10?.markLocks?.();$("#planBar").hidden=false;
   // Sections this login can't open disappear; sections the plan doesn't include show a lock.
   document.querySelectorAll("nav button[data-view]").forEach(x=>{const m=VIEW_MODULE[x.dataset.view];if(!m)return;
-    x.hidden=!me.modules.includes(m);const f=me.module_feature[m];x.classList.toggle("locked",!admin&&!!f&&!me.features.includes(f));
+    x.hidden=!me.modules.includes(m);const f=me.module_feature[m];x.classList.toggle("locked",asOwner&&!!f&&!me.features.includes(f));
     // Product edition: clients only see what they have; no locks, no upgrade prompts
     if(me.edition==="product"&&!admin&&f&&!me.features.includes(f))x.hidden=true});
   if(me.edition==="product"&&!admin){$("#planCard").hidden=true;document.body.classList.add("product")}
@@ -87,14 +87,26 @@ async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();cons
   $("#tfNudge")&&($("#tfNudge").onclick=e=>{e.preventDefault();$("#pwBtn").click()});$("#backCC")&&($("#backCC").onclick=async e=>{e.preventDefault();await req("/api/admin/lab","POST");location.href="/"})
   // the banner stays hidden: Back to Lab and the plan are in the sidebar, two-factor is in Settings > Security
   $("#planBar").hidden=true}
+// A feature the plan doesn't include: what it is, and (for the owner) a Request button. The request waits in the
+// admin's Lab until it is approved. Used by the old views and by the sidebar pages (pulse.js).
+window.MXLockCard=(c,f)=>{const asked=(me.requested||[]).includes(f),owner=me.user.role==="owner"||!!me.view_as,done="Requested · we'll be in touch";
+  c.innerHTML=`<div class="empty" style="padding:40px 10px"><div style="font-size:34px" aria-hidden="true">🔒</div><h2 style="margin:8px 0">${esc((me.feature_names||{})[f]||"This is a premium feature")}</h2><p class="sub">It is not included in your current plan. ${owner?"Ask for it here and we switch it on for you, usually the same day.":"Ask the account owner to request it."}</p>${owner?`<button class="btn lockReq" type="button" style="margin-top:12px" ${asked?"disabled":""}>${asked?done:"Request this upgrade"}</button>`:""}</div>`;
+  c.querySelector(".lockReq")?.addEventListener("click",async e=>{if(me.view_as)return toast("This is what the owner sees. Their requests come to your Lab.");
+    try{await req("/api/upgrade-requests","POST",{feature:f});(me.requested||=[]).push(f);e.target.disabled=true;e.target.textContent=done;toast("Request sent. You'll get a notification when it's on.")}catch(err){toast(err.message)}})};
+// Admin only: "View as" a plan, to see this business exactly as an owner on that plan would (made for test businesses).
+function viewAsBar(admin){let w=$("#viewAs");if(!admin){w?.remove();return}
+  if(!w){const lab=$("#labBtn");w=document.createElement("label");w.id="viewAs";w.className="viewAs";if(lab)lab.after(w);else{if((viewAsBar.n=(viewAsBar.n||0)+1)<10)setTimeout(()=>viewAsBar(admin),300);return}}
+  w.classList.toggle("on",!!me.view_as);
+  w.innerHTML=`<span>${me.playground?"Test business · ":""}View as</span><select aria-label="View this business as an owner on a plan"><option value="">Admin, everything on</option>${(me.plans||[]).map(p=>`<option value="${esc(p.key)}" ${p.key===me.view_as?"selected":""}>${esc(p.name)} owner</option>`).join("")}</select>`;
+  w.querySelector("select").onchange=async e=>{await req("/api/admin/view-as","POST",{plan:e.target.value||null});location.reload()}}
 // A section the plan doesn't include shows what it is and how to get it, instead of an error.
 function lockedCard(view){const m=VIEW_MODULE[view],f=me&&me.module_feature[m],sec=$("#"+view);
   sec.querySelectorAll(".lockCard,.adminNote").forEach(x=>x.remove());[...sec.children].forEach(x=>x.style.display="");
   if(!f||me.features.includes(f))return false;
   // Admin sees everything, with a note that this business's plan doesn't include it.
-  if(me.user.role==="admin"){const n=document.createElement("div");n.className="item adminNote";n.style.marginBottom="12px";n.innerHTML=`<span>Admin view: <b>${esc(me.business.name)}</b>'s plan doesn't include this, so its owner sees it locked. Add it in Command center to unlock it for them.</span>`;sec.prepend(n);return false}
+  if(me.user.role==="admin"&&!me.view_as){const n=document.createElement("div");n.className="item adminNote";n.style.marginBottom="12px";n.innerHTML=`<span>Admin view: <b>${esc(me.business.name)}</b>'s plan doesn't include this, so its owner sees it locked. Add it in Command center to unlock it for them.</span>`;sec.prepend(n);return false}
   const c=document.createElement("div");c.className="card glass lockCard";sec.prepend(c);
-  c.innerHTML=`<div class="empty" style="padding:40px 10px"><div style="font-size:34px">🔒</div><h2 style="margin:8px 0">This is a premium feature</h2><p class="sub">It isn't in your current plan. Ask us to upgrade your plan or add it as an add-on, and it unlocks instantly.</p></div>`;
+  MXLockCard(c,f);
   [...sec.children].forEach(x=>{if(x!==c)x.style.display="none"});return true}
 $("#pwBtn").onclick=()=>{document.querySelector('nav button[data-view="setup"]').click();setTimeout(()=>tabsOf.setup("s2fa"),20)};
 

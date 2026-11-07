@@ -165,7 +165,7 @@ export function lastBackup() {
       : empty ? { hours: Infinity, count: 0, empty } : null;
   } catch { return null; }
 }
-async function alertAdmin(text) {
+export async function alertAdmin(text) {
   const token = process.env.ALERT_BOT_TOKEN, chat = process.env.ALERT_CHAT_ID;
   console.warn('[alert]', text);
   await q(`INSERT INTO audit_log (action, detail) VALUES ('system_alert', $1)`, [text.slice(0, 500)]).catch(() => {});

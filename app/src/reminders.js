@@ -3,6 +3,7 @@
 import { q, one } from './db.js';
 import { okTz, currentTz, daysBetween, fmtDate, fmtTime } from './clock.js';
 import { sendWhatsApp } from './whatsapp.js';
+import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
 import { sendTelegram } from './telegram.js';
 import { sendEmail } from './email.js';
 
@@ -42,7 +43,8 @@ export async function runReminders() {
         [b.business_id, b.customer_id, isTest ? 'test' : 'whatsapp']);
       let status = 'sent';
       const channel = b.reminder_channel || 'whatsapp';
-      if (channel === 'email' && b.email) {
+      if (await isPlayground(b.business_id)) status = 'not_sent: ' + PLAYGROUND_SKIP;
+      else if (channel === 'email' && b.email) {
         const r = await sendEmail(b.email, `Reminder: ${b.service} at ${b.business}`, text, b.business);
         if (!r.ok) status = 'not_sent: ' + r.reason;
       } else if (conv.channel === 'telegram') {
