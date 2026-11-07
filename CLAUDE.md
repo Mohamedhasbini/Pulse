@@ -21,6 +21,9 @@ Roles: `admin` (platform), `owner`, `staff` (permissions per section). Plans and
 - Node 22 + Express 4 (ES modules, no build step, no TypeScript), PostgreSQL 16, plain HTML/CSS/JS front end.
 - Everything runs in Docker on the founder's Windows PC: `docker compose up -d --build`
   - `app` → http://localhost:3100 (public: https://app.nexfoyz.dev via Cloudflare tunnel "jarvis")
+  - **Separate doors** (`app/src/hosts.js`): `lab.nexfoyz.dev` = the Lab, admin only; `app.nexfoyz.dev` = client dashboards,
+    admin refused; localhost = everything. The admin enters a client only through **Support access** (`support.js`):
+    read-only, 60 min, banner, owner notified and sees it in Settings › Security. See `docs/lab-access-2026-11-07.md`.
   - `db` (Postgres), `backup` (daily `pg_dump` + uploads into `./backups`, kept 14 days)
 - AI replies: n8n workflow at :5678 (`n8n/ringback-receptionist.json`, Gemini) with backup models in `app/src/ai-router.js`.
 - **Stays online by itself:** the Windows task "MXAi watchdog" (`scripts/mxai-watchdog.ps1`) starts at sign-in and every 2 minutes

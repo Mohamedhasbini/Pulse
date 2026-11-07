@@ -7,6 +7,8 @@ import { inZone } from './clock.js';
 import { receive, work, resume } from './inbound.js';
 import { loadBusiness, asksToCancel, langOf, findService } from './brain.js';
 import { unify } from './customers.js';
+import http from 'node:http';
+import { hashPassword } from './accounts.js';
 import { claudeFor, recordSpend, costOf } from './aibudget.js';
 import { isPlayground } from './playground.js';
 import { hasFeature } from './features.js';
@@ -172,7 +174,10 @@ try {
   say('No choices: plain text', waBody('Hello', []).type === 'text');
   say('Choices are cleaned (empty, too long, duplicates removed)', JSON.stringify(cleanOptions(['Yes', ' yes ', '', 'x'.repeat(30), 'No'])) === '["Yes","No"]');
   // ---- Lab control: view as a plan, upgrade requests, Claude budget, playgrounds
-  const inBiz = { ...as(admin), cookie: as(admin).cookie + `; rb_biz=${r.id}` }, asStarter = { ...inBiz, cookie: inBiz.cookie + '; rb_viewas=starter' };
+  // the admin opens a business with support access (support.js); the cookie it gets is the way in
+  const openBiz = async (body = {}) => { const x = await fetch(BASE + '/api/admin/switch', { method: 'POST', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: JSON.stringify({ id: r.id, ...body }) });
+    return { ...as(admin), cookie: as(admin).cookie + '; ' + (/rb_support=[^;]+/.exec(x.headers.get('set-cookie') || '')?.[0] || '') }; };
+  const inBiz = await openBiz(), asStarter = { ...inBiz, cookie: inBiz.cookie + '; rb_viewas=starter' };
   const meVA = await fetch(BASE + '/api/me', { headers: asStarter }).then(r => r.json());
   say('View as Starter shows exactly the Starter plan', meVA.view_as === 'starter' && !meVA.features.includes('insights') && meVA.features.includes('booking_page'));
   say("View as Starter gets the owner's plan lock", (await fetch(BASE + '/api/insights?days=30', { headers: asStarter })).status === 402);
@@ -229,15 +234,54 @@ try {
   await fetch(BASE + '/api/admin/controls/platform', { method: 'PUT', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: '{"key":"ai:cerebras","on":true}' });
   await q(`DELETE FROM platform_switches WHERE key='ai:cerebras'`); // back to how it was
   say('Every switch is in the audit log', !!(await one(`SELECT 1 FROM audit_log WHERE action='platform_switch' AND detail LIKE 'ai:cerebras%'`)) && !!(await one(`SELECT 1 FROM audit_log WHERE action='business_switch' AND business_id=$1`, [r.id])));
+  // ---- separate doors: the Lab only at lab.nexfoyz.dev for the admin, dashboards at app.nexfoyz.dev for clients
+  const raw = (method, path, host, headers = {}, body) => new Promise((ok, no) => { const d = body ? JSON.stringify(body) : null;
+    const rq = http.request({ host: 'localhost', port: 3100, method, path, headers: { Host: host, ...(d ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(d) } : {}), ...headers } },
+      rs => { let t = ''; rs.on('data', c => t += c); rs.on('end', () => ok({ status: rs.statusCode, headers: rs.headers, body: t })); });
+    rq.on('error', no); if (d) rq.write(d); rq.end(); });
+  const pw = 'Door-test-' + Date.now(), dEmail = `door-${Date.now()}@example.test`;
+  const dAdmin = await one(`INSERT INTO users (email, name, role, password_hash) VALUES ($1,'Door test','admin',$2) RETURNING id`, [dEmail, hashPassword(pw)]);
+  try {
+    say('Admin sign-in is refused at the app address', (await raw('POST', '/api/login', 'app.nexfoyz.dev', {}, { email: dEmail, password: pw })).status === 401);
+    const lg = await raw('POST', '/api/login', 'lab.nexfoyz.dev', {}, { email: dEmail, password: pw }), ck = [].concat(lg.headers['set-cookie'] || []);
+    say('Admin signs in at the Lab address', lg.status === 200 && ck.some(c => c.startsWith('rb_session=')));
+    say('Sign-in cookies belong to one address only (no Domain=)', ck.length > 0 && ck.every(c => !/;\s*domain=/i.test(c)));
+  } finally { await q('DELETE FROM users WHERE id=$1', [dAdmin.id]); }
+  const oEmail = (await one('SELECT email FROM users WHERE id=$1', [owner.id])).email;
+  await q('UPDATE users SET password_hash=$2 WHERE id=$1', [owner.id, hashPassword(pw)]);
+  say('Owner sign-in is refused at the Lab address', (await raw('POST', '/api/login', 'lab.nexfoyz.dev', {}, { email: oEmail, password: pw })).status === 401);
+  say('Owner signs in at the app address', (await raw('POST', '/api/login', 'app.nexfoyz.dev', {}, { email: oEmail, password: pw })).status === 200);
+  say('An admin session does nothing at the app address', (await raw('GET', '/api/me', 'app.nexfoyz.dev', { cookie: as(admin).cookie })).status === 401);
+  say('An owner session does nothing at the Lab address', (await raw('GET', '/api/me', 'lab.nexfoyz.dev', { cookie: as(owner).cookie })).status === 401);
+  say('The Lab answers at the Lab address', (await raw('GET', '/api/admin/hq?days=7', 'lab.nexfoyz.dev', { cookie: as(admin).cookie })).status === 200);
+  say('The Lab pages carry the strict security policy', !!(await raw('GET', '/', 'lab.nexfoyz.dev', { cookie: as(admin).cookie })).headers['content-security-policy']);
+  const { validSubdomain } = await import('./sitegen.js');
+  say('lab and app can never be client website addresses', !validSubdomain('lab') && !validSubdomain('app'));
+  // ---- support access: read-only, time-limited, recorded, visible to the owner
+  const sup = await openBiz({ reason: 'Smoke check' });
+  const meS = await fetch(BASE + '/api/me', { headers: sup }).then(r => r.json());
+  say('Opening a client starts read-only support access', meS.business?.id === r.id && meS.support?.can_edit === false && meS.support.seconds_left > 3500);
+  const delHook = () => fetch(BASE + '/api/integrations/webhook', { method: 'DELETE', headers: sup });
+  say('Read-only: changes are refused on the server', (await delHook()).status === 403);
+  say('Allow changes needs a reason', (await fetch(BASE + '/api/admin/support/edit', { method: 'POST', headers: { ...sup, 'Content-Type': 'application/json' }, body: '{"reason":"x"}' })).status === 400);
+  await fetch(BASE + '/api/admin/support/edit', { method: 'POST', headers: { ...sup, 'Content-Type': 'application/json' }, body: '{"reason":"Fix opening hours"}' });
+  say('After Allow changes, changes work', (await delHook()).status === 200);
+  const logO = await fetch(BASE + '/api/me/support-log', { headers: as(owner) }).then(r => r.json());
+  say('The owner sees the visit, why, and that changes were made', logO.some(v => v.reason === 'Smoke check' && v.edited && /hours/.test(v.edit_reason)));
+  say('The owner was notified', !!(await one(`SELECT 1 FROM notifications WHERE business_id=$1 AND kind='support'`, [r.id])));
+  await q(`UPDATE support_sessions SET expires_at=now() - interval '1 minute' WHERE business_id=$1 AND ended_at IS NULL`, [r.id]);
+  say('Expired support access no longer opens the business', (await fetch(BASE + '/api/business', { headers: sup })).status === 409);
+  say('A forged support cookie opens nothing', (await fetch(BASE + '/api/business', { headers: { ...as(admin), cookie: as(admin).cookie + '; rb_support=999999.' + 'a'.repeat(40) } })).status === 409);
+  say('The old open-business cookie opens nothing', (await fetch(BASE + '/api/business', { headers: { ...as(admin), cookie: as(admin).cookie + `; rb_biz=${r.id}` } })).status === 409);
   // the admin with no business opened is in the Lab: platform pages only
   const me0 = await fetch(BASE + '/api/me', { headers: as(admin) }).then(r => r.json());
   say('Admin signs in to the Lab, not a business', me0.lab === true && !me0.business);
   say('Lab blocks business data until a business is opened', (await fetch(BASE + '/api/business', { headers: as(admin) })).status === 409);
-  const inside = { ...as(admin), cookie: as(admin).cookie + `; rb_biz=${r.id}` };
+  const inside = await openBiz();
   const me1 = await fetch(BASE + '/api/me', { headers: inside }).then(r => r.json());
   say('Opening a business puts the admin inside it', me1.lab === false && me1.business?.id === r.id);
   const lab = await fetch(BASE + '/api/admin/lab', { method: 'POST', headers: { ...inside, 'Content-Type': 'application/json' } });
-  say('Back to Lab clears the opened business', lab.status === 200 && /rb_biz=;/.test(lab.headers.get('set-cookie') || ''));
+  say('Back to Lab clears the opened business', lab.status === 200 && /rb_support=;/.test(lab.headers.get('set-cookie') || '') && (await fetch(BASE + '/api/business', { headers: inside })).status === 409);
   // wrong confirmation name refuses to close
   x = await fetch(BASE + `/api/admin/businesses/${r.id}`, { method: 'DELETE', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: JSON.stringify({ confirm: 'wrong' }) });
   say('Close needs the exact business name', x.status === 400);

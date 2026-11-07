@@ -252,3 +252,9 @@ nav button.p10.locked,.p10-sub button.locked{opacity:.5}
 .ctl-c{margin-bottom:14px}.ctl-t td small{display:block;color:var(--pv-muted,var(--muted));font-size:12px;margin-top:2px;max-width:46ch}
 .ctl-t select{min-height:30px}
 .ig-c.locked{opacity:.75}.ig-c.locked .ig-st{border-style:dashed}
+/* support access banner: the admin inside a client's dashboard */
+.sup-bar{position:sticky;top:0;z-index:60;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px;padding:10px 14px;border-radius:12px;background:var(--fu-surf,#1b1f22);box-shadow:0 0 0 1px var(--fu-line,rgba(255,255,255,.12));font-size:13px}
+.sup-bar .sup-dot{width:9px;height:9px;border-radius:50%;background:var(--fu-muted,#8a9096)}
+.sup-bar.edit .sup-dot{background:#e8a33d}
+.sup-bar .sup-act{margin-left:auto;display:flex;gap:6px}
+.sup-bar button{min-height:30px;padding:4px 12px;border-radius:999px;border:1px solid var(--fu-line,rgba(255,255,255,.18));background:transparent;color:inherit;font:600 12.5px/1 inherit;cursor:pointer}

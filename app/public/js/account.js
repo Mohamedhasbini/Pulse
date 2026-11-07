@@ -68,7 +68,7 @@ window.PUB=()=>(typeof me!=="undefined"&&me&&me.public_url)||location.origin;
 document.addEventListener("click",e=>{if(!e.target.closest("#tfNudgeX"))return;try{localStorage.setItem("rb-2fa-nudge","off")}catch{}$("#tfNudge")?.remove();$("#tfNudgeX")?.remove();if(!$("#planText").textContent.trim())$("#planBar").hidden=true});
 const nudgeOff=()=>{try{return localStorage.getItem("rb-2fa-nudge")==="off"}catch{return false}};
 async function loadMe(){me=await req("/api/me");if(me.lab)return enterLab();const b=me.business,admin=me.user.role==="admin",asOwner=!admin||!!me.view_as;
-  $("#adminNav").hidden=true;$("#labBtn")&&($("#labBtn").hidden=!admin);viewAsBar(admin);window.P10?.markLocks?.();$("#planBar").hidden=false;
+  $("#adminNav").hidden=true;$("#labBtn")&&($("#labBtn").hidden=!admin);viewAsBar(admin);supportBar();window.P10?.markLocks?.();$("#planBar").hidden=false;
   // Sections this login can't open disappear; sections the plan doesn't include show a lock.
   document.querySelectorAll("nav button[data-view]").forEach(x=>{const m=VIEW_MODULE[x.dataset.view];if(!m)return;
     x.hidden=!me.modules.includes(m);const f=me.module_feature[m];x.classList.toggle("locked",asOwner&&!!f&&!me.features.includes(f));
@@ -93,6 +93,20 @@ window.MXLockCard=(c,f)=>{const asked=(me.requested||[]).includes(f),owner=me.us
   c.innerHTML=`<div class="empty" style="padding:40px 10px"><div style="font-size:34px" aria-hidden="true">🔒</div><h2 style="margin:8px 0">${esc((me.feature_names||{})[f]||"This is a premium feature")}</h2><p class="sub">It is not included in your current plan. ${owner?"Ask for it here and we switch it on for you, usually the same day.":"Ask the account owner to request it."}</p>${owner?`<button class="btn lockReq" type="button" style="margin-top:12px" ${asked?"disabled":""}>${asked?done:"Request this upgrade"}</button>`:""}</div>`;
   c.querySelector(".lockReq")?.addEventListener("click",async e=>{if(me.view_as)return toast("This is what the owner sees. Their requests come to your Lab.");
     try{await req("/api/upgrade-requests","POST",{feature:f});(me.requested||=[]).push(f);e.target.disabled=true;e.target.textContent=done;toast("Request sent. You'll get a notification when it's on.")}catch(err){toast(err.message)}})};
+// Support access banner (admin inside a client's dashboard): read-only or editing, minutes left, Extend, Allow
+// changes (with a reason, recorded, the owner is told), End. At zero it goes back to the Lab.
+function supportBar(){let w=$("#supBar");const s=me.support;if(!s){w?.remove();clearInterval(supportBar.t);return}
+  if(!w){w=document.createElement("div");w.id="supBar";w.className="sup-bar";w.setAttribute("role","status");document.querySelector("main")?.prepend(w)}
+  const end=Date.now()+s.seconds_left*1000;
+  const draw=()=>{const m=Math.max(0,Math.ceil((end-Date.now())/60000));if(m<=0){location.href="/";return}
+    w.classList.toggle("edit",s.can_edit);
+    w.innerHTML=`<span class="sup-dot" aria-hidden="true"></span><b>${s.test?"Test business":"Support access"}</b><span>${esc(s.business)} · ${s.can_edit?(s.test?"changes allowed":"changes allowed, every change is recorded"):"read-only"} · ${m} min left</span>
+      <span class="sup-act"><button type="button" data-sup="extend">+30 min</button>${s.can_edit?"":'<button type="button" data-sup="edit">Allow changes</button>'}<button type="button" data-sup="end">End</button></span>`};
+  draw();clearInterval(supportBar.t);supportBar.t=setInterval(draw,30000);
+  w.onclick=async e=>{const b=e.target.closest("[data-sup]");if(!b)return;const a=b.dataset.sup;
+    try{if(a==="extend"){await req("/api/admin/support/extend","POST");toast("Extended by 30 minutes.");return loadMe()}
+      if(a==="edit"){const why=prompt("Why do you need to change something? This is recorded and the owner is told.");if(!why)return;await req("/api/admin/support/edit","POST",{reason:why});toast("Changes allowed for this visit.");return loadMe()}
+      if(a==="end"){await req("/api/admin/support/end","POST");location.href="/"}}catch(err){toast(err.message)}}}
 // Admin only: "View as" a plan, to see this business exactly as an owner on that plan would (made for test businesses).
 function viewAsBar(admin){let w=$("#viewAs");if(!admin){w?.remove();return}
   if(!w){const lab=$("#labBtn");w=document.createElement("label");w.id="viewAs";w.className="viewAs";if(lab)lab.after(w);else{if((viewAsBar.n=(viewAsBar.n||0)+1)<10)setTimeout(()=>viewAsBar(admin),300);return}}
@@ -137,7 +151,12 @@ async function loadSecurity(){const on=me.user.totp_enabled,any=on||me.user.emai
   $("#tfStart")&&($("#tfStart").onclick=()=>tfSetup(false));
   $("#tfOff")&&($("#tfOff").onsubmit=async e=>{e.preventDefault();try{await req("/api/me/2fa/disable","POST",{password:$("#tfPw").value,code:$("#tfOffCode").value});toast("Two-factor is off.");await loadMe();loadSecurity()}catch(err){toast(err.message)}});
   const act=await req("/api/me/activity");const NAME={login:"Signed in",login_failed:"Wrong password",login_locked:"Locked after wrong passwords",code_failed:"Wrong two-factor code",password_changed:"Password changed",signout_everywhere:"Signed out everywhere","2fa_on":"Two-factor on","2fa_off":"Two-factor off",denied:"Blocked from a section"};
-  $("#myAct").innerHTML=act.length?act.map(a=>`<div class="item"><div class="grow"><b style="font-weight:500">${esc(NAME[a.action]||a.action)}</b><span>${esc(a.at)} · ${esc(a.ip||"")}${a.detail?" · "+esc(a.detail):""}</span></div></div>`).join(""):`<div class="empty">No activity yet.</div>`}
+  $("#myAct").innerHTML=act.length?act.map(a=>`<div class="item"><div class="grow"><b style="font-weight:500">${esc(NAME[a.action]||a.action)}</b><span>${esc(a.at)} · ${esc(a.ip||"")}${a.detail?" · "+esc(a.detail):""}</span></div></div>`).join(""):`<div class="empty">No activity yet.</div>`;
+  // every visit by MXAi support to this dashboard (owners see this; the admin sees it inside support access)
+  if(me.user.role==="staff")return;
+  let box=$("#supLog");if(!box){const c=document.createElement("div");c.className="card glass";c.innerHTML=`<div class="ch"><h2>MXAi support access</h2><p class="sub" style="margin:4px 0 0">Every time MXAi support opened this dashboard: when, why, for how long, and whether anything was changed.</p></div><div class="list" id="supLog"></div>`;$("#myAct").closest(".card").after(c);box=$("#supLog")}
+  const log=await req("/api/me/support-log").catch(()=>[]);
+  box.innerHTML=log.length?log.map(v=>`<div class="item"><div class="grow"><b style="font-weight:500">${v.edited?"Viewed and changed":"Viewed, read-only"}${v.open?" · now":""}</b><span>${esc(v.at)} · ${v.minutes} min · ${esc(v.reason||"")}${v.edited&&v.edit_reason?" · changes: "+esc(v.edit_reason):""}</span></div></div>`).join(""):`<div class="empty">MXAi support has never opened your dashboard.</div>`}
 $("#pwForm").onsubmit=async e=>{e.preventDefault();$("#pwErr").textContent="";try{await req("/api/me/password","POST",{current:$("#pwCur").value,next:$("#pwNew").value});$("#pwForm").reset();toast("Password changed. Other devices are signed out.")}catch(err){$("#pwErr").textContent=err.message}};
 $("#soAll").onclick=async()=>{if(!confirm("Sign out on every device, including this one?"))return;await req("/api/me/signout-everywhere","POST");location.href="/login"};
 

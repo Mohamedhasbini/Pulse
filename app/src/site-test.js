@@ -5,6 +5,7 @@ import http from 'node:http';
 import { q, one, pool } from './db.js';
 import { createBusiness, signSession } from './accounts.js';
 import { closeBusiness } from './ops.js';
+import { signSupport } from './support.js';
 import { siteData, renderSite, STYLES, LANGS, SECTIONS } from './sitegen.js';
 
 const BASE = 'http://localhost:3100', stamp = Date.now(), results = [];
@@ -76,12 +77,14 @@ try {
   check('Owner cannot change style, sections or publishing', s.style === 'elegant' && s.sections.length === SECTIONS.length && s.published === true);
   r = await send('/api/site', 'PUT', { subdomain: 'hacked' }, OWNER_A);
   check('Owner cannot set the address', !(await one('SELECT subdomain FROM businesses WHERE id=$1', [A.id])).subdomain);
-  const ADMIN_A = ADMIN + `; rb_biz=${A.id}`;
+  // the admin works inside a business only through support access (here with changes allowed)
+  const inside = async id => `; rb_support=${signSupport((await one(`INSERT INTO support_sessions (admin_id, business_id, reason, can_edit, expires_at) VALUES ($1,$2,'site test',true, now() + interval '10 minutes') RETURNING id`, [admin.id, id])).id)}`;
+  const ADMIN_A = ADMIN + await inside(A.id);
   r = await send('/api/site', 'PUT', { style: 'bold', subdomain: `test${stamp % 100000}` }, ADMIN_A);
   s = (await one('SELECT site, subdomain FROM businesses WHERE id=$1', [A.id]));
   check('Admin can change style and subdomain', r.status === 200 && s.site.style === 'bold' && s.subdomain === `test${stamp % 100000}`);
   check('Reserved subdomain refused', (await send('/api/site', 'PUT', { subdomain: 'admin' }, ADMIN_A)).status === 400);
-  check('Domain of another business refused', (await send('/api/site', 'PUT', { custom_domain: dom }, ADMIN + `; rb_biz=${B.id}`)).status === 409);
+  check('Domain of another business refused', (await send('/api/site', 'PUT', { custom_domain: dom }, ADMIN + await inside(B.id))).status === 409);
   check("Owner B cannot read A's website settings", !JSON.stringify((await send('/api/site', 'GET', undefined, OWNER_B).catch(() => ({ json: {} }))).json).includes('Owner title'));
   // 5. Gallery upload appears on the site, removing it deletes the file
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');

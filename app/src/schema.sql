@@ -499,3 +499,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS upgrade_requests_one_open ON upgrade_requests 
 -- The Lab's switches (switches.js): one per channel, connector and AI provider for the whole platform, and per business
 CREATE TABLE IF NOT EXISTS platform_switches (key text PRIMARY KEY, enabled boolean NOT NULL DEFAULT true, updated_at timestamptz DEFAULT now(), updated_by text);
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS connector_allow JSONB DEFAULT '{}';
+-- Support access (support.js): the admin's time-limited, read-only-by-default visits to a client's dashboard
+CREATE TABLE IF NOT EXISTS support_sessions (id serial PRIMARY KEY, admin_id int NOT NULL, business_id int REFERENCES businesses(id) ON DELETE CASCADE,
+  reason text, can_edit boolean NOT NULL DEFAULT false, edit_reason text, edit_at timestamptz,
+  started_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL, ended_at timestamptz, ended_by text);
+CREATE INDEX IF NOT EXISTS support_sessions_biz ON support_sessions (business_id, started_at DESC);

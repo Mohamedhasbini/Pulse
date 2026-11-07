@@ -45,6 +45,8 @@ import { setSenders, startAutopilot, offerWaitlist } from './autopilot.js';
 import { mountHQ } from './hq.js';
 import { mountUpgrades, pendingFor } from './upgrades.js';
 import { mountControls } from './controls.js';
+import { surfaceOf, doorAllows } from './hosts.js';
+import { mountSupport, activeSupport, READ_ONLY_OK } from './support.js';
 import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
 import { compress, fingerprint, rememberUser, recallUser, forgetUser, requestLog, CSP } from './web.js';
 
@@ -115,7 +117,7 @@ app.use((req, res, next) => {
   res.set({ 'X-Frame-Options': 'SAMEORIGIN', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' });
   // the app pages (dashboard, sign-in) only: client websites and the public site have their own needs
-  if (req.path === '/' || req.path === '/index.html' || req.path === '/login') res.set('Content-Security-Policy', CSP);
+  if (req.path === '/' || req.path === '/index.html' || req.path === '/login' || surfaceOf(req) === 'lab') res.set('Content-Security-Policy', CSP);
   // Requests that change something must come from our own pages, so another website can't act with a signed-in owner's cookie.
   if (req.method !== 'GET' && req.path.startsWith('/api/') && !req.path.startsWith('/api/public/') && !req.path.startsWith('/api/webook/')) {
     const origin = req.get('origin');
@@ -168,7 +170,8 @@ app.post('/api/login', wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE email=$1', [email]);
   if (u?.locked_until && new Date(u.locked_until) > new Date())
     return res.status(423).json({ error: 'This account is locked for 15 minutes after too many wrong passwords. Ask your administrator if you need help.' });
-  if (!u || u.disabled || !checkPassword(req.body.password, u.password_hash)) {
+  // each login has one door: the admin signs in at the Lab address, everyone else at the app address (any door on this PC)
+  if (!u || u.disabled || !doorAllows(surfaceOf(req), u.role) || !checkPassword(req.body.password, u.password_hash)) {
     a.n++; a.at = Date.now(); if (a.n >= 10) { a.n = 0; a.until = Date.now() + 15 * 60000; }
     attempts.set(ip, a);
     if (u) {
@@ -230,7 +233,7 @@ mountPublicCatalog(app);
 // live demos are off: the website shows real screenshots instead (mountLiveDemo(app) turns /demo/<template> back on)
 
 // Who is signed in, and which business this request is about. Owners and staff only ever get their own business;
-// the admin works on whichever business they switched to (rb_biz cookie).
+// the admin works on the business opened with support access (support.js), read-only unless changes were allowed.
 const BIZ = () => ctx.getStore().biz;
 // each business's time zone, read at most once a minute (changing it is an admin action, rare)
 const tzCache = new Map();
@@ -245,17 +248,20 @@ app.use(wrap(async (req, res, next) => {
   const s = readSession(req.get('cookie'));
   let user = s && recallUser(s.uid);
   if (s && !user) { user = await one('SELECT id, email, name, role, business_id, permissions, totp_enabled, email_2fa, session_version FROM users WHERE id=$1 AND NOT disabled', [s.uid]); if (user) rememberUser(s.uid, user); }
-  if (!user || user.session_version !== s.version) {
+  if (!user || user.session_version !== s.version || !doorAllows(surfaceOf(req), user.role)) {
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Please sign in again.' });
     return res.redirect('/login');
   }
   let biz = user.business_id;
   if (user.role === 'admin') {
-    const want = +(/(?:^|;\s*)rb_biz=(\d+)/.exec(req.get('cookie') || '')?.[1]);
-    biz = (want && await one('SELECT id FROM businesses WHERE id=$1', [want]))?.id || null;
+    // the admin is inside a business only through support access (support.js): time-limited, read-only by default
+    const sup = await activeSupport(user.id, req.get('cookie'));
+    biz = sup?.business_id || null; req.support = sup;
     // In the Lab (no business opened) only platform pages work; business pages wait until a business is opened.
     if (!biz && req.path.startsWith('/api/') && !/^\/api\/(me(\/|$)|admin\/|logout$|verticals$)/.test(req.path))
       return res.status(409).json({ error: 'Open a business first.', lab: true });
+    if (sup && !sup.can_edit && req.method !== 'GET' && req.method !== 'HEAD' && req.path.startsWith('/api/') && !READ_ONLY_OK.test(req.path))
+      return res.status(403).json({ error: 'Read-only support access. Press Allow changes (with a reason) to change something.', support: 'read-only' });
   }
   req.user = user;
   if (demoGuard(req, res)) return;
@@ -284,7 +290,7 @@ const assets = fingerprint(PUBLIC);
 app.get(['/', '/index.html'], assets.page);
 app.get('/app.css', assets.css);
 app.use(express.static(PUBLIC, { setHeaders: assets.headers }));
-const adminOnly = (req, res, next) => req.user.role === 'admin' ? next() : res.status(403).json({ error: 'Only the platform admin can do this.' });
+const adminOnly = (req, res, next) => req.user.role === 'admin' && ['lab', 'dev'].includes(surfaceOf(req)) ? next() : res.status(403).json({ error: 'Only the platform admin can do this.' });
 mountSiteAdmin(app, adminOnly);
 mountUploads(app, () => BIZ(), audit);
 mountCoach(app, () => BIZ(), audit, wrap);
@@ -337,7 +343,7 @@ app.delete('/api/admin/businesses/:id', adminOnly, wrap(async (req, res) => {
 
 // ---------- Me: account, plan, what I can open, security ----------
 // Leave the business you opened and go back to the Lab
-app.post('/api/admin/lab', adminOnly, (req, res) => res.set('Set-Cookie', [`rb_biz=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`, `rb_viewas=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`]).json({ ok: true }));
+// /api/admin/lab (back to the Lab) lives in support.js: it ends support access
 // "View as": see the business you opened with exactly one plan's features and locks (empty plan = back to admin view)
 app.post('/api/admin/view-as', adminOnly, wrap(async (req, res) => {
   const p = req.body.plan ? await one('SELECT key FROM plans WHERE key=$1', [String(req.body.plan)]) : null;
@@ -349,7 +355,8 @@ app.get('/api/me', wrap(async (req, res) => {
       GREATEST(0, b.trial_ends_at::date - current_date)::int AS trial_days_left FROM businesses b LEFT JOIN plans p ON p.key=b.plan_key WHERE b.id=$1`, [BIZ()]);
   const u = req.user;
   res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, totp_enabled: u.totp_enabled, email_2fa: u.email_2fa }, email_ready: emailEnabled(), business: b,
-    features: [...await featuresOf(BIZ(), ctx.getStore().viewAs)], view_as: ctx.getStore().viewAs || null, feature_names: FEATURES, requested: BIZ() ? await pendingFor(BIZ()) : [],
+    features: [...await featuresOf(BIZ(), ctx.getStore().viewAs)], view_as: ctx.getStore().viewAs || null, feature_names: FEATURES, surface: surfaceOf(req),
+    support: req.support ? { business: req.support.business, can_edit: req.support.can_edit, seconds_left: req.support.seconds_left, reason: req.support.reason, test: req.support.is_demo } : null, requested: BIZ() ? await pendingFor(BIZ()) : [],
     plans: u.role === 'admin' ? await q('SELECT key, name FROM plans ORDER BY sort') : undefined, playground: BIZ() ? await isPlayground(BIZ()) : false, modules: Object.keys(MODULES).filter(m => u.role === 'admin' || canOpen(u, m)), module_feature: MODULE_FEATURE,
     edition: process.env.EDITION === 'product' ? 'product' : 'lab', lab: u.role === 'admin' && !BIZ(),
     // links we show or share must work outside this computer, even when the dashboard is opened on localhost
@@ -481,12 +488,7 @@ app.post('/api/admin/businesses', adminOnly, wrap(async (req, res) => {
   await audit(req, 'business_created', `${req.body.name} (${r.email})${addons.length ? ' + ' + addons.join(', ') : ''}`, r.id);
   res.json(r);
 }));
-app.post('/api/admin/switch', adminOnly, wrap(async (req, res) => {
-  const b = await one('SELECT id, name FROM businesses WHERE id=$1', [+req.body.id]);
-  if (!b) return res.status(404).json({ error: 'Business not found.' });
-  await audit(req, 'opened_business', b.name, b.id);
-  res.set('Set-Cookie', [`rb_biz=${b.id}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${365 * 86400}${secureCookie(req)}`, `rb_viewas=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`]).json(b);
-}));
+// /api/admin/switch (open a business) lives in support.js: support access
 // Plan, add-ons, per-business feature switches, status and trial: all take effect on the business's next click.
 app.post('/api/admin/businesses/:id/plan', adminOnly, wrap(async (req, res) => {
   const id = +req.params.id, b = await one('SELECT * FROM businesses WHERE id=$1', [id]);
@@ -715,6 +717,7 @@ mountLab(app, () => BIZ());
 mountHQ(app, adminOnly, wrap, audit, aiHealth);
 mountUpgrades(app, { adminOnly, wrap, audit, BIZ });
 mountControls(app, { adminOnly, wrap, audit });
+mountSupport(app, { adminOnly, wrap, audit, secureCookie });
 mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
 // a PREVIEW_ONLY copy on the real data must never send: Autopilot only runs in the live app
 setSenders({ sendWhatsApp, sendTelegram }); if (!process.env.PREVIEW_ONLY) startAutopilot();

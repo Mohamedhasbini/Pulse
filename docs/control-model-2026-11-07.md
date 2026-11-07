@@ -88,6 +88,13 @@ updated, client told) or decline. Recorded in the audit log. Self-serve upgrades
 - **Playgrounds**: in any business you open, "View as" (under Back to Lab) shows it as a Starter, Pro or Business owner
   would see it. Test businesses never send anything to real people (reminders, campaigns, agents, Inbox replies).
 
+## 6c. Built on 7 November (later)
+
+- **Lab › Controls**: on/off for every channel, connector and AI provider, for everyone or per business.
+- **Separate doors**: the Lab at lab.nexfoyz.dev (admin only), dashboards at app.nexfoyz.dev (admin refused).
+- **Support access** replaces Open business: read-only, 60 minutes, banner, reason to change, owner notified and
+  sees every visit. Cloudflare Access gate: founder's step, see `docs/lab-access-2026-11-07.md`.
+
 ## 7. Build order
 
 | Phase | What | Size |
