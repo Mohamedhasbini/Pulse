@@ -340,6 +340,14 @@ try {
   const hcRes = await fetch(BASE + '/api/admin/health', { headers: as(admin) }).then(x => x.json()).catch(() => []);
   const hl = Array.isArray(hcRes) ? hcRes : hcRes.checks || [];
   say('Lab health checks the off-site copy and the restore test', ['Off-site copy', 'Restore test'].every(n => hl.some(c => c.name === n)));
+  // ---- website: each page has its own title and canonical link; robots, sitemap and privacy are complete
+  const pr = await fetch(BASE + '/pricing').then(x => x.text());
+  say('Each website page has its own title and canonical link', /<title>MXAi pricing/.test(pr) && /rel="canonical" href="[^"]+\/pricing"/.test(pr) && /hreflang="ar"/.test(pr));
+  const rb = await fetch(BASE + '/robots.txt').then(x => x.text()), sm = await fetch(BASE + '/sitemap.xml').then(x => x.text());
+  say('Robots and sitemap are public and list the pages', /Sitemap:/.test(rb) && /Disallow: \/api\//.test(rb) && /<loc>[^<]+\/pricing<\/loc>/.test(sm));
+  const pv = await fetch(BASE + '/privacy').then(x => x.text());
+  say('The privacy page names every provider and has no blanks', !/\{\{/.test(pv) && ['Groq', 'Anthropic', 'Resend', 'OneDrive'].every(w => pv.includes(w)));
+  say('The language switch is public', (await fetch(BASE + '/site-i18n.js', { redirect: 'manual' })).status === 200);
   // the admin with no business opened is in the Lab: platform pages only
   const me0 = await fetch(BASE + '/api/me', { headers: as(admin) }).then(r => r.json());
   say('Admin signs in to the Lab, not a business', me0.lab === true && !me0.business);

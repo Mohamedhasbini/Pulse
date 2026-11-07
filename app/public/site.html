@@ -30,7 +30,7 @@ h1,h2,h3{font-weight:700;letter-spacing:-.035em;line-height:1.05;margin:0}
 .pill{display:inline-flex;gap:8px;align-items:center;font-size:13px;font-weight:500;color:var(--ink2);border:1px solid var(--line2);border-radius:999px;padding:6px 14px 6px 6px;background:rgba(255,255,255,.04)}
 .pill b{font-size:11.5px;font-weight:700;color:#fff;background:var(--v);border-radius:999px;padding:3px 9px}
 .k{display:inline-block;color:var(--v2);font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}.m{opacity:1!important;transform:none!important}.chart .ln{stroke-dashoffset:0!important}}
 
 /* nav */
 header{position:fixed;top:14px;left:0;right:0;z-index:20}
@@ -49,7 +49,7 @@ header .btn{padding:11px 18px;font-size:14px}.signin{background:none!important;b
 @keyframes breathe{50%{opacity:.75;transform:translateX(-50%) scale(1.06)}}
 .ghost{position:absolute;left:0;right:0;top:92px;z-index:-1;font-weight:800;font-size:clamp(120px,24vw,340px);letter-spacing:-.06em;line-height:.8;white-space:nowrap;
   background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 75%);-webkit-background-clip:text;background-clip:text;color:transparent;user-select:none;pointer-events:none}
-.hero h1{font-size:clamp(42px,6.4vw,82px);margin:22px auto 20px;max-width:900px}
+.hero h1{font-size:clamp(34px,6.4vw,82px);margin:22px auto 20px;max-width:900px}
 .hero h1 em{font-style:normal;background:linear-gradient(90deg,#fff,var(--v2) 60%,#e7eaec);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p.lead{font-size:18.5px;color:var(--ink2);max-width:620px;margin:0 auto 32px}
 .ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
@@ -590,9 +590,9 @@ html,body{overflow-x:clip}header nav a{white-space:nowrap}.core{max-width:100vw}
 
 /* ── pages: one file, each address shows its own sections (the sections themselves are unchanged) */
 body[data-page] main>section{display:none}
-body[data-page="home"] main>:is(#see,#does,#core,#tools,#industries,#reviews:not([hidden]),#faq,#start),
+body[data-page="home"] main>:is(#problem,#see,#does,#tools,#industries,#pricing,#reviews:not([hidden]),#faq,#start),
 body[data-page="product"] main>:is(#dashboard,#value,#agents,#features,#inside,#start),
-body[data-page="how"] main>:is(#problem,#how,#architecture,#demo,#start),
+body[data-page="how"] main>:is(#problem,#how,#core,#architecture,#demo,#start),
 body[data-page="pricing"] main>:is(#pricing,#faq,#start),
 body[data-page="templates"] main>:is(#templates,#tools,#start){display:block}
 body[data-page]:not([data-page="home"]) main>.hero{display:none}
@@ -615,7 +615,7 @@ header nav.mn{display:flex;align-items:center;gap:2px}
 .mn-i:hover .mn-p,.mn-i:focus-within .mn-p,.mn-t[aria-expanded="true"]+.mn-p{opacity:1;visibility:visible;transform:translateX(-50%)}
 .mn-p::before{content:"";position:absolute;inset:-14px 0 auto;height:14px}
 .mn-p a{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;text-decoration:none}
-.mn-p a:hover,.mn-p a:focus-visible{background:rgba(255,255,255,.06);outline:none}
+.mn-p a:hover,.mn-p a:focus-visible{background:rgba(255,255,255,.06)}.mn-p a:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .mn-p b{font-size:14px;color:var(--ink);font-weight:600}.mn-p small{font-size:12.5px;color:var(--muted)}
 header nav.mn>a{text-decoration:none;padding:8px 14px;border-radius:999px;color:var(--ink2);font-size:14.5px}
 header nav.mn>a:hover,header nav.mn>a[aria-current="page"]{color:var(--ink);background:rgba(255,255,255,.06)}
@@ -629,7 +629,13 @@ header nav.mn>a:hover,header nav.mn>a[aria-current="page"]{color:var(--ink);back
 .mn-sheet{position:absolute;top:calc(100% + 10px);left:0;right:0;display:grid;gap:2px;padding:8px;border-radius:20px;background:rgba(18,20,22,.97);border:1px solid var(--line);box-shadow:0 20px 50px -20px rgba(0,0,0,.6)}
 .mn-sheet a{padding:14px 16px;border-radius:12px;text-decoration:none;color:var(--ink);font-size:16px}.mn-sheet a:hover{background:rgba(255,255,255,.06)}
 header .wrap{position:relative}
-.mn-sheet[hidden]{display:none}@media (min-width:901px){.mn-sheet{display:none!important}}
+.mn-sheet[hidden]{display:none}
+.lang{display:flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:999px;margin-inline-end:6px}.lang button{min-width:32px;min-height:28px;padding:0 8px;border:0;border-radius:999px;background:none;color:var(--muted);font:600 12px/1 inherit;cursor:pointer}.lang button[aria-pressed="true"]{background:var(--ink);color:#0b0c0d}
+.mn-cta{background:var(--ink);color:#0b0c0d!important;font-weight:600;text-align:center}
+.screen{position:relative}.ex-tag{position:absolute;top:10px;inset-inline-end:12px;z-index:3;padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.55);color:#e9ecef;font:600 11px/1.4 inherit;letter-spacing:.02em}
+.revs footer{padding:0}
+html[dir="rtl"] .hero h1,html[dir="rtl"] .sh{letter-spacing:0}
+@media (max-width:900px){header .lang{display:none}}.mn-lang{display:flex;gap:4px;padding:6px 4px 2px}.mn-lang button{flex:1;min-height:40px;border:1px solid var(--line);border-radius:12px;background:none;color:var(--muted);font:600 13px/1 inherit;cursor:pointer}.mn-lang button[aria-pressed="true"]{background:var(--ink);color:#0b0c0d}@media (min-width:901px){.mn-sheet{display:none!important}}
 @media (max-width:900px){.mn-burger{display:grid}header .signin{display:none}}
 
 /* value cards: each shows its result as a small piece of dashboard, not a paragraph */
@@ -651,7 +657,7 @@ html[data-theme="light"] .vz-chat .c,html[data-theme="light"] .vz-rules span,htm
 /* templates gallery: each template is a live-looking preview of its dashboard, then name, pages and connectors */
 .tp-filter{display:flex;gap:6px;justify-content:center;margin:0 0 26px}
 .tp-filter button{all:unset;cursor:pointer;padding:8px 16px;border-radius:999px;font-size:14px;color:var(--ink2);border:1px solid var(--line)}
-.tp-filter button[aria-selected="true"]{background:var(--ink);color:#0b0c0d;border-color:var(--ink)}
+.tp-filter button[aria-pressed="true"]{background:var(--ink);color:#0b0c0d;border-color:var(--ink)}
 .tp-filter button:focus-visible{outline:2px solid #c6f432;outline-offset:2px}
 .tp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
 .tp{border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));overflow:hidden;transition:transform .3s,border-color .3s}
@@ -668,7 +674,7 @@ html[data-theme="light"] .vz-chat .c,html[data-theme="light"] .vz-rules span,htm
 .tp-k{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .tp-k div{background:#fff;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:1px;min-width:0}
 .tp-k small{font-size:9.5px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tp-k b{font-size:17px;letter-spacing:-.02em}
-.tp-k em{font-style:normal;font-size:9px;font-weight:600;color:#888}.tp-k em.up{color:#3f7d0a}.tp-k em.warn{color:#b45309}
+.tp-k em{font-style:normal;font-size:9px;font-weight:600;color:#5f6368}.tp-k em.up{color:#3f7d0a}.tp-k em.warn{color:#b45309}
 .tp-2{display:grid;grid-template-columns:1.2fr 1fr;gap:8px;flex:1;min-height:0}
 .tp-2>*,.tp-chat,.tp-day,.tp-tables{background:#fff;border-radius:10px;padding:10px}
 .tp-bars{display:flex;align-items:flex-end;gap:5px}.tp-bars i{flex:1;border-radius:4px 4px 2px 2px;background:#a6d61f}.tp-bars.b i{background:#7cc4ff}.tp-bars.p i{background:#c4a5ff}
@@ -740,8 +746,8 @@ html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;fon
     <a href="/templates">Templates</a><a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a>
   </nav>
   <button type="button" class="mn-burger" aria-label="Menu" aria-expanded="false" aria-controls="mnSheet"><i></i><i></i></button>
-  <div class="mn-sheet" id="mnSheet" hidden><a href="/pulse">Home</a><a href="/product">Product</a><a href="/templates">Templates</a><a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a><a href="/login">Sign in</a></div>
-  <a class="btn gho signin" href="/login">Sign in</a><a class="btn gho demo-b" href="/pricing#start" data-kind="demo">Book a demo</a><a class="btn pri" href="/pricing#start" data-kind="signup">Get started</a>
+  <div class="mn-sheet" id="mnSheet" hidden><a href="/pulse">Home</a><a href="/product">Product</a><a href="/templates">Templates</a><a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a><a href="/login">Sign in</a><a class="mn-cta" href="/pricing#start" data-kind="signup">Get set up free</a><div class="mn-lang" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="es" aria-pressed="false">Español</button><button type="button" data-lang="ar" aria-pressed="false" lang="ar">العربية</button></div></div>
+  <a class="btn gho signin" href="/login">Sign in</a><div class="lang" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="es" aria-pressed="false">ES</button><button type="button" data-lang="ar" aria-pressed="false" lang="ar">ع</button></div><a class="btn gho demo-b" href="/pricing#start" data-kind="demo">Book a 30-min demo</a><a class="btn pri" href="/pricing#start" data-kind="signup">Get set up free</a>
 </div></header>
 
 <main>
@@ -752,12 +758,12 @@ html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;fon
   <div class="wrap">
     <span class="pill"><b>24/7</b>Your AI front desk on WhatsApp</span>
     <h1>Never lose a booking to a missed <em>message</em>.</h1>
-    <p class="lead">MXAi answers your WhatsApp in seconds, day and night, in Arabic, English or Spanish. It books clients into your calendar, reminds them so they show up and brings back the ones who stopped coming. You see everything on one screen and step in only when it asks you.</p>
-    <div class="ctas"><a class="btn pri" href="#start" data-kind="signup">Start with MXAi</a><a class="btn gho" href="#start" data-kind="demo"><span class="pl"></span>Book a free demo</a></div>
+    <p class="lead">MXAi answers your WhatsApp in seconds, day and night, in Arabic, English or Spanish. It books clients into your calendar and reminds them so they show up.</p>
+    <div class="ctas"><a class="btn pri" href="#start" data-kind="signup">Get set up free</a><a class="btn gho" href="#start" data-kind="demo"><span class="pl"></span>Book a 30-min demo</a></div>
     <small>Live in a day · From $29 a month · Cancel any time</small>
   </div>
   <div class="wrap stage">
-    <div class="screen"><div class="ccw top" aria-label="The MXAi command center, with example data">
+    <div class="screen"><span class="ex-tag">Example</span><div class="ccw top" aria-label="The MXAi command center, with example data">
     <div class="cc-bar"><span class="cc-logo"><i></i>MXAi</span>
       <nav><b>Today</b><span>Inbox</span><span>Calendar</span><span>Customers</span><span>Insights</span><span>Marketing</span><span>Ask MXAi</span></nav>
       <span class="cc-ai"><i></i>AI on</span><span class="cc-ask">Ask anything about your business…<kbd>Ctrl K</kbd></span></div>
@@ -824,7 +830,7 @@ html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;fon
 </div></section>
 
 <section id="see"><div class="wrap">
-  <div class="sh rv"><span class="k">See it work</span><h2>23:14. You're closed. MXAi books the client.</h2><p>A real conversation, the way your clients have it: on the WhatsApp they already use.</p></div>
+  <div class="sh rv"><span class="k">See it work</span><h2>23:14. You're closed. MXAi books the client.</h2><p>An example conversation, the way your clients have it: on the WhatsApp they already use.</p></div>
   <div class="see rv">
     <div class="glass see-phone" role="img" aria-label="A client asks for a haircut tomorrow at 23:14; MXAi offers three times, the client picks 14:30, and MXAi confirms the booking and promises a reminder.">
       <div class="see-top"><i aria-hidden="true">S</i><div><b>Your salon</b><small>WhatsApp · replies instantly</small></div></div>
@@ -849,7 +855,7 @@ html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;fon
 <section id="does"><div class="wrap">
   <div class="sh rv"><span class="k">What it does</span><h2>Four jobs, done every day without you.</h2><p>Your AI front desk works from your own services, prices, hours and rules.</p></div>
   <div class="does">
-    <div class="glass rv"><i>01</i><h3>Answers</h3><p>Every WhatsApp and Telegram message in seconds, in English, Arabic or Spanish. Prices, hours, directions, policies.</p></div>
+    <div class="glass rv"><i>01</i><h3>Answers</h3><p>Every WhatsApp, Instagram and website chat message in seconds, in English, Arabic or Spanish. Prices, hours, directions, policies.</p></div>
     <div class="glass rv"><i>02</i><h3>Books</h3><p>Offers real free times, books the visit into your calendar and moves or cancels it when the client asks.</p></div>
     <div class="glass rv"><i>03</i><h3>Reminds</h3><p>Sends reminders with one-tap confirm or reschedule, so fewer chairs stay empty.</p></div>
     <div class="glass rv"><i>04</i><h3>Wins clients back</h3><p>Spots regulars who stopped coming and prepares an offer. Nothing is sent until you approve it.</p></div>
@@ -1043,7 +1049,7 @@ html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;fon
 
 <section id="templates"><div class="wrap">
   <div class="sh rv"><span class="k">Templates</span><h2>Pick a dashboard. It's ready in a minute.</h2><p>Each template comes with the pages, words and AI your business needs. Live ones run today.</p></div>
-  <div class="tp-filter" role="tablist"><button type="button" aria-selected="true" data-f="all">All</button><button type="button" aria-selected="false" data-f="live">Live now</button><button type="button" aria-selected="false" data-f="soon">Coming soon</button></div>
+  <div class="tp-filter" role="group" aria-label="Show templates"><button type="button" aria-pressed="true" data-f="all">All</button><button type="button" aria-pressed="false" data-f="live">Live now</button><button type="button" aria-pressed="false" data-f="soon">Coming soon</button></div>
   <div class="tp-grid">
     <article class="tp rv" data-st="live">
       <div class="tp-frame"><div class="tp-crop"><img class="tp-img" src="/shots/salon.jpg" alt="Salon dashboard: team, earnings, bookings and the AI front desk" loading="lazy" width="1440" height="900"></div><span class="tp-badge live">Live</span></div>
@@ -1103,7 +1109,7 @@ html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;fon
 
 <section id="faq" class="faq"><div class="wrap" style="max-width:840px">
   <div class="sh rv"><span class="k">Questions</span><h2>Good to know</h2></div>
-  <details class="glass"><summary>Do my customers need to download anything?</summary><p>No. They message your WhatsApp or Telegram like they always do. MXAi answers there.</p></details>
+  <details class="glass"><summary>Do my customers need to download anything?</summary><p>No. They message your WhatsApp or Instagram like they always do. MXAi answers there.</p></details>
   <details class="glass"><summary>What if the AI doesn't know the answer?</summary><p>It says so politely and hands the chat to you, with an alert on your phone. You can reply from your dashboard and teach it the right answer for next time.</p></details>
   <details class="glass"><summary>Which languages does it speak?</summary><p>It replies in the customer's language, including English, Arabic (and Lebanese) and Spanish.</p></details>
   <details class="glass"><summary>Can I keep using my calendar and team?</summary><p>Yes. Add your team, opening hours and breaks. Bookings you add yourself are respected by the AI.</p></details>
@@ -1119,7 +1125,7 @@ html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;fon
     <div class="demo glass rv"><span class="mono">Step 1</span><b>Your setup, live</b><span>Your services, prices, hours and team, configured during the call.</span></div>
     <div class="demo glass rv"><span class="mono">Step 2</span><b>Real scenarios</b><span>Booking, rescheduling, a complaint and a price question, handled in front of you.</span></div>
     <div class="demo glass rv"><span class="mono">Step 3</span><b>Your command center</b><span>Revenue, capacity and retention views, with a projection for your business.</span></div>
-    <a class="demo glass rv dcta" href="#start" data-kind="demo"><span class="mono">30 minutes · free</span><b>Book a walkthrough</b><span>Pick a time that suits your team.</span><em>Request a session →</em></a>
+    <a class="demo glass rv dcta" href="#start" data-kind="demo"><span class="mono">30 minutes · free</span><b>Book a 30-min demo</b><span>Pick a time that suits your team.</span><em>Request a session →</em></a>
   </div>
 </div></section>
 
@@ -1133,7 +1139,7 @@ html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;fon
     </div>
   </div>
   <div class="form glass" id="formBox">
-    <div class="seg" role="tablist"><button type="button" data-k="signup" aria-pressed="true">Start with MXAi</button><button type="button" data-k="demo" aria-pressed="false">Book a walkthrough</button></div>
+    <div class="seg" role="group" aria-label="What would you like?"><button type="button" data-k="signup" aria-pressed="true">Get set up free</button><button type="button" data-k="demo" aria-pressed="false">Book a 30-min demo</button></div>
     <div class="ref" id="refNote" hidden></div>
     <form id="lead" class="fg" novalidate>
       <label>Your name<input name="name" autocomplete="name" required></label>
@@ -1143,7 +1149,7 @@ html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;fon
       <label>WhatsApp number<input name="phone" inputmode="tel" autocomplete="tel" placeholder="+961 …"></label>
       <label>Email<input name="email" type="email" autocomplete="email"></label>
       <label class="full" id="msgL">Anything we should know? (optional)<textarea name="message" rows="3" placeholder="e.g. 3 chairs, busy on weekends, we get lots of WhatsApp messages"></textarea></label>
-      <div class="full"><button class="btn pri" style="width:100%" id="go">Start with MXAi</button><p class="err" id="err"></p></div>
+      <div class="full"><button class="btn pri" style="width:100%" id="go">Get set up free</button><p class="err" id="err"></p></div>
     </form>
   </div>
 </div></div></div></section>
@@ -1155,7 +1161,7 @@ html body .hero h1 em{font-family:'Instrument Serif',Georgia,serif!important;fon
   <div><a class="logo" href="/pulse"><i><svg viewBox="0 0 24 24"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i>MXAi</a><p style="margin:12px 0 0;max-width:280px">The AI command center for your business.</p></div>
   <div><b>Product</b><a href="/product">Features</a><a href="/templates">Templates</a><a href="/how-it-works">How it works</a><a href="/pricing">Pricing</a><a href="/pricing#start" data-kind="demo">Book a demo</a></div>
   <div><b>For customers</b><a href="/webook">WeBook marketplace</a><a href="/webook" data-install>Get the app</a></div>
-  <div><b>For businesses</b><a href="/login">Sign in</a><a href="/pricing#start" data-kind="signup">Get started</a><a href="/privacy">Privacy</a></div>
+  <div><b>For businesses</b><a href="/login">Sign in</a><a href="/pricing#start" data-kind="signup">Get set up free</a><a href="/privacy">Privacy</a></div>
   </div>
   <div class="big" aria-hidden="true">MXAi</div>
   <div class="wrap" style="border-top:1px solid var(--line);padding-top:18px"><span>© <span id="yr"></span> MXAi. Run your business from one place.</span></div></footer>
@@ -1233,7 +1239,7 @@ if(matchMedia("(hover:hover) and (prefers-reduced-motion:no-preference)").matche
   const hs=[...document.querySelectorAll(".sh h2,.core h2")];addEventListener("scroll",()=>{hs.forEach(h=>{const r=h.getBoundingClientRect(),c=(r.top+r.height/2-innerHeight/2)/innerHeight;h.style.setProperty("--py",(c*-18).toFixed(1)+"px")})},{passive:true});
 }
 // Pricing from the live plans
-const FEAT={booking_page:"Online booking page",webook_listing:"Listed in the WeBook app",reminders:"Appointment reminders",teach:"Teach the AI your answers",insights:"Insights and reports",coupons:"Discount codes",telegram:"Your own Telegram bot",staff_logins:"Staff logins",marketing:"Marketing campaigns",remove_branding:"Your brand only (no MXAi badge)"};
+const FEAT={booking_page:"Online booking page",webook_listing:"Listed in the WeBook app",reminders:"Appointment reminders",teach:"Teach the AI your answers",insights:"Insights and reports",coupons:"Discount codes",telegram:"Your own Telegram bot",staff_logins:"Staff logins",marketing:"Marketing campaigns",remove_branding:"Your brand only (no MXAi badge)",website:"Your own website",assistant_pro:"AI Assistant Pro (Claude)"};
 const sym=c=>c==="EUR"?"€":"$";
 fetch("/api/public/pricing").then(r=>r.json()).then(({plans,addons})=>{
   $("#plans").innerHTML=plans.map((p,i)=>`<div class="plan glass${i===1?" hot":""}"><h3>${esc(p.name)}${i===1?"<small>Most popular</small>":""}</h3><div class="pr">${sym(p.currency)}${+p.price}<small> / month</small></div>
@@ -1243,7 +1249,7 @@ fetch("/api/public/pricing").then(r=>r.json()).then(({plans,addons})=>{
 
 // Lead form: sign up or demo
 let kind="signup",plan="";
-function setKind(k){kind=k;document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===k));$("#go").textContent=k==="demo"?"Request my walkthrough":"Start with MXAi"}
+function setKind(k){kind=k;document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===k));$("#go").textContent=k==="demo"?"Book my 30-min demo":"Get set up free"}
 document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>setKind(b.dataset.k));
 document.addEventListener("click",e=>{const a=e.target.closest("a[data-kind]");if(a){setKind(a.dataset.kind);plan=a.dataset.plan||plan}});
 if(ref)fetch("/api/public/info?b="+encodeURIComponent(ref)).then(r=>r.ok?r.json():null).then(i=>{if(i&&i.name){$("#refNote").hidden=false;$("#refNote").innerHTML=`You found us through <b>${esc(i.name)}</b>. Welcome!`}}).catch(()=>{});
@@ -1270,7 +1276,7 @@ $("#lead").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new 
       const h = document.createElement('div'); h.className = 'swipe-hint'; h.textContent = 'Swipe to see more →'; row.before(h);
     });
     const prev = document.querySelector('.hero > .wrap:last-of-type');
-    if (prev && !document.querySelector('.hero-more') && document.getElementById('dashboard')) prev.insertAdjacentHTML('afterend', '<div class="hero-more"><a href="#dashboard">See the full dashboard ↓</a></div>');
+    if (prev && !document.querySelector('.hero-more') && document.getElementById('dashboard')) prev.insertAdjacentHTML('afterend', '<div class="hero-more"><a href="/product#dashboard">See the full dashboard ↓</a></div>');
   };
   addEventListener('load', () => setTimeout(add, 300)); mq.addEventListener?.('change', add);
 })();
@@ -1302,10 +1308,11 @@ fetch("/api/public/testimonials").then(r=>r.json()).then(({items})=>{if(!items||
 <script>
 // templates gallery filter: all, live now, coming soon
 document.querySelector(".tp-filter")?.addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;
-  document.querySelectorAll(".tp-filter button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));
+  document.querySelectorAll(".tp-filter button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
   document.querySelectorAll(".tp").forEach(t=>t.hidden=b.dataset.f!=="all"&&t.dataset.st!==b.dataset.f)});
 </script>
 <script src="/stream.js"></script>
 <script>window.MXStream&&MXStream.mount(document.querySelector(".hero-fx"),{strength:1,origin:[-0.1,0.78],tip:[1.1,0.06]})</script>
+<script src="/site-i18n.js" defer></script>
 </body>
 </html>
