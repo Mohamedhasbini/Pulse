@@ -10,3 +10,7 @@ tid.txt
 .playwright-mcp/
 .taste-skill/
 .playwright-mcp/
+.env.ci
+
+# watchdog log (scripts/mxai-watchdog.ps1)
+logs/

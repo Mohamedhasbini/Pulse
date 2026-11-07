@@ -27,51 +27,54 @@
     ['inbox', 'Inbox', 'Talk to your customers', [
       ['Conversations', { own: 'inbox', folder: 'all' }],
       ['Needs you', { own: 'inbox', folder: 'needs', hidden: true }], // the inbox has its own Needs you folder; kept so links to it still work
-      ['Delivery queue', { page: 'inbox', tab: 'queue' , adv: true }],
-      ['AI control', { own: 'aictl' , adv: true }]]],
+      ['Messages not sent', { page: 'inbox', tab: 'queue', hidden: true }], // shown from Today / the search box when something failed
+      ['AI on/off', { own: 'aictl' }]]],
     ['calendar', 'Calendar', 'Run your schedule', [
       ['Schedule', { own: 'calendar' }],
       ['Requests', { page: 'inbox', tab: 'conversations', panes: ['approvals'], bare: true }],
-      ['Booking page', { page: 'settings', tab: 'booking', bare: true, cards: ['Online booking page'] }]]],
+      ['Booking page', { page: 'settings', tab: 'booking', bare: true, cards: ['Online booking page'], hidden: true }]]],
     ['customers', 'Customers', 'Know every client', [
-      ['Clients', { page: 'people', tab: 'clients' }],
+      ['Clients', { own: 'clients' }], // clients.js: who to act on first, then the list
       ['Win back', { own: 'growth', hidden: true }], // moved to Growth; kept so the index stays put
-      ['Board', { page: 'people', tab: 'board', panes: ['board'], adv: true }],
-      ['Reviews', { page: 'support', tab: 'reviews', bare: true }]]],
+      ['Board', { page: 'people', tab: 'board', panes: ['board'], hidden: true }],
+      ['Reviews', { page: 'support', tab: 'reviews', bare: true }],
+      ['Memberships', { own: 'members', tpl: ['gym'] }]]], // only for businesses that sell memberships
     ['growth', 'Growth', 'Bring new clients in and old ones back', [
       ['Overview', { own: 'growthhome' }],
       ['Win back', { page: 'people', tab: 'winback' }],
       ['Offers', { own: 'growth' }],
-      ['Sent offers', { page: 'people', tab: 'offers', adv: true }],
-      ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'], adv: true }],
+      ['Sent offers', { page: 'people', tab: 'offers', hidden: true }],
+      ['Discount codes', { page: 'people', tab: 'offers', panes: ['codes'], hidden: true }],
       ['Automations', { entry: 'agents' }],
-      ['Website', { entry: 'website', ws: 0, adv: true }],
-      ['Website photos', { entry: 'website', ws: 1, adv: true }],
-      ['Website design', { entry: 'website', ws: 2, adv: true }],
-      ['Website address', { entry: 'website', ws: 3, adv: true }]]],
+      ['Website', { entry: 'website', ws: 0, hidden: true }],
+      ['Website photos', { entry: 'website', ws: 1, hidden: true }],
+      ['Website design', { entry: 'website', ws: 2, hidden: true }],
+      ['Website address', { entry: 'website', ws: 3, hidden: true }]]],
     ['insights', 'Insights', 'How the business is doing', [
       ['Report', { own: 'report' }],
-      ['Business', { page: 'analytics', tab: 'overview', panes: ['overview', 'next'], drop: ['Services'] , adv: true }],
-      ['Services', { page: 'analytics', tab: 'overview', panes: ['overview'], cards: ['Services'] , adv: true }],
-      ['AI performance', { page: 'support', tab: 'live', panes: ['live'], lean: true , adv: true }],
-      ['Timing', { page: 'analytics', tab: 'timing', panes: ['timing'] , adv: true }],
-      ['Channels', { page: 'analytics', tab: 'timing', panes: ['channels'] , adv: true }],
-      ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true , adv: true }],
-      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow' , adv: true }],
-      ['My board', { own: 'studio', adv: true }],
-      ['Chart library', { own: 'studiolib', adv: true }]]],
-    ['pulse', 'AI Control', 'Review, teach and test Nora', [
+      ['Business', { own: 'report', hidden: true, parent: 0 }],
+      ['Services', { own: 'report', hidden: true, parent: 0 }],
+      ['AI performance', { own: 'aiperf' }],
+      ['Timing', { own: 'report', hidden: true, parent: 0 }],
+      ['Channels', { own: 'report', hidden: true, parent: 0 }],
+      ['Topics', { page: 'support', tab: 'trends', panes: ['trends'], lean: true, hidden: true }],
+      ['Live flow', { page: 'support', tab: 'live', panes: ['flow'], lean: true, draw: 'loadFlow', hidden: true }],
+      ['My board', { own: 'studio', hidden: true }],
+      ['Chart library', { own: 'studiolib', hidden: true }],
+      ['Finance', { own: 'finance' }]]],
+    ['pulse', 'AI Control', 'Your receptionist: check, teach and test Nora', [
       ['To review', { own: 'approvals' }],
       ['Ask', { own: 'ask', hidden: true }],
       ['Brief', { own: 'brief', hidden: true }],
       ['Teach', { entry: 'training', mode: 'coach', only: ['top', 'tchCoach', 'tchRules', 'tchQuestions'] }],
       ['Rules', { entry: 'training', mode: 'coach', only: ['top', 'tchRules'], hidden: true, parent: 3 }],
       ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'], hidden: true, parent: 3 }],
-      ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'], adv: true }],
+      ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'], hidden: true }],
       ['Test', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
-      ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'], adv: true }],
-      ['Versions', { entry: 'training', only: ['top', 'learn'], adv: true }],
-      ['Performance', { own: 'aiperf' }]]],
+      ['Practice chats', { entry: 'demo', only: ['top', 'labSum', 'lab'], hidden: true }],
+      ['Undo changes', { entry: 'training', only: ['top', 'learn'], hidden: true }],
+      ['Performance', { own: 'aiperf', hidden: true }], // moved to Insights › AI performance
+      ['Roles & guidelines', { own: 'airoles' }]]], // last on purpose: older links use tab numbers
     ['settings', 'Settings', 'Set it up once', [
       ['All settings', { page: 'settings', tab: 'details', panes: ['details', 'channels', 'booking', 'codes', 's2fa', 'sdev', 'look', 'dash'], cls: 'set-one' }],
       ['Profile', { page: 'settings', tab: 'details', form: [0, 1, 2, 3, 4, 5, 6, 24], hidden: true, parent: 0 }],
@@ -93,12 +96,20 @@
   ];
   const BADGE = { inbox: 'apprN', pulse: 'paN' };
   // pages that were merged: [new page, tab index] for each old tab
-  const MOVED = { studio: i => ['insights', 8 + i], train: i => ['pulse', 3 + i], lab: i => ['pulse', [8, 7, 9][i] ?? 7],
-    marketing: i => i >= 4 ? ['growth', 6 + i - 4] : ['growth', i + 2],
-    customers: i => i === 1 ? ['growth', 1] : i >= 4 ? ['growth', i - 2] : ['customers', i] };
+  // Tabs are named, not numbered: a number shifts whenever a tab is added or merged (that sent "Answer" to Rules,
+  // "agents ready" to Website...). go(page, 'Tab name') is the way to link; numbers still work for saved shortcuts.
+  const MOVED = { studio: i => ['insights', ['My board', 'Chart library'][i] || 'My board'], train: i => ['pulse', ['Teach', 'Answers', 'Review replies', 'Versions'][i] || 'Teach'],
+    lab: i => ['pulse', ['Practice chats', 'Test', 'Undo changes'][i] || 'Test'],
+    marketing: i => ['growth', ['Offers', 'Sent offers', 'Discount codes', 'Automations'][i] || 'Automations'],
+    customers: i => typeof i === 'string' ? ['customers', i] : i === 1 ? ['growth', 'Win back'] : i >= 5 ? ['growth', i - 2] : ['customers', i] }; // 4 = Memberships
+  const tabIndex = (tabs, t) => {
+    if (typeof t === 'number' || /^\d+$/.test(String(t ?? ''))) return +t || 0;
+    const k = tabs.findIndex(([l]) => l.toLowerCase() === String(t).toLowerCase());
+    return k < 0 ? 0 : k;
+  };
   // the menu in four groups, each heading drawn before its first page
   const GROUP = {};
-  const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Account & security', 's2fa'], ['Look', 'look'], ['Website', 13], ['Integrations', 12]];
+  const SET_IX = [['Business', 'details'], ['Channels & reminders', 'channels'], ['Booking & payments', 'booking'], ['Costs', 'costs'], ['Account & security', 's2fa'], ['Look', 'look'], ['Website', 13], ['Integrations', 12]];
   // tabs marked adv show once the owner asks for more detail on that page (remembered), or while one is open
   const detailOn = id => { try { return localStorage.getItem('mx-detail-' + id) === '1' } catch { return false } };
   const shown = (id, tabs) => tabs.map((t, k) => [t, k]).filter(([t, k]) => t[1].hidden ? false : !t[1].adv || detailOn(id) || (current?.[0] === id && tabs[current[1]]?.[1].adv && k >= 0));
@@ -113,10 +124,20 @@
     if (!P().training || !P().inbox) return false; // sidebar.js not ready yet
     if (typeof me === 'undefined' || !me) return false; // who is signed in decides the menu
     if (window.LAB) return true; // the admin's Lab shows only the Command center
+    // the business's template decides which pages show and what clients are called (members, patients…)
+    if (window.MXBIZ === undefined) { window.MXBIZ = null; fetch('/api/business').then(r => r.ok ? r.json() : {}).then(b => { window.MXBIZ = b || {}; }).catch(() => { window.MXBIZ = {}; }); return false; }
+    if (window.MXBIZ === null) return false;
     pills.dataset.p10 = '1';
+    // live demo from the website: say so, and offer the way out and the way in
+    if (me.user?.role === 'demo' && !document.getElementById('demoBar')) { const d = document.createElement('div'); d.id = 'demoBar'; d.className = 'demo-bar';
+      d.innerHTML = '<span><b>Live demo</b> · sample data, look around freely. Changes are switched off.</span><a href="/demo/exit">Back to templates</a><a class="go" href="/pricing#start">Start your own</a>'; document.body.prepend(d); document.body.classList.add('has-demo'); }
+    const keep = window.MXBIZ.nav, cust = window.MXBIZ.terms?.customers;
+    if (cust) { const row = PAGES.find(p => p[0] === 'customers'); if (row) row[1] = cust[0].toUpperCase() + cust.slice(1); }
+    { const row = PAGES.find(p => p[0] === 'pulse'); if (row) row[1] = nora(); } // the AI page is called by the assistant's own name
     $$('nav .navpills > button, nav .navpills > .ns').forEach(x => { if (x.id !== 'adminNav') x.classList.add('nav-gone') });
     nav = {};
     for (const [id, label] of PAGES) {
+      if (keep && !keep.includes(id)) continue;
       if (GROUP[id]) { const g = document.createElement('div'); g.className = 'p10-grp'; g.textContent = GROUP[id]; pills.insertBefore(g, $('#adminNav')); }
       const b = document.createElement('button'); b.type = 'button'; b.className = 'p10'; b.dataset.p10 = id; b.title = label; b.setAttribute('aria-label', label);
       b.innerHTML = `<svg viewBox="0 0 24 24">${ICON[id] || ICON.insights}</svg><span>${label}</span>${BADGE[id] ? `<b class="badge-n p10-n" data-for="${id}" hidden></b>` : ''}`;
@@ -125,7 +146,7 @@
       const tabs = PAGES.find(p => p[0] === id)[3];
       if (tabs.length > 1) {
         const sub = document.createElement('div'); sub.className = 'p10-sub'; sub.dataset.for = id; sub.hidden = true;
-        sub.innerHTML = tabs.map(([l], k) => `<button type="button" data-k="${k}">${e(l)}</button>`).join('');
+        sub.innerHTML = tabs.map(([l, o], k) => o?.tpl && !o.tpl.includes(window.MXBIZ?.template) ? '' : `<button type="button" data-k="${k}">${e(l)}</button>`).join('');
         sub.addEventListener('click', ev => { const t = ev.target.closest('[data-k]'); if (t) { ev.stopImmediatePropagation(); go(id, +t.dataset.k) } });
         pills.insertBefore(sub, $('#adminNav'));
       }
@@ -133,6 +154,25 @@
     const gear = document.createElement('button'); gear.type = 'button'; gear.id = 'setBtn'; gear.title = 'Settings'; gear.setAttribute('aria-label', 'Settings');
     gear.innerHTML = `<svg viewBox="0 0 24 24">${ICON.settings}</svg>`; gear.addEventListener('click', () => go('settings', 0));
     $('nav .navfoot')?.prepend(gear);
+    // phone: a More button opens every page the bottom bar has no room for (phone.css shows it under 820px)
+    if (!$('#moreBtn')) {
+      const more = document.createElement('button'); more.type = 'button'; more.id = 'moreBtn'; more.setAttribute('aria-label', 'More'); more.setAttribute('aria-expanded', 'false');
+      more.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>More</span>';
+      $('nav .navfoot')?.append(more);
+      const sheet = document.createElement('div'); sheet.id = 'moreSheet'; sheet.hidden = true; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-label', 'More pages');
+      document.body.append(sheet);
+      const close = () => { sheet.hidden = true; more.setAttribute('aria-expanded', 'false'); more.focus(); };
+      more.addEventListener('click', ev => { ev.stopImmediatePropagation();
+        const keepIds = window.MXBIZ?.nav, pages = PAGES.filter(([id]) => !['today', 'inbox', 'calendar', 'customers'].includes(id) && (!keepIds || keepIds.includes(id)));
+        sheet.innerHTML = `<div class="ms-bg" data-ms="close"></div><div class="ms-panel">${pages.map(([id, label]) => `<button type="button" data-ms="${id}"><svg viewBox="0 0 24 24">${ICON[id] || ICON.insights}</svg>${e(label)}</button>`).join('')}
+          ${pages.some(([id]) => id === 'settings') ? '' : `<button type="button" data-ms="settings"><svg viewBox="0 0 24 24">${ICON.settings}</svg>Settings</button>`}
+          <button type="button" data-ms="theme"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>Light or dark</button>
+          <button type="button" data-ms="logout"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg>Sign out</button></div>`;
+        sheet.hidden = false; more.setAttribute('aria-expanded', 'true'); sheet.querySelector('.ms-panel button')?.focus(); });
+      sheet.addEventListener('click', ev => { const b = ev.target.closest('[data-ms]'); if (!b) return; const k = b.dataset.ms; close();
+        if (k === 'theme') return $('#themeBtn')?.click(); if (k === 'logout') return $('#logoutBtn')?.click(); if (k !== 'close') go(k, 0); });
+      sheet.addEventListener('keydown', ev => { if (ev.key === 'Escape') close(); });
+    }
     return true;
   }
   function mark(id) {
@@ -142,11 +182,42 @@
   }
 
   // ---------- opening a page and tab ----------
+  // A page or tab the plan doesn't include (the server refuses its data anyway): greyed in the sidebar, and it opens
+  // the lock card with a Request button instead of an error. The admin sees everything unless "view as" is on.
+  function lockOf(id, name, spec = {}) {
+    const M = typeof me !== 'undefined' && me; if (!M || !M.features || (M.user?.role === 'admin' && !M.view_as)) return null;
+    const f = id === 'insights' ? 'insights' : spec.entry === 'training' ? 'teach' : spec.entry === 'website' ? 'website'
+      : id === 'growth' && /^(Offers|Sent offers|Overview)$/.test(name) ? 'marketing' : name === 'Discount codes' ? 'coupons'
+      : id === 'pulse' && /^(To review|Brief)$/.test(name) ? 'teach' : null;
+    return f && !M.features.includes(f) ? f : null;
+  }
+  function markLocks() {
+    for (const [id, , , tabs] of PAGES) {
+      const all = tabs.every(([n, s]) => s.hidden || lockOf(id, n, s));
+      nav[id]?.classList.toggle('locked', all); if (nav[id]) nav[id].title = all ? 'Not in your plan' : nav[id].getAttribute('aria-label');
+      $$(`.p10-sub[data-for="${id}"] [data-k]`).forEach(b => { const t = tabs[+b.dataset.k]; b.classList.toggle('locked', !!(t && lockOf(id, t[0], t[1]))) });
+    }
+  }
+  // shortcuts the assistant saved use the page names and tab numbers it was given (team.js PAGE_TABS): translated
+  // here into today's pages and tab names, so an old shortcut never lands on the wrong tab
+  const OLD_TABS = { inbox: ['inbox', ['Conversations', 'Needs you', 'Messages not sent']], calendar: ['calendar', ['Schedule', 'Requests', 'Booking page']],
+    customers: ['customers', ['Clients', 'Board', 'Win back', 'Reviews']], marketing: ['growth', ['Offers', 'Discount codes', 'Automations', 'Website', 'Website photos', 'Website design', 'Website address']],
+    pulse: ['pulse', ['To review', 'Ask', 'Brief']], train: ['pulse', ['Teach', 'Rules', 'Answers', 'Review replies']], lab: ['pulse', ['Practice chats', 'Test', 'Undo changes']],
+    insights: ['insights', ['AI performance', 'Live flow', 'Topics', 'Business', 'Services', 'Timing', 'Channels']] };
+  function openShortcut(s) { const m = OLD_TABS[s.page], n = +s.tab; if (m && Number.isInteger(n) && m[1][n]) return go(m[0], m[1][n]); return go(s.page, s.tab); }
   async function go(id, i) {
-    if (MOVED[id]) [id, i] = MOVED[id](+i || 0);
+    if (MOVED[id]) [id, i] = MOVED[id](typeof i === 'string' && !/^\d+$/.test(i) ? i : +i || 0);
     const page = PAGES.find(p => p[0] === id); if (!page) return;
+    i = tabIndex(page[3], i);
     const [, , purpose, tabs] = page, t = tabs[i] || tabs[0], spec = t[1];
-    current = [id, i]; hideOwn();
+    current = [id, i];
+    // switching: the page area stays invisible while the section is assembled (an old page can show for ~0.3s while
+    // it is borrowed and trimmed), then the finished page fades in. The sidebar marks the new place at once.
+    const mainEl = $('main'); mainEl?.classList.add('p10-sw'); clearTimeout(go.veil); go.veil = setTimeout(() => mainEl?.classList.remove('p10-sw'), 1200);
+    const lockF = lockOf(id, t[0], spec);
+    if (lockF) { mark(id); hideOwn(); showOwn('locked', { feature: lockF, title: page[1] }); setTimeout(() => { if (current[0] === id) mainEl?.classList.remove('p10-sw') }, 30); return; }
+    mark(id);
+    hideOwn();
     $$('[data-p10hide]').forEach(c => delete c.dataset.p10hide); // the last tab's hiding never leaks into this one
     if (spec.own) { showOwn(spec.own, spec); }
     else {
@@ -195,6 +266,7 @@
     }
     bar(id, i, purpose, tabs);
     mark(id);
+    setTimeout(() => { if (current[0] === id && current[1] === i) { clearTimeout(go.veil); mainEl?.classList.remove('p10-sw'); } }, 30); // a timer, not animation frames: those pause in background tabs
     fitTab(); setTimeout(fitTab, 400); setTimeout(fitTab, 1300); setTimeout(fitTab, 2600); // again once the tab's data has loaded
   }
   // a tab never scrolls: if its content is taller than the screen, it is scaled down to fit (not below 85%, so text stays readable)
@@ -215,20 +287,58 @@
     }
   }
   // the one tab row: page purpose on the left, tabs (if more than one) on the right
+  // Settings shows one part at a time, chosen from its row of tabs; the choice is kept for the visit
+  let setPartNow = 'details';
+  function setPart(k) {
+    setPartNow = k; const st = $('#setup'); if (st) st.dataset.part = k;
+    // the section list sits inside the page as a side menu, like a settings window
+    const ix = $('.mxh .set-ix, .p10-bar .set-ix'); if (st && ix) { $$('#setup > .set-ix').forEach(x => x.remove()); st.prepend(ix); }
+    // the menu left the tab row, so it answers its own clicks
+    if (st && !st.dataset.ixOn) { st.dataset.ixOn = 1; st.addEventListener('click', ev => { const j = ev.target.closest('.set-ix [data-jump]'); if (j) return setPart(j.dataset.jump); const t = ev.target.closest('.set-ix [data-t]'); if (t) go('settings', +t.dataset.t); }); }
+    if (st && !st.querySelector('.spane[data-pane="costs"]')) { const c = document.createElement('div'); c.className = 'spane'; c.dataset.pane = 'costs'; c.innerHTML = '<h2>Costs</h2><div id="cstRoot"></div>'; st.append(c); }
+    if (k === 'costs') window.PVCosts?.($('#cstRoot'));
+    const PARTS = { details: ['details'], channels: ['channels', 'reminders'], booking: ['booking', 'codes'], s2fa: ['s2fa', 'spw', 'sdev'], look: ['look', 'dash'] };
+    (PARTS[k] || []).forEach(t => { try { dispatchEvent(new CustomEvent('tabshown', { detail: { view: 'setup', tab: t } })); } catch {} });
+    if (k === 's2fa') { try { if (typeof me !== 'undefined' && me && typeof loadSecurity === 'function') loadSecurity(); } catch {} }
+    $$('.set-ix [data-jump]').forEach(x => x.setAttribute('aria-current', x.dataset.jump === k));
+    $('main')?.scrollTo?.(0, 0);
+  }
+  window.P10setPart = k => setPart(k);
   function bar(id, i, purpose, tabs) {
-    $$('.p10-bar').forEach(x => x.remove());
+    $$('.p10-bar, .mxh').forEach(x => x.remove());
     const sec = $('main > section:not([hidden])'); if (!sec) return;
-    const b = document.createElement('div'); b.className = 'p10-bar';
     const title = named(PAGES.find(p => p[0] === id)[1]), tab = tabs.length > 1 ? tabs[i][0] : '';
     // tabs marked adv stay out of the way until the owner asks for detail (or is already on one)
     const sel = tabs[i][1].hidden ? (tabs[i][1].parent ?? 0) : i, hasAdv = tabs.some(t => t[1].adv), detail = hasAdv && (tabs[i][1].adv || detailOn(id));
-    b.innerHTML = `<p class="p10-purpose"><b>${e(title)}${tab ? ` <i>›</i> ${e(tab)}` : ''}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>` + (tabs.filter(t => !t[1].hidden).length > 1 ? `<div class="pa-switch" role="tablist" aria-label="${e(id)}">${tabs.map(([l, o], k) => o.hidden || (o.adv && !detail) ? '' :
-      `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" aria-pressed="${k === sel}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}${hasAdv ? `<button type="button" class="pa-more" data-detail="${detail ? 0 : 1}">${id === 'insights' ? (detail ? 'Back to the report' : 'Explore all charts') : detail ? 'Fewer tools' : 'More tools'}</button>` : ''}</div>` : '');
+    const visible = tabs.map((t, k) => [t, k]).filter(([[, o]]) => !(o.hidden || (o.adv && !detail) || (o.tpl && !o.tpl.includes(window.MXBIZ?.template))));
+    let b;
+    if (id === 'today') {
+      // Today draws its own header; only the "needs you" chips ride along
+      b = document.createElement('div'); b.className = 'p10-bar';
+      b.innerHTML = `<p class="p10-purpose"><b>${e(title)}</b> ${e(named(purpose))}</p><div class="p10-need" id="p10Need"></div>`;
+    } else {
+      // every other page: the same anatomy as Today (date, title, one live sentence, main actions), quiet tabs below
+      b = document.createElement('div'); b.className = 'mxh'; b.setAttribute('role', 'region'); b.setAttribute('aria-label', title);
+      const d = new Date(), dateLine = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + (tab && tabs[sel] && sel !== visible[0]?.[1] ? ` · ${tabs[sel][0]}` : '');
+      b.innerHTML = `<div class="mxh-top"><div class="mxh-id"><p class="mxh-date">${e(dateLine)}</p><h1>${e(title)}</h1>
+          <p class="mxh-sub" aria-live="polite"><span class="mxh-skel" aria-hidden="true"></span></p><div class="p10-need mxh-need" id="p10Need"></div></div>
+        <div class="mxh-acts">${window.MXHead?.actions(id) || ''}</div></div>`
+        + (visible.length > 1 ? `<div class="mxh-tabs" role="tablist" aria-label="${e(title)} sections">${visible.map(([[l], k]) =>
+          `<button type="button" role="tab" data-t="${k}" aria-selected="${k === sel}" tabindex="${k === sel ? 0 : -1}">${e(l)}${id === 'pulse' && k === 0 && count ? ` <b class="pa-n">${count}</b>` : ''}</button>`).join('')}</div>` : '');
+      window.MXHead?.sentence(id, b.querySelector('.mxh-sub'));
+      // arrow keys move between tabs (the tablist pattern)
+      b.querySelector('.mxh-tabs')?.addEventListener('keydown', ev => {
+        if (!/^Arrow(Left|Right)$|^Home$|^End$/.test(ev.key)) return; const list = [...b.querySelectorAll('.mxh-tabs [data-t]')], at = list.indexOf(document.activeElement); if (at < 0) return;
+        ev.preventDefault(); const to = ev.key === 'Home' ? 0 : ev.key === 'End' ? list.length - 1 : (at + (ev.key === 'ArrowRight' ? 1 : -1) + list.length) % list.length; list[to].focus(); list[to].click(); });
+    }
     // Settings is one page: a row of chips jumps to each part; Website and Integrations open their own screens
-    if (id === 'settings' && i === 0) b.insertAdjacentHTML('beforeend', `<div class="set-ix" role="navigation" aria-label="Settings sections">${SET_IX.map(([l, k]) =>
-      `<button type="button" ${typeof k === 'number' ? `data-t="${k}"` : `data-jump="${k}"`}>${e(l)}</button>`).join('')}</div>`);
+    if (id === 'settings' && (i === 0 || i === 12)) { b.insertAdjacentHTML('beforeend', `<div class="set-ix" role="navigation" aria-label="Settings sections">${SET_IX.map(([l, k]) =>
+      `<button type="button" ${typeof k === 'number' ? `data-t="${k}"` : `data-jump="${k}"`}>${e(l)}</button>`).join('')}</div>`); setTimeout(() => { if (i === 0) return setPart(setPartNow);
+      const host = $('#p10-integrations'), ix = $('.mxh .set-ix, .p10-bar .set-ix'); if (!host || !ix) return; $$('#p10-integrations > .set-ix').forEach(x => x.remove()); host.prepend(ix); host.classList.add('set-host');
+      ix.querySelectorAll('button').forEach(x => x.setAttribute('aria-current', String(x.dataset.t === '12')));
+      if (!host.dataset.ixOn) { host.dataset.ixOn = 1; host.addEventListener('click', ev => { const j = ev.target.closest('.set-ix [data-jump]'); if (j) { go('settings', 0); setTimeout(() => setPart(j.dataset.jump), 120); } }); } }); }
     b.addEventListener('click', ev => {
-      const jmp = ev.target.closest('[data-jump]'); if (jmp) return $(`#setup > .spane[data-pane="${jmp.dataset.jump}"]`)?.scrollIntoView({ block: 'start' });
+      const jmp = ev.target.closest('[data-jump]'); if (jmp) return setPart(jmp.dataset.jump);
       const d = ev.target.closest('[data-detail]');
       if (d) { try { localStorage.setItem('mx-detail-' + id, d.dataset.detail) } catch {} return go(id, tabs[i][1].adv && d.dataset.detail === '0' ? 0 : i) }
       const t = ev.target.closest('[data-t]'); if (t) go(id, +t.dataset.t) });
@@ -243,14 +353,14 @@
     const L = {
       today: [[chats, `${chats} chat${chats === 1 ? '' : 's'} waiting for you`, ['inbox', 1]], [it.length, `${it.length} thing${it.length === 1 ? '' : 's'} to approve`, ['pulse', 0]]],
       inbox: [[chats, `${chats} chat${chats === 1 ? '' : 's'} need${chats === 1 ? 's' : ''} you`, ['inbox', 1]]],
-      calendar: [[n('request'), `${n('request')} cancel/move request${n('request') === 1 ? '' : 's'}`, ['calendar', 1]]],
-      growth: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['marketing', 3]]],
+      calendar: [[n('request'), `${n('request')} cancel/move request${n('request') === 1 ? '' : 's'}`, ['calendar', 'Requests']]],
+      growth: [[n('agent'), `${n('agent')} agent${n('agent') === 1 ? ' has' : 's have'} messages ready`, ['growth', 'Automations']]],
       pulse: [[it.length, `${it.length} waiting for your OK`, ['pulse', 0]],
-       [n('question'), `${n('question')} question${n('question') === 1 ? '' : 's'} ${nora()} couldn't answer`, ['train', 1]], [n('lesson'), `${n('lesson')} suggested rule${n('lesson') === 1 ? '' : 's'}`, ['pulse', 0]]],
+       [n('question'), `${n('question')} question${n('question') === 1 ? '' : 's'} ${nora()} couldn't answer`, ['pulse', 'Answers']], [n('lesson'), `${n('lesson')} suggested rule${n('lesson') === 1 ? '' : 's'}`, ['pulse', 0]]],
     }[id] || [];
     const todo = L.filter(x => x[0] > 0).slice(0, 3);
     box.innerHTML = todo.map(([, t, to], k) => `<button type="button" class="need" data-to="${to}">${e(t)} →</button>`).join('');
-    box.onclick = ev => { const t = ev.target.closest('[data-to]'); if (t) { const [p, k] = t.dataset.to.split(','); go(p, +k) } };
+    box.onclick = ev => { const t = ev.target.closest('[data-to]'); if (t) { const [p, k] = t.dataset.to.split(','); go(p, k) } };
   }
 
   // ---------- MXAi Assistant's own pages ----------
@@ -264,16 +374,21 @@
   function hideOwn() { Object.values(own).forEach(s => s.hidden = true) }
   function showOwn(key, spec = {}) {
     $$('main > section.wrap').forEach(s => s.hidden = true);
+    if (key === 'airoles') { const s = page('airoles', 'Roles & guidelines', 'Who answers your clients, and the rules they always follow.', '<div id="mxaiSettings"></div>'); s.hidden = false; window.MXAiSettings?.mount(s.querySelector('#mxaiSettings')); }
+    if (key === 'locked') { const s = page('locked', spec.title, '', '<div class="lkRoot"></div>'); s.hidden = false; s.querySelector('h1').textContent = spec.title; window.MXLockCard?.(s.querySelector('.lkRoot'), spec.feature); }
     if (key === 'calendar') { const s = page('calendar', 'Calendar', '', '<div id="gcRoot"></div>'); s.hidden = false; window.PulseCal?.mount(s); }
     if (key === 'inbox') { const s = page('inbox', 'Inbox', '', '<div id="ibRoot"></div>'); s.hidden = false; window.PulseInbox?.mount(s, spec.folder); }
     if (key === 'approvals') { const s = page('approvals', 'Approvals', 'Everything MXAi Assistant prepared that waits for you. Nothing happens until you press a button.', '<div class="card glass pa-list" id="paList"></div>'); s.hidden = false; if (!s.dataset.on) { s.dataset.on = 1; s.addEventListener('click', act) } loadApprovals(); }
-    if (key === 'studio' || key === 'studiolib') { const s = page(key, key === 'studio' ? 'Studio' : 'Widget library', key === 'studio' ? 'Your own board: any data, any design, placed anywhere.' : 'Every chart and table design, drawn from your live data.', '<div id="stRoot"></div>'); s.hidden = false; key === 'studio' ? window.MXStudio?.mountBoard(s) : window.MXStudio?.mountLib(s); }
+    if (key === 'studio' || key === 'studiolib') { const s = page(key, key === 'studio' ? 'My board' : 'Chart library', key === 'studio' ? 'Your own board: any data, any design, placed anywhere.' : 'Every chart and table design, drawn from your live data.', '<div id="stRoot"></div>'); s.hidden = false; key === 'studio' ? window.MXStudio?.mountBoard(s) : window.MXStudio?.mountLib(s); }
     if (key === 'aictl') { const s = page('aictl', 'AI control', 'Decide who answers your clients: MXAi or your team.', '<div id="aiRoot"></div>'); s.hidden = false; window.MXAiMode?.mount(s); }
     if (key === 'integrations') { const s = page('integrations', 'Integrations', '', '<div id="igRoot"></div>'); s.hidden = false; window.PulseIntegrations?.mount(s); }
     if (key === 'report') { const s = page('report', 'Insights', '', '<div id="rpRoot" class="rp"></div>'); s.hidden = false; window.PVReport?.(s.querySelector('#rpRoot')); }
-    if (key === 'aiperf') { const s = page('aiperf', 'AI Control', '', '<div id="apRoot" class="rp"></div>'); s.hidden = false; window.PVAIPerf?.(s.querySelector('#apRoot')); }
+    if (key === 'clients') { const s = page('clients', 'Clients', '', '<div id="clRoot"></div>'); s.hidden = false; window.MXClients?.mount(s.querySelector('#clRoot')); }
+    if (key === 'members') { const s = page('members', 'Customers', '', '<div id="mbRoot" class="rp"></div>'); s.hidden = false; window.PVMembers?.(s.querySelector('#mbRoot')); }
+    if (key === 'finance') { const s = page('finance', 'Finance', '', '<div id="fnRoot" class="rp"></div>'); s.hidden = false; window.PVFinance?.(s.querySelector('#fnRoot')); }
+    if (key === 'aiperf') { const s = page('aiperf', 'AI performance', '', '<div id="apRoot" class="rp"></div>'); s.hidden = false; window.PVAIPerf?.(s.querySelector('#apRoot')); }
     if (key === 'growthhome') { const s = page('growthhome', 'Growth', '', '<div id="grRoot" class="rp"></div>'); s.hidden = false; window.PVGrowth?.(s.querySelector('#grRoot')); }
-    if (key === 'growth') { const s = page('growth', 'Marketing', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }
+    if (key === 'growth') { const s = page('growth', 'Offers', '', '<div id="mkRoot"></div>'); s.hidden = false; window.PulseMarketing?.mount(s); }
     if (key === 'brief') { const s = page('brief', 'Weekly brief', 'This week against last week, and the agents\' results. Worked out from your own numbers.', '<div id="paBrief"></div>'); s.hidden = false; loadBrief(); }
     if (key === 'ask') { const s = page('ask', 'Ask MXAi', 'Ask anything about your business. MXAi looks it up in your real data and answers with exact numbers.', ASK); s.hidden = false; askInit(s); window.PulseCommand?.open(); }
   }
@@ -293,14 +408,14 @@
     box.innerHTML = d.items.length ? d.items.map((x, i) => `<div class="pa-item" data-i="${i}"><span class="pa-k pa-${x.kind}">${KIND[x.kind]}</span>
       <div class="pa-t"><b>${e(x.title)}</b><small>${e(x.why || '')}</small></div><div class="pa-a">${ACT[x.kind](x)}</div></div>`).join('')
       : `<p class="empty">Nothing waiting. MXAi Assistant is handling everything.</p>`;
-    const n = $('.p10-bar [data-t="0"]'); if (current?.[0] === 'pulse' && n) n.innerHTML = 'To review' + (count ? ` <b class="pa-n">${count}</b>` : '');
+    const n = $('.mxh [data-t="0"]'); if (current?.[0] === 'pulse' && n) n.innerHTML = 'To review' + (count ? ` <b class="pa-n">${count}</b>` : '');
   }
   async function act(ev) {
     const b = ev.target.closest('[data-a]'); if (!b) return;
     const a = b.dataset.a, x = own.approvals._items?.[+b.closest('.pa-item')?.dataset.i];
     if (a === 'retry') return loadApprovals();
-    if (a === 'teach') return go('train', 1);
-    if (a === 'agents') return go('marketing', 3);
+    if (a === 'teach') return go('pulse', 'Answers');
+    if (a === 'agents') return go('growth', 'Automations');
     b.disabled = true;
     try {
       if (a === 'approve' || a === 'reject') await req(`/api/requests/${x.id}/${a}`, 'POST', {});
@@ -320,13 +435,16 @@
   }
 
   // Ask MXAi: one chat. The server picks the skill (Front desk, Support, Growth, Analyst) for each question.
-  const ASK = `<div class="card glass ask"><div class="ask-skills" id="askSkills"></div><div class="ask-log" id="askLog" aria-live="polite"></div>
-    <div class="ask-sugg" id="askSugg"></div><form class="ask-form" id="askForm"><input id="askIn" autocomplete="off" placeholder="Ask anything: who hasn't been back in 2 months? how was last week?" aria-label="Ask MXAi"><button class="btn" type="submit">Ask</button></form></div>`;
+  // Ask MXAi lives in one place, the assistant panel; this page is a doorway to it with the same composer and suggestions
+  const ASK = `<div class="ask-door"><button type="button" class="ask-open" data-q=""><span>Ask anything, or tell me what to do…</span><b aria-hidden="true">↑</b></button>
+    <div class="ask-cards">${[['How did this week go?', 'This week'], ["Who could fill tomorrow's free slots?", 'Fill gaps'], ["Which regulars haven't been back?", 'Win back'], ["Add a shortcut to this week's revenue", 'Shortcut']]
+      .map(([q, k]) => `<button type="button" data-q="${q.replace(/"/g, '&quot;')}"><b>${k}</b>${q}</button>`).join('')}</div></div>`;
   const SUGG = ['How did this week go?', 'Who could fill tomorrow\'s free slots?', 'Add a shortcut to this week\'s revenue', 'Which regulars haven\'t been back?'];
   let convo = [], team = {}, asking = false;
   async function askInit(s) {
     if (s.dataset.on) return; s.dataset.on = 1;
-    try { (await req('/api/team')).team.forEach(t => team[t.id] = t); } catch {}
+    s.querySelector('.ask-door').addEventListener('click', ev => { const t = ev.target.closest('[data-q]'); if (t) window.PulseCommand?.open(t.dataset.q || undefined); });
+    return;
     s.querySelector('#askSkills').innerHTML = 'MXAi Assistant can: ' + ['Answer anything with your real numbers', 'Book, message and follow up', 'Teach Nora rules and answers', 'Run growth agents', 'Add shortcuts to Home', 'Find any page for you'].map(t => `<span>${e(t)}</span>`).join('');
     s.querySelector('#askSugg').innerHTML = SUGG.map(q => `<button type="button" class="chip">${e(q)}</button>`).join('');
     s.querySelector('#askSugg').addEventListener('click', ev => { const c = ev.target.closest('.chip'); if (c) ask(c.textContent) });
@@ -379,7 +497,7 @@
     const t = ev.target;
     if (t.closest('[data-add]')) return window.openPalette?.({ pin: true });
     const x = t.closest('[data-x]'); if (x) { const list = sc.shortcuts.filter((_, k) => k !== +x.dataset.x); try { sc.shortcuts = (await req('/api/shortcuts', 'PUT', { shortcuts: list })).shortcuts } catch {} return drawShortcuts(); }
-    const g = t.closest('[data-i]'); if (g) { const s2 = sc.shortcuts[+g.dataset.i]; if (s2.ask) window.P10.ask(s2.ask); else go(s2.page, s2.tab); }
+    const g = t.closest('[data-i]'); if (g) { const s2 = sc.shortcuts[+g.dataset.i]; if (s2.ask) window.P10.ask(s2.ask); else openShortcut(s2); }
   }
 
 
@@ -399,16 +517,16 @@
   window.openPulse = k => go('pulse', ['approvals', 'ask', 'brief'].indexOf(k) < 0 ? 0 : ['approvals', 'ask', 'brief'].indexOf(k));
   window.openP10 = go;
   // for the search box (palette.js)
-  window.P10 = { pages: PAGES, icon: ICON, named, group: GROUP, shown, ask: x => window.PulseCommand ? window.PulseCommand.open(x) : ask(x), go: (id, t) => go(id, t), current: () => current?.[0], sub: () => current?.[1], shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts() };
+  window.P10 = { pages: PAGES, icon: ICON, named, group: GROUP, shown, ask: x => window.PulseCommand ? window.PulseCommand.open(x) : ask(x), go: (id, t) => go(id, t), current: () => current?.[0], sub: () => current?.[1], shortcuts: () => sc.shortcuts || [], reloadShortcuts: () => loadShortcuts(), markLocks: () => markLocks() };
   // any other way of opening a section (Today's buttons, notifications) drops our tab row so the page isn't mislabelled
   document.addEventListener('click', ev => {
     const n = ev.target.closest('nav button[data-view]'); if (!n || n.classList.contains('p10')) return;
-    if (ev.isTrusted) { $$('.p10-bar').forEach(x => x.remove()); hideOwn(); current = null; mark(null); }
+    if (ev.isTrusted) { $$('.p10-bar, .mxh').forEach(x => x.remove()); hideOwn(); current = null; mark(null); }
   }, true);
 
   addEventListener('load', () => {
     const t = setInterval(() => { if (draw()) { clearInterval(t); if (window.LAB) return; go('today', 0); poll(); setInterval(() => { if (!document.documentElement.classList.contains('live-on')) poll(); }, 60000); setInterval(poll, 300000); setTimeout(loadShortcuts, 600); } }, 200);
     // a change pushed by the server: fresh numbers on the page that is open, no timer involved
-    let bump = 0; addEventListener('mxai:change', () => { clearTimeout(bump); bump = setTimeout(() => { if (document.hidden || !current) return; window.PVInvalidate?.(); poll(); go(current[0], current[1]); }, 400); });
+    let bump = 0; addEventListener('mxai:change', () => { clearTimeout(bump); bump = setTimeout(() => { if (document.hidden || !current) return; window.PVInvalidate?.(); poll(); if (current[0] === 'inbox' && window.PulseInbox?.refresh) window.PulseInbox.refresh(); else go(current[0], current[1]); }, 400); });
   });
 })();

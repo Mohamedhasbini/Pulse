@@ -47,3 +47,24 @@ The n8n workflow uses `gemini-3.1-flash-lite` (about 1-2 s per reply on the free
 - **Sign-in**: email + password (10+ characters with letters and numbers), optional two-factor codes (authenticator app), 5 wrong passwords lock the account for 15 minutes, sessions last 12 hours, "sign out everywhere" and password changes end all other sessions.
 - **Protection**: security headers, cookies are HttpOnly + SameSite=Strict, changes from other websites are refused, every sign-in, refusal and admin action is in `audit_log`.
 - Owners and staff sign in at `/login`; `admin` uses `ADMIN_PASSWORD` the first time (change it, and turn on two-factor, under "Account security").
+
+## Tests
+
+The app and its database run in Docker, so the tests run there too (the `pg` driver is only installed in the image):
+
+```bash
+docker compose up -d --build app
+docker compose exec app npm test
+```
+
+Six suites run: client data separation, end-to-end platform, client websites, Coach, metrics agree, MXAi Assistant.
+A crash in a suite counts as a failure. To test against a fresh, empty database without touching your data:
+
+```bash
+bash scripts/test-fresh.sh
+```
+
+It starts a throwaway copy beside the real one, runs every suite and removes the copy. The copy gets its own settings
+(`.env.ci`, fresh random secrets, every channel and AI switched off), so it can never read your real Telegram bot, send a
+WhatsApp or email, or use up the free AI quota the live receptionist needs. It refuses to run under your real stack's name.
+GitHub runs the same script on every push (`.github/workflows/test.yml`).

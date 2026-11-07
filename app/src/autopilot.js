@@ -35,7 +35,7 @@ async function weekly(b) {
       count(*) FILTER (WHERE created_at BETWEEN now() - interval '14 days' AND now() - interval '7 days' AND status <> 'cancelled')::int AS bookings_prev,
       COALESCE(sum(price) FILTER (WHERE starts_at BETWEEN now() - interval '7 days' AND now() AND status IN ('confirmed','completed')),0)::float AS revenue,
       COALESCE(sum(price) FILTER (WHERE starts_at BETWEEN now() - interval '14 days' AND now() - interval '7 days' AND status IN ('confirmed','completed')),0)::float AS revenue_prev,
-      count(*) FILTER (WHERE created_at > now() - interval '7 days' AND source IN ('whatsapp','telegram','webook','web','chat'))::int AS by_ai,
+      count(*) FILTER (WHERE created_at > now() - interval '7 days' AND status <> 'cancelled' AND source IN ('ai','web'))::int AS by_ai, -- same as metrics.AI_SOURCE (bookings are saved with source ai|web|manual)
       count(*) FILTER (WHERE starts_at BETWEEN now() - interval '7 days' AND now() AND status='no_show')::int AS no_shows,
       COALESCE(sum(price) FILTER (WHERE starts_at BETWEEN now() AND now() + interval '7 days' AND status='confirmed'),0)::float AS next_week
     FROM bookings WHERE business_id=$1`, [b.id]);

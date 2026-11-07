@@ -1,27 +1,29 @@
 // Sends a reminder message before each confirmed appointment (default 24 hours before).
 // Runs every 5 minutes. Each booking gets at most one reminder.
 import { q, one } from './db.js';
-import { sendWhatsApp } from './whatsapp.js';
+import { okTz, currentTz, daysBetween, fmtDate, fmtTime } from './clock.js';
+import { sendWhatsApp, sendWhatsAppTemplate } from './whatsapp.js';
+import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
 import { sendTelegram } from './telegram.js';
 import { sendEmail } from './email.js';
 
 const REF = id => 'RB-' + String(id).padStart(4, '0');
 
 export function fill(template, b) {
-  const s = new Date(b.starts_at);
-  const day = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
-  const diff = Math.round((day(s) - day(new Date())) / 864e5);
+  // on the business's own clock: "tomorrow at 10:30" means its tomorrow and its 10:30
+  const s = new Date(b.starts_at), tz = okTz(b.timezone) ? b.timezone : currentTz();
+  const diff = daysBetween(new Date(), s, tz);
   const vals = {
-    when: diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : 'on ' + s.toLocaleDateString('en-GB', { weekday: 'long' }),
+    when: diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : 'on ' + fmtDate(s, { weekday: 'long' }, 'en-GB', tz),
     name: (b.customer || '').split(' ')[0] || 'there', service: b.service, business: b.business,
-    date: s.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }),
-    time: s.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), ref: REF(b.id),
+    date: fmtDate(s, { weekday: 'long', day: 'numeric', month: 'long' }, 'en-GB', tz),
+    time: fmtTime(s, tz), ref: REF(b.id),
   };
   return template.replace(/\{(\w+)\}/g, (m, k) => vals[k] ?? m);
 }
 
 export async function runReminders() {
-  const due = await q(`SELECT b.*, s.name service, cu.name customer, cu.phone, cu.reminder_channel, cu.email, cu.telegram_chat_id, bz.name business, bz.reminder_text, bz.reminder_hours, bz.wa_phone_number_id
+  const due = await q(`SELECT b.*, s.name service, cu.name customer, cu.phone, cu.reminder_channel, cu.email, cu.telegram_chat_id, bz.name business, bz.reminder_text, bz.reminder_hours, bz.wa_phone_number_id, bz.timezone
       FROM bookings b JOIN services s ON s.id=b.service_id JOIN customers cu ON cu.id=b.customer_id JOIN businesses bz ON bz.id=b.business_id
       WHERE b.status='confirmed' AND b.reminder_sent_at IS NULL AND b.reminder_status IS NULL AND bz.reminders_enabled
         AND b.starts_at > now() + interval '1 hour'
@@ -41,15 +43,27 @@ export async function runReminders() {
         [b.business_id, b.customer_id, isTest ? 'test' : 'whatsapp']);
       let status = 'sent';
       const channel = b.reminder_channel || 'whatsapp';
-      if (channel === 'email' && b.email) {
+      if (await isPlayground(b.business_id)) status = 'not_sent: ' + PLAYGROUND_SKIP;
+      else if (channel === 'email' && b.email) {
         const r = await sendEmail(b.email, `Reminder: ${b.service} at ${b.business}`, text, b.business);
         if (!r.ok) status = 'not_sent: ' + r.reason;
       } else if (conv.channel === 'telegram') {
         const r = await sendTelegram(b.telegram_chat_id, text, b.business_id);
         if (!r.ok) status = 'not_sent: ' + r.reason;
       } else if (!['test', 'webook'].includes(conv.channel) && !isTest) {
-        if (channel === 'whatsapp') {
-          const r = await sendWhatsApp(b.wa_phone_number_id, b.phone, text);
+        // an Instagram client has no phone number (ig-<id>): a WhatsApp send could never arrive, so say so honestly
+        if (/^ig-/.test(b.phone)) status = 'not_sent: Instagram clients get no reminders yet (Meta allows replies within 24 hours only)';
+        else if (channel === 'whatsapp') {
+          // WhatsApp accepts free text only within 24 hours of the client's last message; after that only an approved
+          // template (WA_REMINDER_TEMPLATE, body: {{1}} name, {{2}} service, {{3}} day, {{4}} time, {{5}} business)
+          const last = await one(`SELECT max(m.created_at) AS at FROM messages m JOIN conversations c ON c.id=m.conversation_id
+            WHERE c.customer_id=$1 AND c.channel='whatsapp' AND m.role='customer'`, [b.customer_id]);
+          const open = last?.at && Date.now() - new Date(last.at) < 23.5 * 3600e3, tpl = process.env.WA_REMINDER_TEMPLATE;
+          const tz = b.timezone || currentTz();
+          const r = open ? await sendWhatsApp(b.wa_phone_number_id, b.phone, text)
+            : tpl ? await sendWhatsAppTemplate(b.wa_phone_number_id, b.phone, tpl, process.env.WA_REMINDER_LANG || 'en', [b.customer || 'there', b.service, fmtDate(new Date(b.starts_at), { weekday: 'long', day: 'numeric', month: 'long' }, 'en-GB', tz), fmtTime(new Date(b.starts_at), tz), b.business])
+            : b.email ? await sendEmail(b.email, `Reminder: ${b.service} at ${b.business}`, text, b.business)
+            : { ok: false, reason: "outside WhatsApp's 24-hour window; add an approved reminder template (WA_REMINDER_TEMPLATE)" };
           if (!r?.ok) status = 'not_sent: ' + (r?.reason || 'unknown');
         } else status = `not_sent: ${channel === 'sms' ? 'SMS' : 'email'} sending is not connected yet`;
       }

@@ -53,7 +53,7 @@ canvas.scene3d:not(#_){display:none!important}
 /* tables */
 :root:is([data-theme="light"],[data-theme="dark"]) main th:not(#_){background:transparent!important;border-bottom:1px solid var(--h-rim)!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important;font-size:12px!important}
 :root:is([data-theme="light"],[data-theme="dark"]) main td:not(#_){border-bottom:1px solid var(--h-rim)!important}
-:root:is([data-theme="light"],[data-theme="dark"]) main tbody tr:hover td:not(#_){background:var(--h-nest)!important}
+:root:is([data-theme="light"],[data-theme="dark"]) main tbody tr:hover td:not(#_){background:var(--h-nest)!important;transition:background var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 
 /* buttons: primary = ink pill, ghost = outline */
 :root:is([data-theme="light"],[data-theme="dark"]) main :is(.btn:not(.ghost),.mk-launch,button.primary):not(:disabled):not(#_){background:var(--h-tag)!important;color:var(--h-tag-ink)!important;border:0!important;border-radius:12px!important;box-shadow:none!important}

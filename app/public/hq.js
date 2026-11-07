@@ -11,12 +11,12 @@
   const card = (title, sub, body, cls = '') => `<section class="hq-c ${cls}"><header><h3>${esc(title)}</h3>${sub ? `<small>${esc(sub)}</small>` : ''}</header>${body}</section>`;
   const STATUS = { active: ['Paying', 'ok'], trial: ['Trial', 'mid'], paused: ['Paused', 'bad'] };
   const PROV = { anthropic: 'Claude', n8n: 'Gemini (main)', 'gemini-flash-lite': 'Gemini Flash-Lite', 'gemini-flash': 'Gemini Flash', 'gemini-3.1-lite': 'Gemini 3.1 Lite', groq: 'Groq', cerebras: 'Cerebras', openrouter: 'OpenRouter', quick: 'Instant (no AI)', fallback: 'Safety message', staff: 'Your team' };
-  let D = null, days = 30, sortBy = 'mrr', metric = 'chats', q = '';
+  let D = null, UP = [], days = 30, sortBy = 'mrr', metric = 'chats', q = '';
 
   async function load() {
     const box = $('#ccHQ'); if (!box) return;
     if (!D) box.innerHTML = '<p class="hq-loading">Loading your company…</p>';
-    const r = await fetch(`/api/admin/hq?days=${days}`); D = r.ok ? await r.json() : null;
+    const [r, u] = await Promise.all([fetch(`/api/admin/hq?days=${days}`), fetch('/api/admin/upgrade-requests')]); D = r.ok ? await r.json() : null; UP = u.ok ? await u.json() : [];
     if (!D) { box.innerHTML = '<p class="hq-loading">Could not load HQ. Try again in a moment.</p>'; return; }
     draw();
   }
@@ -31,7 +31,7 @@
       kpi('Pipeline', money(m.pipeline_mrr), `${m.trials} on trial${m.paused ? ` · ${m.paused} paused` : ''}`),
       kpi('Value created', money(m.value_created), `booked by MXAi for clients · ${D.days} days`),
       kpi('Client return', roi == null ? '—' : roi + '×', 'value created ÷ what they pay'),
-      kpi('Running cost', '$0', `free AI tiers today · at paid Gemini prices it would be about ${money(m.cost_monthly, 2)} / month`),
+      kpi('Running cost', money(m.cost_monthly, 2), `this month: Claude${m.infra_monthly ? ' + servers' : ''}; the free AI costs nothing${m.costing_more ? ` · ${m.costing_more} client${m.costing_more === 1 ? '' : 's'} cost more than they pay` : ''}`),
       kpi('Gross margin', m.gross_margin == null ? '—' : m.gross_margin + '%', m.mrr ? `${money(m.mrr - m.cost_monthly)} a month after costs` : 'starts with the first paying client'),
       kpi('AI replies', (D.ai.ai_real || 0).toLocaleString(), `to real clients · ${(D.ai.ai - D.ai.ai_real).toLocaleString()} more were your own tests`),
     ].join('')}</div>`;
@@ -49,19 +49,26 @@
     const rows = real.filter(c => !q || (c.name + ' ' + c.plan + ' ' + (c.country || '') + ' ' + c.vertical).toLowerCase().includes(q))
       .sort((a, b) => sortBy === 'name' ? a.name.localeCompare(b.name) : (b[sortBy] ?? -1) - (a[sortBy] ?? -1));
     const th = (k, l, r) => `<th class="${r ? 'r' : ''}"><button type="button" data-sort="${k}" aria-pressed="${sortBy === k}">${l}${sortBy === k ? ' ↓' : ''}</button></th>`;
-    const table = card('Clients', `${real.length} ${real.length === 1 ? 'business' : 'businesses'} · sorted by ${({ mrr: 'monthly revenue', ai_value: 'value created', roi: 'return', ai_replies: 'AI replies', cost: 'cost', name: 'name', price: 'price' })[sortBy]}`,
+    const table = card('Clients', `${real.length} ${real.length === 1 ? 'business' : 'businesses'} · sorted by ${({ mrr: 'monthly revenue', ai_value: 'value created', roi: 'return', ai_replies: 'AI replies', cost: 'cost', claude_spent: 'AI cost', margin: 'margin', name: 'name', price: 'price' })[sortBy]}`,
       `<div class="hq-tools"><input type="search" id="hqQ" placeholder="Find a client, plan or country" value="${esc(q)}" aria-label="Find a client"><button type="button" class="hq-btn" data-nav="new">+ New business</button></div>
-      <div class="hq-tw"><table class="hq-t"><thead><tr>${th('name', 'Client')}<th>Plan</th><th>Status</th>${th('price', 'Price', 1)}${th('mrr', 'MRR', 1)}${th('ai_value', 'Value created', 1)}${th('roi', 'Return', 1)}${th('ai_replies', 'AI replies', 1)}${th('cost', 'Cost', 1)}<th>Last active</th><th>AI</th><th></th></tr></thead>
+      <div class="hq-tw"><table class="hq-t"><thead><tr>${th('name', 'Client')}<th>Plan</th><th>Status</th>${th('price', 'Price', 1)}${th('mrr', 'MRR', 1)}${th('ai_value', 'Value created', 1)}${th('roi', 'Return', 1)}${th('ai_replies', 'AI replies', 1)}${th('claude_spent', 'AI cost', 1)}${th('margin', 'Margin', 1)}<th>Last active</th><th>AI</th><th></th></tr></thead>
       <tbody>${rows.map(c => { const [sl, sc] = STATUS[c.status] || [c.status, 'mid']; return `<tr>
         <td><b>${esc(c.name)}</b><small>${esc([c.vertical, c.country].filter(Boolean).join(' · '))}</small></td>
         <td>${esc(c.plan)}${c.addons.length ? `<small>+ ${esc(c.addons.join(', '))}</small>` : ''}</td>
         <td><span class="hq-st ${sc}">${sl}${c.status === 'trial' ? ` · ${c.trial_days_left} d` : ''}</span></td>
         <td class="r">${money(c.price)}</td><td class="r"><b>${money(c.mrr)}</b></td><td class="r">${money(c.ai_value)}<small>${c.ai_bookings} bookings</small></td>
-        <td class="r">${c.roi == null ? '—' : `<span class="hq-roi${c.roi >= 3 ? ' hi' : ''}">${c.roi}×</span>`}</td><td class="r">${c.ai_replies.toLocaleString()}</td><td class="r">${money(c.cost, 2)}</td>
+        <td class="r">${c.roi == null ? '—' : `<span class="hq-roi${c.roi >= 3 ? ' hi' : ''}">${c.roi}×</span>`}</td><td class="r">${c.ai_replies.toLocaleString()}</td><td class="r">${money(c.claude_spent, 2)}<small>${c.claude_calls ? `${c.claude_calls} Claude · budget ${money(c.claude_budget)}` : 'free AI'}</small></td>
+        <td class="r">${c.over ? `<span class="hq-st bad" title="Costs more than it pays this month">${money(c.margin, 2)}</span><small>costs more than it pays</small>` : money(c.margin, 2)}</td>
         <td>${ago(c.last_activity)}</td>
         <td><button type="button" class="hq-sw" role="switch" aria-checked="${c.ai_mode !== 'off'}" data-ai="${c.id}" title="Switch the AI for this client">${c.ai_mode !== 'off' ? 'On' : 'Off'}</button></td>
-        <td class="r"><button type="button" class="hq-btn sm" data-open="${c.id}">Open</button></td></tr>`; }).join('') || `<tr><td colspan="12" class="hq-none">No client matches “${esc(q)}”.</td></tr>`}</tbody></table></div>`, 'w12');
+        <td class="r"><button type="button" class="hq-btn sm" data-open="${c.id}">Open</button></td></tr>`; }).join('') || `<tr><td colspan="13" class="hq-none">No client matches “${esc(q)}”.</td></tr>`}</tbody></table></div>`, 'w12');
 
+    // upgrades go through you: what owners asked for, approve or decline
+    const open = UP.filter(r => r.status === 'pending'), done = UP.filter(r => r.status !== 'pending').slice(0, 5);
+    const ups = card('Upgrade requests', open.length ? `${open.length} waiting for you` : 'nothing waiting', (open.length ? `<ul class="hq-ups">${open.map(r => `<li><div><b>${esc(r.business)}</b>${r.is_demo ? ' <small>test business</small>' : ''}<span>${esc(r.feature_name)}${r.addon ? ` · approving adds “${esc(r.addon)}” (${money(r.addon_price)}/month)` : ' · approving switches it on for them'}</span><small>asked ${esc(r.at)}${r.note ? ' · “' + esc(r.note) + '”' : ''}</small></div>
+      <div class="hq-upb"><button type="button" class="hq-btn" data-up="${r.id}" data-ok="1">Approve</button><button type="button" class="hq-btn sm" data-up="${r.id}" data-ok="0">Decline</button></div></li>`).join('')}</ul>`
+      : '<p class="hq-note">When an owner opens a locked feature and presses Request, it lands here.</p>')
+      + (done.length ? `<p class="hq-note">Recent: ${done.map(r => `${esc(r.business)} · ${esc(r.feature_name)} · ${r.status}`).join(' — ')}</p>` : ''), 'w6');
     // growth: where clients come from
     const L = D.growth.leads, leadN = L.reduce((s, x) => s + x.n, 0), clicks = D.growth.clicks.reduce((s, x) => s + x.n, 0);
     const signups = Math.max(leadN, m.trials + m.paying), visits = Math.max(clicks, signups);
@@ -88,7 +95,7 @@
 
     box.innerHTML = `<div class="hq-head"><div><h2>HQ</h2><p>Your company at a glance: revenue, the value MXAi creates for clients, costs, growth, AI and health.</p></div>
       <div class="hq-seg" role="group" aria-label="Period">${[7, 30, 90, 365].map(d => `<button type="button" data-days="${d}" aria-pressed="${d === days}">${d === 365 ? '12 months' : d + ' days'}</button>`).join('')}<button type="button" data-refresh title="Refresh">↻</button></div></div>
-      ${kpis}<div class="hq-grid">${trend}${mix}${table}${funnel}${sources}${months}${aiOps}${control}${healthC}${sim}</div>
+      ${kpis}<div class="hq-grid">${trend}${mix}${table}${ups}${funnel}${sources}${months}${aiOps}${control}${healthC}${sim}</div>
       <p class="hq-foot">Updated ${new Date(D.generated).toLocaleTimeString()} · the paid-price cost estimate in the numbers above uses COST_PER_AI_REPLY and COST_PER_WA_TEMPLATE from .env; the calculator uses its own inputs.</p>`;
     window.HQSim?.render($('#hqCalc'), D);
   }
@@ -107,7 +114,13 @@
   document.addEventListener('input', e => { if (e.target.closest('#hqSim')) simulate(); if (e.target.id === 'hqQ') { q = e.target.value.trim().toLowerCase(); clearTimeout(simulate.t); simulate.t = setTimeout(() => { const pos = e.target.selectionStart; draw(); const i = $('#hqQ'); i.focus(); i.setSelectionRange(pos, pos); }, 200); } });
   document.addEventListener('change', e => { if (e.target.closest('#hqSim')) simulate(); });
   document.addEventListener('click', async e => {
-    const t = e.target.closest('#ccHQ [data-metric],#ccHQ [data-days],#ccHQ [data-sort],#ccHQ [data-open],#ccHQ [data-ai],#ccHQ [data-all],#ccHQ [data-nav],#ccHQ [data-refresh]'); if (!t) return;
+    const t = e.target.closest('#ccHQ [data-metric],#ccHQ [data-days],#ccHQ [data-sort],#ccHQ [data-open],#ccHQ [data-ai],#ccHQ [data-all],#ccHQ [data-nav],#ccHQ [data-refresh],#ccHQ [data-up]'); if (!t) return;
+    if (t.dataset.up) {
+      const ok = t.dataset.ok === '1', r = UP.find(x => x.id === +t.dataset.up);
+      if (ok && !confirm(`Approve ${r.feature_name} for ${r.business}?${r.addon ? ` This adds the ${r.addon} add-on (${money(r.addon_price)} a month).` : ''}`)) return;
+      const x = await fetch(`/api/admin/upgrade-requests/${r.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approve: ok }) });
+      window.toast?.(x.ok ? (ok ? `${r.feature_name} is on for ${r.business}. They were notified.` : 'Declined.') : 'That request was already answered.'); return load();
+    }
     if (t.dataset.metric) { metric = t.dataset.metric; return draw(); }
     if (t.dataset.days) { days = +t.dataset.days; return load(); }
     if (t.dataset.refresh != null) return load();

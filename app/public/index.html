@@ -16,13 +16,21 @@
 <link rel="stylesheet" href="/today.css">
 <link rel="stylesheet" href="/hq.css">
 <link rel="stylesheet" href="/mx-ui.css">
+<link rel="stylesheet" href="/pagehead.css">
+<link rel="stylesheet" href="/sidebar.css">
+<link rel="stylesheet" href="/banner.css">
+<link rel="stylesheet" href="/light.css">
+<link rel="stylesheet" href="/phone.css">
+<link rel="stylesheet" href="/density.css">
 <link rel="icon" href="/pulse-logo.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#e8e6e1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="/pulse-logo.svg">
 <style>body{margin:0}[hidden]{display:none!important}</style>
-<script>try{if(!localStorage.getItem("rb-glass")){localStorage.setItem("rb-theme","dark");localStorage.setItem("rb-stone","1");localStorage.setItem("rb-glass","1")}document.documentElement.dataset.theme=localStorage.getItem("rb-theme")||"dark"}catch{document.documentElement.dataset.theme="dark"}</script>
+<script>try{if(!localStorage.getItem("rb-glass")){localStorage.setItem("rb-stone","1");localStorage.setItem("rb-glass","1")}if(!localStorage.getItem("rb-light-default")){localStorage.setItem("rb-theme","light");localStorage.setItem("rb-light-default","1")}document.documentElement.dataset.theme=localStorage.getItem("rb-theme")||"light"}catch{document.documentElement.dataset.theme="light"}
+/* design preview skins: ?skin=name&mode=light|dark shows the dashboard in a candidate design. Nothing is saved: your own theme is untouched */
+try{var q=new URLSearchParams(location.search),k=q.get("skin"),m=q.get("mode");if(m==="light"||m==="dark")document.documentElement.dataset.theme=m;if(/^(stone|champagne|atelier|console|mist)$/.test(k||"")){document.documentElement.dataset.skin=k;var l=document.createElement("link");l.rel="stylesheet";l.href="/skins/"+k+".css";document.head.appendChild(l)}}catch{}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -442,7 +450,7 @@
               <div class="item" style="flex-direction:column;align-items:stretch;gap:8px" data-up="cover"><b>Cover photo</b><div class="upv"></div><div style="display:flex;gap:6px"><label class="btn ghost" style="flex:1;text-align:center;cursor:pointer">Upload<input type="file" accept="image/jpeg,image/png,image/webp" hidden></label><button class="btn ghost upx" type="button" hidden>Remove</button></div></div>
               <div class="item" style="flex-direction:column;align-items:stretch;gap:8px" data-up="menu"><b>Menu or price list</b><div class="upv"></div><div style="display:flex;gap:6px"><label class="btn ghost" style="flex:1;text-align:center;cursor:pointer">Upload<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" hidden></label><button class="btn ghost upx" type="button" hidden>Remove</button></div></div>
             </div></div>
-          <div class="full"><button class="btn">Save</button></div>
+          <div class="full set-save"><button class="btn">Save</button></div>
         </form>
       </div>
       <div class="card glass">
@@ -513,10 +521,15 @@
   <form class="form" id="pForm"><label>Name<input id="pName" required></label><label>Phone<input id="pPhone" readonly></label>
   <label>Email<input id="pEmail" type="email"></label><label>Remind by<select id="pRemind"><option value="whatsapp">WhatsApp</option><option value="sms">SMS</option><option value="email">Email</option></select></label>
   <label>Birthday<input id="pBday" type="date"></label>
-  <label class="full">Private staff notes (the AI uses them but never shows them, e.g. "allergic to ammonia", "prefers Layla")<textarea id="pNotes" rows="3"></textarea></label>
+  <label class="full">Private staff notes (only your team sees them, never the AI or the client; e.g. "allergic to ammonia", "prefers Layla")<textarea id="pNotes" rows="3"></textarea></label>
   <p class="full" id="pErr" style="color:var(--bad);margin:0" hidden></p><div class="full"><button class="btn">Save profile</button></div></form>
   <div class="ch" style="margin:18px 0 8px"><h2>Bookings</h2></div><div class="list" id="pBook"></div>
-  <div class="ch" style="margin:18px 0 8px"><h2>Conversations</h2></div><div class="list" id="pConv"></div></div></div>
+  <div class="ch" style="margin:18px 0 8px"><h2>Conversations</h2></div><div class="list" id="pConv"></div>
+  <div class="ch" style="margin:18px 0 8px"><h2>Client's data</h2></div>
+  <p class="sub" style="margin:0 0 10px">If this client asks for a copy of their data, or for it to be deleted (their right under GDPR).</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn ghost" id="pExport" href="#" download>Download their data</a><button class="btn ghost" id="pEraseOpen" type="button">Erase this client…</button></div>
+  <div id="pErase" hidden style="margin-top:12px"><p style="margin:0 0 8px">Their name, contact details, notes and chats are deleted for good. Bookings and payments stay in your records without their name.</p>
+  <label>Type ERASE to confirm <input id="pEraseIn" autocomplete="off" spellcheck="false"></label> <button class="btn" id="pEraseGo" type="button">Erase for good</button><p id="pEraseMsg" role="status" style="margin:8px 0 0"></p></div></div></div>
 <div class="modal" id="modal" hidden><div class="glass"><div class="ch"><h2 id="mTitle">Conversation</h2><div style="display:flex;gap:6px"><button class="btn ghost" id="mResolve" type="button" hidden>Mark handled</button><button class="btn ghost" id="mClose" type="button">Close</button></div></div><div class="msgs" id="mMsgs" style="padding:0;max-height:52vh;overflow-y:auto"></div>
   <div id="mBar" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--edge)">
     <span id="mAiState" class="tag t-faq"></span><button class="btn ghost" type="button" id="mAiToggle"></button></div>
@@ -525,11 +538,15 @@
 
 <script src="/js/net.js"></script>
 <script src="/js/core.js"></script>
+<script src="/js/dialog.js"></script>
 <script src="/js/overview.js"></script>
 <script src="/js/calendar.js"></script>
 <script src="/js/test-chat.js"></script>
 <script src="/js/setup.js"></script>
 <script src="/js/nav.js"></script>
+<script src="/mxai-settings.js"></script>
+<script src="/sidebar-resize.js"></script>
+<script src="/stream.js" data-bg></script>
 <script src="/js/customers.js"></script>
 <script src="/js/insights.js?v=2"></script>
 <script src="/js/setup-ai.js"></script>
@@ -545,8 +562,10 @@
 <script src="/admin.js"></script>
 <script src="/hq-sim.js"></script>
 <script src="/hq.js"></script>
+<script src="/controls.js"></script>
 <script src="/coach-ui.js"></script>
 <script src="/mx-ui.js"></script>
+<script src="/today-widgets.js"></script>
 <script src="/home.js?v=3"></script>
 <script src="/charts.js?v=16"></script>
 <script src="/aimode.js?v=1"></script>
@@ -554,7 +573,6 @@
 <script src="/widgets-lib2.js"></script>
 <script src="/studio.js?v=5"></script>
 <script src="/hero.js?v=8"></script>
-<script src="/kpis.js"></script>
 <script src="/tip.js"></script>
 <script src="/ui.js"></script>
 <script src="/signature.js"></script>
@@ -568,9 +586,10 @@
 <script src="/team-dock.js"></script>
 <script src="/inbox.js?v=2"></script>
 <script src="/gcal.js"></script>
+<script src="/pagehead.js"></script>
+<script src="/clients.js"></script>
 <script src="/pulse.js?v=6"></script>
 <script src="/command.js"></script>
-<script src="/briefing.js"></script>
 <script src="/marketing.js?v=10"></script>
 <script src="/integrations.js"></script>
 <script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}))</script>

@@ -18,12 +18,15 @@ async function loadApprovals(){apprs=await req("/api/requests?status="+apprStatu
 document.getElementById("apprTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;document.querySelectorAll("#apprTabs button").forEach(x=>x.setAttribute("aria-pressed",x===b));apprStatus=b.dataset.s;loadApprovals()};
 document.addEventListener("click",async e=>{const a=e.target.closest("[data-appr]");if(!a)return;
   const card=a.closest(".item");let note=card.querySelector(".apnote");
+  if(note){const g=note.querySelector("[data-go]");g.dataset.go=a.dataset.d;g.textContent=a.dataset.d==="approve"?"Confirm approve":"Confirm reject";note.querySelector("input").focus();return}
   if(!note){note=document.createElement("div");note.className="apnote";note.style.cssText="display:flex;gap:6px;width:100%;margin-top:8px";
     note.innerHTML=`<input placeholder="Optional note to the customer" aria-label="Note to the customer"><button class="mini" data-go="${a.dataset.d}">${a.dataset.d==="approve"?"Confirm approve":"Confirm reject"}</button>`;
     card.querySelector(".grow").appendChild(note);note.querySelector("input").focus();
-    note.querySelector("[data-go]").onclick=async()=>{try{await req(`/api/requests/${a.dataset.appr}/${a.dataset.d}`,"POST",{note:note.querySelector("input").value});
-      toast(a.dataset.d==="approve"?"Approved. The customer has been told.":"Rejected. The customer has been told.");loadApprovals();refresh();if(weekStart)loadCal()}
-      catch(err){if(err.status===409&&a.dataset.d==="approve"&&/no longer free/.test(err.message)){note.innerHTML=`<span style="color:var(--bad)">${esc(err.message)}</span>`}else toast(err.message)}};
+    // the decision is read when Confirm is pressed, so switching from Approve to Reject can never send the old one
+    note.querySelector("[data-go]").onclick=async ev=>{const d=ev.currentTarget.dataset.go,btn=ev.currentTarget;btn.disabled=true;
+      try{await req(`/api/requests/${a.dataset.appr}/${d}`,"POST",{note:note.querySelector("input").value});
+      toast(d==="approve"?"Approved. The customer has been told.":"Rejected. The customer has been told.");note.remove();loadApprovals();refresh();if(weekStart)loadCal()}
+      catch(err){btn.disabled=false;if(err.status===409&&d==="approve"&&/no longer free/.test(err.message)){const s=document.createElement("span");s.style.color="var(--bad)";s.textContent=err.message;note.prepend(s)}else toast(err.message)}};
   }else note.querySelector("[data-go]").textContent=a.dataset.d==="approve"?"Confirm approve":"Confirm reject",note.querySelector("[data-go]").dataset.go=a.dataset.d});
 
 // ---------- coupons ----------
@@ -100,4 +103,4 @@ $("#ldF").onchange=drawLeads;
 $("#ldList").addEventListener("change",async e=>{const el=e.target.closest(".ldSt,.ldNote");if(!el)return;const id=+el.dataset.id,l=leadData.leads.find(x=>x.id===id);
   if(el.classList.contains("ldSt"))l.status=el.value;else l.notes=el.value;await req("/api/admin/leads/"+id,"PUT",{status:l.status,notes:l.notes});toast("Lead updated.");if(el.classList.contains("ldSt"))loadLeads()});
 // safety net only: while the live stream is connected (html.live-on) changes arrive by push, so this polls every 5 minutes; without it, every 5 seconds
-let pollN=0;setInterval(()=>{pollN++;if(document.hidden)return;if(document.documentElement.classList.contains("live-on")&&pollN%60)return;refresh();loadApprovals();pollTestChat();if(!$("#calendar").hidden)loadCal()},5000);
+let pollN=0;setInterval(()=>{pollN++;if(document.hidden)return;if(document.documentElement.classList.contains("live-on")&&pollN%60)return;refresh();if(!document.querySelector(".apnote"))loadApprovals();pollTestChat();if(!$("#calendar").hidden)loadCal()},5000);

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lead lab · MXAi</title>
+<meta name="robots" content="noindex">
+<style>
+:root { --canvas:#d9dee2; --surface:#f3f5f6; --sunk:#e7ebee; --ink:#0f1418; --muted:#56606a; --line:#c5ccd2; --btn:#161b20; --btn-fg:#eef1f3; --lime:#c6f432; --good:#3f5f12; --bad:#9b2c2c; --warn:#8a5a00; }
+@media (prefers-color-scheme: dark) { :root { --canvas:#101316; --surface:#191d21; --sunk:#14181b; --ink:#e8ecef; --muted:#98a2ab; --line:#2b3238; --btn:#c6f432; --btn-fg:#0f1418; --good:#b9e05a; --bad:#f0928a; --warn:#e8b552; color-scheme:dark; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--canvas); color:var(--ink); font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { max-width:1100px; margin:0 auto; padding:24px max(16px,env(safe-area-inset-left)) 64px; display:grid; gap:18px; }
+h1 { font:600 1.5rem/1.2 system-ui; margin:0; } h2 { font-size:.78rem; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:0 0 10px; }
+.panel { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+.row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.muted { color:var(--muted); } .small { font-size:.82rem; }
+input, textarea, select { font:inherit; color:var(--ink); background:var(--sunk); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+textarea { width:100%; min-height:60px; }
+button { font:inherit; font-weight:600; border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:8px; padding:7px 12px; cursor:pointer; min-height:34px; }
+button.primary { background:var(--btn); color:var(--btn-fg); border-color:var(--btn); }
+button:disabled { opacity:.5; cursor:default; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+.clients { display:flex; gap:8px; flex-wrap:wrap; }
+.clients button[aria-pressed="true"] { background:var(--btn); color:var(--btn-fg); }
+.tags { display:flex; flex-wrap:wrap; gap:5px; }
+.tag { background:var(--sunk); border:1px solid var(--line); border-radius:99px; padding:2px 9px; font-size:.78rem; }
+.bar { height:10px; background:var(--sunk); border:1px solid var(--line); border-radius:99px; overflow:hidden; } .bar i { display:block; height:100%; background:var(--btn); }
+.kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; }
+.kpi { background:var(--sunk); border-radius:10px; padding:10px 12px; } .kpi b { font:600 1.25rem/1.1 ui-monospace,Consolas,monospace; display:block; }
+.lead { border-top:1px solid var(--line); padding:14px 0; display:grid; gap:6px; }
+.lead:first-child { border-top:0; }
+.lead h3 { margin:0; font-size:1rem; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+.lead h3 a { color:inherit; }
+.fit { font:600 .82rem ui-monospace,Consolas,monospace; padding:2px 8px; border-radius:99px; background:var(--sunk); }
+.fit.hi { background:var(--btn); color:var(--btn-fg); }
+.st-valid { color:var(--good); font-weight:600; } .st-invalid { color:var(--bad); } .st-catch_all, .st-unknown { color:var(--warn); }
+.grade button[aria-pressed="true"] { background:var(--btn); color:var(--btn-fg); }
+.log { font:12px/1.5 ui-monospace,Consolas,monospace; background:var(--sunk); border-radius:8px; padding:8px 10px; max-height:160px; overflow:auto; white-space:pre-wrap; }
+.err { color:var(--bad); }
+</style>
+</head>
+<body>
+<main>
+  <div class="row" style="justify-content:space-between">
+    <div><h1>Lead lab</h1><div class="muted">MXAi finds companies for a business, checks the contact, scores the fit. You grade each lead. Target: 70% "I'd contact".</div></div>
+    <div id="quality" class="kpi" style="min-width:180px"></div>
+  </div>
+
+  <section class="panel">
+    <h2>Businesses</h2>
+    <div class="clients" id="clients"></div>
+    <details style="margin-top:12px"><summary>Add a business</summary>
+      <form id="addForm" class="row" style="margin-top:10px;align-items:flex-start">
+        <input id="cName" placeholder="Business name" required>
+        <input id="cSite" placeholder="Website, e.g. example.ae" required>
+        <textarea id="cNotes" placeholder="Notes for MXAi: who you sell to, cities, deal size, who is NOT a fit…"></textarea>
+        <button class="primary" type="submit">Read the website and build the profile</button>
+      </form>
+    </details>
+  </section>
+
+  <section class="panel" id="clientPanel" hidden></section>
+  <section class="panel" id="batchPanel" hidden></section>
+</main>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const api = async (url, opt = {}) => { const r = await fetch(url, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...opt }); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || `Error ${r.status}`); return d; };
+  let clientId = null, batchId = null, timer = null;
+
+  async function loadQuality() {
+    const g = await api('/api/eng/quality').catch(() => null); if (!g) return;
+    const pct = g.graded ? Math.round(g.contact / g.graded * 100) : 0;
+    $('#quality').innerHTML = `<span class="small muted">Graded: ${g.graded}</span><b>${g.graded ? pct + '%' : '–'}</b><span class="small muted">would contact (target 70%)</span>`;
+  }
+  async function loadClients() {
+    const list = await api('/api/eng/clients').catch(e => { $('#clients').innerHTML = `<span class="err">${esc(e.message)}</span>`; return []; });
+    $('#clients').innerHTML = list.length ? list.map(c => `<button data-c="${c.id}" aria-pressed="${c.id === clientId}">${esc(c.name)} <span class="small muted">${esc(c.status)}</span></button>`).join('') : '<span class="muted">No businesses yet.</span>';
+    if (!clientId && list[0]) openClient(list[0].id);
+  }
+  async function openClient(id) {
+    clientId = id; batchId = null; $('#batchPanel').hidden = true;
+    $$('[data-c]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.c === id)));
+    const c = await api(`/api/eng/clients/${id}`); const p = c.profile || {}; const ic = p.ideal_customer || {};
+    const panel = $('#clientPanel'); panel.hidden = false;
+    panel.innerHTML = `<h2>${esc(c.name)} · ${esc(c.website)}</h2>
+      ${c.status === 'new' ? '<p>Reading the website and building the profile… (about a minute)</p>' : ''}
+      ${c.status === 'failed' ? `<p class="err">${esc(c.error)}</p>` : ''}
+      ${p.offer ? `<p><b>Sells:</b> ${esc(p.offer)}</p>
+        <p><b>Ideal customer:</b> ${esc(ic.summary)}</p>
+        <div class="tags">${(ic.sectors || []).map(s => `<span class="tag">${esc(s)}</span>`).join('')}${(ic.cities || []).map(s => `<span class="tag">📍 ${esc(s)}</span>`).join('')}${(ic.roles || []).map(s => `<span class="tag">👤 ${esc(s)}</span>`).join('')}</div>
+        <p class="small muted">Not a fit: ${esc((ic.exclude || []).join(', ') || '–')} · Searches: ${esc((p.search_queries || []).join(' · '))}</p>` : ''}
+      <details><summary>Correct the profile with notes</summary><textarea id="notes">${esc(p.notes || '')}</textarea><button id="rebuild">Rebuild profile</button></details>
+      <div class="row" style="margin-top:12px"><label class="small">Leads per batch <select id="size"><option>25</option><option selected>50</option><option>100</option></select></label>
+        <button class="primary" id="run" ${c.status === 'ready' ? '' : 'disabled'}>Find leads</button></div>
+      <div style="margin-top:12px">${(c.batches || []).map(b => `<button data-b="${b.id}">Batch ${b.id} · ${esc(b.status)}${b.stats?.leads != null ? ` · ${b.stats.leads} leads` : ''} · ${new Date(b.created_at).toLocaleDateString()}</button>`).join(' ')}</div>`;
+    $('#run').onclick = async () => { try { const r = await api(`/api/eng/clients/${id}/batches`, { method: 'POST', body: JSON.stringify({ size: +$('#size').value }) }); openBatch(r.id); openClient(id); } catch (e) { alert(e.message); } };
+    $('#rebuild').onclick = async () => { await api(`/api/eng/clients/${id}/rebuild`, { method: 'POST', body: JSON.stringify({ notes: $('#notes').value }) }); openClient(id); };
+    if (c.status === 'new') setTimeout(() => clientId === id && openClient(id), 6000);
+    if (!batchId && c.batches?.[0]) openBatch(c.batches[0].id);
+  }
+  const $$ = s => [...document.querySelectorAll(s)];
+  async function openBatch(id) {
+    batchId = id; clearTimeout(timer);
+    const b = await api(`/api/eng/batches/${id}`); const s = b.stats || {};
+    const panel = $('#batchPanel'); panel.hidden = false;
+    const running = b.status === 'running' || b.status === 'queued';
+    const graded = b.leads.filter(l => l.grade).length, yes = b.leads.filter(l => l.grade === 'contact').length;
+    panel.innerHTML = `<h2>Batch ${b.id} · ${esc(b.status)}${b.step ? ' · ' + esc(b.step) : ''}</h2>
+      ${b.error ? `<p class="err">${esc(b.error)}</p>` : ''}
+      <div class="kpis">
+        <div class="kpi"><span class="small muted">Companies found</span><b>${s.candidates ?? '–'}</b></div>
+        <div class="kpi"><span class="small muted">Websites read</span><b>${s.read ?? '–'}</b></div>
+        <div class="kpi"><span class="small muted">Real companies</span><b>${s.companies ?? '–'}</b></div>
+        <div class="kpi"><span class="small muted">Leads</span><b>${s.leads ?? b.leads.length}</b></div>
+        <div class="kpi"><span class="small muted">Fit ≥ 70</span><b>${s.fit_70 ?? '–'}</b></div>
+        <div class="kpi"><span class="small muted">Email verified</span><b>${s.email_valid ?? '–'}</b></div>
+        <div class="kpi"><span class="small muted">Your grades</span><b>${graded ? Math.round(yes / graded * 100) + '%' : '–'}</b><span class="small muted">${graded}/${b.leads.length} graded</span></div>
+      </div>
+      ${running ? `<details open style="margin-top:10px"><summary>Live log</summary><div class="log">${esc((s.log || []).slice(-14).join('\n'))}</div></details>` : ''}
+      <div id="leads" style="margin-top:10px">${b.leads.map(leadHtml).join('') || (running ? '<p class="muted">Leads appear when the batch finishes.</p>' : '<p class="muted">No leads in this batch.</p>')}</div>`;
+    if (running) timer = setTimeout(() => batchId === id && openBatch(id), 5000);
+  }
+  function leadHtml(l) {
+    const contact = l.email ? `${esc(l.contact_name || 'General address')}${l.contact_role ? ', ' + esc(l.contact_role) : ''} · <span>${esc(l.email)}</span> <span class="st-${esc(l.email_status)}">${esc(({ valid: 'verified', catch_all: 'server accepts all', unknown: 'not confirmed', invalid: 'invalid', unchecked: 'not checked' })[l.email_status] || l.email_status)}</span>${l.email_kind === 'pattern' ? ' <span class="small muted">(guessed, then verified)</span>' : ''}`
+      : l.contact_name ? `${esc(l.contact_name)}${l.contact_role ? ', ' + esc(l.contact_role) : ''} · <span class="muted">no email found</span>` : '<span class="muted">No contact found</span>';
+    return `<article class="lead" data-l="${l.id}">
+      <h3><span class="small muted">#${l.rank}</span> <a href="${esc(l.website)}" target="_blank" rel="noopener">${esc(l.name || l.domain)}</a> <span class="fit ${l.fit >= 70 ? 'hi' : ''}">fit ${l.fit}</span> <span class="small muted">${esc([l.sector, l.city].filter(Boolean).join(' · '))}</span></h3>
+      ${l.description ? `<div>${esc(l.description)}</div>` : ''}
+      <div class="small"><b>Why:</b> ${esc((l.reasons || []).join(' · '))}</div>
+      <div class="small"><b>Contact:</b> ${contact}${l.contact_source ? ` · <a href="${esc(l.contact_source)}" target="_blank" rel="noopener">source</a>` : ''}</div>
+      ${(l.tech || []).length ? `<div class="tags">${l.tech.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+      <div class="row grade"><span class="small muted">Would you contact them?</span>
+        ${['contact', 'maybe', 'no'].map(g => `<button data-g="${g}" aria-pressed="${l.grade === g}">${({ contact: 'Yes, I\'d contact', maybe: 'Maybe', no: 'No' })[g]}</button>`).join('')}
+        <input data-r placeholder="Why? (optional)" value="${esc(l.grade_reason || '')}" style="flex:1;min-width:160px"></div>
+    </article>`;
+  }
+  document.addEventListener('click', async e => {
+    const c = e.target.closest('[data-c]'); if (c) return openClient(+c.dataset.c);
+    const b = e.target.closest('[data-b]'); if (b) return openBatch(+b.dataset.b);
+    const g = e.target.closest('[data-g]');
+    if (g) { const art = g.closest('[data-l]'); try { await api(`/api/eng/leads/${art.dataset.l}/grade`, { method: 'POST', body: JSON.stringify({ grade: g.dataset.g, reason: art.querySelector('[data-r]').value }) });
+      art.querySelectorAll('[data-g]').forEach(x => x.setAttribute('aria-pressed', String(x === g))); loadQuality(); } catch (err) { alert(err.message); } }
+  });
+  $('#addForm').addEventListener('submit', async e => { e.preventDefault();
+    try { const r = await api('/api/eng/clients', { method: 'POST', body: JSON.stringify({ name: $('#cName').value, website: $('#cSite').value, notes: $('#cNotes').value }) }); clientId = r.id; await loadClients(); openClient(r.id); e.target.reset(); } catch (err) { alert(err.message); } });
+  loadClients(); loadQuality();
+})();
+</script>
+</body>
+</html>

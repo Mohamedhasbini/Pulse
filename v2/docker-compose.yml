@@ -1,0 +1,57 @@
+# MXAi v2: the new product (growth engine first), fully separate from MXAi v1 (the folder above).
+# Own app (port 3200, this PC only), own database, own data. It shares only the engine services in
+# C:\Users\Mohamad\mxai-stack over the private Docker network "mxai-net". Start: cd v2 && docker compose up -d --build
+name: mxai-v2
+x-logging: &logs
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+services:
+  db:
+    build: ./db # postgres:16-alpine + pgvector
+    restart: unless-stopped
+    logging: *logs
+    environment:
+      POSTGRES_DB: mxai
+      POSTGRES_USER: mxai
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - v2data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mxai"]
+      interval: 5s
+      retries: 10
+
+  app:
+    build: ./app
+    restart: unless-stopped
+    logging: *logs
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+      - C:/Users/Mohamad/mxai-stack/crawl4ai/.env   # CRAWL4AI_API_TOKEN
+      - C:/Users/Mohamad/mxai-stack/reacher/.env    # RCH__HEADER_SECRET
+    environment:
+      DATABASE_URL: postgres://mxai:${DB_PASSWORD}@db:5432/mxai
+      ENGINE_CRAWL4AI_URL: http://crawl4ai:11235
+      ENGINE_SEARXNG_URL: http://searxng:8080
+      ENGINE_REACHER_URL: http://reacher:8080
+    ports:
+      - "127.0.0.1:3200:3200" # this PC only
+    networks: [default, mxai]
+    init: true
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3200/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  v2data:
+networks:
+  mxai:
+    name: mxai-net
+    external: true

@@ -69,7 +69,7 @@ export async function lessonSuggestions(B) {
     q(`SELECT attention_reason AS reason, count(*)::int AS n FROM conversations WHERE business_id=$1 AND attention_reason IS NOT NULL AND created_at > now() - interval '30 days' GROUP BY 1 ORDER BY 2 DESC LIMIT 3`, [B]),
     q(`SELECT title FROM ai_lessons WHERE business_id=$1 AND status IN ('approved','dismissed')`, [B])]);
   const done = new Set(decided.map(d => d.title)), out = [];
-  gaps.forEach(g => out.push({ kind: 'answer', title: `Answer “${g.question}”`, body: g.question, evidence: `asked ${g.n} times, the AI couldn't answer` }));
+  gaps.forEach(g => out.push({ kind: 'answer', title: `Answer “${g.question}”`, body: g.question, evidence: `asked ${g.n} times, no answer yet` }));
   low.forEach(t => out.push({ kind: 'rule', title: `Handle “${t.topic}” with more care`, body: `When a customer writes about ${t.topic.toLowerCase()}, apologise first if something went wrong, explain clearly, and offer a concrete next step.`, evidence: `rated ${t.r} over ${t.n} chats` }));
   reasons.filter(r => /know|answer/i.test(r.reason)).forEach(r => out.push({ kind: 'rule', title: 'Say when you need to check', body: 'If you are not sure of an answer, say you will check with the team instead of guessing, and hand the chat over.', evidence: `${r.n} handovers in 30 days` }));
   return out.filter(l => !done.has(l.title));

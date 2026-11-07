@@ -12,16 +12,16 @@
   // ---------- top bar: the Ask pill ----------
   function askPill() {
     const nav = $('nav[aria-label="Main"]'); if (!nav || $('#hxAsk')) return;
-    // the top bar is graphite in both modes; set inline so no older theme rule can repaint it
-    if (matchMedia('(min-width:1001px)').matches) nav.style.setProperty('background', '#0f1011', 'important');
     const b = document.createElement('button'); b.type = 'button'; b.id = 'hxAsk';
-    b.innerHTML = '<i></i><span>Ask Nora or jump to…</span><kbd>Ctrl K</kbd>';
+    b.innerHTML = `<i></i><span>Ask ${esc(window.P10 ? window.P10.named('Nora') : 'MXAi')} or jump to…</span><kbd>Ctrl K</kbd>`;
     b.addEventListener('click', () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })));
     $('.navfoot', nav)?.before(b);
   }
 
   // ---------- hero content per page ----------
-  const fd = (cls, tab, title, sub, chips = []) => `<div class="hx-fd ${cls}" data-tab="${esc(tab)}"><b>${esc(title)}</b><small>${esc(sub)}</small>${chips.length ? `<div class="hx-row">${chips.map((c, i) => `<span class="${i ? '' : 'k'}">${esc(c)}</span>`).join('')}</div>` : ''}</div>`;
+  // a chip is a fact (text) or a way somewhere: [label, page, tab] renders a real button that opens that tab
+  const fd = (cls, tab, title, sub, chips = []) => `<div class="hx-fd ${cls}" data-tab="${esc(tab)}"><b>${esc(title)}</b><small>${esc(sub)}</small>${chips.length ? `<div class="hx-row">${chips.map((c, i) => Array.isArray(c) ? `<button type="button" class="hx-go" data-hxgo="${esc(c[1] + '|' + c[2])}">${esc(c[0])} →</button>` : `<span class="${i ? '' : 'k'}">${esc(c)}</span>`).join('')}</div>` : ''}</div>`;
+  document.addEventListener('click', ev => { const b = ev.target.closest('.hx [data-hxgo]'); if (b) { const [p, t] = b.dataset.hxgo.split('|'); window.P10?.go(p, t); } });
   const stat = (l, v, rev) => `<div><span>${esc(l)}</span><b class="${rev ? 'rev' : ''}">${v}</b></div>`;
   async function content(id) {
     const live = await get('/api/live?days=30'), n = live?.now || {}, up = live?.upcoming || [];
@@ -29,20 +29,20 @@
     const nextCard = next ? fd('a', 'Next up', `${next.name || 'Client'} · ${next.service}`, `${next.start.startsWith(today) ? 'Today' : next.start.slice(5, 10)} ${hm(next.start)} · ${next.minutes} min · ${money(next.price)}`) : fd('a', 'Next up', 'Nothing booked next', 'Your AI keeps the calendar open');
     if (id === 'today') return { folders: nextCard + fd('b', 'Today', "Today's schedule", `${n.visits_today || 0} visits · ${money(n.revenue_today)} today · ${n.upcoming_count || 0} coming up`, [`${n.waiting || 0} waiting`, `${n.replies_today || 0} replies today`]) };
     if (id === 'inbox') return { line: `${n.replies_today || 0} replies today`, stats: stat('Waiting for you', n.waiting || 0) + stat('Active now', n.active_now || 0) + stat('Avg reply', n.avg_ms ? (n.avg_ms / 1000).toFixed(1) + 's' : '—'),
-      folders: fd('a', 'Unsure', `${n.unsure || 0} replies to check`, 'Teach the right answer once') + fd('b', 'To learn', `${n.to_learn || 0} questions`, 'Answers the AI did not know', ['Open Train'] ) };
+      folders: fd('a', 'Unsure', `${n.unsure || 0} replies to check`, 'Teach the right answer once') + fd('b', 'To learn', `${n.to_learn || 0} questions`, 'Answers the AI did not know') };
     if (id === 'calendar') return { line: `${money(n.upcoming_value)} coming up`, stats: stat('Upcoming', n.upcoming_count || 0) + stat('Booked value', money(n.upcoming_value), 1) + stat('Approvals', n.approvals || 0),
       folders: nextCard + fd('b', 'Today', `${todays.length} still to come today`, todays.slice(0, 3).map(b => hm(b.start)).join(' · ') || 'Free day', [`${n.approvals || 0} to approve`]) };
-    if (id === 'marketing' || id === 'customers') {
+    if (id === 'growth' || id === 'customers') { // the Growth page was called marketing once
       const m = await get('/api/marketing/overview?days=30'), k = m?.kpis || {}, s = m?.segments || {};
-      if (id === 'marketing') return { line: `${money(k.revenue)} back`, stats: stat('Revenue won', money(k.revenue), 1) + stat('Conversion', k.reached ? k.conversion + '%' : '—') + stat('Agreed to offers', (k.optin_rate || 0) + '%'),
-        folders: fd('a', 'Last campaign', m?.campaigns?.[0]?.name || 'No campaign yet', m?.campaigns?.[0] ? `${m.campaigns[0].sent} sent · ${m.campaigns[0].booked} booked` : 'Open the studio to start') + fd('b', 'Audience', `${k.opted_in || 0} of ${k.customers || 0} can get offers`, 'Every booking confirmation asks once', ['Campaign studio']) };
+      if (id === 'growth') return { line: `${money(k.revenue)} back`, stats: stat('Revenue won', money(k.revenue), 1) + stat('Conversion', k.reached ? k.conversion + '%' : '—') + stat('Agreed to offers', (k.optin_rate || 0) + '%'),
+        folders: fd('a', 'Last campaign', m?.campaigns?.[0]?.name || 'No campaign yet', m?.campaigns?.[0] ? `${m.campaigns[0].sent} sent · ${m.campaigns[0].booked} booked` : 'Open the studio to start') + fd('b', 'Audience', `${k.opted_in || 0} of ${k.customers || 0} can get offers`, 'Every booking confirmation asks once', [['Campaign studio', 'growth', 'Offers']]) };
       return { line: 'your business', stats: stat('Clients', (k.customers || 0).toLocaleString()) + stat('Regulars', s.regular?.n || 0) + stat('VIP spend', money(s.vip?.spent), 1),
-        folders: fd('a', 'At risk', `${(s.lapsed?.n || 0) + (s.lost?.n || 0)} lapsed clients`, `${money((s.lapsed?.spent || 0) + (s.lost?.spent || 0))} spent with you before`) + fd('b', 'New', `${s.new?.n || 0} new this month`, 'A second visit makes them regulars', ['Win back']) };
+        folders: fd('a', 'At risk', `${(s.lapsed?.n || 0) + (s.lost?.n || 0)} lapsed clients`, `${money((s.lapsed?.spent || 0) + (s.lost?.spent || 0))} spent with you before`) + fd('b', 'New', `${s.new?.n || 0} new this month`, 'A second visit makes them regulars', [['Win back', 'growth', 'Win back']]) };
     }
     if (id === 'insights') return { line: `${money(n.earned)} earned`, stats: stat('Earned', money(n.earned), 1) + stat('Before', money(n.earned_prev)) + stat('AI bookings', n.ai_count || 0) };
     return {};
   }
-  const LINES = { inbox: 'every conversation', calendar: 'your week', marketing: 'what came back', customers: 'your regulars', insights: 'the numbers', pulse: 'your partner', train: 'what Nora knows', lab: 'try it safely', settings: 'set it up once' };
+  const LINES = { inbox: 'every conversation', calendar: 'your week', growth: 'what came back', customers: 'your regulars', insights: 'the numbers', pulse: 'your partner', train: 'what Nora knows', lab: 'try it safely', settings: 'set it up once' };
 
   async function decorate(bar) {
     if (bar.dataset.hx) return; bar.dataset.hx = '1';
@@ -51,15 +51,18 @@
     const id = window.P10?.current?.() || '';
     if (id === 'today') { bar.classList.add('hx-skip'); return today(); }
     const title = (window.P10?.pages || []).find(p => p[0] === id)?.[1] || $('.p10-purpose b', bar)?.textContent.split('›')[0].trim() || '';
+    // the page stays invisible until its header is complete (at most 250 ms), so it never shows half-built and then jumps
+    const sec0 = bar.closest('main > section'), reveal = () => sec0?.classList.remove('hx-wait'); sec0?.classList.add('hx-wait'); setTimeout(reveal, 250);
     const hero = document.createElement('div'); hero.className = 'hx'; hero.innerHTML = `<div class="hx-in"><div class="hx-greet"><h1>${esc(title)}<em>${esc(window.P10 ? window.P10.named(window.P10.pages.find(p => p[0] === id)?.[2] || LINES[id] || '') : LINES[id] || '')}</em></h1><div class="hx-stats"></div></div><div class="hx-folders"></div></div>`;
     bar.before(hero); hero.append(bar);
     const c = await content(id);
     // work pages keep their purpose line; Insights and Marketing lead with their headline number
-    if (c.line && !/^(inbox|calendar|customers|growth|pulse|settings)$/.test(id)) hero.querySelector('em').textContent = c.line;
+    // the purpose line stays as drawn: swapping it for a number after the fetch made the header jump
     hero.querySelector('.hx-stats').innerHTML = c.stats || '';
     hero.querySelector('.hx-folders').innerHTML = c.folders || '';
     await extras(id, hero);
     const xs = hero.parentElement.querySelectorAll('.hx-x'); window.PVBoard?.(id, xs[xs.length - 1] || hero);
+    reveal();
   }
 
   // ---------- round 5: one idea per tab ----------
@@ -77,8 +80,8 @@
     }
     if (id === 'insights') {
       // Ledgerix: the one big number, with the Ask bar under it
-      const l = await get('/api/live?days=90'), n = l?.now || {};
       greet.insertAdjacentHTML('beforeend', `<div class="hx-ask"><i>✦</i><input placeholder="Ask anything about your numbers…" aria-label="Ask MXAi Assistant">${['Why did revenue change?', 'Best service to promote', 'Forecast next month'].map(q => `<button type="button" data-q="${q}">${q}</button>`).join('')}</div>`);
+      const l = await get('/api/live?days=90'), n = l?.now || {};
       hero.querySelector('.hx-folders').innerHTML = `<div class="hx-bignum"><span>Earned, last 90 days</span><b>${money(n.earned)}</b><small>${n.earned_prev ? `${n.earned >= n.earned_prev ? '+' : ''}${Math.round((n.earned - n.earned_prev) / n.earned_prev * 100)}% vs the 90 days before` : 'first period'}</small></div>`;
       // the answer lands right here, short; "Full answer" opens MXAi Assistant on the same question
       const full = q => window.PulseCommand?.open ? window.PulseCommand.open(q) : window.P10?.ask?.(q);
@@ -109,6 +112,7 @@
         <div class="hx-tbars">${by.map((v, i) => `<div><i class="${v === mx && v ? 'on' : ''}" style="height:${Math.max(6, v / mx * 100)}%"></i><span>${9 + i * 2}h</span></div>`).join('')}</div></div></div>`);
     }
     if (id === 'customers') {
+      window.PVCustomers?.(hero.closest('main > section'));
       // Orion match cards: the top three clients with a loyalty ring
       const all = await get('/api/customers'), list = (Array.isArray(all) ? all : all?.rows || []).filter(c => !/^(test|sim-|e2e)/.test(c.phone || '') || c.visits);
       const top = [...list].sort((a, b) => (b.spent || 0) - (a.spent || 0)).slice(0, 3);
@@ -136,22 +140,7 @@
     window.PVBoard?.('today', h);
   }
 
-  // ---------- sub-tabs: a glass dropdown under each top-bar tab ----------
-  let dd = null, ddFor = null, ddT = 0;
-  function dropdown(btn) {
-    const id = btn.dataset.p10, page = (window.P10?.pages || []).find(p => p[0] === id), tabs = page?.[3] || [];
-    if (tabs.length < 2 || !matchMedia('(min-width:1001px)').matches) return hideDD();
-    if (!dd) { dd = document.createElement('div'); dd.id = 'hxDD'; document.body.append(dd);
-      dd.addEventListener('mouseenter', () => clearTimeout(ddT)); dd.addEventListener('mouseleave', () => { ddT = setTimeout(hideDD, 180); });
-      dd.addEventListener('click', ev => { const t = ev.target.closest('[data-k]'); if (t) { hideDD(); window.P10.go(t.dataset.id, +t.dataset.k); } }); }
-    const r = btn.getBoundingClientRect(), cur = window.P10.current?.() === id;
-    dd.innerHTML = `<b>${esc(page[1])}</b>` + tabs.map(([l], k) => `<button type="button" data-id="${id}" data-k="${k}">${esc(l)}</button>`).join('');
-    dd.style.left = Math.max(8, r.left) + 'px'; dd.style.top = r.bottom + 8 + 'px'; dd.hidden = false; dd.classList.add('on'); ddFor = id;
-  }
-  function hideDD() { if (dd) { dd.classList.remove('on'); dd.hidden = true; ddFor = null; } }
-  document.addEventListener('mouseover', ev => { const b = ev.target.closest('nav[aria-label="Main"] button.p10'); if (!b) return; clearTimeout(ddT); if (ddFor !== b.dataset.p10) dropdown(b); });
-  document.addEventListener('mouseout', ev => { if (ev.target.closest('nav[aria-label="Main"] button.p10') && !ev.relatedTarget?.closest?.('#hxDD,nav button.p10')) ddT = setTimeout(hideDD, 220); });
-  addEventListener('scroll', hideDD, { passive: true });
+  // sub-pages are the tab row at the top of each page; the hover dropdown from the old top bar is gone
 
   // ---------- KPI cards open in place ----------
   document.addEventListener('click', ev => {

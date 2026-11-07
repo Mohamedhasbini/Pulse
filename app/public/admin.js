@@ -13,6 +13,9 @@ const SECTIONS=[["Clients",[["biz","All businesses","Every client: plan, add-ons
 const PANE={biz:"#ccBiz",new:"#ccNew",users:"#ccUsers",leads:"#ccLeads",plans:"#ccPlans",platform:"#ccPlatform",audit:"#ccAudit"};
 const nav=document.createElement("nav");nav.className="setnav";nav.setAttribute("aria-label","Command center sections");
 nav.innerHTML=SECTIONS.map(([g,items])=>`<h3>${g}</h3>`+items.map(([k,l])=>`<button type="button" data-k="${k}"><i></i>${l}</button>`).join("")).join("");
+// the Lab has one menu: its own. Light/dark and Sign out live at the bottom of it (the dashboard sidebar is hidden here)
+{const foot=document.createElement("div");foot.className="setnav-foot";foot.innerHTML='<button type="button" data-lf="themeBtn">Light or dark</button><button type="button" data-lf="logoutBtn">Sign out</button>';nav.append(foot);
+ foot.addEventListener("click",e=>{const b=e.target.closest("[data-lf]");if(b)document.getElementById(b.dataset.lf)?.click()})}
 const main=document.createElement("div");main.className="ccmain";
 ad.classList.add("cclay");tabs.after(nav);nav.after(main);
 // move every section (and the "done" notice) into the main column, each with a one-line introduction
@@ -70,6 +73,8 @@ function drawDetail(){const b=list.find(x=>x.id===sel),box=$("#cmDetail");if(!b)
 
     <section class="cm-sec"><h3>Plan and billing</h3>
       <div class="cm-grid2"><label>Plan<select class="bPlan">${(cat?.plans||[]).map(p=>`<option value="${p.key}" ${p.key===b.plan_key?"selected":""}>${esc(p.name)} · ${+p.price} ${esc(p.currency)}/mo</option>`).join("")}</select></label>
+        <label>Keep chats for<select class="bKeep">${[["","Always"],[6,"6 months"],[12,"12 months"],[24,"24 months"],[36,"36 months"]].map(([v,l])=>`<option value="${v}" ${String(b.retention_months??"")===String(v)?"selected":""}>${l}</option>`).join("")}</select></label>
+        <label>Claude budget a month ($)<input class="bBudget" type="number" min="0" max="1000" step="1" value="${b.ai_budget??5}" title="Used only when AI Assistant Pro is on for this client"></label>
         <label>Status<select class="bStatus">${[["trial","Trial"],["active","Active (paying)"],["paused","Paused"]].map(([v,l])=>`<option value="${v}" ${v===b.plan_status?"selected":""}>${l}</option>`).join("")}</select></label></div>
       <div class="cm-note">${b.plan_status==="trial"?`Trial ends ${esc(b.trial_ends||"")} · `:""}Monthly total with add-ons: <b id="cmTotal">${money(total,cur)}</b></div></section>
 
@@ -84,12 +89,25 @@ function drawDetail(){const b=list.find(x=>x.id===sel),box=$("#cmDetail");if(!b)
       <div class="list">${logins.map(x=>`<div class="item"><div class="grow"><b>${esc(x.email)}</b><small>${esc(x.role)}${x.name?" · "+esc(x.name):""} · ${x.last_login?"last in "+esc(x.last_login):"never signed in"}${x.disabled?" · switched off":""}</small></div><span class="tag ${x.totp_enabled?"t-book":"t-faq"}">${x.totp_enabled?"2FA on":"2FA off"}</span></div>`).join("")||'<div class="empty">No logins.</div>'}</div>
       <button class="btn ghost" type="button" data-act="login" style="margin-top:8px">Add a login</button></section>
 
+    <section class="cm-sec"><h3>Payments</h3><p class="sub" style="margin:0 0 8px">${b.is_demo?"Test business: it never ends.":b.paid_until?`Paid until <b>${esc(b.paid_until)}</b>.`:"No payment recorded yet."} Record money you received (Whish, OMT, bank transfer, cash); it moves "paid until" forward and makes the plan active.</p>
+      <div class="cm-pay" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">
+        <label>Amount<input class="pAmt" type="number" min="0" step="0.01" style="width:110px"></label>
+        <label>Months<select class="pMon"><option>1</option><option>3</option><option>6</option><option>12</option></select></label>
+        <label>Paid by<select class="pMeth"><option value="whish">Whish</option><option value="omt">OMT</option><option value="bank">Bank transfer</option><option value="cash">Cash</option><option value="card">Card</option><option value="other">Other</option></select></label>
+        <label style="flex:1;min-width:140px">Note<input class="pNote" placeholder="Receipt number, who paid"></label>
+        <button class="btn" type="button" data-act="pay">Record payment</button></div>
+      <div class="list pList" style="margin-top:8px"></div></section>
     <section class="cm-sec danger"><h3>Danger zone</h3><div class="item"><div class="grow"><b>Close this client</b><small>Deletes customers, chats, bookings, logins and photos. Export first.</small></div><button class="btn ghost" type="button" data-act="close">Close…</button></div></section>`;
-  const body=()=>({plan_key:box.querySelector(".bPlan").value,status:box.querySelector(".bStatus").value,addons:[...box.querySelectorAll(".bAdd:checked")].map(x=>x.value),
+  const body=()=>({plan_key:box.querySelector(".bPlan").value,status:box.querySelector(".bStatus").value,ai_budget:box.querySelector(".bBudget")?.value,retention_months:box.querySelector(".bKeep")?.value??undefined,addons:[...box.querySelectorAll(".bAdd:checked")].map(x=>x.value),
     feature_overrides:Object.fromEntries([...box.querySelectorAll(".seg3")].map(g=>[g.dataset.k,g.querySelector("[aria-pressed=true]")?.dataset.v||""]).filter(([,v])=>v).map(([k,v])=>[k,v==="on"]))});
   const recalc=()=>{const p=planOf(box.querySelector(".bPlan").value),t=(+p?.price||0)+[...box.querySelectorAll(".bAdd:checked")].reduce((s,x)=>s+(+(addons.find(a=>a.key===x.value)?.price)||0),0);
     $("#cmTotal").textContent=money(t,p?.currency||cur);$("#cmDirty").textContent="Unsaved changes"};
-  box.querySelectorAll(".bPlan,.bStatus,.bAdd").forEach(x=>x.addEventListener("change",recalc));
+  box.querySelectorAll(".bPlan,.bStatus,.bAdd,.bBudget,.bKeep").forEach(x=>x.addEventListener("change",recalc));
+  // payments: the monthly total is the suggested amount; the list shows the last ones
+  {const amt=box.querySelector(".pAmt"),mon=box.querySelector(".pMon"),fill=()=>{const p=planOf(box.querySelector(".bPlan").value),t=(+p?.price||0)+[...box.querySelectorAll(".bAdd:checked")].reduce((s,x)=>s+(+(addons.find(a=>a.key===x.value)?.price)||0),0);if(amt&&!amt.dataset.touched)amt.value=t*(+mon.value||1)};
+   if(amt){fill();amt.addEventListener("input",()=>amt.dataset.touched="1");mon.addEventListener("change",fill);
+    req(`/api/admin/businesses/${b.id}/payments`).then(ps=>{box.querySelector(".pList").innerHTML=ps.map(p=>`<div class="item"><div class="grow"><b style="font-weight:500">${esc(String(p.amount))} ${esc(p.currency)} · ${esc(p.method||"")}</b><small>${esc(p.at)} · ${p.months} month${p.months===1?"":"s"}${p.note?" · "+esc(p.note):""}</small></div></div>`).join("")}).catch(()=>{});
+    box.querySelector('[data-act="pay"]').addEventListener("click",async e=>{e.stopPropagation();try{const r=await req(`/api/admin/businesses/${b.id}/payment`,"POST",{amount:+amt.value,months:+mon.value,method:box.querySelector(".pMeth").value,note:box.querySelector(".pNote").value,currency:planOf(box.querySelector(".bPlan").value)?.currency});toast(`Payment recorded. Paid until ${r.paid_until}.`);loadBizList?.()}catch(err){toast(err.message)}},true)}}
   box.querySelectorAll(".seg3").forEach(g=>g.addEventListener("click",e=>{const v=e.target.closest("[data-v]");if(!v)return;g.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===v));$("#cmDirty").textContent="Unsaved changes"}));
   box.onclick=async e=>{const a=e.target.closest("[data-act]");if(!a)return;const act=a.dataset.act;
     try{

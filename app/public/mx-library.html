@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MXUI Library</title>
+<link rel="stylesheet" href="mx-ui.css">
+<style>
+:root{--fu-canvas:#f5f5f5;--fu-surf:#fff;--fu-raise:#f5f5f5;--fu-line:#e8e8e8;--fu-line2:#d4d4d4;--fu-ink:#0a0a0a;--fu-ink2:#404040;--fu-mute:#737373}
+:root[data-theme="dark"]{--fu-canvas:#0a0a0a;--fu-surf:#171717;--fu-raise:#262626;--fu-line:#262626;--fu-line2:#404040;--fu-ink:#fafafa;--fu-ink2:#d4d4d4;--fu-mute:#a1a1a1}
+body{margin:0;background:var(--fu-canvas);color:var(--fu-ink);font:14px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mx-card{box-shadow:0 0 0 1px var(--fu-line),0 1px 2px rgba(0,0,0,.05)}
+body>header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:24px 24px 0;max-width:1280px;margin:0 auto}
+body>header h1{margin:0;font-size:22px;letter-spacing:-.02em}body>header p{margin:2px 0 0;color:var(--fu-mute)}
+main{padding:24px;max-width:1280px;margin:0 auto}
+</style></head><body>
+<header><div><h1>MXUI component library</h1><p>Every piece the dashboard builds from, in light and dark.</p></div><div id="th"></div></header>
+<main class="mx-page" id="lib"></main>
+<script src="mx-ui.js"></script>
+<script>
+const U = MXUI, L = document.getElementById('lib');
+const th = () => { document.getElementById('th').innerHTML = U.segmented([['light', 'Light'], ['dark', 'Dark']], document.documentElement.dataset.theme, 'Theme'); };
+document.getElementById('th').addEventListener('click', e => { const b = e.target.closest('[data-seg]'); if (!b) return; const set = () => { document.documentElement.dataset.theme = b.dataset.seg; th(); };
+  document.startViewTransition ? document.startViewTransition(set) : set(); });
+th();
+L.innerHTML = `
+<div class="mx-grid">
+ ${U.kpi({ title: 'Revenue, last 30 days', value: '$3,300', ctx: '75 visits', change: 108, vs: 'vs 30 days before', why: 'Mostly from Hair colour (+$771)', state: 'improving' })}
+ ${U.kpi({ title: 'Bookings', value: '75', ctx: 'visits', change: 97, vs: 'vs 30 days before', why: 'Wednesday is your busiest day', state: 'healthy' })}
+ ${U.kpi({ title: 'Average reply', value: '2.4s', ctx: 'from message to answer', change: 12, lowerIsBetter: true, vs: 'vs 15 days before', why: 'Slower than usual', state: 'warning' })}
+ ${U.kpi({ title: 'Questions to teach', value: '3', ctx: "Nora couldn't answer these", why: 'Answer once and it remembers', state: 'critical', action: U.button('Teach now', 'x') })}
+</div>
+<div class="mx-grid">
+ ${U.card({ title: 'Period and status', span: 4, size: 'compact', body: U.segmented([['d', 'Day'], ['w', 'Week'], ['m', 'Month']], 'w') + `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">${U.chip('Confirmed', 'healthy')}${U.chip('Waiting', 'warning')}${U.chip('Cancelled', 'critical')}${U.chip('Draft')}</div>` })}
+ ${U.card({ title: 'Time booked today', span: 4, size: 'compact', body: `<div style="display:flex;gap:20px;align-items:center">${U.radial({ pct: 40, label: 'booked' })}<div style="flex:1">${U.sparkBars([3, 5, 2, 6, 4, 7, 4])}</div></div>` })}
+ ${U.card({ title: 'Plan usage', span: 4, size: 'compact', body: U.usage({ label: 'AI messages', value: 820, max: 1000 }) + U.usage({ label: 'Staff seats', value: 3, max: 3 }) + U.usage({ label: 'Offers this month', value: 2, max: 10 }) })}
+</div>
+<div class="mx-grid">
+ ${U.card({ title: 'Revenue by service', span: 6, body: U.barList([{ label: 'Hair colour', value: 1260 }, { label: 'Facial', value: 880 }, { label: 'Haircut & blow-dry', value: 540 }, { label: 'Manicure', value: 300 }], v => '$' + v) })}
+ ${U.card({ title: 'Chats that became bookings', span: 6, body: U.funnel([{ label: 'Chats', value: 120 }, { label: 'Asked for a time', value: 64 }, { label: 'Booked', value: 41 }, { label: 'Came', value: 37 }]) })}
+</div>
+<div class="mx-grid">
+ ${U.list({ title: "Today's appointments", span: 4, meta: '4 · $200', go: 'x', rows: [U.row({ time: '10:00', title: 'Hair colour', sub: 'Fadi · 60 min', value: '$90' }), U.row({ time: '11:00', title: 'Haircut', sub: 'Aya · 60 min', value: '$35' }), U.row({ time: '12:00', title: '2 free hours', sub: 'Fill with a waitlist client', cls: 'gap' }), U.row({ time: '14:00', title: 'Facial', sub: 'Rita · 60 min', value: '$55' })] })}
+ ${U.rec({ text: '3 chats waiting for a reply', why: 'Clients are waiting for a person', label: 'Open', go: 'x', span: 4 })}
+ ${U.card({ title: 'Bookings by stage', span: 4, body: U.stages([{ label: 'Completed', value: 37 }, { label: 'Confirmed', value: 16 }, { label: 'Waiting', value: 4 }, { label: 'Cancelled', value: 3 }]) + `<div style="margin-top:auto">${U.thinking('Nora is typing')}</div>` })}
+</div>
+${U.strip({ title: 'Business health · last 30 days', go: 'x', items: [['Booked by MXAi', '$3,984', U.trend(145)], ['Chats answered alone', '100%', ''], ['Monthly goal', '6%', ''], ['Booked ahead', '$834', U.trend(-4)]] })}
+<div class="mx-grid">${U.card({ title: 'Empty state', span: 4, size: 'compact', body: U.empty('No offers sent yet', 'Your first offer will show here.') })}${U.card({ title: 'Loading', span: 4, size: 'compact', body: U.loading(3) })}${U.card({ title: 'Error', span: 4, size: 'compact', body: U.error('your numbers', 'x') })}</div>`;
+L.addEventListener('click', e => { if (e.target.closest('[data-go]')) U.toast('Buttons work here; on the dashboard they open the page'); });
+</script>
+</body></html>

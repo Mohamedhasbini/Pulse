@@ -11,6 +11,7 @@ const card=(id,title,right,body,why)=>`<div class="card glass sp-card" id="${id}
 // a card is inserted once at the top of its pane and then refreshed in place
 function put(k,id,html){const p=pane(k);if(!p)return;let c=document.getElementById(id);const t=document.createElement("div");t.innerHTML=html;
   if(c)c.replaceWith(t.firstElementChild);else{const mine=p.querySelectorAll(":scope > .sp-card"),ref=mine[mine.length-1];ref?ref.after(t.firstElementChild):p.prepend(t.firstElementChild)}}
+const tiles=xs=>`<div class="er-k" style="grid-template-columns:repeat(${xs.length},1fr)">${xs.map(([l,v,n])=>`<div><small>${l}</small><b>${v}</b>${n?`<span>${n}</span>`:""}</div>`).join("")}</div>`;
 const CH={whatsapp:"WhatsApp",telegram:"Telegram",test:"Test chat",webook:"WeBook",web:"Website",missed_call:"Missed call"};
 const KINDS={booking:"Bookings",question:"Questions",change:"Changes",complaint:"Complaints",cancel:"Cancellations",other:"Other",untagged:"Not tagged yet"};
 
@@ -23,12 +24,12 @@ async function load(){let s;try{s=await req(`/api/support?days=30${$("#incTest")
     ["Open cases",String(s.open),"","Waiting for you now"],
     ["Satisfaction",s.csat??"—",s.csat!=null&&s.csat_prev!=null?chg(s.csat,s.csat_prev,""):"",`${s.rated} ratings`]
   ].map(([t,v,c,h])=>`<div title="${h}"><small>${t}</small><b>${v}</b>${c}</div>`).join("")}</div>`);
-  put("live","spChannels",card("spChannels","Resolved by channel","30 days",s.channels.length?s.channels.map(c=>bar(CH[c.channel]||c.channel,`${pct(c.resolved)} · ${c.n}`,c.resolved)).join(""):`<p class="sub">No chats yet.</p>`));
+  put("live","spChannels",card("spChannels","Resolved by channel","30 days",s.channels.length?s.channels.map(c=>bar(CH[c.channel]||c.channel,`${pct(c.resolved)} · ${c.n}`,c.resolved)).join("")+tiles([["Chats",String(s.n||0),"30 days"],["Resolved by AI",pct(s.resolved),"all channels"],["Handed to you",String(s.reasons.reduce((a,r)=>a+r.n,0)),"see reasons"]]):`<p class="sub">No chats yet.</p>`));
   put("live","spReasons",card("spReasons","Why the AI handed over","30 days",s.reasons.length?s.reasons.map(r=>bar(r.reason.replace(/[.;].*$/,""),r.n,r.n/s.reasons[0].n*100,"var(--need)")).join(""):`<p class="sub">No handovers. The AI solved everything.</p>`));
   // Topics
   const top=s.topics,rising=[...top].filter(t=>t.n>t.prev).sort((a,b)=>(b.n-b.prev)-(a.n-a.prev)).slice(0,3);
   put("trends","spTopics",card("spTopics","What customers contact you about","30 days",top.length?`<div class="tw"><table><thead><tr><th>Topic</th><th>Chats</th><th>Trend</th><th>Solved by AI</th><th>Rating</th></tr></thead><tbody>${top.map(t=>`<tr><td>${esc(t.topic)}</td><td class="num">${t.n}</td><td class="num ${t.n>t.prev?"up":t.n<t.prev?"dn":""}">${t.prev?(t.n>=t.prev?"↑ ":"↓ ")+Math.abs(Math.round((t.n-t.prev)/t.prev*100))+"%":"new"}</td><td class="num">${pct(t.resolved)}</td><td class="num">${t.csat??"—"}</td></tr>`).join("")}</tbody></table></div>`
-    :`<p class="sub">Topics appear here as new chats come in: the AI names the subject of every conversation.</p>`));
+    :`<p class="sub">Topics appear here as new chats come in: the AI names the subject of every conversation.</p>`+tiles([["Chats",String(s.n||0),"30 days"],...s.kinds.slice(0,3).map(k=>[KINDS[k.kind]||k.kind,String(k.n),`${Math.round(k.n/Math.max(1,s.n)*100)}% of chats`])])));
   put("trends","spKinds",card("spKinds","What they want","30 days",s.kinds.map(k=>bar(KINDS[k.kind]||k.kind,k.n,k.n/Math.max(1,s.n)*100,k.kind==="complaint"?"var(--need)":k.kind==="untagged"?"var(--gp-meta)":"")).join("")
     +(rising.length?`<p class="sp-note">Rising: ${rising.map(t=>`<b>${esc(t.topic)}</b>`).join(", ")}</p>`:"")));
   // Satisfaction

@@ -344,7 +344,7 @@ html body nav .ai-chip span:not(#_):not(#__):not(#___),html body .ai-chip span:n
 :root[data-theme="light"] .pv-stack>div:last-child i:first-child,:root[data-theme="light"] .pv-week>div.on>div>i{box-shadow:inset 0 3px 0 #c6f432}
 :root[data-theme="light"] .pv-feed span{color:#15181a!important}
 :root[data-theme="light"] .pv-beat polyline{stroke:#15181a}
-html body main .pv-t td.hc:not(#_):not(#__):not(#___),html body main .pv-t tr:hover td.hc:not(#_):not(#__):not(#___){background:var(--c)!important}
+html body main .pv-t td.hc:not(#_):not(#__):not(#___),html body main .pv-t tr:hover td.hc:not(#_):not(#__):not(#___){background:var(--c)!important;transition:background var(--duration-fast, 250ms) var(--ease-smooth-out, cubic-bezier(0.22, 1, 0.36, 1))}
 
 /* motion: paused while the tab is hidden; near-instant when the system asks for reduced motion */
 html.tab-hidden *,html.tab-hidden *::before,html.tab-hidden *::after{animation-play-state:paused!important}

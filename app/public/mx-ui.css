@@ -82,3 +82,1154 @@
 @keyframes mxSk{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.mx-skel{animation:none}}
 .mx-err{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--mx-crit)}
+
+/* ── Board layer (Nov 2026): clearer cards learnt from calm admin dashboards. An icon chip opens every card, the
+   label sits under it, the figure is large with its change in a tinted pill beside it, and cards lift off the
+   canvas with a soft shadow instead of heavy borders. Graphite and silver stay; lime stays for the one action. */
+:root{--mx-r:18px;--mx-canvas:#0f1113;--mx-shadow:0 1px 2px rgba(0,0,0,.25),0 8px 24px -16px rgba(0,0,0,.5)}
+:root[data-theme="light"]{--mx-canvas:#e4e7ea;--mx-shadow:0 1px 2px rgba(16,24,32,.05),0 10px 30px -18px rgba(16,24,32,.25)}
+.mx-card{padding:20px;gap:10px;box-shadow:var(--mx-shadow);transition:box-shadow .2s,transform .2s}
+.mx-card:hover{box-shadow:var(--mx-shadow),0 0 0 1px var(--mx-line)}
+.mx-hd{flex-wrap:wrap;row-gap:12px}
+.mx-ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;margin-right:auto;color:var(--mx-ink);
+  background:var(--mx-raise);border:1px solid var(--mx-line)}
+.mx-ic svg{width:18px;height:18px}
+.mx-hd h3{order:9;flex:1 0 100%;font-size:13.5px;font-weight:500;color:var(--mx-ink2);letter-spacing:0}
+.mx-numrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mx-num{font-size:30px;font-weight:600;letter-spacing:-.025em}
+.mx-trend{display:inline-flex;align-items:center;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:600}
+.mx-trend.up{background:color-mix(in srgb,var(--mx-ok) 16%,transparent)}
+.mx-trend.down{background:color-mix(in srgb,var(--mx-crit) 14%,transparent)}
+.mx-trend.flat{background:var(--mx-raise)}
+.mx-ctx{color:var(--mx-mute);font-size:12.5px}
+.mx-why{color:var(--mx-ink2);font-size:13px;padding-top:10px;border-top:1px solid var(--mx-line);margin-top:auto}
+.mx-foot{margin-top:4px}
+.mx-meter{height:8px}
+.mx-state{border:0;background:var(--mx-raise);padding:3px 9px}
+.mx-card[data-state="critical"] .mx-state{background:color-mix(in srgb,var(--mx-crit) 14%,transparent)}
+.mx-card[data-state="warning"] .mx-state{background:color-mix(in srgb,var(--mx-warn) 16%,transparent)}
+.mx-card[data-state="healthy"] .mx-state,.mx-card[data-state="improving"] .mx-state{background:color-mix(in srgb,var(--mx-ok) 14%,transparent)}
+.mx-card[data-state="critical"],.mx-card[data-state="warning"]{box-shadow:var(--mx-shadow)}
+.mx-hd .mx-meta{background:var(--mx-raise);border-radius:8px;padding:3px 9px;font-size:12px}
+.mx-hd button.mx-link{border:1px solid var(--mx-line);border-radius:10px;padding:5px 11px;font-size:12px}
+.mx-hd button.mx-link:hover{background:var(--mx-raise)}
+/* rows: a little air and a hover, like a list you can click */
+.mx-row{padding:11px 10px;margin:0 -10px;border-radius:12px;border-top:0}
+.mx-row+.mx-row{box-shadow:0 -1px 0 var(--mx-line)}
+.mx-row[role="button"]:hover{background:var(--mx-raise);box-shadow:none}
+.mx-row[role="button"]:hover+.mx-row{box-shadow:none}
+.mx-row .mx-time{font-weight:600;color:var(--mx-ink)}
+.mx-row .mx-val{font-weight:600}
+.mx-row .mx-btn{min-height:32px;padding:0 12px;font-size:12.5px;border-radius:10px}
+.mx-row.gap{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--mx-raise) 6px 7px)}
+/* the strip becomes four small tiles, each with its own label, figure and change */
+.mx-strip{gap:12px}
+.mx-strip>div{background:var(--mx-raise);border:1px solid var(--mx-line);border-radius:14px;padding:14px 16px!important;gap:6px}
+.mx-strip>div span{font-weight:500;color:var(--mx-ink2)}
+.mx-strip b{font-size:22px;font-weight:600}
+@media (max-width:767px){.mx-strip{gap:10px}}
+.mx-card.mx-rec .mx-ic{background:#ffffff12;border-color:#ffffff1f;color:var(--mx-lime)}
+.mx-btn{border-radius:12px}
+.mx-btn.pri,.mx-btn.sig{box-shadow:0 1px 2px rgba(0,0,0,.2)}
+
+/* ── MXAi chat on the same system: solid surface, one font, a roomy composer and suggestion cards with icons */
+.pc:not(#_){--pc-serif:var(--pc-sans);--pc-acc:var(--mx-lime);--pc-acc-ink:#14181b;background:var(--pc-bg)!important;opacity:1!important;backdrop-filter:none!important}
+.pc:not(#_){--pc-bg:#121416;--pc-side:#0d0f10;--pc-raise:#1b1e21;--pc-line:#ffffff10;--pc-line2:#ffffff1e;--pc-ink:#f1f3f4;--pc-mut:#a2a8ad;--pc-dim:#71787e}
+:root[data-theme="light"] .pc:not(#_){--pc-bg:#eef0f2;--pc-side:#e4e7ea;--pc-raise:#ffffff;--pc-line:#0f141814;--pc-line2:#0f141826;--pc-ink:#0f1418;--pc-mut:#545c63;--pc-dim:#7d858c}
+.pc-side{padding:16px 12px!important;gap:6px!important}
+.pc-new{border-radius:12px!important}
+.pc-search{border-radius:12px!important}
+.pc-hello h1{font:600 32px/1.15 var(--pc-sans)!important;letter-spacing:-.025em!important}
+.pc-hello p{font-size:15px;line-height:1.55}
+.pc-in{border-radius:22px!important;padding:16px 16px 12px 20px!important;box-shadow:0 1px 2px #0000001a,0 18px 40px -22px #00000066!important}
+.pc-in textarea{font-size:15px!important;min-height:28px}
+.pc-chip{border-radius:10px!important;background:var(--pc-bg)}
+.pc-send{width:38px!important;height:38px!important;border-radius:50%!important;box-shadow:0 2px 8px -2px #c6f43280}
+.pc-sugg{gap:10px!important;margin-top:18px!important}
+.pc-sugg button{display:grid!important;grid-template-columns:auto 1fr;column-gap:12px;align-items:start;padding:14px!important;border-radius:16px!important;
+  background:var(--pc-raise);border-color:var(--pc-line)!important;box-shadow:0 1px 2px #0000000f}
+.pc-sugg button b{grid-column:2;margin:0 0 2px!important}
+.pc-sugg button:hover{border-color:var(--pc-line2)!important;transform:translateY(-1px)}
+.pc-sic{grid-row:span 2;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--pc-bg);border:1px solid var(--pc-line);color:var(--pc-ink);font-size:14px}
+.pc-main>header{border-bottom:1px solid var(--pc-line)}
+.pc-m.you .pc-b{border-radius:18px 18px 6px 18px!important}
+.mx-list{padding:0 10px;margin:0 -10px;overflow-x:hidden}
+.mx-card[data-state="warning"].mx-c12.compact .mx-why{border-top:0;padding-top:0}
+/* the chat inside light mode: older light rules reached into it, so these win explicitly */
+:root .pc:not(#_):not(#__) .pc-side{background:var(--pc-side)!important;border-right:1px solid var(--pc-line)!important}
+:root .pc:not(#_):not(#__) .pc-in textarea{background:transparent!important;border:0!important;box-shadow:none!important;outline:0;padding:4px 0!important;color:var(--pc-ink)!important}
+:root .pc:not(#_):not(#__) .pc-chip{color:var(--pc-mut)!important;background:var(--pc-bg)!important;border:1px solid var(--pc-line)!important;font-size:12px!important}
+:root .pc:not(#_):not(#__) .pc-chip i{background:#1f9a5a!important}
+:root .pc:not(#_):not(#__) .pc-send{background:var(--mx-lime)!important;color:#14181b!important;font-size:17px!important}
+:root .pc:not(#_):not(#__) .pc-search{background:var(--pc-raise)!important;border:1px solid var(--pc-line)!important;color:var(--pc-ink)!important}
+:root .pc:not(#_):not(#__) .pc-new{color:var(--pc-ink)!important}
+/* AI Control › Ask: the doorway to the assistant, drawn like its composer */
+.ask-door{max-width:760px;margin:24px auto;display:flex;flex-direction:column;gap:12px}
+.ask-open{all:unset;box-sizing:border-box;cursor:text;display:flex;align-items:center;gap:12px;padding:18px 14px 18px 22px;border-radius:22px;background:var(--mx-surf);border:1px solid var(--mx-line);box-shadow:var(--mx-shadow);color:var(--mx-mute);font-size:15px}
+.ask-open span{flex:1}.ask-open b{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--mx-lime);color:#14181b}
+.ask-open:hover{border-color:var(--mx-ink2)}
+.ask-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ask-cards button{all:unset;box-sizing:border-box;cursor:pointer;padding:14px;border-radius:16px;background:var(--mx-surf);border:1px solid var(--mx-line);font-size:13px;color:var(--mx-mute);line-height:1.4}
+.ask-cards button b{display:block;color:var(--mx-ink);font-weight:600;margin-bottom:2px}
+.ask-cards button:hover{border-color:var(--mx-ink2)}
+@media (max-width:767px){.ask-cards{grid-template-columns:1fr 1fr}}
+/* Insights › the ask bar: one composer row, the suggestions as small chips under it */
+:root .hx-ask:not(#_):not(#__){display:flex!important;flex-wrap:wrap;align-items:center;gap:8px!important;padding:12px!important;border-radius:20px!important;background:var(--mx-surf)!important;border:1px solid var(--mx-line)!important;box-shadow:var(--mx-shadow)!important;max-width:760px}
+:root .hx-ask:not(#_):not(#__) i{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--mx-raise)!important;color:var(--mx-ink)!important;font-style:normal;flex:none}
+:root .hx-ask:not(#_):not(#__) input{flex:1 1 200px!important;min-width:0;width:auto!important;background:transparent!important;border:0!important;box-shadow:none!important;font-size:15px!important;color:var(--mx-ink)!important;padding:8px 4px!important}
+:root .hx-ask:not(#_):not(#__) button{flex:none;border-radius:10px!important;padding:6px 11px!important;font-size:12.5px!important;background:var(--mx-raise)!important;border:1px solid var(--mx-line)!important;color:var(--mx-ink2)!important;min-height:0!important}
+:root .hx-ask:not(#_):not(#__) input+button{margin-left:0}
+@media (max-width:767px){:root .hx-ask:not(#_):not(#__) input{flex-basis:calc(100% - 50px)!important}}
+/* page stylesheets (report, growth) reach into cards; the card anatomy wins everywhere */
+.mx-card:not(#_):not(#__) .mx-num{font-size:30px!important;font-weight:600!important;letter-spacing:-.025em!important;line-height:1.05!important}
+.mx-card:not(#_):not(#__) .mx-trend{border:0!important;font-size:12px!important;line-height:1.4!important}
+.mx-card:not(#_):not(#__) .mx-why{font-size:13px!important;line-height:1.45!important;margin-bottom:0!important}
+.mx-card:not(#_):not(#__) .mx-ctx{font-size:12.5px!important;line-height:1.4!important}
+.mx-card:not(#_):not(#__) .mx-hd h3{font-size:13.5px!important}
+
+/* components read the one neutral scale in both themes */
+:root:not(#_){--mx-surf:var(--fu-surf,#171717);--mx-raise:var(--fu-raise,#262626);--mx-line:var(--fu-line,#262626);--mx-ink:var(--fu-ink,#fafafa);--mx-ink2:var(--fu-ink2,#d4d4d4);--mx-mute:var(--fu-mute,#a1a1a1);--mx-canvas:var(--fu-canvas,#0a0a0a)}
+:root:not([data-theme="light"]) .pc:not(#_){--pc-bg:#0a0a0a;--pc-side:#0a0a0a;--pc-raise:#171717;--pc-line:#262626;--pc-line2:#404040;--pc-ink:#fafafa;--pc-mut:#a1a1a1;--pc-dim:#737373}
+:root[data-theme="light"] .pc:not(#_){--pc-bg:#f5f5f5;--pc-side:#f5f5f5;--pc-raise:#ffffff;--pc-line:#e8e8e8;--pc-line2:#d4d4d4;--pc-ink:#0a0a0a;--pc-mut:#737373;--pc-dim:#a1a1a1}
+
+/* ── library additions: segmented, chip, usage, bar list, funnel, radial, spark bars, stages, toast, thinking */
+.mx-seg{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:var(--mx-raise)}
+.mx-seg button{all:unset;cursor:pointer;padding:6px 12px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mx-mute);transition:color .15s,background-color .15s}
+.mx-seg button:hover{color:var(--mx-ink)}
+.mx-seg button[aria-selected="true"]{background:var(--mx-surf);color:var(--mx-ink);box-shadow:0 0 0 1px var(--mx-line),0 1px 2px rgba(0,0,0,.08)}
+.mx-seg button:focus-visible{outline:2px solid var(--mx-ink);outline-offset:1px}
+.mx-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:500;background:var(--mx-raise);color:var(--mx-ink2);white-space:nowrap}
+.mx-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.9}
+.mx-chip.healthy{color:var(--mx-ok);background:color-mix(in srgb,var(--mx-ok) 13%,transparent)}
+.mx-chip.warning{color:var(--mx-warn);background:color-mix(in srgb,var(--mx-warn) 14%,transparent)}
+.mx-chip.critical{color:var(--mx-crit);background:color-mix(in srgb,var(--mx-crit) 13%,transparent)}
+.mx-use{display:flex;flex-direction:column;gap:6px}
+.mx-use-hd{display:flex;justify-content:space-between;font-size:13px;color:var(--mx-ink2)}.mx-use-hd b{font-weight:600;color:var(--mx-ink);font-variant-numeric:tabular-nums}
+.mx-use small{font-size:12px;color:var(--mx-mute)}
+.mx-use.healthy .mx-meter u{background:var(--mx-ink)}.mx-use.warning .mx-meter u{background:var(--mx-warn)}.mx-use.critical .mx-meter u{background:var(--mx-crit)}
+.mx-bars{display:flex;flex-direction:column;gap:6px}
+.mx-bar{position:relative;display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;font-size:13px}
+.mx-bar i{position:absolute;inset:0 auto 0 0;border-radius:9px;background:var(--mx-raise)}
+.mx-bar span,.mx-bar b{position:relative}.mx-bar span{flex:1;color:var(--mx-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx-bar b{font-weight:600;font-variant-numeric:tabular-nums}
+.mx-fun{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px;align-items:end}
+.mx-fun-s{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mx-fun-col{height:96px;display:flex;align-items:flex-end;border-radius:10px;background:var(--mx-raise);overflow:hidden;margin-bottom:8px}
+.mx-fun-col i{display:block;width:100%;background:var(--mx-ink);border-radius:10px 10px 0 0}
+.mx-fun-s:not(:first-child) .mx-fun-col i{opacity:.72}.mx-fun-s:nth-child(n+3) .mx-fun-col i{opacity:.5}
+.mx-fun-s b{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}.mx-fun-s span{font-size:12.5px;color:var(--mx-ink2)}.mx-fun-s small{font-size:11.5px;color:var(--mx-mute)}
+.mx-rad{position:relative;display:grid;place-items:center;flex:none}
+.mx-rad svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.mx-rad circle{fill:none;stroke-width:10}.mx-rad .tr{stroke:var(--mx-raise)}.mx-rad .fg{stroke:var(--mx-ink);stroke-linecap:round;transition:stroke-dasharray .6s cubic-bezier(.23,1,.32,1)}
+.mx-rad span{display:flex;flex-direction:column;align-items:center;line-height:1.1}.mx-rad b{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}.mx-rad small{font-size:11px;color:var(--mx-mute)}
+.mx-spark{display:flex;align-items:flex-end;gap:3px}
+.mx-spark i{flex:1;border-radius:3px;background:var(--mx-raise);min-width:3px}.mx-spark i.now{background:var(--mx-ink)}
+.mx-stg{display:flex;flex-direction:column;gap:10px}
+.mx-stg-bar{display:flex;gap:3px;height:10px}.mx-stg-bar i{border-radius:4px}
+.mx-stg .s0{background:var(--mx-ink)}.mx-stg .s1{background:var(--mx-ink2);opacity:.75}.mx-stg .s2{background:var(--mx-mute);opacity:.6}.mx-stg .s3{background:var(--mx-line)}
+.mx-stg-key{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--mx-ink2)}
+.mx-stg-key i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}.mx-stg-key b{color:var(--mx-ink);font-weight:600}.mx-stg-key small{color:var(--mx-mute)}
+.mx-toast{position:fixed;right:20px;bottom:20px;z-index:1000;max-width:360px;padding:12px 16px;border-radius:14px;background:var(--mx-ink);color:var(--mx-surf);font-size:13.5px;box-shadow:0 10px 30px -10px rgba(0,0,0,.4);
+  opacity:0;transform:translateY(8px) scale(.98);transition:opacity .2s cubic-bezier(.23,1,.32,1),transform .2s cubic-bezier(.23,1,.32,1)}
+.mx-toast.on{opacity:1;transform:none}
+@media (max-width:767px){.mx-toast{left:16px;right:16px;bottom:84px;max-width:none}}
+.mx-think{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--mx-mute)}
+.mx-think i{width:6px;height:6px;border-radius:50%;background:currentColor;animation:mxTh 1.2s infinite ease-in-out}
+.mx-think i:nth-child(2){animation-delay:.15s}.mx-think i:nth-child(3){animation-delay:.3s}.mx-think span{margin-left:6px}
+@keyframes mxTh{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
+@media (prefers-reduced-motion:reduce){.mx-think i{animation:none;opacity:.6}.mx-toast,.mx-rad .fg{transition:opacity .2s}}
+
+/* ── Inbox on the board system: three panels as cards on the canvas (folders · chats · the open chat), quiet rows
+   with one strong line each, the client's numbers as small tiles, and a composer drawn like the MXAi chat */
+:root .ib:not(#_):not(#__){gap:16px;height:calc(100vh - 150px)!important;font-size:14px;color:var(--mx-ink)}
+:root .ib:not(#_):not(#__)>:is(.ib-folders,.ib-list,.ib-read){background:var(--mx-surf)!important;border:0!important;border-radius:var(--mx-r)!important;
+  box-shadow:0 0 0 1px var(--mx-line),0 1px 2px rgba(0,0,0,.05)!important;backdrop-filter:none!important}
+/* folders: a calm vertical menu, the count as a small tile */
+:root .ib:not(#_):not(#__) .ib-folders{padding:8px!important;gap:2px!important;align-self:start}
+:root .ib:not(#_):not(#__) .ib-folders button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--mx-ink2)}
+:root .ib:not(#_):not(#__) .ib-folders button span{flex:1}
+:root .ib:not(#_):not(#__) .ib-folders button:hover{background:var(--mx-raise);color:var(--mx-ink)}
+:root .ib:not(#_):not(#__) .ib-folders button.on,:root .ib:not(#_):not(#__) .ib-folders button[aria-current],:root .ib:not(#_):not(#__) .ib-folders button[aria-pressed="true"]{background:var(--mx-raise);color:var(--mx-ink)}
+:root .ib:not(#_):not(#__) .ib-folders b{min-width:22px;padding:1px 7px;border-radius:7px;background:var(--mx-raise);font-size:11.5px;font-weight:600;color:var(--mx-mute);text-align:center;font-variant-numeric:tabular-nums}
+:root .ib:not(#_):not(#__) .ib-folders b:empty{display:none}
+/* the list: search on top, rows with avatar, name, one line, time */
+:root .ib:not(#_):not(#__) .ib-list{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+:root .ib:not(#_):not(#__) .ib-bar{display:flex;align-items:center;gap:6px;padding:12px!important;border-bottom:1px solid var(--mx-line)!important;background:none!important}
+:root .ib:not(#_):not(#__) .ib-bar input{flex:1;min-width:0;height:36px;padding:0 12px 0 34px!important;border-radius:10px!important;border:0!important;background:var(--mx-raise) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 11px center/15px!important;
+  color:var(--mx-ink)!important;font-size:13.5px!important;box-shadow:none!important}
+:root .ib:not(#_):not(#__) .ib-range{font-size:12px;color:var(--mx-mute);white-space:nowrap;font-variant-numeric:tabular-nums}
+:root .ib:not(#_):not(#__) .ib-nav{all:unset;cursor:pointer;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;color:var(--mx-ink2);font-size:16px}
+:root .ib:not(#_):not(#__) .ib-nav:hover{background:var(--mx-raise)}
+:root .ib:not(#_):not(#__) #ibRows{flex:1;overflow:auto;padding:6px}
+:root .ib:not(#_):not(#__) .ib-row{all:unset;box-sizing:border-box;cursor:pointer;width:100%;display:grid!important;grid-template-columns:36px 1fr auto;grid-template-areas:"av who at" "av what ch";column-gap:12px;row-gap:2px;
+  padding:10px!important;border-radius:12px;border:0!important;background:none!important;transition:background-color .15s}
+:root .ib:not(#_):not(#__) .ib-row+.ib-row{box-shadow:0 -1px 0 var(--mx-line)}
+:root .ib:not(#_):not(#__) .ib-row:hover,:root .ib:not(#_):not(#__) .ib-row:hover+.ib-row{box-shadow:none}
+:root .ib:not(#_):not(#__) .ib-row:hover{background:var(--mx-raise)!important}
+:root .ib:not(#_):not(#__) .ib-row.on{background:var(--mx-raise)!important;box-shadow:inset 3px 0 0 var(--mx-ink)!important}
+:root .ib:not(#_):not(#__) .ib-row:focus-visible{outline:2px solid var(--mx-ink);outline-offset:-2px}
+:root .ib:not(#_):not(#__) .ib-av{grid-area:av;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--mx-raise);color:var(--mx-ink2);font-size:12px;font-weight:600;box-shadow:inset 0 0 0 1px var(--mx-line)}
+:root .ib:not(#_):not(#__) .ib-row.on .ib-av{background:var(--mx-surf)}
+:root .ib:not(#_):not(#__) .ib-who{grid-area:who;font-size:14px;font-weight:500;color:var(--mx-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .ib:not(#_):not(#__) .ib-row.unread .ib-who{font-weight:650}
+:root .ib:not(#_):not(#__) .ib-row.unread .ib-at{color:var(--mx-ink);font-weight:600}
+:root .ib:not(#_):not(#__) .ib-what{grid-area:what;display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;color:var(--mx-mute)}
+:root .ib:not(#_):not(#__) .ib-snip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .ib:not(#_):not(#__) .ib-what .chip{flex:none;font-style:normal;font-size:11px;font-weight:600;padding:1px 7px;border-radius:6px;border:0;background:var(--mx-raise);color:var(--mx-ink2)}
+:root .ib:not(#_):not(#__) .ib-what .chip.need{color:var(--mx-warn);background:color-mix(in srgb,var(--mx-warn) 15%,transparent)}
+:root .ib:not(#_):not(#__) .ib-at{grid-area:at;font-size:12px;color:var(--mx-mute);text-align:right;font-variant-numeric:tabular-nums}
+:root .ib:not(#_):not(#__) .ib-ch{grid-area:ch;font-size:11px;color:var(--mx-mute);text-align:right}
+:root .ib:not(#_):not(#__) .ib-none,:root .ib:not(#_):not(#__) .ib-empty{padding:40px 20px;text-align:center;color:var(--mx-mute);font-size:13.5px}
+/* the open chat: header with actions, the client in three tiles, the thread, the composer */
+:root .ib:not(#_):not(#__) .ib-read{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+:root .ib:not(#_):not(#__) .ib-head{display:flex;align-items:center;gap:12px;padding:14px 16px!important;border-bottom:1px solid var(--mx-line)!important;background:none!important}
+:root .ib:not(#_):not(#__) .ib-head>div:not(.ib-acts){flex:1;min-width:0}
+:root .ib:not(#_):not(#__) .ib-head h2{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--mx-ink)}
+:root .ib:not(#_):not(#__) .ib-head small{display:block;font-size:12.5px;color:var(--mx-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .ib:not(#_):not(#__) .ib-acts{display:flex;gap:6px}
+:root .ib:not(#_):not(#__) .ib-read .btn{min-height:34px;padding:0 13px!important;border-radius:10px!important;font-size:13px!important;font-weight:500!important;background:var(--mx-ink)!important;color:var(--mx-surf)!important;border:0!important;box-shadow:none!important}
+:root .ib:not(#_):not(#__) .ib-read .btn.ghost{background:var(--mx-surf)!important;color:var(--mx-ink)!important;box-shadow:0 0 0 1px var(--mx-line)!important}
+:root .ib:not(#_):not(#__) .ib-read .btn.ghost:hover{background:var(--mx-raise)!important}
+:root .ib:not(#_):not(#__) .ib-cust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px 16px!important;border-bottom:1px solid var(--mx-line)!important;background:none!important}
+:root .ib:not(#_):not(#__) .ib-cust:empty{display:none}
+:root .ib:not(#_):not(#__) .ib-cust span{padding:8px 10px;border-radius:10px;background:var(--mx-raise);font-size:12px;color:var(--mx-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .ib:not(#_):not(#__) .ib-cust b{display:block;font-size:15px;font-weight:600;color:var(--mx-ink);font-variant-numeric:tabular-nums}
+:root .ib:not(#_):not(#__) .ib-msgs{flex:1;overflow:auto;padding:16px!important;display:flex;flex-direction:column;gap:10px;background:none!important}
+:root .ib:not(#_):not(#__) .ib-m{max-width:78%;display:flex;flex-direction:column;gap:3px}
+:root .ib:not(#_):not(#__) .ib-m p{margin:0;padding:9px 13px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-wrap;background:var(--mx-raise)!important;color:var(--mx-ink)!important;border:0!important}
+:root .ib:not(#_):not(#__) .ib-m.customer{align-self:flex-start}
+:root .ib:not(#_):not(#__) .ib-m.customer p{border-radius:16px 16px 16px 6px}
+:root .ib:not(#_):not(#__) .ib-m:is(.assistant,.staff){align-self:flex-end;align-items:flex-end}
+:root .ib:not(#_):not(#__) .ib-m:is(.assistant,.staff) p{border-radius:16px 16px 6px 16px;background:var(--mx-ink)!important;color:var(--mx-surf)!important}
+:root .ib:not(#_):not(#__) .ib-m.staff p{box-shadow:inset 0 0 0 1.5px var(--mx-lime)}
+:root .ib:not(#_):not(#__) .ib-m small{font-size:11.5px;color:var(--mx-mute);padding:0 4px}
+:root .ib:not(#_):not(#__) .ib-why{font-size:12.5px;color:var(--mx-ink2);max-width:100%}
+:root .ib:not(#_):not(#__) .ib-why summary{cursor:pointer;color:var(--mx-mute);padding:0 4px}
+:root .ib:not(#_):not(#__) .ib-why[open]{padding:10px 12px;border-radius:12px;background:var(--mx-surf);box-shadow:0 0 0 1px var(--mx-line)}
+:root .ib:not(#_):not(#__) .ib-why dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0}
+:root .ib:not(#_):not(#__) .ib-why dt{color:var(--mx-mute)}
+:root .ib:not(#_):not(#__) .ib-reply{display:flex;align-items:center;gap:8px;margin:12px!important;padding:6px 6px 6px 16px!important;border-radius:18px!important;background:var(--mx-surf)!important;
+  box-shadow:0 0 0 1px var(--mx-line2,var(--mx-line)),0 6px 18px -12px rgba(0,0,0,.35)!important;border:0!important}
+:root .ib:not(#_):not(#__) .ib-reply input{flex:1;min-width:0;height:36px;border:0!important;background:transparent!important;box-shadow:none!important;outline:0;font-size:14px!important;color:var(--mx-ink)!important;padding:0!important}
+:root .ib:not(#_):not(#__) .ib-reply .btn{min-height:36px;border-radius:12px!important;background:var(--mx-lime)!important;color:#14181b!important;font-weight:600!important}
+:root .ib:not(#_):not(#__) .ib-back{all:unset;cursor:pointer;display:none;width:32px;height:32px;place-items:center;border-radius:9px}
+:root .ib:not(#_):not(#__) .ib-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+@media (max-width:900px){
+  :root .ib:not(#_):not(#__){height:auto!important;gap:12px}
+  :root .ib:not(#_):not(#__) .ib-folders{flex-direction:row;overflow-x:auto;padding:6px!important}
+  :root .ib:not(#_):not(#__) .ib-folders button{white-space:nowrap;flex:none}
+  :root .ib:not(#_):not(#__) .ib-back{display:grid}
+  :root .ib:not(#_):not(#__) .ib-read{min-height:70vh}
+  :root .ib:not(#_):not(#__) .ib-m{max-width:88%}
+}
+/* Inbox fixes after the first look: the list has its own search, so the header one goes; older rules set four
+   row columns and grey folder buttons, these win */
+#p10-inbox .hx-greet>:is(.hx-smart,.hx-sugg){display:none!important}
+:root .ib:not(#_):not(#__) .ib-row{grid-template-columns:36px minmax(0,1fr) auto!important;grid-template-areas:"av who at" "av what ch"!important}
+:root .ib:not(#_):not(#__) .ib-row>*{grid-column:auto!important;grid-row:auto!important}
+:root .ib:not(#_):not(#__) .ib-row>.ib-av{grid-area:av!important}:root .ib:not(#_):not(#__) .ib-row>.ib-who{grid-area:who!important}
+:root .ib:not(#_):not(#__) .ib-row>.ib-what{grid-area:what!important}:root .ib:not(#_):not(#__) .ib-row>.ib-at{grid-area:at!important}:root .ib:not(#_):not(#__) .ib-row>.ib-ch{grid-area:ch!important}
+:root .ib:not(#_):not(#__) .ib-row:not(.on):not(:hover){background:transparent!important}
+:root .ib:not(#_):not(#__) .ib-folders button{background:transparent!important;border:0!important;box-shadow:none!important}
+:root .ib:not(#_):not(#__) .ib-folders button:hover,:root .ib:not(#_):not(#__) .ib-folders button[aria-current="true"]{background:var(--mx-raise)!important;color:var(--mx-ink)!important}
+:root .ib:not(#_):not(#__) .ib-folders button[aria-current="true"] b{background:var(--mx-surf)}
+:root .ib:not(#_):not(#__) .ib-folders button span{color:inherit!important}
+:root .ib:not(#_):not(#__) .ib-bar input{background-color:var(--mx-raise)!important}
+
+/* ── Calendar on the board system: side panel and grid as cards, one Day/Week/Month switch (inside the grid),
+   bookings as soft tiles tinted by their service with a solid edge, today marked in ink not green */
+#p10-calendar .p10-bar>.hx-chips{display:none!important}
+:root .gc:not(#_):not(#__){gap:16px!important}
+:root .gc:not(#_):not(#__) :is(.gc-side,.gc-main){background:var(--mx-surf)!important;border:0!important;border-radius:var(--mx-r)!important;box-shadow:0 0 0 1px var(--mx-line),0 1px 2px rgba(0,0,0,.05)!important;backdrop-filter:none!important}
+:root .gc:not(#_):not(#__) .gc-side{padding:14px!important;display:flex;flex-direction:column;gap:14px;align-self:start}
+:root .gc:not(#_):not(#__) .gc-side .btn{border-radius:12px!important;min-height:38px;font-weight:600!important}
+:root .gc:not(#_):not(#__) .gc-side .btn:not(.gc-new){background:var(--mx-surf)!important;color:var(--mx-ink)!important;box-shadow:0 0 0 1px var(--mx-line)!important;border:0!important}
+/* the small month: plain numbers, today an ink dot, days with bookings underlined by a dot, the shown range a soft band */
+:root .gc:not(#_):not(#__) .gc-mini-h{font-size:13px;font-weight:600;color:var(--mx-ink)}
+:root .gc:not(#_):not(#__) .gc-mini-h button{all:unset;cursor:pointer;width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:var(--mx-ink2)}
+:root .gc:not(#_):not(#__) .gc-mini-h button:hover{background:var(--mx-raise)}
+:root .gc:not(#_):not(#__) .gc-mini-g>*{border-radius:8px!important;font-size:12px;color:var(--mx-ink2);background:none!important;font-variant-numeric:tabular-nums}
+:root .gc:not(#_):not(#__) .gc-mini-g .out{color:var(--mx-mute);opacity:.6}
+:root .gc:not(#_):not(#__) .gc-mini-g .inrange{background:var(--mx-raise)!important;color:var(--mx-ink)}
+:root .gc:not(#_):not(#__) .gc-mini-g .today{background:var(--mx-ink)!important;color:var(--mx-surf)!important;font-weight:600}
+:root .gc:not(#_):not(#__) .gc-mini-g .busy{text-decoration:none;position:relative}
+:root .gc:not(#_):not(#__) .gc-mini-g button:hover{background:var(--mx-raise)!important}
+:root .gc:not(#_):not(#__) .gc-legend{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--mx-ink2)}
+:root .gc:not(#_):not(#__) .gc-legend i{width:10px;height:10px;border-radius:3px;margin-right:8px}
+/* the grid card: toolbar, day heads, hour lines */
+:root .gc:not(#_):not(#__) .gc-main{overflow:hidden}
+:root .gc:not(#_):not(#__) .gc-head{padding:12px 14px!important;border-bottom:1px solid var(--mx-line)!important;background:none!important;gap:8px}
+:root .gc:not(#_):not(#__) .gc-head h2,:root .gc:not(#_):not(#__) .gc-head b{font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--mx-ink)}
+:root .gc:not(#_):not(#__) .gc-head .btn,:root .gc:not(#_):not(#__) .gc-arrow{all:unset;cursor:pointer;height:32px;min-width:32px;padding:0 10px;box-sizing:border-box;display:inline-grid;place-items:center;border-radius:10px;font-size:13px;font-weight:500;color:var(--mx-ink);box-shadow:0 0 0 1px var(--mx-line)}
+:root .gc:not(#_):not(#__) .gc-arrow{box-shadow:none;padding:0}
+:root .gc:not(#_):not(#__) :is(.gc-head .btn,.gc-arrow):hover{background:var(--mx-raise)}
+:root .gc:not(#_):not(#__) .gc-views{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:var(--mx-raise)!important;border:0!important}
+:root .gc:not(#_):not(#__) .gc-views button{all:unset;cursor:pointer;padding:6px 12px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mx-mute)}
+:root .gc:not(#_):not(#__) .gc-views button:hover{color:var(--mx-ink)}
+:root .gc:not(#_):not(#__) .gc-views :is(button.on,button[aria-pressed="true"],button[aria-selected="true"]){background:var(--mx-surf)!important;color:var(--mx-ink)!important;box-shadow:0 0 0 1px var(--mx-line),0 1px 2px rgba(0,0,0,.08)}
+:root .gc:not(#_):not(#__) .gc-dh{font-size:12px;color:var(--mx-mute);background:none!important;border-color:var(--mx-line)!important}
+:root .gc:not(#_):not(#__) .gc-dh b{font-size:15px;font-weight:600;color:var(--mx-ink);margin-left:4px;font-variant-numeric:tabular-nums}
+:root .gc:not(#_):not(#__) .gc-dh.today b{display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:50%;background:var(--mx-ink)!important;color:var(--mx-surf)!important}
+:root .gc:not(#_):not(#__) .gc-col.today{background:color-mix(in srgb,var(--mx-ink) 3%,transparent)!important}
+:root .gc:not(#_):not(#__) :is(.gc-col,.gc-grid,.gc-times,.gc-corner){border-color:var(--mx-line)!important}
+:root .gc:not(#_):not(#__) .gc-times{font-family:inherit!important;font-size:11.5px!important;color:var(--mx-mute)!important;font-variant-numeric:tabular-nums}
+:root .gc:not(#_):not(#__) .gc-now{background:var(--mx-crit)!important;height:2px!important}
+/* bookings: tinted tile, solid service edge, name strong, service quiet */
+:root .gc:not(#_):not(#__) .gc-b{background:color-mix(in srgb,var(--c,#737373) 14%,var(--mx-surf))!important;border:0!important;border-radius:8px!important;
+  box-shadow:inset 3px 0 0 var(--c,#737373)!important;color:var(--mx-ink)!important;padding:4px 8px 4px 10px!important;text-align:left;font-size:11.5px;line-height:1.3;overflow:hidden}
+:root .gc:not(#_):not(#__) .gc-b b{font-weight:600;font-size:12px;color:var(--mx-ink)}
+:root .gc:not(#_):not(#__) .gc-b:hover{background:color-mix(in srgb,var(--c,#737373) 22%,var(--mx-surf))!important}
+:root .gc:not(#_):not(#__) .gc-b:focus-visible{outline:2px solid var(--mx-ink);outline-offset:1px}
+:root .gc:not(#_):not(#__) .gc-off,.gc-off-b{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--mx-raise) 6px 7px)!important}
+/* month view */
+:root .gc:not(#_):not(#__) .gc-mh{font-size:12px;color:var(--mx-mute);background:none!important}
+:root .gc:not(#_):not(#__) .gc-md{border-color:var(--mx-line)!important;background:none!important}
+:root .gc:not(#_):not(#__) .gc-md.out{opacity:.5}
+:root .gc:not(#_):not(#__) .gc-md.today>:first-child{background:var(--mx-ink)!important;color:var(--mx-surf)!important;border-radius:50%}
+:root .gc:not(#_):not(#__) .gc-chip{border-radius:6px!important;background:color-mix(in srgb,var(--c,#737373) 14%,var(--mx-surf))!important;box-shadow:inset 2px 0 0 var(--c,#737373);color:var(--mx-ink)!important;border:0!important}
+:root .gc:not(#_):not(#__) .gc-badge{border-radius:7px!important;background:var(--mx-raise)!important;color:var(--mx-ink2)!important}
+/* light mode panels follow the cards: #f7f7f7, no edge (Inbox, Calendar, chat inputs keep white inside) */
+:root[data-theme="light"] .ib:not(#_):not(#__)>:is(.ib-folders,.ib-list,.ib-read),:root[data-theme="light"] .gc:not(#_):not(#__) :is(.gc-side,.gc-main){box-shadow:none!important;border-radius:16px!important}
+:root[data-theme="light"] .mx-card:not(#_){box-shadow:none}
+:root[data-theme="light"] .mx-strip>div{border-color:transparent!important}
+/* Block time is a button, not an off-hours band */
+:root .gc:not(#_):not(#__) .btn.gc-off{background:var(--mx-surf)!important}
+:root[data-theme="light"] .gc:not(#_):not(#__) .btn.gc-off{background:#fff!important}
+:root[data-theme="light"]{--mx-shadow:none}
+:root[data-theme="light"] .hx-ask:not(#_):not(#__){box-shadow:none!important;border-color:transparent!important;border-radius:16px!important}
+
+/* ── summary charts: columns, area, heat, table (inner pieces sit on the card's own surface) */
+.mx-axis{display:flex;flex-direction:column;justify-content:space-between;height:var(--h);padding-bottom:22px;font-size:11px;color:var(--mx-mute);text-align:right;min-width:34px;font-variant-numeric:tabular-nums}
+.mx-cols,.mx-area{display:flex;gap:10px;margin-top:6px}
+.mx-cols-in{flex:1;display:flex;gap:6px;height:var(--h);min-width:0}
+.mx-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.mx-col-t{flex:1;width:100%;max-width:44px;border-radius:9px;background:var(--mx-raise);display:flex;align-items:flex-end;overflow:hidden}
+.mx-col-t i{display:block;width:100%;border-radius:9px;background:var(--mx-ink2);opacity:.85;transition:height .5s cubic-bezier(.23,1,.32,1)}
+.mx-col.now .mx-col-t i{background:var(--mx-lime);opacity:1}
+:root[data-theme="light"] .mx-col.now .mx-col-t i{background:#0a0a0a}
+.mx-col span{font-size:11px;color:var(--mx-mute);white-space:nowrap}
+.mx-col:hover .mx-col-t i{opacity:1}
+.mx-area-in{flex:1;position:relative;height:var(--h);min-width:0}
+.mx-area-in svg{position:absolute;inset:0 0 22px 0;width:100%;height:calc(100% - 22px);overflow:visible}
+.mx-area .f{fill:color-mix(in srgb,var(--mx-ink) 9%,transparent)}
+.mx-area .l{fill:none;stroke:var(--mx-ink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.mx-xl{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;font-size:11px;color:var(--mx-mute)}
+.mx-heat{display:grid;grid-template-columns:auto repeat(var(--c),minmax(0,1fr));gap:4px;align-items:center}
+.mx-heat b{font-size:10.5px;font-weight:500;color:var(--mx-mute);text-align:center;white-space:nowrap}
+.mx-heat>b:nth-child(n){text-align:left}
+.mx-heat i{aspect-ratio:1;max-height:16px;border-radius:5px;background:var(--mx-raise);position:relative;overflow:hidden}
+.mx-heat i::after{content:"";position:absolute;inset:0;background:var(--mx-ink);opacity:var(--a)}
+.mx-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.mx-tiles>div{background:var(--mx-raise);border-radius:12px;padding:10px 12px;min-width:0}
+.mx-tiles b{display:block;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--mx-ink);white-space:nowrap}
+.mx-tiles span{font-size:12px;color:var(--mx-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+:root[data-theme="light"] .mx-tiles>div{background:#fff}
+.mx-tbl{overflow-x:auto;margin:0 -4px}
+.mx-tbl table{width:100%;border-collapse:collapse;font-size:13.5px}
+.mx-tbl th{text-align:left;font-size:12px;font-weight:500;color:var(--mx-mute);padding:8px 12px;border-bottom:1px solid var(--mx-line);white-space:nowrap}
+.mx-tbl td{padding:11px 12px;border-bottom:1px solid var(--mx-line);color:var(--mx-ink);white-space:nowrap}
+.mx-tbl tr:last-child td{border-bottom:0}
+.mx-tbl tbody tr[data-go]{cursor:pointer}.mx-tbl tbody tr[data-go]:hover td{background:var(--mx-raise)}
+:root[data-theme="light"] .mx-tbl tbody tr[data-go]:hover td{background:#fff}
+.mx-tbl td:last-child,.mx-tbl th:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.mx-tbl .who{display:flex;align-items:center;gap:10px}.mx-tbl .who i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--mx-raise);font-style:normal;font-size:11px;font-weight:600;color:var(--mx-ink2)}
+:root[data-theme="light"] .mx-tbl .who i{background:#fff}
+.mx-hd .mx-seg{order:2}
+.mx-big{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.mx-big b{font-size:30px;font-weight:600;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.mx-rec-row{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--mx-ink);color:var(--mx-surf);margin-bottom:6px}
+.mx-rec-row p{margin:0;flex:1;font-size:13.5px;line-height:1.4}.mx-rec-row small{display:block;opacity:.7;font-size:12px}
+.mx-rec-row .mx-btn{background:var(--mx-lime)!important;color:#14181b!important;border:0}
+@media (max-width:767px){.mx-tiles{grid-template-columns:1fr 1fr}.mx-cols-in{gap:3px}.mx-col span{font-size:10px}}
+.mx-heat{gap:3px 4px}.mx-heat i{aspect-ratio:auto;height:14px;max-height:none;border-radius:4px}
+:root[data-theme="light"] .mx-heat i{background:#fff}
+/* page switches are instant: no slide-in for the page, no replayed rise/grow/draw on charts (they made every tab
+   switch look like it loaded twice) */
+main>section.wrap:not([hidden]),main>section.wrap:not([hidden])>*{animation:none!important}
+.pv-c,.pv-bar i,.pv-stack i,.pv-code i,.pv-sbars i,.hx,.hx *{animation:none!important}
+.pv-area polyline,.pv-sp polyline{stroke-dashoffset:0!important;animation:none!important}
+main>section.hx-wait{visibility:hidden}
+
+/* ── chart colours (after the BoardUI finance and marketing templates): one fresh green leads (our lime), then blue,
+   purple, pink and yellow for further series. Text stays neutral; colour is only for marks */
+:root:not(#_):not(#__){--mx-s1:#c6f432;--mx-s2:#60a5fa;--mx-s3:#c084fc;--mx-s4:#f472b6;--mx-s5:#facc15;--mx-s1-ink:#14181b}
+:root[data-theme="light"]:not(#_):not(#__){--mx-s1:#9be31a;--mx-s2:#3b82f6;--mx-s3:#a855f7;--mx-s4:#ec4899;--mx-s5:#eab308}
+/* the older Insights charts read --pv-lime / --pv-silver: lead in green, second series in blue */
+:root:not(#_):not(#__):not(#___){--pv-lime:var(--mx-s1);--pv-silver:var(--mx-s2);--pv-track:var(--mx-raise)}
+:root[data-theme="light"]:not(#_):not(#__):not(#___){--pv-track:#fff}
+/* columns: green bars on a soft track; the current period a touch deeper */
+.mx-col-t i{background:var(--mx-s1)!important;opacity:.95}
+.mx-col.now .mx-col-t i,:root[data-theme="light"] .mx-col.now .mx-col-t i{background:var(--mx-s1)!important;opacity:1;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--mx-ink) 18%,transparent)}
+:root[data-theme="light"] .mx-col-t{background:#fff}
+/* area: green line with a fill that fades downwards */
+.mx-area .l{stroke:var(--mx-s1)!important;stroke-width:2.5}
+.mx-area .f{fill:url(#mxAreaG)!important}
+:root[data-theme="light"] .mx-area .l{stroke:#65a30d!important}
+/* heat: purple steps, like the activity grid */
+.mx-heat i::after{background:var(--mx-s3)!important}
+/* funnel, stages, spark and radial pick up the series colours */
+.mx-fun-s:nth-child(1) .mx-fun-col i{background:var(--mx-s1)}.mx-fun-s:nth-child(2) .mx-fun-col i{background:var(--mx-s2);opacity:1}
+.mx-fun-s:nth-child(3) .mx-fun-col i{background:var(--mx-s3);opacity:1}.mx-fun-s:nth-child(4) .mx-fun-col i{background:var(--mx-s4);opacity:1}
+.mx-stg .s0{background:var(--mx-s1)}.mx-stg .s1{background:var(--mx-s2);opacity:1}.mx-stg .s2{background:var(--mx-s3);opacity:1}.mx-stg .s3{background:var(--mx-s4);opacity:1}
+.mx-spark i.now{background:var(--mx-s1)}.mx-rad .fg{stroke:var(--mx-s1)}
+.mx-bar i{background:color-mix(in srgb,var(--mx-s2) 22%,var(--mx-raise))}
+/* rings: one ring per series, outermost first, each a share of its own total */
+.mx-rings{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.mx-rings svg{width:170px;height:170px;flex:none;transform:rotate(-90deg)}
+.mx-rings circle{fill:none;stroke-width:9;stroke-linecap:round}.mx-rings .tr{stroke:var(--mx-raise)}
+:root[data-theme="light"] .mx-rings .tr{stroke:#fff}
+.mx-key{display:flex;flex-direction:column;gap:8px;font-size:13px;min-width:0;flex:1}
+.mx-key span{display:flex;align-items:center;gap:8px;color:var(--mx-ink2);white-space:nowrap}
+.mx-key i{width:10px;height:10px;border-radius:3px;flex:none}.mx-key b{margin-left:auto;color:var(--mx-ink);font-weight:600;font-variant-numeric:tabular-nums}
+:root[data-theme="light"] .mx-seg{background:#ebebeb}:root[data-theme="light"] .mx-seg button[aria-selected="true"]{background:#fff!important;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+:root:not(#_):not(#__):not(#___) body{--pv-lime:var(--mx-s1);--pv-silver:var(--mx-s2);--pv-track:var(--mx-raise);--d1:var(--mx-s1);--d2:var(--mx-s2);--d3:var(--mx-s5);--d4:var(--mx-s3)}
+:root[data-theme="light"]:not(#_):not(#__):not(#___) body{--pv-track:#fff}
+.rp-cell .pv-heat b{border-radius:6px!important}
+/* no page header: each page opens on its own tab row (tabs on the left, what needs you on the right), then content */
+:root .hx:not(#_):not(#__) .hx-greet,:root .hx:not(#_):not(#__) .hx-folders,:root .hx:not(#_):not(#__) .hx-stats{display:none!important}
+:root .hx:not(#_):not(#__){padding:0!important;margin:0 0 12px!important;min-height:0!important;background:none!important;border:0!important;box-shadow:none!important}
+:root .hx:not(#_):not(#__) .hx-in{padding:0!important;margin:0!important;gap:0!important;min-height:0!important;display:block!important}
+:root .p10-bar:not(#_):not(#__){display:flex!important;align-items:center;gap:10px;flex-wrap:wrap;margin:0!important;padding:0!important;border:0!important;background:none!important;min-height:0}
+:root .p10-bar:not(#_):not(#__) .p10-purpose{display:none!important}
+:root .p10-bar:not(#_):not(#__) .p10-need{order:3;margin-left:auto}
+:root .p10-bar:not(#_):not(#__) .pa-switch{order:1;margin:0!important}
+:root .p10-bar:not(#_):not(#__) .set-ix{order:2}
+main>section>.top{display:none!important}
+/* pages use the whole width, with one 12px rhythm between blocks */
+:root main:not(#_){padding:12px 12px 76px!important}
+:root .mx-page:not(#_),:root .rp:not(#_){max-width:none!important;gap:12px!important}
+:root .mx-grid:not(#_){gap:12px!important}
+:root .rp:not(#_)>*+*{margin-top:12px}
+:root .mx-bars:not(#_):not(#__) .mx-bar i{background:color-mix(in srgb,var(--mx-s2) 20%,transparent)!important;border:0!important}
+:root[data-theme="light"] .mx-bars:not(#_):not(#__) .mx-bar i{background:color-mix(in srgb,var(--mx-s2) 16%,#fff)!important}
+/* the tab row sits right under the top bar */
+:root .hx:not(#_):not(#__)+.top,:root main>section>.hx:first-child{margin-top:0!important}
+:root main>section.wrap:not(#_){padding-top:0!important}
+html body main .hx:not(#_):not(#__):not(#___):not(#____){height:auto!important;min-height:0!important;padding:0!important;margin:0 0 12px!important}
+html body main .hx:not(#_):not(#__):not(#___):not(#____)>*{margin-top:0!important;padding-top:0!important;min-height:0!important}
+html body main .p10-bar:not(#_):not(#__):not(#___):not(#____){margin:0!important;padding:0!important}
+html body main .hx:not(#_):not(#__):not(#___):not(#____)::before,html body main .hx:not(#_):not(#__):not(#___):not(#____)::after{display:none!important}
+/* ── Growth › Offers: the overview carries the numbers and charts, so this tab opens on making an offer:
+   the campaign studio, the ranked next campaigns, then sent offers, codes and agents */
+#mkRoot:not(#_)>:is(.mk-hero-band,.mk-insights,.mk-row2){display:none!important}
+#mkRoot:not(#_){display:flex!important;flex-direction:column;gap:12px}
+#mkRoot:not(#_)>.mk-bar-top{order:0}#mkRoot:not(#_)>.mk-wide{order:1}#mkRoot:not(#_)>.mk-row2b{order:2}#mkRoot:not(#_)>.mk-grid2{order:3}
+#mkRoot:not(#_)>*{margin:0!important}
+/* ── Growth › Automations: the activity log is a short scrolling box, not a 1,300px wall */
+#agents:not(#_) #agLog{max-height:340px;overflow:auto}
+#agents:not(#_)>*+*{margin-top:12px!important}
+/* ── older cards everywhere take the board card: one surface, 16px corners, no edge, no blur, no glow */
+:root main:not(#_):not(#__) :is(.card,.card.glass,.mk-card,.mk-band,.desk-c,.ag,.spane .row>*,.hx-cc,.pv-c){background:var(--mx-surf)!important;border:0!important;border-radius:16px!important;
+  box-shadow:none!important;backdrop-filter:none!important;background-image:none!important}
+:root:not([data-theme="light"]) main:not(#_):not(#__) :is(.card,.card.glass,.mk-card,.mk-band,.desk-c,.ag,.spane .row>*,.pv-c){box-shadow:0 0 0 1px var(--mx-line)!important}
+:root[data-theme="light"] main:not(#_):not(#__) :is(.card,.mk-card,.desk-c,.ag,.pv-c) :is(.card,.mk-card,.row-in,li,.ag-in){background:#fff!important}
+/* inner tiles (campaign templates, autopilot switches, next-campaign cards) sit on the card: white in light, one step up in dark */
+:root main:not(#_):not(#__) :is(.mk-sc,.ap-row,.mk-next>*,.mk-row2b .mk-card>div>div,.mk-aud li){background:var(--mx-raise)!important;border:0!important;box-shadow:none!important;border-radius:12px!important}
+:root[data-theme="light"] main:not(#_):not(#__) :is(.mk-sc,.ap-row,.mk-next>*,.mk-row2b .mk-card>div>div,.mk-aud li){background:#fff!important}
+/* ── Customers › Clients: the summary above replaces the old figure row; the list is a box that scrolls with its
+   headings in view, so the page stays one screen of meaning instead of 4,600px of rows */
+#people:not(#_) #pplKpis{display:none!important}
+#people:not(#_) .spane>#cuSum{margin-bottom:12px}
+#people:not(#_) .spane>.card{max-height:640px;overflow:auto;padding-top:0!important}
+#people:not(#_) .spane>.card thead th{position:sticky;top:0;z-index:1;background:var(--mx-surf)!important}
+#people:not(#_) .spane>.card tbody tr{background:transparent!important}
+#people:not(#_) .spane>.card tbody td{border-bottom:1px solid var(--mx-line)!important;background:transparent!important}
+:root[data-theme="light"] #people:not(#_) .spane>.card tbody tr:hover td{background:#fff!important}
+/* ── Settings: one part at a time (Business, Channels, Booking with codes, Account with developer, Look with the
+   dashboard), chosen from a row of tabs; forms on the board card with quiet fields */
+#setup[data-part]:not(#_):not(#__):not(#___):not(#____)>.spane{display:none!important}
+#setup[data-part="details"]:not(#_):not(#__):not(#___):not(#____)>.spane[data-pane="details"],#setup[data-part="channels"]:not(#_):not(#__):not(#___):not(#____)>.spane[data-pane="channels"],
+#setup[data-part="booking"]:not(#_):not(#__):not(#___):not(#____)>.spane:is([data-pane="booking"],[data-pane="codes"]),#setup[data-part="s2fa"]:not(#_):not(#__):not(#___):not(#____)>.spane:is([data-pane="s2fa"],[data-pane="sdev"]),
+#setup[data-part="look"]:not(#_):not(#__):not(#___):not(#____)>.spane:is([data-pane="look"],[data-pane="dash"]){display:block!important}
+#setup:not(#_)>.spane+.spane{margin-top:12px}
+:root .set-ix:not(#_){display:inline-flex!important;gap:2px;padding:3px;border-radius:12px;background:var(--mx-raise);flex-wrap:wrap}
+:root[data-theme="light"] .set-ix:not(#_){background:#ebebeb}
+:root .set-ix:not(#_) button{all:unset;cursor:pointer;padding:6px 12px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mx-mute)}
+:root .set-ix:not(#_) button:hover{color:var(--mx-ink)}
+:root .set-ix:not(#_) button[aria-current="true"]{background:var(--mx-surf);color:var(--mx-ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+:root[data-theme="light"] .set-ix:not(#_) button[aria-current="true"]{background:#fff}
+/* form fields: quiet, rounded, white on the grey card in light, one step up in dark */
+:root #setup:not(#_):not(#__) :is(input:not([type=checkbox]):not([type=radio]):not([type=color]),select,textarea){background:var(--mx-raise)!important;border:1px solid transparent!important;border-radius:10px!important;
+  box-shadow:none!important;color:var(--mx-ink)!important;font-size:13.5px!important;padding:8px 12px!important;min-height:38px}
+:root[data-theme="light"] #setup:not(#_):not(#__) :is(input:not([type=checkbox]):not([type=radio]):not([type=color]),select,textarea){background:#fff!important;border-color:#ebebeb!important}
+:root #setup:not(#_):not(#__) :is(input,select,textarea):focus{outline:2px solid var(--mx-ink)!important;outline-offset:1px}
+:root #setup:not(#_):not(#__) .spane>h2,:root #setup:not(#_):not(#__) .spane>h3{font-size:16px;font-weight:600;letter-spacing:-.01em;margin:4px 0 6px}
+:root #setup:not(#_):not(#__) label{color:var(--mx-ink2)}
+/* phone bar: every page in one row that scrolls sideways, instead of four pages and a More sheet */
+@media (max-width:767px){
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__){display:flex!important;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;gap:2px}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__)::-webkit-scrollbar{display:none}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .p10[data-p10]{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;
+    flex:0 0 76px;min-height:50px;padding:4px 2px!important;border-radius:12px;font-size:11px!important;font-weight:500;color:var(--mx-mute)!important;background:none!important;border:0!important;scroll-snap-align:start}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .p10[data-p10][aria-current="true"]{color:var(--mx-ink)!important;background:var(--mx-raise)!important}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .ph-more{display:none!important}
+}
+/* phone pass: rings stack above their legend, legends truncate, the client list box keeps its height, need pills wrap */
+@media (max-width:767px){
+  .mx-rings{flex-direction:column;align-items:stretch}.mx-rings svg{align-self:center;width:150px;height:150px}
+  .mx-key span{min-width:0}.mx-key span>:not(b):not(i){overflow:hidden;text-overflow:ellipsis}
+  .mx-key{width:100%}
+  #people:not(#_):not(#__) .spane>.card{display:block!important;max-height:560px!important;overflow:auto!important}
+  :root .p10-bar:not(#_):not(#__) .p10-need{flex-wrap:wrap;margin-left:0;max-width:100%}
+  :root .p10-bar:not(#_):not(#__) .p10-need>*{max-width:100%;white-space:normal}
+  .mx-tiles b{font-size:15px}
+}
+#people:not(#_):not(#__):not(#___) .spane>.card{min-height:0!important;height:auto!important;max-height:560px!important;overflow:auto!important}
+@media (max-width:767px){html body main .p10-bar #p10Need:not(#_):not(#__){display:flex!important;flex-wrap:wrap!important;overflow:visible!important;width:100%;margin-left:0!important}html body main .p10-bar #p10Need .need:not(#_){max-width:100%;white-space:normal!important}}
+/* Insights › What to do next: one line per move, the reason in grey after it */
+.rp-next .mx-row .mx-tx{flex-direction:row;align-items:baseline;gap:10px}.rp-next .mx-row .mx-tx b{flex:none;max-width:55%}
+.rp-next .mx-row .mx-tx small{flex:1;min-width:0}
+@media (max-width:767px){.rp-next .mx-row .mx-tx{flex-direction:column;gap:0}.rp-next .mx-row .mx-tx b{max-width:100%}}
+.pa-switch:has(>button:only-of-type){display:none!important}
+/* chart keys: what each line or band means, drawn in its own style */
+.pv-key{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:12.5px;color:var(--mx-ink2)}
+.pv-key span{display:inline-flex;align-items:center;gap:7px}.pv-key svg{width:22px;height:10px;flex:none}
+
+/* ── agent team: Today's team grid and the Automations board (after the BoardUI project board) */
+.tm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tm-tile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:var(--mx-raise);min-width:0;transition:transform .15s cubic-bezier(.23,1,.32,1)}
+:root[data-theme="light"] .tm-tile{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.tm-tile:hover{transform:translateY(-1px)}.tm-tile:active{transform:scale(.98)}.tm-tile:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+.tm-who{display:flex;align-items:center;gap:10px;min-width:0}
+.tm-av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:700;font-size:14px;color:#14181b;font-style:normal}
+.tm-who b{display:block;font-size:14px;font-weight:600;color:var(--mx-ink)}.tm-who small{display:block;font-size:12px;color:var(--mx-mute)}
+.tm-who .mx-chip{margin-left:auto}
+.tm-say{margin:0;font-size:12.5px;line-height:1.4;color:var(--mx-ink2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tm-next{font-size:12px;padding:5px 8px;border-radius:8px;background:var(--mx-surf);color:var(--mx-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root[data-theme="light"] .tm-next{background:#f5f5f5}
+.tm-alert{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;margin-bottom:10px;background:color-mix(in srgb,var(--mx-crit) 12%,transparent);color:var(--mx-ink);font-size:13px}
+.tm-alert b{flex:1}
+@media (max-width:767px){.tm-grid{grid-template-columns:1fr}}
+.tb-board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(280px,1fr);gap:12px;overflow-x:auto;padding-bottom:4px;align-items:start}
+.tb-col{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:var(--mx-surf);min-width:0;max-height:640px}
+:root:not([data-theme="light"]) .tb-col{box-shadow:0 0 0 1px var(--mx-line)}
+.tb-col header{display:flex;align-items:center;gap:10px}.tb-col header i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:13px;color:#14181b;flex:none}
+.tb-col header b{display:block;font-size:14px;color:var(--mx-ink)}.tb-col header small{font-size:12px;color:var(--mx-mute)}
+.tb-col header span{margin-left:auto;font-size:12.5px;color:var(--mx-mute);font-variant-numeric:tabular-nums}
+.tb-say{margin:0;font-size:12.5px;line-height:1.4;color:var(--mx-ink2)}
+.tb-cards{display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0}
+.tb-card{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:var(--mx-raise);transition:transform .15s cubic-bezier(.23,1,.32,1)}
+:root[data-theme="light"] .tb-card{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.tb-card:hover{transform:translateY(-1px)}.tb-card:active{transform:scale(.98)}.tb-card:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+.tb-card b{font-size:13.5px;font-weight:600;line-height:1.35;color:var(--mx-ink)}.tb-card small{font-size:12px;line-height:1.4;color:var(--mx-mute)}
+.tb-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tb-area{font-size:11.5px;padding:2px 8px;border-radius:7px;box-shadow:inset 0 0 0 1px var(--mx-line);color:var(--mx-ink2)}
+.tb-val{margin-left:auto;font-size:12px;font-weight:600;color:var(--mx-ink);font-variant-numeric:tabular-nums}
+.tb-ask{all:unset;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--mx-ink2);padding:6px 2px}.tb-ask:hover{color:var(--mx-ink)}
+#agents:not(#_) #tmDesk{display:none!important}
+#agents:not(#_) #tbRoot{margin-bottom:12px}
+
+/* ── Settings in the top menu (the gear goes; Settings is a page like the others) */
+@media (min-width:768px){html body nav[aria-label="Main"] .p10[data-p10="settings"]:not(#_):not(#__){display:inline-flex!important}html body #setBtn:not(#_){display:none!important}}
+
+/* ── Settings as a settings window: a side menu of sections on the left, the chosen section on the right */
+@media (min-width:900px){
+  #setup:not([hidden]):not(#_):not(#__){display:grid!important;grid-template-columns:230px minmax(0,1fr);column-gap:16px;align-items:start}
+  #setup:not(#_):not(#__)>.set-ix{grid-column:1;grid-row:1/span 30;position:sticky;top:0;display:flex!important;flex-direction:column;align-items:stretch;gap:2px;padding:10px;border-radius:16px;background:var(--mx-surf)!important}
+  #setup:not(#_):not(#__)>.spane{grid-column:2}
+}
+#setup:not(#_):not(#__)>.set-ix button{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--mx-ink2)}
+#setup:not(#_):not(#__)>.set-ix button:hover{background:var(--mx-raise);color:var(--mx-ink)}
+#setup:not(#_):not(#__)>.set-ix button[aria-current="true"]{background:var(--mx-raise)!important;color:var(--mx-ink);box-shadow:none}
+:root[data-theme="light"] #setup:not(#_):not(#__)>.set-ix button[aria-current="true"]{background:#fff!important;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+#setup:not(#_):not(#__)>.set-ix::before{content:"Settings";display:block;padding:4px 12px 8px;font-size:12px;font-weight:600;color:var(--mx-mute)}
+#setup[data-part="costs"]:not(#_):not(#__):not(#___):not(#____)>.spane[data-pane="costs"]{display:block!important}
+/* section cards: label and explanation on the left, the control on the right */
+.set-card{background:var(--mx-surf);border-radius:16px;padding:16px 18px}
+.set-card-h{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.set-card-h b{display:block;font-size:15px;color:var(--mx-ink)}.set-card-h small{display:block;font-size:13px;color:var(--mx-mute);max-width:70ch;margin-top:2px}
+/* the cost editor */
+.cst-head,.cst-row{display:grid;grid-template-columns:minmax(120px,1.4fr) minmax(110px,1fr) minmax(150px,1.2fr) 100px minmax(100px,1fr) 36px;gap:8px;align-items:center}
+.cst-head{font-size:12px;color:var(--mx-mute);padding:0 2px 6px}
+.cst-list{display:flex;flex-direction:column;gap:8px}
+.cst-row :is(input,select){width:100%;min-width:0;box-sizing:border-box;height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--mx-line);background:var(--mx-raise);color:var(--mx-ink);font:inherit;font-size:13.5px}
+:root[data-theme="light"] .cst-row :is(input,select){background:#fff}
+.cst-row :is(input,select):focus{outline:2px solid var(--mx-ink);outline-offset:1px}
+.cst-del{all:unset;cursor:pointer;width:36px;height:36px;display:grid;place-items:center;border-radius:10px;color:var(--mx-mute)}.cst-del:hover{background:var(--mx-raise);color:var(--mx-crit)}
+.cst-foot{display:flex;align-items:center;gap:8px;margin-top:14px}.cst-msg{font-size:13px;color:var(--mx-mute)}
+@media (max-width:767px){.cst-head{display:none}.cst-row{grid-template-columns:1fr 1fr;padding:10px;border-radius:12px;background:var(--mx-raise)}.cst-row>:first-child{grid-column:1/-1}}
+
+/* ── finance charts */
+.mx-sankey{position:relative;height:320px;margin:14px 0 22px}
+.mx-sankey svg{position:absolute;inset:0;width:100%;height:100%}
+.mx-sk-l,.mx-sk-r{position:absolute;top:0;bottom:0;width:14%}.mx-sk-l{left:0}.mx-sk-r{right:0}
+.mx-sk-l span,.mx-sk-r span{position:absolute;display:flex;flex-direction:column;justify-content:center;min-height:18px;overflow:hidden}
+.mx-sk-l span{right:6px;left:0;text-align:right}.mx-sk-r span{left:6px;right:0}
+.mx-sankey b{font-size:12.5px;font-weight:600;color:var(--mx-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mx-sankey small{font-size:11.5px;color:var(--mx-mute)}
+.mx-sk-ax{position:absolute;left:0;right:0;bottom:-20px;display:flex;justify-content:space-between;font-size:11.5px;color:var(--mx-mute)}
+.mx-gauge{position:relative;display:flex;flex-direction:column;align-items:center}
+.mx-gauge svg{width:100%;max-width:260px}.mx-gauge .tr{stroke:var(--mx-raise)}:root[data-theme="light"] .mx-gauge .tr{stroke:#fff}
+.mx-gauge-c{margin-top:-58px;text-align:center}.mx-gauge-c b{display:block;font-size:30px;font-weight:600;letter-spacing:-.02em}.mx-gauge-c small{font-size:12px;color:var(--mx-mute)}
+.mx-gauge-k{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin-top:16px;font-size:12.5px;color:var(--mx-ink2)}
+.mx-gauge-k span{display:inline-flex;align-items:center;gap:6px}.mx-gauge-k i{width:10px;height:10px;border-radius:3px}.mx-gauge-k b{color:var(--mx-ink);font-weight:600}
+.mx-ffun{position:relative}
+.mx-ffun svg{width:100%;height:170px;display:block}.mx-ffun path{opacity:.9}
+.mx-ffun-p{position:absolute;left:0;right:0;top:0;height:170px;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;align-items:center}
+.mx-ffun-p span{display:flex;justify-content:center;transform:translateX(-22%)}.mx-ffun-p em{font-style:normal;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--mx-surf);color:var(--mx-ink)}
+.mx-ffun-k{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;margin-top:12px}
+.mx-ffun-k>div{padding:8px 10px;border-radius:12px;background:var(--mx-raise);min-width:0}:root[data-theme="light"] .mx-ffun-k>div{background:#fff}
+.mx-ffun-k span{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mx-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mx-ffun-k i{width:8px;height:8px;border-radius:3px;flex:none}
+.mx-ffun-k b{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+@media (max-width:767px){.mx-sankey{height:260px}.mx-sk-l,.mx-sk-r{width:24%}.mx-ffun-k{grid-auto-flow:row;grid-template-columns:1fr 1fr}}
+/* the top menu fits all eight places plus Settings: tighter pills, the Ask box narrower */
+@media (min-width:768px){
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__){gap:2px!important;flex-wrap:nowrap;min-width:0}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .p10{padding:6px 10px!important;font-size:13px!important;white-space:nowrap}
+  html body nav[aria-label="Main"]:not(#_) #hxAsk{max-width:190px;min-width:0}
+  html body nav[aria-label="Main"]:not(#_) #hxAsk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media (min-width:768px) and (max-width:1279px){html body nav[aria-label="Main"]:not(#_) #hxAsk kbd{display:none}}
+
+@media (min-width:900px){
+  html body main #setup:not([hidden]):not(#_):not(#__):not(#___):not(#____){display:grid!important;grid-template-columns:230px minmax(0,1fr);column-gap:16px;align-items:start}
+  html body main #setup:not(#_):not(#__):not(#___):not(#____)>*{grid-column:2}
+  html body main #setup:not(#_):not(#__):not(#___):not(#____)>.set-ix{grid-column:1;grid-row:1/span 40}
+}
+@media (min-width:768px){html body nav[aria-label="Main"]:not(#_):not(#__) .ph-more{display:none!important}}
+.rp-period{display:flex;justify-content:flex-end;margin-bottom:12px}
+html body main>section[hidden]:not(#_):not(#__):not(#___):not(#____):not(#_____){display:none!important}
+
+/* ── MXAi chat, after the BoardUI AI chat: one canvas, your message in a soft bubble on the right, the answer as
+   plain text at 15px, the steps as a small card with a tick list, a slim composer with a round send */
+.pc:not(#_):not(#__){--pc-bg:#0a0a0a;--pc-side:#0a0a0a;--pc-raise:#171717;--pc-line:#262626;--pc-line2:#333;--pc-ink:#fafafa;--pc-mut:#a1a1a1;--pc-dim:#737373;font-size:15px!important;line-height:1.6!important}
+:root[data-theme="light"] .pc:not(#_):not(#__){--pc-bg:#f7f7f7;--pc-side:#f7f7f7;--pc-raise:#ffffff;--pc-line:#ebebeb;--pc-line2:#d4d4d4;--pc-ink:#0a0a0a;--pc-mut:#737373;--pc-dim:#a1a1a1}
+.pc:not(#_):not(#__) .pc-side{border-right:1px solid var(--pc-line)!important}
+.pc:not(#_):not(#__) .pc-main>header{border-bottom:0!important;padding:14px 24px!important}
+.pc:not(#_):not(#__) .pc-title{font-size:13.5px!important;font-weight:500!important;color:var(--pc-mut)!important}
+.pc:not(#_):not(#__) .pc-log{max-width:760px;margin:0 auto;width:100%;padding:8px 24px 24px!important;box-sizing:border-box}
+.pc:not(#_):not(#__) .pc-m{margin:0 0 22px!important;gap:12px!important}
+/* your message */
+.pc:not(#_):not(#__) .pc-m.you{display:flex;justify-content:flex-end}
+.pc:not(#_):not(#__) .pc-m.you .pc-b{max-width:78%;padding:12px 16px!important;border-radius:18px!important;background:var(--pc-raise)!important;color:var(--pc-ink)!important;
+  font-size:15px!important;line-height:1.55!important;border:0!important;box-shadow:0 1px 2px rgba(0,0,0,.06)!important}
+/* the answer: plain text, no box */
+.pc:not(#_):not(#__) .pc-m.bot{display:flex;align-items:flex-start}
+.pc:not(#_):not(#__) .pc-mark{flex:none;margin-top:2px}
+.pc:not(#_):not(#__) .pc-m.bot .pc-body{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;border-radius:0!important;min-width:0;flex:1}
+.pc:not(#_):not(#__) .pc-a{font-size:15px!important;line-height:1.65!important;color:var(--pc-ink)!important;font-family:inherit!important}
+.pc:not(#_):not(#__) .pc-a :is(h1,h2,h3,h4){font-size:15px!important;font-weight:600!important;line-height:1.4!important;margin:18px 0 6px!important;letter-spacing:0!important}
+.pc:not(#_):not(#__) .pc-a :is(p,ul,ol){margin:0 0 10px!important}
+.pc:not(#_):not(#__) .pc-a :is(ul,ol){padding-left:20px!important}
+.pc:not(#_):not(#__) .pc-a li{margin:4px 0!important;font-size:15px!important;line-height:1.6!important}
+.pc:not(#_):not(#__) .pc-a :is(b,strong){font-weight:600!important}
+.pc:not(#_):not(#__) .pc-a em,.pc:not(#_):not(#__) .pc-a i{font-style:normal;color:var(--pc-mut)}
+/* the steps: a small card with a tick list */
+.pc:not(#_):not(#__) .pc-trail{display:block;max-width:420px;margin:0 0 14px!important;padding:10px 14px!important;border-radius:14px!important;background:var(--pc-raise)!important;
+  border:0!important;box-shadow:0 0 0 1px var(--pc-line)!important;font-size:13.5px!important}
+.pc:not(#_):not(#__) .pc-trail summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;color:var(--pc-mut);font-weight:500}
+.pc:not(#_):not(#__) .pc-trail summary::-webkit-details-marker{display:none}
+.pc:not(#_):not(#__) .pc-trail summary::before{content:"";width:14px;height:14px;border-radius:50%;border:1.5px solid var(--mx-ok,#16a34a);background:radial-gradient(circle,var(--mx-ok,#16a34a) 0 3px,transparent 3.5px)}
+.pc:not(#_):not(#__) .pc-trail ol{list-style:none;margin:10px 0 0!important;padding:0!important;display:flex;flex-direction:column;gap:6px}
+.pc:not(#_):not(#__) .pc-trail li{position:relative;padding:6px 10px 6px 30px!important;border-radius:10px;color:var(--pc-ink);font-size:13.5px!important;line-height:1.45!important}
+.pc:not(#_):not(#__) .pc-trail li::before{content:"";position:absolute;left:9px;top:9px;width:12px;height:12px;border-radius:50%;border:1.5px dashed var(--pc-dim)}
+.pc:not(#_):not(#__) .pc-trail li.step{box-shadow:0 0 0 1px var(--pc-line)}
+.pc:not(#_):not(#__) .pc-trail li.step::before{border:0;background:var(--mx-ok,#16a34a);mask:none;-webkit-mask:none}
+.pc:not(#_):not(#__) .pc-trail li.thought{color:var(--pc-mut)}
+/* the composer: a white (or #171717) rounded box, text on top, chips and a round send below */
+.pc:not(#_):not(#__) .pc-dock{max-width:760px;margin:0 auto;width:100%;padding:0 24px 16px!important;box-sizing:border-box}
+.pc:not(#_):not(#__) .pc-in{border-radius:22px!important;padding:12px 12px 10px 18px!important;background:var(--pc-raise)!important;border:0!important;
+  box-shadow:0 0 0 1px var(--pc-line),0 8px 24px -16px rgba(0,0,0,.25)!important}
+.pc:not(#_):not(#__) .pc-in textarea{font-size:15px!important;line-height:1.5!important}
+.pc:not(#_):not(#__) .pc-chip{font-size:12px!important;padding:3px 10px!important;border-radius:99px!important;background:transparent!important;box-shadow:inset 0 0 0 1px var(--pc-line)!important;border:0!important}
+.pc:not(#_):not(#__) .pc-send{width:36px!important;height:36px!important;border-radius:50%!important;font-size:16px!important}
+.pc:not(#_):not(#__) .pc-note{font-size:11.5px!important;color:var(--pc-dim)!important;text-align:center}
+/* the hello screen and the sidebar list */
+.pc:not(#_):not(#__) .pc-hello h1{font-size:28px!important}
+.pc:not(#_):not(#__) .pc-list :is(button,[data-th]){font-size:13.5px!important;border-radius:10px!important}
+.pc:not(#_):not(#__) .pc-list [data-th][aria-current="true"],.pc:not(#_):not(#__) .pc-list .on{background:var(--pc-raise)!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-in textarea{background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important;padding:4px 0!important;border-radius:0!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-in:focus-within{box-shadow:0 0 0 1.5px var(--pc-ink),0 8px 24px -16px rgba(0,0,0,.25)!important}
+/* answer tables: readable numbers, quiet headings, hairline rows, on the same surface as the steps card */
+html body .pc:not(#_):not(#__):not(#___) .pc-data{background:var(--pc-raise)!important;border:0!important;border-radius:14px!important;box-shadow:0 0 0 1px var(--pc-line)!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-data :is(td,th){color:var(--pc-ink)!important;opacity:1!important;font-size:13.5px!important;border-color:var(--pc-line)!important;background:transparent!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-data th{color:var(--pc-mut)!important;font-weight:500!important;font-size:12px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-data td.n{font-variant-numeric:tabular-nums}
+
+/* ── compact pass: cards hug their content; one-figure cards are small, charts only as tall as their data needs */
+html body .mx-card:not(#_):not(#__){min-height:0!important;padding:14px 16px!important;gap:8px!important}
+html body .mx-card:not(#_):not(#__) .mx-hd{flex-wrap:nowrap;row-gap:0;gap:10px;min-height:28px}
+html body .mx-card:not(#_):not(#__) .mx-ic{width:28px;height:28px;border-radius:9px;margin-right:0}
+html body .mx-card:not(#_):not(#__) .mx-ic svg{width:15px;height:15px}
+html body .mx-card:not(#_):not(#__) .mx-hd h3{order:0;flex:1 1 auto;font-size:13.5px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body .mx-card:not(#_):not(#__) .mx-num{font-size:26px!important}
+html body .mx-card:not(#_):not(#__) .mx-why{padding-top:8px;font-size:12.5px!important}
+html body .mx-card:not(#_):not(#__) .mx-big b{font-size:24px}
+/* chart heights */
+html body .mx-cols:not(#_) :is(.mx-cols-in,.mx-axis){height:140px!important}
+html body .mx-area:not(#_) :is(.mx-area-in,.mx-axis){height:130px!important}
+html body .mx-rings:not(#_) svg{width:120px!important;height:120px!important}
+html body .mx-sankey:not(#_){height:240px!important}
+html body .mx-gauge:not(#_) svg{max-width:200px}html body .mx-gauge-c:not(#_){margin-top:-46px}html body .mx-gauge-c:not(#_) b{font-size:24px}
+html body .mx-ffun:not(#_) svg,html body .mx-ffun:not(#_) .mx-ffun-p{height:110px!important}
+html body .mx-heat:not(#_) i{height:11px}
+html body .mx-bar:not(#_){height:30px}
+.tm-say{-webkit-line-clamp:2}.tm-tile{padding:10px!important;gap:6px!important}.tm-av{width:30px!important;height:30px!important;font-size:12px!important}
+/* the older Insights charts: smaller headline figures, shorter plots, long tables scroll inside the card */
+html body .pv-c:not(#_):not(#__){padding:14px 16px!important;min-height:0!important}
+html body .pv-c:not(#_):not(#__) .pv-big{font-size:26px!important;margin-bottom:4px!important}
+html body .pv-c:not(#_):not(#__) .pv-big em{font-size:13px!important}
+html body .pv-c:not(#_):not(#__) svg.pv-area{height:130px!important}
+html body .pv-c:not(#_):not(#__) .pv-donut svg{width:110px!important;height:110px!important}
+html body .pv-c:not(#_):not(#__) .pv-stack{height:150px!important}
+html body .pv-c:not(#_):not(#__) :is(.pv-scroll,.pv-tbl,table){max-height:300px;overflow:auto;display:block}
+html body .pv-c:not(#_):not(#__) .pv-feed li{padding:6px 0!important}
+html body .rp-cell .pv-heat b:not(#_){height:20px!important}
+html body .pv-c:not(#_):not(#__)>header h3{font-size:14px!important}html body .pv-c:not(#_):not(#__)>header small{font-size:12px!important}
+
+/* ── MXAi as a tab: the chat sits under the top bar like a page, light in both themes (Claude / ChatGPT style):
+   a soft history column on the left, one wide centred conversation, a roomy composer */
+html body .pc:not(#_):not(#__):not(#___){position:fixed!important;left:0!important;right:0!important;z-index:35!important;grid-template-columns:260px 1fr!important;
+  --pc-bg:#ffffff;--pc-side:#f7f7f7;--pc-raise:#f4f4f4;--pc-line:#ebebeb;--pc-line2:#d4d4d4;--pc-ink:#0a0a0a;--pc-mut:#6b6b6b;--pc-dim:#9a9a9a;
+  background:#ffffff!important;color:#0a0a0a!important;color-scheme:light}
+html body .pc:not(#_):not(#__):not(#___) .pc-side{background:#f7f7f7!important;border-right:1px solid #ebebeb!important;padding:14px 12px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-main>header .pc-x,html body .pc:not(#_):not(#__):not(#___) .pc-main>header kbd{display:none}
+html body .pc:not(#_):not(#__):not(#___) :is(.pc-log,.pc-dock){max-width:860px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-m.you .pc-b{background:#f4f4f4!important;box-shadow:none!important}
+html body .pc:not(#_):not(#__):not(#___) :is(.pc-trail,.pc-data){background:#fff!important;box-shadow:0 0 0 1px #ebebeb!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-in{background:#fff!important;box-shadow:0 0 0 1px #e5e5e5,0 10px 30px -18px rgba(0,0,0,.25)!important;border-radius:26px!important;padding:14px 14px 10px 20px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-in:focus-within{box-shadow:0 0 0 1.5px #0a0a0a,0 10px 30px -18px rgba(0,0,0,.25)!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-send{background:#0a0a0a!important;color:#fff!important;box-shadow:none!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-chip{color:#6b6b6b!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-new{background:#fff!important;box-shadow:0 0 0 1px #ebebeb!important;color:#0a0a0a!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-search{background:#fff!important;border:1px solid #ebebeb!important;color:#0a0a0a!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-list [data-th]{color:#3f3f3f!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-list [data-th]:hover,html body .pc:not(#_):not(#__):not(#___) .pc-list [aria-current="true"]{background:#ececec!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-sugg button{background:#fff!important;box-shadow:0 0 0 1px #ebebeb!important;color:#6b6b6b!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-sugg button b{color:#0a0a0a!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-sic{background:#f4f4f4!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-hello h1{color:#0a0a0a!important;font-size:30px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-a{color:#1a1a1a!important}
+body.pc-on main:not(.pc-main){visibility:hidden}
+/* the MXAi tab in the menu */
+html body nav[aria-label="Main"] .pc-tab:not(#_):not(#__){display:inline-flex!important;align-items:center;gap:6px}
+html body nav[aria-label="Main"] .pc-tab:not(#_) svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+html body nav[aria-label="Main"] .pc-tab[aria-current="true"]:not(#_){background:var(--mx-raise)!important;color:var(--mx-ink)!important}
+html body.pc-on nav[aria-label="Main"] .p10[aria-current="true"]:not(.pc-tab):not(#_):not(#__):not(#___){background:transparent!important;color:inherit!important;font-weight:inherit}
+@media (min-width:768px){html body nav[aria-label="Main"] .pc-tab:not(#_) svg{display:none}}
+@media (max-width:767px){html body .pc:not(#_):not(#__):not(#___){grid-template-columns:1fr!important}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .pc-tab{display:flex!important;flex-direction:column;flex:0 0 76px;min-height:50px;justify-content:center;gap:3px;font-size:11px!important;color:var(--mx-mute)!important;background:none!important}
+  html body nav[aria-label="Main"] .navpills:not(#_):not(#__) .pc-tab svg{width:22px;height:22px;display:block}}
+
+/* ── Inbox, Gmail-style: an insight strip, a folder rail, roomy rows with a colour per person, the open chat beside */
+#p10-inbox .ib-ins{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+#p10-inbox .ib-in{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:16px;background:var(--mx-surf);position:relative;overflow:hidden}
+#p10-inbox .ib-in::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--mx-line)}
+#p10-inbox .ib-in.warn::before{background:var(--mx-warn)}#p10-inbox .ib-in.ok::before{background:var(--mx-s1)}
+#p10-inbox .ib-in span{font-size:12.5px;color:var(--mx-mute)}#p10-inbox .ib-in b{font-size:24px;font-weight:600;letter-spacing:-.02em;color:var(--mx-ink);font-variant-numeric:tabular-nums}
+#p10-inbox .ib-in small{font-size:12px;color:var(--mx-mute)}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___){grid-template-columns:220px minmax(420px,1.3fr) minmax(380px,1fr)!important;gap:12px!important;height:calc(100vh - 230px)!important;min-height:520px}
+/* the folder rail: no card, rounded pills like Gmail */
+html body #p10-inbox .ib:not(#_):not(#__):not(#___)>.ib-folders{background:transparent!important;box-shadow:none!important;padding:0!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders button{display:flex;align-items:center;gap:12px;padding:10px 14px!important;border-radius:0 99px 99px 0!important;margin-right:8px;font-size:14px!important;color:var(--mx-ink2)!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders button[aria-current="true"]{background:color-mix(in srgb,var(--mx-s1) 26%,var(--mx-surf))!important;color:var(--mx-ink)!important;font-weight:600!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders b{background:transparent!important;font-size:12.5px!important;color:inherit!important;font-weight:600}
+/* the list and the open chat: clean white panels in light, one step up in dark */
+html body #p10-inbox .ib:not(#_):not(#__):not(#___)>:is(.ib-list,.ib-read){background:var(--mx-surf)!important;border-radius:18px!important;box-shadow:none!important}
+:root[data-theme="light"] #p10-inbox .ib:not(#_):not(#__):not(#___)>:is(.ib-list,.ib-read){background:#fff!important;box-shadow:0 0 0 1px #ebebeb,0 1px 3px rgba(0,0,0,.04)!important}
+:root[data-theme="light"] #p10-inbox .ib-in{background:#fff;box-shadow:0 0 0 1px #ebebeb}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-bar{padding:14px 16px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-bar input{height:42px;border-radius:12px!important;font-size:14px!important}
+:root[data-theme="light"] #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-bar input{background-color:#f4f4f4!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) #ibRows{padding:4px 8px 8px}
+/* a row: avatar · name · label and preview · channel · time — 64px, unread in bold */
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row{grid-template-columns:40px minmax(0,150px) minmax(0,1fr) auto!important;grid-template-areas:"av who what at"!important;
+  align-items:center;column-gap:14px;min-height:64px;padding:10px 12px!important;border-radius:12px;box-shadow:none!important;margin-bottom:2px}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row+.ib-row{box-shadow:0 -1px 0 var(--mx-line)!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row:hover{background:var(--mx-raise)!important;box-shadow:0 1px 3px rgba(0,0,0,.06)!important}
+:root[data-theme="light"] #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row:hover{background:#f7f7f7!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row.on{background:color-mix(in srgb,var(--mx-s2) 10%,transparent)!important;box-shadow:inset 3px 0 0 var(--mx-s2)!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-av{width:40px;height:40px;font-size:13px;background:hsl(var(--h) 70% 90%)!important;color:hsl(var(--h) 45% 28%)!important;box-shadow:none!important}
+:root:not([data-theme="light"]) #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-av{background:hsl(var(--h) 35% 26%)!important;color:hsl(var(--h) 70% 85%)!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-who{font-size:14.5px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-what{font-size:13.5px!important;gap:8px}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row.unread .ib-snip{color:var(--mx-ink);font-weight:500}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-ch{grid-area:at!important;align-self:end;display:inline-flex;align-items:center;gap:6px;font-size:11.5px}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-ch::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ch)}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-at{align-self:start;font-size:12.5px}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-at,html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-ch{justify-self:end}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row{grid-template-rows:auto auto}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-av{grid-row:1/3!important;grid-area:auto!important;grid-column:1!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-who{grid-row:1/3!important;grid-area:auto!important;grid-column:2!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-what{grid-row:1/3!important;grid-area:auto!important;grid-column:3!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-at{grid-row:1!important;grid-area:auto!important;grid-column:4!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-ch{grid-row:2!important;grid-area:auto!important;grid-column:4!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-what .chip{padding:2px 8px;border-radius:7px}
+/* the open chat */
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-head{padding:16px 20px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-head h2{font-size:18px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-cust{padding:12px 20px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-msgs{padding:20px!important;gap:12px!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-m p{font-size:14.5px!important;padding:10px 14px!important}
+:root[data-theme="light"] #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-m.customer p{background:#f1f1f1!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-reply{margin:14px 16px 16px!important}
+@media (max-width:1279px){html body #p10-inbox .ib:not(#_):not(#__):not(#___){grid-template-columns:200px minmax(0,1fr) minmax(0,1fr)!important}#p10-inbox .ib-ins{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){#p10-inbox .ib-ins{grid-template-columns:1fr 1fr;gap:8px}html body #p10-inbox .ib:not(#_):not(#__):not(#___){grid-template-columns:1fr!important;height:auto!important}
+  html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders{flex-direction:row!important}html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-folders button{border-radius:99px!important;margin:0}
+  html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row{grid-template-columns:40px minmax(0,1fr) auto!important}
+  html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-who{grid-row:1!important;grid-column:2!important}html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-what{grid-row:2!important;grid-column:2!important}
+  html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-at,html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row>.ib-ch{grid-column:3!important}}
+html body #p10-inbox :has(>#ibIns):not(#_){display:flex!important;flex-direction:column!important}
+html body #p10-inbox #ibIns:not(#_){width:100%;flex:none}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-row{grid-template-columns:40px minmax(0,120px) minmax(0,1fr) auto!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-m.customer p:not(#_){background:var(--mx-raise)!important;color:var(--mx-ink)!important}
+:root[data-theme="light"] #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-m.customer p:not(#_){background:#f1f1f1!important}
+html body #p10-inbox .ib:not(#_):not(#__):not(#___) .ib-m.customer:not(#_){background:transparent!important;box-shadow:none!important;padding:0!important}
+
+/* ── Calendar, Google Calendar style: the grid on the page itself (no card), hairline grey lines, weekday over a large
+   date, today in a dark circle, bookings as solid blocks in their service colour with white text, a red "now" line */
+html body .gc:not(#_):not(#__):not(#___) :is(.gc-side,.gc-main){background:transparent!important;box-shadow:none!important;border-radius:0!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-side{padding:4px 8px 0 0!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-side .btn.gc-new{background:var(--mx-surf)!important;color:var(--mx-ink)!important;border-radius:16px!important;min-height:52px!important;padding:0 22px!important;
+  font-size:14px!important;font-weight:600!important;box-shadow:0 1px 3px rgba(0,0,0,.18),0 4px 10px -4px rgba(0,0,0,.18)!important;align-self:flex-start}
+:root[data-theme="light"] .gc:not(#_):not(#__):not(#___) .gc-side .btn.gc-new{background:#fff!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-side .btn.gc-new:hover{box-shadow:0 2px 6px rgba(0,0,0,.2),0 8px 18px -6px rgba(0,0,0,.2)!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-mini-g>*{font-size:11.5px;border-radius:50%!important;aspect-ratio:1}
+html body .gc:not(#_):not(#__):not(#___) .gc-mini-g .inrange{background:transparent!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-head{border-bottom:0!important;padding:4px 4px 12px!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-head h2,html body .gc:not(#_):not(#__):not(#___) .gc-head>b,html body .gc:not(#_):not(#__):not(#___) .gc-head>span{font-size:22px!important;font-weight:500!important;letter-spacing:-.01em}
+/* day headings: WEEKDAY over a large date */
+html body .gc:not(#_):not(#__):not(#___) .gc-dh{display:flex!important;flex-direction:column;align-items:center;gap:2px;padding:6px 0 10px!important;font-size:11px!important;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mx-mute)!important;border-bottom:1px solid var(--mx-line)!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-dh b{margin:0!important;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;font-size:22px!important;font-weight:500!important;letter-spacing:0;color:var(--mx-ink)!important;text-transform:none}
+html body .gc:not(#_):not(#__):not(#___) .gc-dh.today{color:var(--mx-ink)!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-dh.today b{background:var(--mx-ink)!important;color:var(--mx-surf)!important;width:42px!important;height:42px!important}
+:root[data-theme="light"] .gc:not(#_):not(#__):not(#___) .gc-dh.today b{color:#fff!important}
+/* the grid: hairlines, no shaded today column */
+html body .gc:not(#_):not(#__):not(#___) .gc-col.today{background:transparent!important}
+html body .gc:not(#_):not(#__):not(#___) :is(.gc-col,.gc-grid,.gc-times,.gc-corner,.gc-body){border-color:var(--mx-line)!important}
+:root[data-theme="light"] .gc:not(#_):not(#__):not(#___) :is(.gc-col,.gc-grid,.gc-times,.gc-corner,.gc-body,.gc-dh){border-color:#e3e3e3!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-times{font-size:11px!important;color:var(--mx-mute)!important}
+/* bookings: solid blocks, white text, a small gap so neighbours separate */
+html body .gc:not(#_):not(#__):not(#___) .gc-b{background:var(--c,#5f6368)!important;box-shadow:none!important;color:#fff!important;border-radius:6px!important;padding:3px 8px!important;
+  font-size:12px!important;line-height:1.3!important;margin-right:4px;border:1px solid color-mix(in srgb,var(--c,#5f6368) 70%,#000)!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-b b{color:#fff!important;font-weight:600!important;font-size:12.5px!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-b:hover{filter:brightness(1.07);background:var(--c,#5f6368)!important;box-shadow:0 4px 12px -4px rgba(0,0,0,.35)!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-chip{background:var(--c,#5f6368)!important;color:#fff!important;box-shadow:none!important}
+/* now: a red line with a dot at its start */
+html body .gc:not(#_):not(#__):not(#___) .gc-now{background:#ea4335!important;height:2px!important;z-index:3}
+html body .gc:not(#_):not(#__):not(#___) .gc-now::before{content:"";position:absolute;left:-6px;top:-5px;width:12px;height:12px;border-radius:50%;background:#ea4335}
+/* the view switch and arrows: Google's quiet outline buttons */
+html body .gc:not(#_):not(#__):not(#___) .gc-views{background:transparent!important;box-shadow:0 0 0 1px var(--mx-line)!important;border-radius:10px!important}
+html body .gc:not(#_):not(#__):not(#___) .gc-head .btn{border-radius:10px!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) :is(.gc-side,.gc-main){background:transparent!important;box-shadow:none!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-dh{height:auto!important;min-height:76px;overflow:visible!important;justify-content:flex-end}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-corner{height:auto!important;min-height:76px}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-side .btn.gc-new{background:#fff!important;color:#0a0a0a!important}
+:root:not([data-theme="light"]) main .gc:not(#_):not(#__):not(#___):not(#____) .gc-side .btn.gc-new{background:#262626!important;color:#fafafa!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-grid{grid-template-rows:76px auto!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b *{color:#fff!important;opacity:.95}
+html body main .gc:not(#_):not(#__):not(#___):not(#____),html body main #p10-calendar .card:has(.gc):not(#_):not(#__):not(#___):not(#____){background:transparent!important;box-shadow:none!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____):not(#_____) .gc-side .gc-new{background:#fff!important;background-image:none!important;color:#0a0a0a!important;filter:none!important;opacity:1!important}:root:not([data-theme="light"]) main .gc:not(#_):not(#__):not(#___):not(#____):not(#_____) .gc-side .gc-new{background:#262626!important;color:#fafafa!important}
+/* the chat is light in both themes, so everything inside an answer is too: tables, rows, figures in code style,
+   bold and italic text (older dark-theme rules painted rows black and figures white) */
+html body .pc:not(#_):not(#__):not(#___) :is(.pc-mdt,.pc-mdt table,.pc-mdt thead,.pc-mdt tbody,.pc-mdt tr,.pc-mdt td){background:#fff!important;color:#0a0a0a!important;border-color:#ebebeb!important;box-shadow:none!important;border-radius:0!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-mdt{border:1px solid #ebebeb!important;border-radius:12px!important;overflow:hidden}
+html body .pc:not(#_):not(#__):not(#___) .pc-mdt th{background:#f7f7f7!important;color:#6b6b6b!important;border-color:#ebebeb!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-mdt tbody tr:hover td{background:#fafafa!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-a code{background:#f1f1f1!important;color:#0a0a0a!important;border:1px solid #e5e5e5!important;font-size:13px!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-a :is(strong,b,em,i,span,a,p,li,h1,h2,h3,h4){color:inherit!important;background:transparent!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-a a{color:#2563eb!important;text-decoration:underline}
+html body .pc:not(#_):not(#__):not(#___) :is(.pc-data,.pc-data table,.pc-data tr,.pc-data td){background:#fff!important;color:#0a0a0a!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-data th{background:#fff!important;color:#6b6b6b!important}
+html body .pc:not(#_):not(#__):not(#___) :is(.pc-acts,.pc-tools,.pc-src) :is(button,a,span){color:#525252!important;background:transparent!important}
+/* the top menu, explicit per theme: plain text tabs, the current one on a soft pill; Back to Lab as an outline button */
+html body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab){color:#a3a3a3!important;background:transparent!important}
+html body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab):hover{color:#fafafa!important;background:#1f1f1f!important}
+html body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab)[aria-current="true"]{color:#fafafa!important;background:#262626!important;font-weight:600}
+html body nav[aria-label="Main"]:not(#_):not(#__):not(#___) #labBtn{color:#fafafa!important;background:transparent!important;box-shadow:inset 0 0 0 1px #404040!important;border:0!important}
+:root[data-theme="light"] body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab){color:#525252!important}
+:root[data-theme="light"] body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab):hover{color:#0a0a0a!important;background:#f5f5f5!important}
+:root[data-theme="light"] body nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) :is(.p10,.pc-tab)[aria-current="true"]{color:#0a0a0a!important;background:#f0f0f0!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___) #labBtn{color:#0a0a0a!important;box-shadow:inset 0 0 0 1px #e5e5e5!important}
+/* while the chat is open, only the MXAi tab is marked */
+html body.pc-on nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) .p10:not(.pc-tab)[aria-current="true"]{background:transparent!important;font-weight:inherit;color:#a3a3a3!important}
+:root[data-theme="light"] body.pc-on nav[aria-label="Main"] .navpills:not(#_):not(#__):not(#___) .p10:not(.pc-tab)[aria-current="true"]{color:#525252!important}
+/* table titles inside answers */
+html body .pc:not(#_):not(#__):not(#___) .pc-dh :is(b,small,span){color:#0a0a0a!important}html body .pc:not(#_):not(#__):not(#___) .pc-dh small{color:#6b6b6b!important}
+html body .pc:not(#_):not(#__):not(#___) .pc-dh button{color:#0a0a0a!important;background:#fff!important;box-shadow:0 0 0 1px #e5e5e5!important;border:0!important}
+/* the chat on a phone: a slim composer so the conversation has the screen */
+@media (max-width:767px){
+  html body .pc:not(#_):not(#__):not(#___) .pc-dock{padding:0 10px 8px!important}
+  html body .pc:not(#_):not(#__):not(#___) .pc-in{padding:8px 8px 8px 14px!important;border-radius:20px!important}
+  html body .pc:not(#_):not(#__):not(#___) .pc-inbar .pc-chip,html body .pc:not(#_):not(#__):not(#___) .pc-note{display:none!important}
+  html body .pc:not(#_):not(#__):not(#___) .pc-inbar{margin-top:4px!important}
+  html body .pc:not(#_):not(#__):not(#___) .pc-in textarea{font-size:15px!important;min-height:22px}
+  html body .pc:not(#_):not(#__):not(#___) .pc-main>header{padding:8px 12px!important}
+  html body .pc:not(#_):not(#__):not(#___) .pc-log{padding:8px 12px 12px!important}
+}
+@media (max-width:767px){html body .pc:not(.pc-sideopen):not(#_):not(#__):not(#___) .pc-side{box-shadow:none!important;visibility:hidden}}
+/* ── one typeface: Geist everywhere (headings, figures, tables, buttons, forms, the chat), Geist Mono only for times
+   and codes; figures line up (tabular numbers); slight negative tracking on big numbers, optical smoothing */
+:root{--mx-font:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mx-mono:"Geist Mono",ui-monospace,Menlo,monospace}
+html body,html body :is(main,nav,.pc,.ph-sheet,dialog) :is(*,input,button,select,textarea):not(svg):not(svg *):not(code):not(kbd):not(.mx-time):not(.gc-times):not(.gc-times *){font-family:var(--mx-font)!important}
+html body :is(code,kbd,.mx-time,.gc-times,.gc-times *){font-family:var(--mx-mono)!important}
+html body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+html body :is(.mx-num,.mx-big b,.mx-strip b,.ib-in b,.tb-val,.mx-tbl td,.mx-bar b,.pv-big,.mx-tiles b,.mx-rad b,.mx-gauge-c b){font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+html body :is(.mx-num,.mx-big b,.ib-in b,.pv-big){letter-spacing:-.025em}
+
+/* ── Settings as a settings app: a group title and one line above each card, no repeated title inside the card,
+   full-strength text, rows with hairlines, switches for on/off, no stray decorations */
+html body #setup:not(#_):not(#__) .spane>h2{font-size:22px!important;font-weight:600!important;letter-spacing:-.02em;margin:2px 0 14px!important}
+html body #setup:not(#_):not(#__) .sethead{display:flex;flex-direction:column;gap:2px;margin:18px 2px 8px!important;padding:0!important;border:0!important}
+html body #setup:not(#_):not(#__) .sethead b{font-size:15px!important;font-weight:600!important;color:var(--mx-ink)!important}
+html body #setup:not(#_):not(#__) .sethead span{font-size:13px!important;color:var(--mx-mute)!important}
+html body #setup:not(#_):not(#__) .spane .card{opacity:1!important;filter:none!important;color:var(--mx-ink)!important;padding:6px 18px!important;border-radius:16px!important;resize:none!important;overflow:visible}
+:root[data-theme="light"] #setup:not(#_):not(#__) .spane .card{background:#fff!important;box-shadow:0 0 0 1px #ebebeb!important}
+html body #setup:not(#_):not(#__) .spane .card::after,html body #setup:not(#_):not(#__) .spane .card::before{display:none!important}
+html body #setup:not(#_):not(#__) .spane .card>.ch{display:flex;justify-content:flex-end;align-items:center;gap:8px;min-height:0;margin:8px 0 0!important;padding:0!important;border:0!important}
+html body #setup:not(#_):not(#__) .spane .card>.ch>h2{display:none!important}
+html body #setup:not(#_):not(#__) .spane .card>.ch>small{font-size:12px;color:var(--mx-mute)}
+html body #setup:not(#_):not(#__) .spane .card :is(p,span,small,li,div,label,b,strong,a){opacity:1!important}
+html body #setup:not(#_):not(#__) .spane .card :is(.sub,small){color:var(--mx-mute)!important}
+html body #setup:not(#_):not(#__) .spane .card :is(label,.row,.form>*):not(:last-child){border-color:var(--mx-line)!important}
+html body #setup:not(#_):not(#__) .spane .card h3{font-size:14px!important;font-weight:600!important;margin:14px 0 6px!important;color:var(--mx-ink)!important}
+/* switches instead of tick boxes */
+html body #setup:not(#_):not(#__) input[type=checkbox]{appearance:none;-webkit-appearance:none;width:38px;height:22px;flex:none;border-radius:99px;background:#d4d4d4;position:relative;cursor:pointer;transition:background-color .2s;vertical-align:middle;margin:0 8px 0 0;border:0!important}
+html body #setup:not(#_):not(#__) input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.23,1,.32,1)}
+html body #setup:not(#_):not(#__) input[type=checkbox]:checked{background:#16a34a}
+html body #setup:not(#_):not(#__) input[type=checkbox]:checked::after{transform:translateX(16px)}
+html body #setup:not(#_):not(#__) input[type=checkbox]:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+:root:not([data-theme="light"]) #setup:not(#_):not(#__) input[type=checkbox]:not(:checked){background:#404040}
+/* buttons inside settings: one quiet style, the primary action in ink */
+html body #setup:not(#_):not(#__) .spane .btn{border-radius:10px!important;min-height:36px;padding:0 14px!important;font-size:13px!important;font-weight:500!important}
+html body #setup:not(#_):not(#__) .spane .btn:not(.ghost){background:var(--mx-ink)!important;color:var(--mx-surf)!important;border:0!important}
+:root[data-theme="light"] #setup:not(#_):not(#__) .spane .btn:not(.ghost){color:#fff!important}
+html body #setup:not(#_):not(#__) .spane .btn.ghost{background:transparent!important;color:var(--mx-ink)!important;box-shadow:inset 0 0 0 1px var(--mx-line)!important;border:0!important}
+html body #setup:not(#_):not(#__) .spane .tag{font-size:11.5px;border-radius:7px;padding:2px 8px}
+/* Integrations shares the settings layout */
+@media (min-width:900px){
+  html body main #p10-integrations.set-host:not([hidden]):not(#_):not(#__){display:grid!important;grid-template-columns:230px minmax(0,1fr);column-gap:16px;align-items:start}
+  html body main #p10-integrations.set-host:not(#_):not(#__)>*{grid-column:2}
+  html body main #p10-integrations.set-host:not(#_):not(#__)>.set-ix{grid-column:1;grid-row:1/span 40;position:sticky;top:0;display:flex!important;flex-direction:column;align-items:stretch;gap:2px;padding:10px;border-radius:16px;background:var(--mx-surf)!important}
+}
+html body #p10-integrations:not(#_):not(#__)>.set-ix button{display:flex;align-items:center;padding:9px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--mx-ink2)}
+html body #p10-integrations:not(#_):not(#__)>.set-ix button[aria-current="true"]{background:#fff!important;color:var(--mx-ink)}
+html body #p10-integrations:not(#_):not(#__)>.set-ix::before{content:"Settings";display:block;padding:4px 12px 8px;font-size:12px;font-weight:600;color:var(--mx-mute)}
+html body main #setup:not(#_):not(#__):not(#___) input[type=checkbox]{background:#d4d4d4!important;border:0!important;box-shadow:none!important;opacity:1!important}
+html body main #setup:not(#_):not(#__):not(#___) input[type=checkbox]:checked{background:#16a34a!important}
+:root:not([data-theme="light"]) main #setup:not(#_):not(#__):not(#___) input[type=checkbox]:not(:checked){background:#404040!important}
+html body main #setup:not(#_):not(#__):not(#___) label.switch{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--mx-ink)}
+html body main #setup:not(#_):not(#__):not(#___) :is(#efBody,#tfBody){display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+html body main #setup:not(#_):not(#__):not(#___) :is(#efBody,#tfBody)>.more-link{position:static!important;order:2;font-size:12.5px;color:var(--mx-mute);background:none!important;border:0;padding:0}
+html body main #setup:not(#_):not(#__):not(#___) :is(#efBody,#tfBody)>p{flex:1 0 100%;order:3}
+
+/* ── Settings > Look: one row per option (name and one line on the left, a segmented switch on the right) */
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-grid{display:flex!important;flex-direction:column;gap:0!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name ctl" "help ctl";column-gap:24px;row-gap:2px;align-items:center;
+  padding:14px 0!important;margin:0!important;background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row+.cu-row{border-top:1px solid var(--mx-line)!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>b{grid-area:name;font-size:14px!important;font-weight:600;color:var(--mx-ink)!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>small{grid-area:help;font-size:12.5px!important;color:var(--mx-mute)!important;max-width:60ch}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>.cu-seg{grid-area:ctl;display:inline-flex!important;flex-wrap:nowrap;gap:2px!important;padding:3px;border-radius:12px;background:#ebebeb}
+:root:not([data-theme="light"]) main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>.cu-seg{background:#262626}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button{border:0!important;background:transparent!important;color:var(--mx-mute)!important;border-radius:9px!important;padding:6px 14px!important;
+  font-size:13px!important;font-weight:500!important;box-shadow:none!important;min-height:0!important;cursor:pointer;transition:color .15s,background-color .15s}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button:hover{color:var(--mx-ink)!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button[aria-pressed="true"]{background:#fff!important;color:#0a0a0a!important;box-shadow:0 1px 2px rgba(0,0,0,.12)!important}
+:root:not([data-theme="light"]) main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button[aria-pressed="true"]{background:#404040!important;color:#fafafa!important}
+html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-seg button:focus-visible{outline:2px solid var(--mx-ink);outline-offset:1px}
+@media (max-width:767px){html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row{grid-template-columns:1fr;grid-template-areas:"name" "help" "ctl";row-gap:8px}
+  html body main #setup:not(#_):not(#__):not(#___) :is(#cuLook,#cuDash) .cu-row>.cu-seg{flex-wrap:wrap;justify-self:start}}
+
+/* AI Control > Performance: paired day bars (chats, the booked share inside in green), big figures with one line */
+.ap-pair{display:flex;align-items:flex-end;gap:4px;height:150px;margin-top:4px}
+.ap-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;height:100%}
+.ap-bar{flex:1;width:100%;max-width:26px;display:flex;align-items:flex-end;border-radius:7px;background:var(--mx-raise)}
+:root[data-theme="light"] .ap-bar{background:#fff}
+.ap-bar i{display:flex;align-items:flex-end;width:100%;border-radius:7px;background:var(--mx-s2);overflow:hidden;min-height:2px}
+.ap-bar u{display:block;width:100%;background:var(--mx-s1)}
+.ap-day span{font-size:11px;color:var(--mx-mute);height:14px}
+.ap-k{display:inline-block;width:10px;height:10px;border-radius:3px}.ap-k.a{background:var(--mx-s2)}.ap-k.b{background:var(--mx-s1)}
+.ap-big{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}.ap-big b{font-size:26px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.ap-big span{font-size:12.5px;color:var(--mx-mute)}
+html body main .ap-bar:not(#_):not(#__) i{background:var(--mx-s2)!important;border:0!important}
+html body main .ap-bar:not(#_):not(#__) u{background:var(--mx-s1)!important}
+html body main .pv-key:not(#_) .ap-k.a{background:var(--mx-s2)!important}html body main .pv-key:not(#_) .ap-k.b{background:var(--mx-s1)!important}
+/* ── Calendar details, as in Google Calendar: soft tonal events with a solid edge (name, time range, service),
+   hour labels on the lines with fainter half-hour lines, a "My calendars" list of services with tick boxes */
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b{background:color-mix(in srgb,var(--c,#5f6368) 18%,var(--mx-surf))!important;color:var(--mx-ink)!important;
+  border:0!important;box-shadow:inset 4px 0 0 var(--c,#5f6368)!important;border-radius:6px!important;padding:3px 8px 3px 10px!important;display:flex;flex-direction:column;align-items:flex-start;gap:0;overflow:hidden;text-align:left}
+:root[data-theme="light"] main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b{background:color-mix(in srgb,var(--c,#5f6368) 16%,#fff)!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b *{color:inherit!important;opacity:1}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b b{font-size:12.5px!important;font-weight:600!important;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b b small{font-weight:400;color:var(--mx-ink2)!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b>small{font-size:11.5px!important;color:var(--mx-ink2)!important;line-height:1.3;font-variant-numeric:tabular-nums}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b>span{font-size:11.5px!important;color:var(--mx-mute)!important;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b:hover{background:color-mix(in srgb,var(--c,#5f6368) 28%,var(--mx-surf))!important;filter:none}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-b.faded{opacity:.5;text-decoration:line-through}
+/* hour and half-hour lines */
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-col{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--row) - 1px),var(--mx-line) calc(var(--row) - 1px),var(--mx-line) var(--row)),
+  repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--row) / 2 - 1px),color-mix(in srgb,var(--mx-line) 55%,transparent) calc(var(--row) / 2 - 1px),color-mix(in srgb,var(--mx-line) 55%,transparent) calc(var(--row) / 2))!important}
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-times span{transform:translateY(-50%);padding-right:8px;font-size:11px!important;color:var(--mx-mute)!important}
+/* My calendars */
+html body main .gc:not(#_):not(#__):not(#___):not(#____) .gc-legend{display:flex;flex-direction:column;gap:2px}
+.gc-lh{font-size:13px;font-weight:600;color:var(--mx-ink);padding:4px 6px 6px}
+.gc-cal{display:flex;align-items:center;gap:10px;padding:6px;border-radius:8px;font-size:13px;color:var(--mx-ink2);cursor:pointer}
+.gc-cal:hover{background:var(--mx-raise)}
+.gc-cal input{appearance:none;-webkit-appearance:none;width:16px;height:16px;border-radius:4px;border:2px solid var(--c);margin:0;display:grid;place-items:center;flex:none;cursor:pointer}
+.gc-cal input:checked{background:var(--c)}
+.gc-cal input:checked::after{content:"";width:8px;height:4px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.gc-cal input:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]{appearance:none!important;-webkit-appearance:none!important;width:16px!important;height:16px!important;border-radius:4px!important;border:2px solid var(--c)!important;background:transparent!important;box-shadow:none!important;margin:0!important;display:grid!important;place-items:center}
+html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]:checked{background:var(--c)!important}
+html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]::before{display:none!important}
+html body main .gc:not(#_):not(#__):not(#___) .gc-cal input[type=checkbox]:checked::after{content:"";display:block;width:8px;height:4px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px);background:none;position:static}
+html body main .gc:not(#_):not(#__):not(#___) .gc-side .gc-new::after,html body main .gc:not(#_):not(#__):not(#___) .gc-side .gc-new::before{display:none!important;content:none!important}
+
+/* ── MXAi chat, after the claude.ai reading experience: a warm paper canvas, one centred column, plain answer text
+   with generous rhythm, your message in a soft bubble, thin quiet scrollbars, tables that wrap instead of scrolling */
+html body .pc:not(#_):not(#__):not(#___):not(#____){--pc-bg:#faf9f6;--pc-side:#f4f3ee;--pc-raise:#ffffff;--pc-line:#e7e5dd;--pc-ink:#1f1e1b;--pc-mut:#6b6a63;background:#faf9f6!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-side{background:#f4f3ee!important;border-right:1px solid #e7e5dd!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log{max-width:760px!important;padding:24px 28px 32px!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-m{margin:0 0 36px!important}
+/* nothing in the conversation keeps a colour from the dark theme: text takes the chat's ink */
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log :is(p,li,td,th,span,b,strong,em,i,small,div,h1,h2,h3,h4,dd,dt,summary,label):not(.pc-mark):not(.pc-caret){color:inherit!important;text-shadow:none!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log{color:#1f1e1b!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log :is(small,th,.pc-dh small){color:#6b6a63!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-a{font-size:15.5px!important;line-height:1.7!important;color:#1f1e1b!important;max-width:68ch}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-a :is(p,ul,ol){margin:0 0 14px!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-a :is(h1,h2,h3,h4){margin:22px 0 8px!important;font-size:16px!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-m.you .pc-b{background:#f0eee6!important;color:#1f1e1b!important;border-radius:20px!important;padding:12px 18px!important;font-size:15.5px!important}
+/* tables wrap; the data card sits quietly on the paper */
+html body .pc:not(#_):not(#__):not(#___):not(#____) :is(.pc-scroll,.pc-mdt){overflow-x:auto;scrollbar-width:thin}
+html body .pc:not(#_):not(#__):not(#___):not(#____) :is(.pc-scroll,.pc-mdt) table{min-width:0!important;width:100%;table-layout:auto}
+html body .pc:not(#_):not(#__):not(#___):not(#____) :is(.pc-scroll,.pc-mdt) :is(td,th){white-space:normal!important;word-break:normal;overflow-wrap:anywhere;padding:10px 14px!important;font-size:13.5px!important;vertical-align:top}
+html body .pc:not(#_):not(#__):not(#___):not(#____) :is(.pc-data,.pc-mdt){border:1px solid #e7e5dd!important;box-shadow:none!important;border-radius:14px!important;background:#fff!important}
+/* thin quiet scrollbars, everywhere in the chat */
+html body .pc:not(#_):not(#__):not(#___):not(#____),html body .pc:not(#_):not(#__):not(#___):not(#____) *{scrollbar-width:thin;scrollbar-color:#d6d3c9 transparent}
+html body .pc:not(#_):not(#__):not(#___):not(#____) ::-webkit-scrollbar{width:8px;height:8px}
+html body .pc:not(#_):not(#__):not(#___):not(#____) ::-webkit-scrollbar-thumb{background:#d6d3c9;border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+html body .pc:not(#_):not(#__):not(#___):not(#____) ::-webkit-scrollbar-track,html body .pc:not(#_):not(#__):not(#___):not(#____) ::-webkit-scrollbar-button{background:transparent;display:none}
+/* the composer: white on the paper, a soft lift, the send in ink */
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-dock{max-width:760px!important;padding:0 28px 18px!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-in{background:#fff!important;border-radius:22px!important;box-shadow:0 0 0 1px #e2dfd6,0 4px 18px -8px rgba(60,50,30,.18)!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-in:focus-within{box-shadow:0 0 0 1px #b9b5a8,0 6px 22px -8px rgba(60,50,30,.22)!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-chip{background:#faf9f6!important;box-shadow:inset 0 0 0 1px #e7e5dd!important;color:#6b6a63!important}
+html body .pc:not(#_):not(#__):not(#___):not(#____) ::selection{background:#e8e3d3}
+/* action buttons under an answer: quiet text buttons */
+html body .pc:not(#_):not(#__):not(#___):not(#____) .pc-log button:not(.pc-more){color:#4a4943!important}
+
+/* Integrations › Connectors catalog: filter pills, then tiles (live ones open their setup, the rest marked Soon) */
+.cn{margin:0 0 22px}.cn-h{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}.cn-h b{font-size:15px;font-weight:600;color:var(--mx-ink)}.cn-h small{font-size:12.5px;color:var(--mx-mute)}
+.cn-f{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.cn-f button{all:unset;cursor:pointer;padding:6px 12px;border-radius:999px;font-size:12.5px;color:var(--mx-mute);background:var(--mx-raise)}
+.cn-f button[aria-selected="true"]{background:var(--mx-ink);color:var(--mx-bg,#fff)}
+.cn-f button:focus-visible,.cn-c:focus-visible{outline:2px solid var(--mx-s2);outline-offset:2px}
+.cn-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.cn-c{all:unset;box-sizing:border-box;display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--mx-raise);cursor:pointer;min-width:0}
+:root[data-theme="light"] .cn-c{background:#fff}
+.cn-c.soon{cursor:default;opacity:.7}
+.cn-c i{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-style:normal;font-weight:600;font-size:14px;background:var(--mx-line,#e5e5e5);color:var(--mx-ink)}
+.cn-c.live i{background:color-mix(in srgb,var(--mx-s2) 22%,transparent)}.cn-c.on i{background:color-mix(in srgb,var(--mx-ok,#22c55e) 25%,transparent)}
+.cn-c span{display:flex;flex-direction:column;min-width:0}.cn-c b{font-size:13.5px;font-weight:600;color:var(--mx-ink)}
+.cn-c small{font-size:12px;line-height:1.35;color:var(--mx-mute);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cn-c em{font-style:normal;font-size:11.5px;padding:3px 8px;border-radius:999px;color:var(--mx-mute);background:var(--mx-line,#eee)}
+.cn-c.live em{color:var(--mx-ink)}.cn-c.on em{color:var(--mx-ok,#16a34a)}
+@media (max-width:700px){.cn-f{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.cn-f button{flex:none;min-height:0;white-space:nowrap}}
+
+/* Customers › Memberships: status pills and row actions */
+.mb-st{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--mx-raise);color:var(--mx-mute)}
+.mb-st.active{background:color-mix(in srgb,var(--mx-ok,#22c55e) 18%,transparent);color:var(--mx-ok,#15803d)}
+.mb-st.risk{background:color-mix(in srgb,var(--mx-warn,#f59e0b) 22%,transparent);color:#b45309}
+:root[data-theme="dark"] .mb-st.risk{color:#fbbf24}
+.mb-act{display:inline-flex;gap:6px;white-space:nowrap}
+.mb-act button{all:unset;cursor:pointer;padding:5px 10px;border-radius:999px;font-size:12px;background:var(--mx-raise);color:var(--mx-ink)}
+:root[data-theme="light"] .mb-act button{background:#fff;border:1px solid #e5e5e5}
+.mb-act button:focus-visible{outline:2px solid var(--mx-s2);outline-offset:2px}.mb-act button:disabled{opacity:.5}
+
+/* Calendar: a class with spots is one block with a fill bar (8/12 booked) */
+.gc-class .gc-spots{display:block;height:4px;border-radius:99px;background:color-mix(in srgb,var(--c) 22%,transparent);margin:3px 0 2px;overflow:hidden}
+.gc-class .gc-spots i{display:block;height:100%;background:var(--c);border-radius:99px}
+.gc-class.full small{font-weight:600}
+
+/* live demo bar: a slim strip above the dashboard */
+.demo-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding:9px 16px;background:#141414;color:#e8e8e8;font-size:13px;box-shadow:0 -6px 20px rgba(0,0,0,.18)}
+.demo-bar b{color:#c6f432}.demo-bar a{color:#e8e8e8;text-decoration:none;padding:5px 12px;border-radius:999px;border:1px solid #3a3a3a}
+.demo-bar a.go{background:#c6f432;color:#111;border-color:#c6f432;font-weight:600}
+.demo-bar a:focus-visible{outline:2px solid #c6f432;outline-offset:2px}
+body.has-demo{padding-bottom:52px}
+@media (max-width:700px){.demo-bar{bottom:64px;font-size:12px;gap:8px}.demo-bar span{width:100%;text-align:center}}
+
+/* tighter dashboard: cards sit close together so the page reads as one surface, not cards floating on a background */
+html body main:not(#_){padding:8px 8px 72px!important}
+html body main:not(#_) :is(.mx-page,.rp){display:flex!important;flex-direction:column;gap:8px!important}
+html body main:not(#_) .mx-grid{gap:8px!important;margin:0!important}
+html body main:not(#_) .mx-grid:empty{display:none!important}
+html body main:not(#_) .tdh{margin:2px 4px 0!important}
+html body main:not(#_) .p10-sub:not([hidden]),html body main:not(#_)>section>.set-ix{margin-bottom:6px!important}
+@media (max-width:700px){html body main:not(#_){padding:6px 6px 84px!important}html body main:not(#_) :is(.mx-page,.rp),html body main:not(#_) .mx-grid{gap:6px!important}}
+html body main:not(#_) .rp-period{margin:0!important}
+html body main:not(#_) .rp-g{margin-top:6px!important}
+html body main:not(#_) .rp-h{margin:0 4px 6px!important}
+html body main:not(#_) section:has(.pa-switch) .rp-period{position:absolute!important;top:2px;right:4px;z-index:2}
+html body main:not(#_)>section>.top{margin:0!important}html body main:not(#_)>section>.rp{margin-top:0!important}
+html body main:not(#_):not(#__):not(#___):not(#____){padding:8px 8px 72px!important}
+html body main:not(#_):not(#__) .mx-page{padding:0!important;margin:0!important}
+html body main:not(#_):not(#__) .spane{gap:8px!important}
+html body main:not(#_):not(#__)>section.wrap{padding-bottom:0!important}
+@media (max-width:700px){html body main:not(#_):not(#__):not(#___):not(#____){padding:6px 6px 84px!important}}
+
+/* Today › Earned: figures and the service mix under the chart, so the card is full of information, not space */
+.er-k{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.er-k div{background:var(--mx-raise);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:1px;min-width:0}
+:root[data-theme="light"] .er-k div,:root[data-theme="light"] .er-mix{background:#fff}
+.er-k small,.er-mix>small{font-size:11.5px;color:var(--mx-mute)}.er-k b{font-size:18px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.er-k span{font-size:11.5px;color:var(--mx-mute)}
+.er-mix{margin-top:8px;background:var(--mx-raise);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.er-bar{display:flex;height:10px;border-radius:99px;overflow:hidden;gap:2px}.er-bar>span{display:block;height:100%}
+.er-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--mx-mute)}.er-leg span{display:inline-flex;align-items:center;gap:6px}.er-leg i{width:8px;height:8px;border-radius:3px}.er-leg b{color:var(--mx-ink);font-weight:600}
+@media (max-width:700px){.er-k{grid-template-columns:1fr 1fr}}
+.tm-next-up{margin-top:8px;background:var(--mx-raise);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+:root[data-theme="light"] .tm-next-up{background:#fff}
+.tm-next-up small{font-size:11.5px;color:var(--mx-mute)}
+.tm-next-up div{display:grid;grid-template-columns:48px 1fr auto;gap:8px;font-size:13px;align-items:center}.tm-next-up b{font-variant-numeric:tabular-nums}
+.tm-next-up em{font-style:normal;color:var(--mx-mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.er-tb{margin-top:10px}.er-tb .mx-tbl td,.er-tb .mx-tbl th{padding-top:7px!important;padding-bottom:7px!important}
+html body main:not(#_) .learn{grid-template-columns:1fr!important}
+
+/* older side-by-side cards: long lists scroll inside the card instead of stretching the whole row */
+html body main:not(#_) .row>.card .list{max-height:300px;overflow:auto;scrollbar-width:thin}
+/* Win back: best customers on the left, the two short lists stacked on the right, so the columns end together */
+html body main:not(#_) .row.r3:has(#inNoShow){display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+html body main:not(#_) .row.r3:has(#inNoShow)>.card:first-child{grid-row:span 2}
+html body main:not(#_) .row.r3:has(#inNoShow) #inTop{max-height:none}
+.er-wd{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:64px;align-items:end}
+.er-wd div{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.er-wd i{display:block!important;width:100%;flex:none;max-height:calc(100% - 18px);border-radius:5px 5px 2px 2px;background:color-mix(in srgb,var(--mx-s1) 45%,transparent)}.er-wd i.best{background:var(--mx-s1)}
+.er-wd span{font-size:11px;color:var(--mx-mute)}
+html body main:not(#_) table :is(td,th){text-align:left!important}html body main:not(#_) table td{font-variant-numeric:tabular-nums}
+.gw-steps{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;counter-reset:s}
+.gw-steps li{counter-increment:s;background:var(--mx-raise);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--mx-mute)}
+:root[data-theme="light"] .gw-steps li{background:#fff}
+.gw-steps li::before{content:counter(s);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--mx-s1);color:#111;font-weight:700;font-size:12px}
+.gw-steps b{color:var(--mx-ink);font-size:13.5px;font-weight:600}
+.gw-empty .mx-btn{margin-top:12px}
+@media (max-width:700px){.gw-steps{grid-template-columns:1fr}}
+.gw-msg{display:flex;flex-direction:column;gap:6px;margin:8px 0 10px;padding:12px;border-radius:14px;background:var(--mx-raise)}
+:root[data-theme="light"] .gw-msg{background:#fff}
+.gw-msg span{max-width:78%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.45}
+.gw-msg .c{align-self:flex-start;background:#e9f9d0;color:#1a1a1a;border-bottom-left-radius:4px}
+.gw-msg .a{align-self:flex-end;background:var(--mx-ink);color:var(--mx-bg,#fff);border-bottom-right-radius:4px}
+:root[data-theme="dark"] .gw-msg .c{background:#24301a;color:#e8f5d0}
+.mx-sk-l .sk-lab,.mx-sk-r .sk-lab{min-height:0;line-height:1.15}
+/* Clients: one-line summary above the list; the breakdown opens on demand */
+.cu-strip{margin:0;font-size:13px;color:var(--mx-ink2,var(--mx-ink));opacity:.85}
+.cu-strip b{color:var(--mx-ink);font-variant-numeric:tabular-nums;opacity:1}
+.cu-more>summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--mx-ink);padding:6px 0;list-style:none;display:inline-flex;gap:6px;align-items:center;border-radius:6px}
+.cu-more>summary::-webkit-details-marker{display:none}
+.cu-more>summary::before{content:'›';display:inline-block;transition:transform .15s}
+.cu-more[open]>summary::before{transform:rotate(90deg)}
+.cu-more>summary:focus-visible{outline:2px solid var(--mx-ink);outline-offset:2px}
+.cu-more[open]{display:flex;flex-direction:column;gap:var(--mx-3)}
+@media (prefers-reduced-motion:reduce){.cu-more>summary::before{transition:none}}
+/* Settings: the one Save button stays in reach while the long form scrolls */
+#setupForm .set-save{position:sticky;bottom:0;z-index:2;padding:12px 0;background:var(--mx-surf);border-top:1px solid var(--mx-line);display:flex;justify-content:flex-end}
+#setup .spane:has(#setupForm){overflow:visible!important} /* let the page scroll the form, so Save can stick */
+/* Keyboard focus is always visible (WCAG 2.4.7). Several older rules set outline:none; this one ring wins, for keyboard only */
+:where(a[href],button,input,select,textarea,summary,[tabindex]:not([tabindex="-1"]),[role=button],[role=tab]):focus-visible{outline:2px solid var(--mx-ink,currentColor)!important;outline-offset:2px!important}
+/* ---- Accessibility fixes (2026-11-04 audit) ---- */
+/* Pop-up windows sit above the phone's bottom menu (z 50/60), so their buttons are never hidden behind it */
+.modal:not(#_){z-index:100}
+/* The keyboard ring beats the older outline:none!important rules on inputs and buttons inside main */
+main :is(input,select,textarea,button,a[href],[tabindex]:not([tabindex="-1"])):focus-visible:not(#_){outline:2px solid var(--mx-ink,currentColor)!important;outline-offset:2px!important}
+/* the Inbox reply box drew no ring at all: show it on the whole bar */
+.ib-reply:focus-within:not(#_){box-shadow:0 0 0 2px var(--mx-ink,currentColor)!important;border-radius:12px}
+/* small close buttons keep their look but get a 24px target (WCAG 2.5.8) */
+.nudge-x:not(#_),.sc-x:not(#_){min-width:24px;min-height:24px;display:inline-grid;place-items:center}
+.sc-x:focus-visible{opacity:1}

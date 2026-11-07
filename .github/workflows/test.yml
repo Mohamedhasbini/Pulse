@@ -1,0 +1,13 @@
+# Runs every platform test on each push and pull request, against a fresh database. Nothing is released unless it passes.
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check every script
+        run: for f in app/src/*.js app/public/*.js app/public/js/*.js; do node --check "$f"; done
+      - name: Run every test suite on a throwaway stack (fresh database, fresh random secrets, channels and AI off)
+        run: bash scripts/test-fresh.sh ci

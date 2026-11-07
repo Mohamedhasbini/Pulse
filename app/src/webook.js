@@ -3,10 +3,12 @@
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { q, one } from './db.js';
+import { tzOf, wall } from './clock.js';
 import { handleMessage, loadBusiness } from './brain.js';
-import { unify } from './customers.js';
+
 import { VERTICALS } from './verticals.js';
 import { hasFeature } from './features.js';
+import { allowedFor } from './switches.js';
 
 const PUBLIC = fileURLToPath(new URL('../public', import.meta.url));
 const KEY = crypto.createHmac('sha256', process.env.ADMIN_PASSWORD || 'webook').update('webook-session').digest();
@@ -24,6 +26,7 @@ const toMin = t => { const [h, m] = String(t).split(':').map(Number); return h *
 const CATEGORY = { salon: 'Beauty', barber: 'Barbers', clinic: 'Health', dental: 'Health', spa: 'Spa & wellness', gym: 'Fitness', restaurant: 'Food & drinks', car: 'Car care', tutoring: 'Learning' };
 
 const hits = new Map();
+setInterval(() => { const now = Date.now(); for (const [k, h] of hits) if (!h.length || now - h[h.length - 1] > 3600e3) hits.delete(k); }, 600e3).unref();
 function limited(req, key, max, ms) {
   const k = (req.get('cf-connecting-ip') || req.ip) + key, now = Date.now();
   const h = (hits.get(k) || []).filter(t => now - t < ms); h.push(now); hits.set(k, h);
@@ -49,16 +52,17 @@ export function mountWeBook(app) {
         (SELECT count(*) FROM reviews r WHERE r.business_id=b.id)::int AS reviews,
         ((SELECT count(*) FROM bookings k WHERE k.business_id=b.id AND k.created_at > now() - interval '14 days' AND k.status <> 'cancelled') * 2
           + (SELECT count(*) FROM reviews r WHERE r.business_id=b.id AND r.created_at > now() - interval '30 days'))::int AS trend,
-        b.currency FROM businesses b WHERE b.listed ORDER BY b.name`);
+        b.currency, b.timezone FROM businesses b WHERE b.listed ORDER BY b.name`);
     // Only businesses whose plan includes the WeBook listing (demo businesses always show).
     const allowed = new Set(); for (const b of list) if (b.is_demo || await hasFeature(b.id, 'webook_listing')) allowed.add(b.id);
-    const now = new Date(), mins = now.getHours() * 60 + now.getMinutes();
+    const now = new Date();
     res.json(list.filter(b => allowed.has(b.id)).map(b => {
       const v = VERTICALS[b.vertical] || VERTICALS.salon;
-      const today = (b.hours?.[now.getDay()] || []).map(([a, z]) => [toMin(a), toMin(z)]);
+      const w = wall(now, tzOf(b)), mins = w.min; // "open now" on each business's own clock
+      const today = (b.hours?.[w.wd] || []).map(([a, z]) => [toMin(a), toMin(z)]);
       const open = today.some(([a, z]) => mins >= a && mins < z);
-      const closesAt = open ? (b.hours[now.getDay()].find(([a, z]) => mins >= toMin(a) && mins < toMin(z)) || [])[1] : null;
-      delete b.hours;
+      const closesAt = open ? (b.hours[w.wd].find(([a, z]) => mins >= toMin(a) && mins < toMin(z)) || [])[1] : null;
+      delete b.hours; delete b.timezone;
       return { ...b, type: v.label, emoji: v.emoji, category: CATEGORY[b.vertical] || 'Other', open, closes_at: closesAt };
     }));
   }));
@@ -86,14 +90,14 @@ export function mountWeBook(app) {
     for (const t of (Array.isArray(req.body.tokens) ? req.body.tokens : []).slice(0, 30)) {
       const s = verify(t); if (!s) continue;
       const c = await one('SELECT * FROM customers WHERE id=$1 AND business_id=$2', [s.customerId, s.businessId]); if (!c) continue;
-      // Every booking with this phone at this business (chat, WeBook or website) belongs to this person.
+      // Only this session's own client record: a phone number typed into another record is no proof it is the same person.
       const rows = await q(`SELECT k.id, k.business_id, b.name AS business, b.vertical, k.status, k.price::float, k.manage_token,
           to_char(k.starts_at,'YYYY-MM-DD"T"HH24:MI') AS start, to_char(k.ends_at,'YYYY-MM-DD"T"HH24:MI') AS "end", s.name AS service,
           (k.starts_at - now() >= make_interval(hours => b.cancel_hours)) AS can_cancel, k.starts_at < now() AS past,
           (SELECT stars FROM reviews r WHERE r.booking_id=k.id) AS my_stars,
           (SELECT status FROM requests r WHERE r.booking_id=k.id AND r.type='cancel' ORDER BY id DESC LIMIT 1) AS cancel_request
           FROM bookings k JOIN services s ON s.id=k.service_id JOIN businesses b ON b.id=k.business_id JOIN customers cu ON cu.id=k.customer_id
-          WHERE k.business_id=$1 AND (cu.id=$2 OR cu.phone=$3) ORDER BY k.starts_at DESC LIMIT 50`, [s.businessId, c.id, c.phone]);
+          WHERE k.business_id=$1 AND cu.id=$2 ORDER BY k.starts_at DESC LIMIT 50`, [s.businessId, c.id]);
       for (const r of rows) {
         if (!r.manage_token) { r.manage_token = crypto.randomBytes(18).toString('base64url'); await q('UPDATE bookings SET manage_token=$1 WHERE id=$2', [r.manage_token, r.id]); }
         out.push({ ...r, token: t, emoji: (VERTICALS[r.vertical] || VERTICALS.salon).emoji });
@@ -124,14 +128,15 @@ export function mountWeBook(app) {
   app.post('/api/webook/session', wrap(async (req, res) => {
     if (limited(req, 'session', 10, 60 * 60000)) return res.status(429).json({ error: 'Too many tries. Please wait a little.' });
     const biz = await loadBusiness(+req.body.business_id);
-    if (!biz) return res.status(404).json({ error: 'Business not found.' });
+    if (!biz || !biz.listed || !(biz.is_demo || await hasFeature(biz.id, 'webook_listing'))) return res.status(404).json({ error: 'Business not found.' });
     const name = String(req.body.name || '').trim().slice(0, 60), phone = String(req.body.phone || '').replace(/[^\d+]/g, '');
     if (name.length < 2) return res.status(400).json({ error: 'Please enter your name.' });
     if (phone.replace(/\D/g, '').length < 7) return res.status(400).json({ error: 'Please enter a valid phone number.' });
-    const c = await one(`INSERT INTO customers (business_id, phone, name) VALUES ($1,$2,$3)
-        ON CONFLICT (business_id, phone) DO UPDATE SET name = COALESCE(customers.name, EXCLUDED.name) RETURNING id, name`, [biz.id, phone, name]);
-    // Same number used on WhatsApp, Telegram or the booking page: same client.
-    Object.assign(c, await unify(biz.id, c.id) || {});
+    // A typed phone number proves nothing (anyone can type anyone's), so a new session never opens an existing client's
+    // record, bookings or chat. The app keeps its token, so the same device keeps one record; the number is kept as the
+    // contact for reminders, and the owner can merge it with the client's other records from the Clients page.
+    const c = await one(`INSERT INTO customers (business_id, phone, name, contact_phone) VALUES ($1,$2,$3,$4) RETURNING id, name`,
+      [biz.id, 'wb-' + crypto.randomBytes(9).toString('base64url'), name, phone]);
     res.json({ token: sign(c.id, biz.id), name: c.name, business: { id: biz.id, name: biz.name } });
   }));
 
@@ -157,6 +162,8 @@ export function mountWeBook(app) {
   app.post('/api/webook/send', wrap(async (req, res) => {
     const s = await sessionOf(req);
     if (!s) return res.status(401).json({ error: 'Please start again.' });
+    if (!(await allowedFor(s.businessId, 'channel:webook'))) return res.status(503).json({ error: 'Chat with this business is paused right now. Please call them or try again later.' });
+    if (limited(req, 'send-ip', 120, 60 * 60000)) return res.status(429).json({ error: 'You are sending messages very fast. Please wait a moment.' });
     if (limited(req, 'send' + s.customerId, 40, 10 * 60000)) return res.status(429).json({ error: 'You are sending messages very fast. Please wait a moment.' });
     const text = String(req.body.text || '').trim().slice(0, 1500);
     if (!text) return res.status(400).json({ error: 'Write a message first.' });

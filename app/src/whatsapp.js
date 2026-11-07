@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import { one } from './db.js';
+import { allowedFor } from './switches.js';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 // Kapso (kapso.ai) mirrors Meta's Cloud API: same message body, different base URL and key. Used when KAPSO_API_KEY is set.
@@ -17,18 +19,35 @@ export function waBody(text, options = []) {
 }
 
 export async function sendWhatsApp(phoneNumberId, to, text, options = []) {
+  // switched off in the Lab: for every business, or for the business that owns this number
+  const owner = phoneNumberId ? (await one('SELECT id FROM businesses WHERE wa_phone_number_id=$1 LIMIT 1', [String(phoneNumberId)]).catch(() => null))?.id : null;
+  if (!(await allowedFor(owner, 'channel:whatsapp'))) return { ok: false, reason: 'WhatsApp is switched off in the Lab' };
   const kapso = process.env.KAPSO_API_KEY, token = process.env.WA_ACCESS_TOKEN;
   if ((!kapso && !token) || !phoneNumberId) { console.warn('WhatsApp not configured; message not sent'); return { ok: false, reason: 'WhatsApp not connected' }; }
   const post = msg => fetch(`${kapso ? KAPSO : GRAPH}/${phoneNumberId}/messages`, {
     method: 'POST',
     headers: { ...(kapso ? { 'X-API-Key': kapso } : { Authorization: `Bearer ${token}` }), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messaging_product: 'whatsapp', to, ...msg }),
+    body: JSON.stringify({ messaging_product: 'whatsapp', to, ...msg }), signal: AbortSignal.timeout(10000),
   }).catch(e => ({ ok: false, status: 0, text: async () => e.message }));
   const msg = waBody(text, options);
   let res = await post(msg);
   // Buttons refused (old app, test number limits): the same words as plain text, so the customer is never left without a reply.
   if (!res.ok && msg.type === 'interactive') { console.warn('WhatsApp buttons refused, sending text:', res.status, await res.text()); res = await post({ type: 'text', text: { body: String(text) + '\n\n' + options.map(o => '• ' + o).join('\n') } }); }
   if (!res.ok) { const t = await res.text(); console.error('WhatsApp send failed', res.status, t); return { ok: false, reason: `WhatsApp error ${res.status}` }; }
+  return { ok: true };
+}
+
+// A pre-approved template (Meta) with body parameters: allowed outside the 24-hour window.
+export async function sendWhatsAppTemplate(phoneNumberId, to, name, lang, params = []) {
+  const owner = phoneNumberId ? (await one('SELECT id FROM businesses WHERE wa_phone_number_id=$1 LIMIT 1', [String(phoneNumberId)]).catch(() => null))?.id : null;
+  if (!(await allowedFor(owner, 'channel:whatsapp'))) return { ok: false, reason: 'WhatsApp is switched off in the Lab' };
+  const kapso = process.env.KAPSO_API_KEY, token = process.env.WA_ACCESS_TOKEN;
+  if ((!kapso && !token) || !phoneNumberId) return { ok: false, reason: 'WhatsApp not connected' };
+  const res = await fetch(`${kapso ? KAPSO : GRAPH}/${phoneNumberId}/messages`, { method: 'POST', signal: AbortSignal.timeout(10000),
+    headers: { ...(kapso ? { 'X-API-Key': kapso } : { Authorization: `Bearer ${token}` }), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'template', template: { name, language: { code: lang },
+      components: [{ type: 'body', parameters: params.map(t => ({ type: 'text', text: String(t) })) }] } }) }).catch(e => ({ ok: false, status: 0, text: async () => e.message }));
+  if (!res.ok) { const t = await res.text(); console.error('WhatsApp template failed', res.status, t); return { ok: false, reason: `WhatsApp error ${res.status}` }; }
   return { ok: true };
 }
 

@@ -28,6 +28,16 @@ try {
   const live = await fetch(`${BASE}/api/live?days=7`, { headers: { cookie: `rb_session=${signSession(u.id, u.session_version)}`, origin: BASE } }).then(r => r.json());
   const same = ['visits_today', 'revenue_today', 'booked_today', 'value_today', 'ai_count', 'ai_value'].every(k => live.now?.[k] === { ...m, ...ai }[k]);
   check('Home shows the same numbers as metrics.js', same, JSON.stringify(live.now && { v: live.now.visits_today, r: live.now.revenue_today, a: live.now.ai_count }));
+  // Revenue is one rule everywhere: a no-show pays nothing, and a future booking is not income of "the last 30 days"
+  await add(at(-2), 40, 'no_show', 'ai');
+  await add(at(3), 90, 'confirmed', 'web');
+  const { insights } = await import('./insights.js'), { summary } = await import('./finance.js');
+  const ins = await insights(A.id, 30), fin = await summary(A.id, 30);
+  const todayNoonPast = (await one(`SELECT ${at(0)} < now() AS p`)).p;
+  const want = 20 + (todayNoonPast ? 50 : 0);
+  const insRev = ins.totals.revenue, finRev = fin.revenue;
+  check('Insights revenue leaves out no-shows and future bookings', insRev === want, `insights ${insRev}, expected ${want}`);
+  check('Insights and Finance agree on revenue', insRev === finRev, `insights ${insRev}, finance ${finRev}`);
 } catch (e) { check('Metrics test ran', false, e.message) } finally {
   for (const id of made) await closeBusiness(id).catch(() => {});
   console.log(`\n${results.filter(Boolean).length} passed, ${results.filter(x => !x).length} failed`);

@@ -5,8 +5,11 @@
 //   GET/POST/DELETE /api/integrations/keys[/:id]     business API keys (shown once, stored as a hash)
 //   GET /api/v1/{summary,bookings,customers}          public read API, "Authorization: Bearer pk_..."
 import crypto from 'node:crypto';
+import dns from 'node:dns/promises';
+import net from 'node:net';
 import { q, one } from './db.js';
 import { seal, unseal } from './ops.js';
+import { allowedFor, keyOfProvider } from './switches.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const T = 8000; // every outside call gives up after 8 seconds
@@ -39,6 +42,10 @@ export const PROVIDERS = {
   telegram: { group: 'Messaging', name: 'Telegram bot', does: 'A Telegram bot answers customers.',
     fields: [{ k: 'bot_token', label: 'Bot token', secret: true, hint: 'From @BotFather' }],
     test: async c => ok(await get(`https://api.telegram.org/bot${c.bot_token}/getMe`), j => `Connected · @${j.result?.username}`) },
+  instagram: { group: 'Messaging', name: 'Instagram DMs (Meta)', does: 'Your Instagram account answers and books in direct messages.',
+    fields: [{ k: 'access_token', label: 'Access token', secret: true, hint: 'Meta app → Instagram → Generate token' }, { k: 'ig_user_id', label: 'Instagram account ID', hint: 'Numbers, shown next to the token' },
+      { k: 'app_secret', label: 'App secret', secret: true, hint: 'Meta app → Settings → Basic' }],
+    test: async c => ok(await get(`https://graph.facebook.com/v21.0/${encodeURIComponent(c.ig_user_id)}?fields=username`, { Authorization: `Bearer ${c.access_token}` }), j => `Connected · @${j.username || c.ig_user_id}`) },
   resend: { group: 'Email', name: 'Email (Resend)', does: 'Confirmations and reminders from your own domain.',
     fields: [{ k: 'api_key', label: 'API key', secret: true }, { k: 'from', label: 'From address', hint: 'bookings@yourdomain.com' }],
     test: async c => ok(await get('https://api.resend.com/domains', { Authorization: `Bearer ${c.api_key}` }), j => `Connected · ${(j.data || []).length} domain(s)`) },
@@ -57,11 +64,29 @@ async function load(B, provider) {
   return { ...r, config: c };
 }
 // the decrypted config of a connected provider, for the rest of the app (MXAi Assistant, messaging, payments)
-export async function credentials(B, provider) { const r = await load(B, provider); return r && r.status !== 'off' ? r.config : null; }
+// Blocked in the Lab (for everyone, or for this business) = treated as not connected, wherever it is used.
+export async function credentials(B, provider) {
+  if (!(await allowedFor(B, keyOfProvider(provider)))) return null;
+  const r = await load(B, provider); return r && r.status !== 'off' ? r.config : null;
+}
+const blocked = async (B, p) => !(await allowedFor(B, keyOfProvider(p)));
+const BLOCKED = { error: 'Not available for this business yet. Ask MXAi to allow it (owners can press Request).', locked: 'connector' };
 
-function post(c, payload) {
+// a webhook may only go to a public internet address: not this PC, the home network, Docker or cloud metadata
+const PRIVATE = [/^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2\d|3[01])\./, /^169\.254\./, /^0\./, /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./, /^::1$/, /^f[cd]/i, /^fe80/i, /^::ffff:(127|10|192\.168|169\.254)\./i];
+export async function publicUrl(u) {
+  let url; try { url = new URL(u); } catch { throw new Error('That is not a valid web address.'); }
+  if (url.protocol !== 'https:') throw new Error('The webhook URL must start with https://');
+  const host = url.hostname.replace(/^\[|\]$/g, '');
+  const ips = net.isIP(host) ? [host] : (await dns.lookup(host, { all: true }).catch(() => [])).map(a => a.address);
+  if (!ips.length) throw new Error('That address does not exist.');
+  if (ips.some(ip => PRIVATE.some(r => r.test(ip)))) throw new Error('Webhooks can only go to a public internet address.');
+  return url.toString();
+}
+async function post(c, payload) {
+  await publicUrl(c.url);
   const body = JSON.stringify(payload), sig = crypto.createHmac('sha256', c.secret || '').update(body).digest('hex');
-  return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Pulse-Event': payload.event, 'X-Pulse-Signature': `sha256=${sig}` }, body, signal: AbortSignal.timeout(T) });
+  return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-MXAi-Event': payload.event, 'X-MXAi-Signature': `sha256=${sig}`, 'X-Pulse-Event': payload.event, 'X-Pulse-Signature': `sha256=${sig}` } /* old names kept for receivers set up before the rename */, body, redirect: 'manual', signal: AbortSignal.timeout(T) });
 }
 // fire-and-forget: a slow or broken webhook never delays a customer reply; the last error shows in Integrations
 export function emitWebhook(B, event, data) {
@@ -75,14 +100,18 @@ export function mountIntegrations(app, BIZ) {
   app.get('/api/integrations', wrap(async (_req, res) => {
     const rows = await q('SELECT provider, config, status, checked_at, error, updated_at FROM integrations WHERE business_id=$1', [BIZ()]);
     const saved = Object.fromEntries(rows.map(r => [r.provider, r]));
+    const allowed = Object.fromEntries(await Promise.all(Object.keys(PROVIDERS).map(async id => [id, await allowedFor(BIZ(), keyOfProvider(id))])));
+    const { pendingFor } = await import('./upgrades.js'), asked = new Set(await pendingFor(BIZ()));
     res.json({ providers: Object.entries(PROVIDERS).map(([id, p]) => {
       const s = saved[id], c = {}; if (s) for (const f of p.fields) c[f.k] = f.secret ? mask(unseal(s.config?.[f.k])) : s.config?.[f.k] || '';
       return { id, group: p.group, name: p.name, does: p.does, fields: p.fields.map(({ k, label, secret, hint }) => ({ k, label, secret: !!secret, hint })),
+        allowed: allowed[id], key: keyOfProvider(id), requested: asked.has(keyOfProvider(id)),
         connected: !!s, status: s?.status || 'off', checked_at: s?.checked_at, error: s?.error, values: c };
     }), keys: await q('SELECT id, name, prefix, created_at, last_used_at FROM api_keys WHERE business_id=$1 ORDER BY id DESC', [BIZ()]) });
   }));
   app.put('/api/integrations/:p', wrap(async (req, res) => {
     const p = PROVIDERS[req.params.p]; if (!p) return res.sendStatus(404);
+    if (await blocked(BIZ(), req.params.p)) return res.status(403).json({ ...BLOCKED, key: keyOfProvider(req.params.p) });
     const old = (await load(BIZ(), req.params.p))?.config || {}, cfg = {};
     for (const f of p.fields) {
       let v = String(req.body?.[f.k] ?? '').trim();
@@ -92,12 +121,19 @@ export function mountIntegrations(app, BIZ) {
       cfg[f.k] = f.secret ? seal(v) : v;
     }
     if (p.fields.some(f => f.secret) && !p.fields.filter(f => f.secret && f.k !== 'secret').every(f => unseal(cfg[f.k]))) return res.status(400).json({ error: 'Add the key first.' });
+    // one Instagram account answers for one business: claiming another's id would swallow that business's DMs
+    if (req.params.p === 'instagram') {
+      if (!/^\d+$/.test(cfg.ig_user_id || '')) return res.status(400).json({ error: 'The Instagram account ID is numbers only.' });
+      if (await one(`SELECT 1 FROM integrations WHERE provider='instagram' AND business_id<>$1 AND config->>'ig_user_id'=$2`, [BIZ(), cfg.ig_user_id]))
+        return res.status(409).json({ error: 'That Instagram account is already connected to another business.' });
+    }
     await q(`INSERT INTO integrations (business_id, provider, config, status, updated_at) VALUES ($1,$2,$3,'saved',now())
       ON CONFLICT (business_id, provider) DO UPDATE SET config=EXCLUDED.config, status='saved', error=NULL, updated_at=now()`, [BIZ(), req.params.p, cfg]);
     res.json({ ok: true, secret: req.params.p === 'webhook' && !old.secret ? unseal(cfg.secret) : undefined });
   }));
   app.post('/api/integrations/:p/test', wrap(async (req, res) => {
     const p = PROVIDERS[req.params.p], r = p && await load(BIZ(), req.params.p); if (!r) return res.status(404).json({ error: 'Save it first.' });
+    if (await blocked(BIZ(), req.params.p)) return res.status(403).json({ ...BLOCKED, key: keyOfProvider(req.params.p) });
     try { const msg = await p.test(r.config, BIZ()); await q(`UPDATE integrations SET status='connected', checked_at=now(), error=NULL WHERE business_id=$1 AND provider=$2`, [BIZ(), req.params.p]); res.json({ ok: true, message: msg }); }
     catch (e) { const m = e.name === 'TimeoutError' ? 'No answer within 8 seconds.' : String(e.message || e).slice(0, 200); await q(`UPDATE integrations SET status='error', checked_at=now(), error=$3 WHERE business_id=$1 AND provider=$2`, [BIZ(), req.params.p, m]); res.json({ ok: false, message: m }); }
   }));

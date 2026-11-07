@@ -26,11 +26,12 @@ async function loadBizList(){const list=await req("/api/admin/businesses");$("#a
       <span>${b.chats} chats · ${b.questions} customer messages · ${b.bookings} bookings</span></div><button class="mini" data-open="${b.id}" type="button">Open</button></summary>
       <div class="form" style="margin-top:12px">
         <label>Plan<select class="bPlan">${cat.plans.map(p=>`<option value="${p.key}" ${p.key===b.plan_key?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>
+        <label>Claude budget a month ($)<input class="bBudget" type="number" min="0" max="1000" step="1" value="${b.ai_budget??5}" title="Only used when AI Assistant Pro is on for this business"></label>
         <label>Status<select class="bStatus">${["trial","active","paused"].map(s=>`<option ${s===b.plan_status?"selected":""}>${s}</option>`).join("")}</select></label>
         <div class="full"><span class="sub" style="font-size:13px">Add-ons</span><div style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:6px">${cat.addons.map(a=>`<label class="switch"><input type="checkbox" class="bAdd" value="${a.key}" ${(b.addons||[]).includes(a.key)?"checked":""}> ${esc(a.name)}</label>`).join("")||'<span class="sub">No add-ons yet</span>'}</div></div>
         <div class="full"><span class="sub" style="font-size:13px">Feature switches for this business only (default follows plan and add-ons)</span><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px;margin-top:6px">${Object.entries(cat.features).map(([k,n])=>`<label style="display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px">${esc(n)}<select class="bOv" data-k="${k}" style="width:auto"><option value="" ${ov[k]===undefined?"selected":""}>Default</option><option value="on" ${ov[k]===true?"selected":""}>On</option><option value="off" ${ov[k]===false?"selected":""}>Off</option></select></label>`).join("")}</div></div>
         <div class="full" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn bSave" type="button">Save changes</button><button class="btn ghost bExt" type="button">+14 trial days</button><button class="btn ghost bLogin" type="button">Add a login</button></div></div></details>`}).join("");
-  $("#abList").querySelectorAll("[data-b]").forEach(d=>{const id=+d.dataset.b,body=()=>({plan_key:d.querySelector(".bPlan").value,status:d.querySelector(".bStatus").value,
+  $("#abList").querySelectorAll("[data-b]").forEach(d=>{const id=+d.dataset.b,body=()=>({plan_key:d.querySelector(".bPlan").value,status:d.querySelector(".bStatus").value,ai_budget:d.querySelector(".bBudget").value,
       addons:[...d.querySelectorAll(".bAdd:checked")].map(x=>x.value),feature_overrides:Object.fromEntries([...d.querySelectorAll(".bOv")].filter(x=>x.value).map(x=>[x.dataset.k,x.value==="on"]))});
     d.querySelector(".bSave").onclick=async()=>{await req(`/api/admin/businesses/${id}/plan`,"POST",body());toast("Saved. It applies on their next click.");loadBizList();loadMe()};
     d.querySelector(".bExt").onclick=async()=>{await req(`/api/admin/businesses/${id}/plan`,"POST",{...body(),extend_days:14});toast("Trial extended by 14 days.");loadBizList();loadMe()};
@@ -71,9 +72,10 @@ function loadPlans(){const card=(p,kind)=>`<div class="card glass" data-k="${esc
   $("#plList").innerHTML=cat.plans.map(p=>card(p,"plan")).join("")+cat.addons.map(a=>card(a,"addon")).join("");
   $("#plList").querySelectorAll("[data-k]").forEach(c=>{const kind=c.dataset.kind==="addon"?"?kind=addon":"";
     c.querySelector(".pSave").onclick=async()=>{try{await req(`/api/admin/plans/${encodeURIComponent(c.dataset.k)}${kind}`,"PUT",{name:c.querySelector(".pN").value,price:+c.querySelector(".pP").value,currency:c.querySelector(".pC").value.toUpperCase(),features:[...c.querySelectorAll(".pF:checked")].map(x=>x.value)});toast("Saved. Every business on it updates instantly.");loadMe()}catch(err){toast(err.message)}};
-    c.querySelector(".pDel").onclick=async()=>{if(!confirm("Delete this?"))return;try{await req(`/api/admin/plans/${encodeURIComponent(c.dataset.k)}${kind}`,"DELETE");loadAdmin()}catch(err){toast(err.message)}}})}
+    c.querySelector(".pDel").onclick=async()=>{if(!confirm("Delete this?"))return;const u=`/api/admin/plans/${encodeURIComponent(c.dataset.k)}${kind}`;
+      try{await req(u,"DELETE");loadAdmin()}catch(err){if(err.status===409&&confirm(err.message+" Delete it anyway?")){try{await req(u+(u.includes("?")?"&":"?")+"force=1","DELETE");loadAdmin()}catch(e2){toast(e2.message)}}else toast(err.message)}}})}
 const newPlan=kind=>async()=>{const name=prompt(kind==="addon"?"Add-on name":"Plan name");if(!name)return;const key=name.toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
-  try{await req(`/api/admin/plans/${key}${kind==="addon"?"?kind=addon":""}`,"PUT",{name,price:0,currency:"USD",features:[]});loadAdmin()}catch(err){toast(err.message)}};
+  try{await req(`/api/admin/plans/${key}${kind==="addon"?"?kind=addon":""}`,"PUT",{name,price:0,currency:"USD",features:[],create:true});loadAdmin()}catch(err){toast(err.message)}};
 $("#plNew").onclick=newPlan("plan");$("#adNew").onclick=newPlan("addon");
 
 let adT;async function loadAudit(){const list=await req("/api/admin/audit?q="+encodeURIComponent($("#adQ").value||""));

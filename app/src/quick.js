@@ -59,7 +59,7 @@ export function quickAnswer(biz, text) {
   // 3) General questions
   if (/services|what do you (do|offer)|menu|price list|prices|خدمات|شو بتعملو|أسعار/.test(t))
     return (ar ? 'خدماتنا: ' : 'Our services: ') + biz.services.map(s => `${s.name} (${Number(s.price)} ${cur}, ${s.minutes} min)`).join(', ') + (ar ? '. أي خدمة بتحب تحجز؟' : '. Which one would you like to book?');
-  if (/open|close|hours|working|دوام|بتفتح|بتسكر|ساعات/.test(t)) return (ar ? 'أوقات العمل: ' : 'Our opening hours: ') + hoursText(biz) + '.';
+  if (/open|close|hours|working|دوام|بتفتح|بتسكر|ساعات/.test(t) && !/christmas|xmas|new year|easter|eid|ramadan|holiday|navidad|festivo|noel|ferie|عيد|رمضان|عطل|\d{1,2}[./-]\d{1,2}/i.test(t)) return (ar ? 'أوقات العمل: ' : 'Our opening hours: ') + hoursText(biz) + '.';
   if (/where|address|location|map|park|وين|عنوان|موقع/.test(t) && biz.address)
     return (ar ? `عنواننا: ${biz.address}` : `We're at ${biz.address}`) + (biz.maps_url ? ` (${biz.maps_url})` : '') + '.';
   // "gift card" or "voucher" is a product question, not a payment one: leave it to the AI (or the owner)

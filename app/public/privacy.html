@@ -40,14 +40,19 @@ table{width:100%;border-collapse:collapse;font-size:15px;margin:10px 0}td,th{tex
 <h2>Who helps us run the service</h2>
 <table><thead><tr><th>Provider</th><th>Role</th></tr></thead><tbody>
 <tr><td>Google (Gemini)</td><td>Writes the assistant's replies from the conversation</td></tr>
-<tr><td>Meta (WhatsApp) through Kapso</td><td>Delivers WhatsApp messages</td></tr>
+<tr><td>Groq, OpenRouter, Cerebras</td><td>Back-up AI services, used only when the main one is busy</td></tr>
+<tr><td>Anthropic (Claude)</td><td>Only for businesses that chose the AI Assistant Pro add-on: answers the business owner's questions</td></tr>
+<tr><td>Meta (WhatsApp, through Kapso; Instagram)</td><td>Delivers WhatsApp and Instagram messages</td></tr>
 <tr><td>Telegram</td><td>Delivers Telegram messages, if you use Telegram</td></tr>
+<tr><td>Resend</td><td>Sends emails (sign-in codes, booking emails)</td></tr>
 <tr><td>Cloudflare</td><td>Secure connection and protection of the website</td></tr>
-<tr><td>Our hosting provider</td><td>Stores the database and backups</td></tr>
+<tr><td>Google Fonts</td><td>The letters on the MXAi website (your browser loads them from Google)</td></tr>
+<tr><td>{{COMPANY}} (our own server)</td><td>Stores the database and daily backups</td></tr>
+<tr><td>Microsoft (OneDrive)</td><td>Keeps an encrypted copy of the backups, which only we can open</td></tr>
 </tbody></table>
 
 <h2>How long we keep it</h2>
-<p>Data is kept while the business uses MXAi. When a business closes its account, its data, including customers, messages, bookings and photos, is deleted. Backups are kept for up to 14 days and then deleted automatically.</p>
+<p>Data is kept while the business uses MXAi. When a business closes its account, its data, including customers, messages, bookings and photos, is deleted. Each business can choose to keep chats for a set time (for example 12 months); older messages are then deleted automatically. Backups are kept for up to 14 days on our server and an encrypted copy for up to 30 days, then deleted automatically. IP addresses in sign-in records are removed after 12 months.</p>
 
 <h2>How we protect it</h2>
 <ul><li>Each business can only see its own data. This is tested automatically.</li>
@@ -58,8 +63,8 @@ table{width:100%;border-collapse:collapse;font-size:15px;margin:10px 0}td,th{tex
 <p>You can ask to <b>see, correct, export or delete</b> your data, or to stop marketing messages. Ask the business you booked with, or contact us and we will help within 30 days. If you are in the EU you may also complain to your data protection authority (in Spain, the AEPD).</p>
 
 <h2>Contact</h2>
-<p>Use the form on the <a href="/pulse#start">MXAi website</a> and choose "Book a demo", writing "Privacy" in the message, or ask the business directly.</p>
+<p>MXAi is provided by {{COMPANY}}. {{CONTACT}}</p>
 <p class="muted">This page describes how the service works. Have it reviewed by a lawyer for your country before relying on it legally.</p>
 </main>
-<script>document.getElementById("upd").textContent=new Date(document.lastModified).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})</script>
+<script>document.getElementById("upd").textContent="7 November 2026"</script>
 </body></html>

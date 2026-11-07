@@ -95,7 +95,7 @@ window.PulseMarketing = (() => {
     if (!list.length) return '';
     return `<div class="mk-card mk-wide"><div class="mk-h"><h3>Next campaigns, ranked by value</h3><small>value = reachable × expected reply rate × your average ticket</small></div>
       <div class="mk-ideas">${list.map((x, i) => `<article class="${i ? '' : 'top'}"><header><b>${esc(x.title)}</b><span>${x.reachable ? money(x.value) : money(x.potential)}<small>${x.reachable ? 'expected' : 'if they agree'}</small></span></header>
-        <p>${esc(x.why)}</p><footer><small>${x.reachable} of ${x.total} reachable · ~${x.rate}% reply</small><button type="button" class="mk-go" data-go="${x.go.join(',')}">${x.reachable ? 'Create campaign' : 'See how to reach them'}</button></footer></article>`).join('')}</div></div>`;
+        <p>${esc(x.why)}</p><footer><small>${x.reachable} of ${x.total} reachable · ~${x.rate}% reply</small><button type="button" class="mk-go" data-seg="${esc(x.audience)}" data-go="${x.go.join(',')}">${x.reachable ? 'Create campaign' : 'See how to reach them'}</button></footer></article>`).join('')}</div></div>`;
   }
   function tables(d) {
     const pill = r => { const [t, c] = RES[r] || [r, '']; return `<span class="mk-pill ${c}">${t}</span>`; };
@@ -147,7 +147,12 @@ window.PulseMarketing = (() => {
         return;
       }
     }
-    const g = e.target.closest('[data-go]'); if (g) { const [pg, t] = g.dataset.go.split(','); return window.P10?.go(pg, +t); }
+    // "Create campaign" on an idea opens that group's draft in the campaign studio right here, ready to launch
+    const sg = e.target.closest('[data-seg]');
+    const IDEA_DRAFT = { lapsed: 'winback', lost: 'winback', vip: 'vip', new: 'second', never: 'quiet' }; // idea's group -> studio draft
+    if (sg && studioData) { const k = studioData.drafts.findIndex(d => d.id === IDEA_DRAFT[sg.dataset.seg]);
+      if (k >= 0) { openD = k; draw(); root.querySelector('.mk-brief')?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); root.querySelector('.mk-brief textarea')?.focus({ preventScroll: true }); return; } }
+    const g = e.target.closest('[data-go]'); if (g) { const [pg, t] = g.dataset.go.split(','); return window.P10?.go(pg, t); } // tab name or number
     const a = e.target.closest('[data-ask]'); if (a) window.PulseCommand?.open(a.dataset.ask);
   });
   return { mount(s) { root = s.querySelector('#mkRoot'); load(); } };

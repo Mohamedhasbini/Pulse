@@ -152,13 +152,13 @@ $("#apply").onclick=async()=>{const code=$("#code").value.trim();$("#err").hidde
 $("#f").onsubmit=async e=>{e.preventDefault();$("#err").hidden=true;$("#go").disabled=true;$("#go").textContent="Booking…";
   try{const r=await api("/api/public/book","POST",{service_id:svc.id,start:`${day}T${time}`,name:$("#name").value,phone:$("#phone").value,email:$("#email").value.trim(),
       notes:$("#notes").value,reminder_channel:$("#remind").value,coupon:coupon?coupon.code:$("#code").value.trim(),website:$("#website").value,offers:$("#offers").checked});
-    history.replaceState(null,"",`/booking/${r.token}`);manage(r.token,true)}
+    history.replaceState(null,"",`/booking/${r.token}?b=${info.id}`);manage(r.token,true)}
   catch(err){$("#err").textContent=err.message;$("#err").hidden=false;$("#go").textContent="Confirm booking";check();
     if(err.status===409){const d=document.querySelector(".day[aria-pressed=true]");if(d)d.click()}}};
 
 async function manage(token,fresh){
   $("#flow").hidden=true;const box=$("#done");box.hidden=false;box.innerHTML=`<div class="empty">Loading your booking…</div>`;
-  try{const b=await api(`/api/public/booking/${token}`);const s=L(b.start),e=L(b.end);
+  try{const b=await api(`/api/public/booking/${token}`);if(!B&&b.business_id&&info&&b.business_id!==info.id){location.replace(location.pathname+"?b="+b.business_id);return}const s=L(b.start),e=L(b.end);
     const state=b.status==="cancelled"?["✕","Booking cancelled","var(--bad)"]:b.cancel_request==="pending"?["⏳","Cancellation waiting for approval","var(--blue)"]:b.past?["✓","Appointment done","var(--green)"]:["✓",fresh?"You're booked!":"Your booking","var(--green)"];
     box.innerHTML=`<div class="ok"><div class="tick" style="color:${state[2]}">${state[0]}</div><h1>${state[1]}</h1><p class="sub">Booking ref <span class="ref">${b.ref}</span></p></div>
       <div class="sum" style="margin-top:14px"><div><span>Name</span><b>${esc(b.name)}</b></div><div><span>Service</span><b>${esc(b.service)}</b></div>
@@ -178,7 +178,7 @@ async function manage(token,fresh){
         <button class="btn" id="cxYes" style="background:var(--bad);color:#fff">${b.can_cancel?"Yes, cancel":"Yes, send request"}</button><button class="btn ghost" id="cxNo" style="width:100%">Keep my booking</button>`;
         $("#cxNo").onclick=()=>manage(token);
         $("#cxYes").onclick=async()=>{try{await api(`/api/public/booking/${token}/cancel`,"POST");manage(token)}catch(err){a.innerHTML=`<p class="err">${esc(err.message)}</p>`}}}}
-    if(b.status!=="confirmed"||b.past)a.innerHTML=`<a class="btn" href="/book" style="text-align:center;text-decoration:none">Book again</a>`;
+    if(b.status!=="confirmed"||b.past)a.innerHTML=`<a class="btn" href="/book?b=${b.business_id}" style="text-align:center;text-decoration:none">Book again</a>`;
   }catch(err){box.innerHTML=`<p class="err">${esc(err.message)}</p><a class="btn" href="/book" style="display:block;text-align:center;text-decoration:none;margin-top:12px">Make a new booking</a>`}}
 start();
 </script>
