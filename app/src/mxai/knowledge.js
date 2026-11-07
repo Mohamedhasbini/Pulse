@@ -23,7 +23,13 @@ export function teamOf(team) {
   const lines = Array.isArray(team) ? team : clean(team).split(/\r?\n|;/);
   return lines.map(l => (typeof l === 'object' && l ? `${l.name || ''} - ${l.role || ''}` : String(l)))
     .map(l => /^\s*([^-–—:|,]+?)\s*(?:[-–—:|,]\s*(.+))?$/.exec(l)).filter(Boolean)
-    .map(m => ({ name: m[1].trim().split(/\s+/)[0], role: clean(m[2]) || undefined })).filter(t => t.name);
+    .map(m => ({ name: firstName(m[1]), role: clean(m[2]) || undefined })).filter(t => t.name);
+}
+// Titles stay with the first name: "Dr. Rami Saad" -> "Dr. Rami", "الدكتورة مايا" -> "الدكتورة مايا"
+export const TITLE = /^(dr|dra|doctor|doctora|docteur|mr|mrs|ms|miss|mme|mlle|m|sr|sra|srta|prof|profesor|profesora|chef|coach|د|دكتور|الدكتور|دكتورة|الدكتورة|السيد|السيدة|الاستاذ|الأستاذ|الاستاذة|الأستاذة)\.?$/i;
+function firstName(full) {
+  const w = String(full).trim().split(/\s+/);
+  return TITLE.test(w[0]) && w[1] ? `${w[0]} ${w[1]}` : w[0];
 }
 
 // Same rules as brain.js paymentText: only options the owner switched on, online payment only once it is live.

@@ -19,8 +19,8 @@ export function detectLang(text) {
   const raw = String(text || '');
   if (AR.test(raw)) return 'ar';
   const t = ' ' + fold(raw) + ' ';
-  if (/[¿¡ñ]/.test(raw) || / (hola|buenas|buenos|gracias|donde|cuando|cuanto|horario|abren|cierran|direccion|ubicacion|quiero|tienen|por favor|que tal|adios|hasta luego|hasta pronto|nos vemos|vale|perfecto) /.test(t)) return 'es';
-  if (/ (bonjour|bonsoir|salut|merci|ou etes|adresse|horaires|ouvert|fermez|je voudrais|s il vous plait|svp|ca va|au revoir|a bientot|bonne journee|bonne soiree|parfait) /.test(t)) return 'fr';
+  if (/[¿¡ñ]/.test(raw) || / (hola|buenas|buenos|gracias|donde|cuando|cuanto|horario|abren|cierran|direccion|ubicacion|quiero|tienen|por favor|que tal|adios|hasta luego|hasta pronto|nos vemos|vale|perfecto|precio|cuesta|cuanto cuesta|hacen|haceis|ustedes|puedo|necesito) /.test(t)) return 'es';
+  if (/ (bonjour|bonsoir|salut|merci|ou etes|adresse|horaires|ouvert|fermez|je voudrais|s il vous plait|svp|ca va|au revoir|a bientot|bonne journee|bonne soiree|parfait|quel|quelle|quels|quelles|prix|combien|faites|vous|avez|etes|pouvez|est ce que|rendez vous|je veux|j aimerais|c est) /.test(t)) return 'fr';
   return 'en';
 }
 
@@ -65,6 +65,8 @@ const pickLang = (lang, text) => (['en', 'ar', 'es', 'fr'].includes(lang) ? lang
 // Booking, changes or free times need live availability, never a saved answer (it would offer stale slots).
 const NEEDS_LIVE = /\b(book|booking|appointment|reserve|reservation|reschedule|cancel|slot|slots|available|availability|free time|tomorrow|tonight|today|reservar|reserva|cita|cancelar|cambiar|manana|hoy|disponible|rendez vous|reserver|annuler|deplacer|demain|aujourd hui|disponible)\b|احجز|حجز|موعد|بكرا|بكرة|اليوم|الغا|إلغاء|بدي روح/;
 const ASKS_HOURS = /\b(open|opening|close|closing|hours|working hours|what time|horario|abren|abierto|cierran|hora abren|ouvert|ouvrez|fermez|horaires|heures d ouverture)\b|دوام|بتفتح|بتسكر|ساعات|اوقات|أوقات/;
+// Holidays and specific dates: the weekly hours may not apply, so these go to the AI (which checks with the team)
+export const SPECIAL_DAY = /\b(christmas|xmas|new year|easter|eid|ramadan|holiday|holidays|bank holiday|public holiday|navidad|nochebuena|nochevieja|ano nuevo|semana santa|festivo|feriado|noel|nouvel an|paques|ferie|jour ferie|vacances|january|february|march|april|june|july|august|september|october|november|december|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|janvier|fevrier|mars|avril|juin|juillet|aout|septembre|octobre|novembre|decembre|\d{1,2} \d{1,2})\b|عيد|رمضان|الميلاد|راس السنة|رأس السنة|عطلة|عطله/;
 const ASKS_WHERE = /\b(where|address|location|located|map|directions|donde|direccion|ubicacion|ubicados|ou etes|ou se trouve|adresse|localisation)\b|وين|عنوان|موقع|العنوان/;
 
 // FAQ match, the same scoring as quick.js: most specific answer, written by the owner.
@@ -106,7 +108,7 @@ export function fastPath({ biz = {}, audience = 'customer', text, lang, history 
 
   const faq = faqMatch(biz.faqs, raw);
   if (faq) return { reply: faq.a, options: [], kind: 'faq' };
-  if (ASKS_HOURS.test(t) && biz.hours) return { reply: TEXT.hours[L] + hoursText(biz) + '.', options: [], kind: 'hours' };
+  if (ASKS_HOURS.test(t) && biz.hours && !SPECIAL_DAY.test(t) && !/\d{1,2}[./-]\d{1,2}/.test(raw)) return { reply: TEXT.hours[L] + hoursText(biz) + '.', options: [], kind: 'hours' };
   if (ASKS_WHERE.test(t) && biz.address)
     return { reply: TEXT.where[L](biz.address) + (biz.maps_url ? ` (${biz.maps_url})` : '') + '.', options: [], kind: 'location' };
   return null;

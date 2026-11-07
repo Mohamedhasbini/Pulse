@@ -195,8 +195,7 @@ async function handle({ businessId, phone, name, text, channel = 'whatsapp', waI
     const chit = !queued && smallTalk(text);
     if (chit) decision = { reply: chit, action: 'none', quick: true };
     else {
-      if (!(await takeAiSlot())) throw Object.assign(new Error('AI limit reached for this minute'), { busy: true });
-      turn = await customerTurn({ biz, customer, conv, channel, text, queued, history: chat, bookings, timeOff, theirs, emailSkipped, missing, options });
+      turn = await customerTurn({ biz, customer, conv, channel, text, queued, history: chat, bookings, timeOff, theirs, emailSkipped, missing, options, takeSlot: takeAiSlot });
       decision = turn.decision;
       Object.assign(aiHealth, { ok: true, at: new Date(), ms: Date.now() - t0, error: null });
       // answered live: an older queued copy of this chat would only repeat it

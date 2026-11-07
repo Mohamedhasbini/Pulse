@@ -51,6 +51,7 @@ export function validate(params, args) {
       if (p.enum) { const e = p.enum.find(x => x.toLowerCase() === v.toLowerCase()); if (!e) { errors.push(`"${k}" must be one of ${p.enum.join(', ')}`); continue; } v = e; }
       if (p.pattern && !new RegExp(p.pattern, 'i').test(v)) { errors.push(`"${k}" has the wrong format${p.hint ? ` (use ${p.hint})` : ''}`); continue; }
     } else if (p.type === 'integer' || p.type === 'number') {
+      if (typeof v === 'string' && /^\s*-?\d+(\.\d+)?\s*$/.test(v)) v = Number(v);
       if (typeof v !== 'number' || !Number.isFinite(v) || (p.type === 'integer' && !Number.isInteger(v))) { errors.push(`"${k}" must be ${p.type === 'integer' ? 'a whole number' : 'a number'}`); continue; }
       if (p.minimum != null && v < p.minimum) { errors.push(`"${k}" must be at least ${p.minimum}`); continue; }
       if (p.maximum != null && v > p.maximum) { errors.push(`"${k}" must be at most ${p.maximum}`); continue; }

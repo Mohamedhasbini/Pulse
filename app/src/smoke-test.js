@@ -417,6 +417,22 @@ try {
     for (const n of mine) fs.unlinkSync(`${dir}/${n}`); }
   await new Promise(s => setTimeout(s, 300));
   say('Closing removes its photos', (await fetch(BASE + `/media/${r.id}/` + String(ex.business.logo_url).split('/').pop())).status === 404);
+  // MXAi tester findings (7 Nov): staff titles, own name, French, holidays, numbers as text
+  { const { teamOf } = await import('./mxai/knowledge.js'), { checkOutput } = await import('./mxai/guardrails.js');
+    const { detectLang, fastPath } = await import('./mxai/router.js'), { validate } = await import('./mxai/tools.js');
+    const team = teamOf('Dr. Rami Saad - Dermatologist\nNour - Nurse');
+    say('A team title stays with the name ("Dr. Rami")', team[0].name === 'Dr. Rami' && team[1].name === 'Nour', JSON.stringify(team));
+    const gb = { name: 'Skin Test', assistant_name: 'Lina', services: [{ name: 'Botox', price: 250 }] };
+    const known = [{ name: 'Rami Fares', phone: '+96170000001' }, { name: 'Lina Khoury', phone: '+96170000002' }];
+    const g1 = checkOutput({ reply: 'Our dermatologist is Dr. Rami. Botox is 250 USD.', biz: gb, facts: { public: { team }, knownCustomers: known, customer: { name: 'Sam' } }, lang: 'en' });
+    say('A staff member\'s name is not taken for another customer', g1.action !== 'handoff', JSON.stringify(g1.hits));
+    const g2 = checkOutput({ reply: "Hi, I'm Lina, the AI assistant of Skin Test.", biz: gb, facts: { public: { team }, knownCustomers: known, customer: { name: 'Sam' } }, lang: 'en' });
+    say('The assistant\'s own name is not taken for another customer', g2.action !== 'handoff', JSON.stringify(g2.hits));
+    say('French questions are seen as French', ['Quel est le prix du Botox ?', 'Faites-vous des massages ?', 'Quelle IA êtes-vous ?'].every(x => detectLang(x) === 'fr'));
+    const hb = { name: 'Skin Test', hours: { mon: ['09:00', '18:00'] } };
+    say('A holiday question is not answered with the weekly hours', !fastPath({ biz: hb, text: 'Are you open on Christmas day?' }) && !!fastPath({ biz: hb, text: 'What are your opening hours?' }));
+    const v = validate({ properties: { guests: { type: 'integer', minimum: 1 } }, required: ['guests'] }, { guests: '2' });
+    say('A number written as text ("2") is accepted', v.ok && (v.args?.guests ?? 2) === 2, JSON.stringify(v)); }
 } catch (e) {
   say("Smoke test crashed", false, e.message); // a crash is a failure, never a silent pass
 } finally {

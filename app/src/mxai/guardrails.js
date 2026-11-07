@@ -321,7 +321,8 @@ function strangerPhones(reply, biz, facts) {
 function otherCustomers(f, reply, facts, teamNames) {
   const me = fold(facts.customer?.name || '');
   const myFirst = me.split(' ')[0];
-  const team = new Set(teamNames.map(t => fold(t).split(' ')[0]));
+  const TITLES = /^(dr|dra|doctor|doctora|docteur|mr|mrs|ms|miss|mme|mlle|m|sr|sra|srta|prof|profesor|profesora|chef|coach|د|دكتور|الدكتور|دكتوره|الدكتوره|السيد|السيده|الاستاذ|الاستاذه)$/;
+  const team = new Set(teamNames.filter(Boolean).flatMap(t => fold(t).replace(/[^\p{L}\p{N}' ]/gu, ' ').split(' ').filter(w => w && !TITLES.test(w)).slice(0, 1)));
   const hits = [];
   const myDigits = digits(facts.customer?.phone).slice(-8);
   const replyDigits = digits(reply);
@@ -455,7 +456,7 @@ export function checkOutput({ reply, biz = {}, audience = 'customer', role = nul
   // (b) internal data
   if (LEAK.some(re => re.test(f))) hits.push({ kind: 'leak', detail: 'numbers' });
   if (PROMPT_MARKERS.some(re => re.test(f)) || recitesPrompt(f, facts.systemPrompt)) hits.push({ kind: 'leak', detail: 'instructions' });
-  const people = otherCustomers(f, tidied, facts, k.team);
+  const people = otherCustomers(f, tidied, facts, [...k.team, biz.assistant_name, k.pub.assistant_name, 'Nora']);
   if (people.length) hits.push({ kind: 'leak', detail: people });
   const phones = strangerPhones(tidied, biz, facts);
   if (phones.length) hits.push({ kind: 'leak', detail: phones.map(p => 'phone ' + p) });
