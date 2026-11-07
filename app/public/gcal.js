@@ -45,9 +45,10 @@ window.PulseCal = (() => {
   }
 
   async function load() {
-    const [s, t] = range();
+    const [s, t] = range(), tok = st.tok = (st.tok || 0) + 1;
     try {
       const [cal, rq] = await Promise.all([req(`/api/calendar?from=${key(s)}T00:00&to=${key(t)}T00:00`), req('/api/requests?status=pending').catch(() => [])]);
+      if (tok !== st.tok) return; // a newer week was asked for meanwhile
       st.data = cal; st.requests = rq;
     } catch { root.querySelector('#gcBody').innerHTML = '<p class="gc-none">Couldn\'t load the calendar. <button type="button" class="btn ghost" data-retry="1">Retry</button></p>'; return; }
     draw();
@@ -196,6 +197,7 @@ window.PulseCal = (() => {
       root = section.querySelector('#gcRoot');
       if (!root.dataset.on) { root.dataset.on = 1; st.at = now(); frame();
         root.addEventListener('pointerdown', dragStart); addEventListener('pointermove', dragMove); addEventListener('pointerup', dragEnd);
+        addEventListener('pointercancel', () => { if (drag) { drag.el.classList.remove('gc-drag'); drag.el.style.transform = ''; drag = null; } });
         root.addEventListener('click', ev => { if (dragged) { ev.stopImmediatePropagation(); ev.preventDefault(); } }, true); }
       setTimeout(load, 0); // not requestAnimationFrame: browsers pause it in background tabs, which left the calendar empty
     },

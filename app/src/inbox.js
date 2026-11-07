@@ -44,7 +44,7 @@ export function mountInbox(app, BIZ, LOCAL) {
   }));
   // the customer beside the chat: visits, spend, next appointment
   app.get('/api/inbox/:id/customer', wrap(async (req, res) => {
-    res.json(await one(`SELECT cu.id, cu.name, cu.phone, cu.marketing_ok,
+    res.json(await one(`SELECT cu.id, cu.name, cu.phone, cu.marketing_ok, c.channel, c.needs_attention, c.ai_paused,
         (SELECT count(*) FROM bookings b WHERE b.customer_id=cu.id AND b.status IN ('completed','confirmed') AND b.starts_at < now())::int AS visits,
         (SELECT COALESCE(sum(price),0) FROM bookings b WHERE b.customer_id=cu.id AND b.status IN ('completed','confirmed') AND b.starts_at < now())::float AS spent,
         (SELECT ${LOCAL('b.starts_at')} || ' · ' || s.name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.customer_id=cu.id AND b.status='confirmed' AND b.starts_at > now() ORDER BY b.starts_at LIMIT 1) AS next

@@ -27,7 +27,7 @@
     ['inbox', 'Inbox', 'Talk to your customers', [
       ['Conversations', { own: 'inbox', folder: 'all' }],
       ['Needs you', { own: 'inbox', folder: 'needs', hidden: true }], // the inbox has its own Needs you folder; kept so links to it still work
-      ['Delivery queue', { page: 'inbox', tab: 'queue', hidden: true }], // shown from Today / the search box when something failed
+      ['Messages not sent', { page: 'inbox', tab: 'queue', hidden: true }], // shown from Today / the search box when something failed
       ['AI on/off', { own: 'aictl' }]]],
     ['calendar', 'Calendar', 'Run your schedule', [
       ['Schedule', { own: 'calendar' }],
@@ -62,7 +62,7 @@
       ['My board', { own: 'studio', hidden: true }],
       ['Chart library', { own: 'studiolib', hidden: true }],
       ['Finance', { own: 'finance' }]]],
-    ['pulse', 'AI Control', 'Review, teach and test Nora', [
+    ['pulse', 'AI Control', 'Your receptionist: check, teach and test Nora', [
       ['To review', { own: 'approvals' }],
       ['Ask', { own: 'ask', hidden: true }],
       ['Brief', { own: 'brief', hidden: true }],
@@ -71,8 +71,8 @@
       ['Answers', { entry: 'training', mode: 'questions', only: ['top', 'tchQuestions'], hidden: true, parent: 3 }],
       ['Review replies', { entry: 'training', mode: 'review', only: ['top', 'tchStats', 'tchReview'], hidden: true }],
       ['Test', { entry: 'demo', only: ['top', 'lab-h', 'demo'] }],
-      ['Scenarios', { entry: 'demo', only: ['top', 'labSum', 'lab'], hidden: true }],
-      ['Versions', { entry: 'training', only: ['top', 'learn'], hidden: true }],
+      ['Practice chats', { entry: 'demo', only: ['top', 'labSum', 'lab'], hidden: true }],
+      ['Undo changes', { entry: 'training', only: ['top', 'learn'], hidden: true }],
       ['Performance', { own: 'aiperf', hidden: true }]]], // moved to Insights › AI performance
     ['settings', 'Settings', 'Set it up once', [
       ['All settings', { page: 'settings', tab: 'details', panes: ['details', 'channels', 'booking', 'codes', 's2fa', 'sdev', 'look', 'dash'], cls: 'set-one' }],
@@ -98,7 +98,7 @@
   // Tabs are named, not numbered: a number shifts whenever a tab is added or merged (that sent "Answer" to Rules,
   // "agents ready" to Website...). go(page, 'Tab name') is the way to link; numbers still work for saved shortcuts.
   const MOVED = { studio: i => ['insights', ['My board', 'Chart library'][i] || 'My board'], train: i => ['pulse', ['Teach', 'Answers', 'Review replies', 'Versions'][i] || 'Teach'],
-    lab: i => ['pulse', ['Scenarios', 'Test', 'Versions'][i] || 'Test'],
+    lab: i => ['pulse', ['Practice chats', 'Test', 'Undo changes'][i] || 'Test'],
     marketing: i => ['growth', ['Offers', 'Sent offers', 'Discount codes', 'Automations'][i] || 'Automations'],
     customers: i => typeof i === 'string' ? ['customers', i] : i === 1 ? ['growth', 'Win back'] : i >= 5 ? ['growth', i - 2] : ['customers', i] }; // 4 = Memberships
   const tabIndex = (tabs, t) => {
@@ -132,6 +132,7 @@
       d.innerHTML = '<span><b>Live demo</b> · sample data, look around freely. Changes are switched off.</span><a href="/demo/exit">Back to templates</a><a class="go" href="/pricing#start">Start your own</a>'; document.body.prepend(d); document.body.classList.add('has-demo'); }
     const keep = window.MXBIZ.nav, cust = window.MXBIZ.terms?.customers;
     if (cust) { const row = PAGES.find(p => p[0] === 'customers'); if (row) row[1] = cust[0].toUpperCase() + cust.slice(1); }
+    { const row = PAGES.find(p => p[0] === 'pulse'); if (row) row[1] = nora(); } // the AI page is called by the assistant's own name
     $$('nav .navpills > button, nav .navpills > .ns').forEach(x => { if (x.id !== 'adminNav') x.classList.add('nav-gone') });
     nav = {};
     for (const [id, label] of PAGES) {
@@ -152,6 +153,25 @@
     const gear = document.createElement('button'); gear.type = 'button'; gear.id = 'setBtn'; gear.title = 'Settings'; gear.setAttribute('aria-label', 'Settings');
     gear.innerHTML = `<svg viewBox="0 0 24 24">${ICON.settings}</svg>`; gear.addEventListener('click', () => go('settings', 0));
     $('nav .navfoot')?.prepend(gear);
+    // phone: a More button opens every page the bottom bar has no room for (phone.css shows it under 820px)
+    if (!$('#moreBtn')) {
+      const more = document.createElement('button'); more.type = 'button'; more.id = 'moreBtn'; more.setAttribute('aria-label', 'More'); more.setAttribute('aria-expanded', 'false');
+      more.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>More</span>';
+      $('nav .navfoot')?.append(more);
+      const sheet = document.createElement('div'); sheet.id = 'moreSheet'; sheet.hidden = true; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-label', 'More pages');
+      document.body.append(sheet);
+      const close = () => { sheet.hidden = true; more.setAttribute('aria-expanded', 'false'); more.focus(); };
+      more.addEventListener('click', ev => { ev.stopImmediatePropagation();
+        const keepIds = window.MXBIZ?.nav, pages = PAGES.filter(([id]) => !['today', 'inbox', 'calendar', 'customers'].includes(id) && (!keepIds || keepIds.includes(id)));
+        sheet.innerHTML = `<div class="ms-bg" data-ms="close"></div><div class="ms-panel">${pages.map(([id, label]) => `<button type="button" data-ms="${id}"><svg viewBox="0 0 24 24">${ICON[id] || ICON.insights}</svg>${e(label)}</button>`).join('')}
+          ${pages.some(([id]) => id === 'settings') ? '' : `<button type="button" data-ms="settings"><svg viewBox="0 0 24 24">${ICON.settings}</svg>Settings</button>`}
+          <button type="button" data-ms="theme"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>Light or dark</button>
+          <button type="button" data-ms="logout"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg>Sign out</button></div>`;
+        sheet.hidden = false; more.setAttribute('aria-expanded', 'true'); sheet.querySelector('.ms-panel button')?.focus(); });
+      sheet.addEventListener('click', ev => { const b = ev.target.closest('[data-ms]'); if (!b) return; const k = b.dataset.ms; close();
+        if (k === 'theme') return $('#themeBtn')?.click(); if (k === 'logout') return $('#logoutBtn')?.click(); if (k !== 'close') go(k, 0); });
+      sheet.addEventListener('keydown', ev => { if (ev.key === 'Escape') close(); });
+    }
     return true;
   }
   function mark(id) {
@@ -166,7 +186,8 @@
   function lockOf(id, name, spec = {}) {
     const M = typeof me !== 'undefined' && me; if (!M || !M.features || (M.user?.role === 'admin' && !M.view_as)) return null;
     const f = id === 'insights' ? 'insights' : spec.entry === 'training' ? 'teach' : spec.entry === 'website' ? 'website'
-      : id === 'growth' && /^(Offers|Sent offers)$/.test(name) ? 'marketing' : name === 'Discount codes' ? 'coupons' : null;
+      : id === 'growth' && /^(Offers|Sent offers|Overview)$/.test(name) ? 'marketing' : name === 'Discount codes' ? 'coupons'
+      : id === 'pulse' && /^(To review|Brief)$/.test(name) ? 'teach' : null;
     return f && !M.features.includes(f) ? f : null;
   }
   function markLocks() {

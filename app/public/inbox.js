@@ -10,7 +10,7 @@ window.PulseInbox = (() => {
 
   // "14:05" today, "Mon" this week, "12 Oct" before
   function when(s) {
-    if (!s) return ''; const d = new Date(s.replace('T', ' ')), now = new Date();
+    if (!s) return ''; const d = new Date(String(s).replace('T', ' ').replace(/-/g, '/')), now = new Date(); // slashes: old iPhones reject "YYYY-MM-DD HH:MM"
     if (d.toDateString() === now.toDateString()) return s.slice(11, 16);
     if (now - d < 6 * 864e5) return d.toLocaleDateString('en-GB', { weekday: 'short' });
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -62,7 +62,7 @@ window.PulseInbox = (() => {
         <span class="ib-who">${e(who(r))}</span>
         <span class="ib-what">${r.needs_attention ? '<i class="chip need">Needs you</i>' : KIND[r.kind] ? `<i class="chip k-${r.kind}">${KIND[r.kind]}</i>` : ''}<span class="ib-snip">${r.last ? (r.last.role === 'customer' ? '' : r.last.role === 'staff' ? 'You: ' : ai() + ': ') + e(r.last.text) : ''}</span></span>
         <span class="ib-ch">${e(CH[r.channel] || r.channel)}</span><span class="ib-at">${e(when(r.at))}</span></button>`).join('')
-      : `<p class="ib-none">${st.q ? 'No chats match your search.' : st.folder === 'needs' ? `Nothing needs you. ${ai()} is handling every chat.` : 'No chats here yet.'}</p>`;
+      : `<p class="ib-none">${st.q ? 'No chats match your search.' : st.folder === 'needs' ? `Nothing needs you. ${ai()} is handling every chat.` : 'No chats yet. When clients write on WhatsApp, Instagram or your booking page, they appear here.'}</p>`;
     // wide screens: open the first chat so the reading pane is never an empty half of the page
     if (!st.open && d.rows.length && innerWidth > 1100) open(d.rows[0].id);
   }
@@ -82,10 +82,16 @@ window.PulseInbox = (() => {
   }
   async function open(id) {
     st.open = id; root.querySelectorAll('.ib-row').forEach(r => r.classList.toggle('on', +r.dataset.c === id));
-    const row = st.rows.find(r => r.id === id) || {}, read = root.querySelector('#ibRead');
+    const tok = st.tok = (st.tok || 0) + 1, read = root.querySelector('#ibRead');
     read.innerHTML = '<div class="ib-empty">Loading…</div>';
     root.querySelector('.ib').classList.add('reading'); // on a phone the chat takes the whole screen
-    const [msgs, cu] = await Promise.all([req(`/api/conversations/${id}/messages`), req(`/api/inbox/${id}/customer`).catch(() => ({}))]);
+    let msgs, cu;
+    try { [msgs, cu] = await Promise.all([req(`/api/conversations/${id}/messages`), req(`/api/inbox/${id}/customer`).catch(() => ({}))]); }
+    catch (err) { if (tok === st.tok) read.innerHTML = `<div class="ib-empty">Couldn't open this chat. <button type="button" class="btn ghost" data-c="${id}">Try again</button></div>`; return; }
+    if (tok !== st.tok) return; // another chat was opened meanwhile
+    // a chat opened from Today or search may not be in the list: its own details come with the customer
+    const row = st.rows.find(r => r.id === id) || { id, channel: cu.channel, name: cu.name, phone: cu.phone, needs_attention: cu.needs_attention, ai_paused: cu.ai_paused };
+    st.cur = row;
     req(`/api/inbox/${id}/seen`, 'POST', {}).then(() => { const r = root.querySelector(`.ib-row[data-c="${id}"]`); r?.classList.remove('unread'); }).catch(() => {});
     read.innerHTML = `<header class="ib-head"><button type="button" class="ib-back" data-back="1" aria-label="Back to chats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><div><h2>${e(who(row))}</h2><small>${e(CH[row.channel] || row.channel || '')}${row.phone && !/^test-/.test(row.phone) ? ' · ' + e(row.phone) : ''}${row.attention_reason ? ' · ' + e(row.attention_reason) : ''}</small></div>
         <div class="ib-acts">${row.needs_attention ? '<button type="button" class="btn" data-a="done">Mark done</button>' : ''}
@@ -120,7 +126,7 @@ window.PulseInbox = (() => {
     const c = t.closest('[data-c]'); if (c) return open(+c.dataset.c);
     if (t.closest('.ib-retry')) return load();
     const a = t.closest('[data-a]'); if (!a || !st.open) return;
-    const row = st.rows.find(r => r.id === st.open) || {};
+    const row = st.rows.find(r => r.id === st.open) || st.cur || {};
     if (a.dataset.a === 'done') await req(`/api/conversations/${st.open}/resolve`, 'POST', {});
     if (a.dataset.a === 'ai') await req(`/api/conversations/${st.open}/ai`, 'POST', { paused: !row.ai_paused });
     await load(); open(st.open);

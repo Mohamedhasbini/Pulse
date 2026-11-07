@@ -41,6 +41,8 @@ const hm=s=>String(s||"").slice(11,16);
 const mins=t=>{const[h,m]=t.split(":");return +h*60+ +m},clock=m=>`${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`;
 const day=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const nora=()=>window.P10?.named?.("Nora")||"Nora";
+// the business's own clock (its time zone), not the phone's: a Beirut salon checked from Spain still sees Beirut time
+const now=()=>typeof bizNow==="function"?bizNow():new Date();
 
 // Home opens Today; every other page hides it
 homeBtn.addEventListener("click",ev=>{ev.stopImmediatePropagation();show()},true);
@@ -57,16 +59,16 @@ function load(force){if(running){if(force)again=true;return running}
   running=loadNow().catch(err=>console.error("Today:",err)).finally(()=>{running=null;doneAt=Date.now();if(again){again=false;load(true)}});return running}
 
 async function loadNow(){
-  const t=day(new Date()),get=u=>req(u).catch(()=>null);
-  const [team,hist,biz,live,ch,wait,brief,cal,kpis,month]=await Promise.all([window.PVTeam?window.PVTeam().catch(()=>null):null,window.PVData?window.PVData().catch(()=>null):null,get("/api/business"),get("/api/live?days=30"),get("/api/channels"),get("/api/pulse/waiting"),get("/api/briefing"),get(`/api/calendar?from=${t}T00:00&to=${t}T23:59`),get("/api/kpis?days=30"),get(`/api/calendar?from=${day(new Date(new Date().getFullYear(),new Date().getMonth()-1,1))}T00:00&to=${t}T23:59`)]);
+  const failed=[],t=day(now()),get=(u,what)=>req(u).catch(()=>{if(what)failed.push(what);return null});
+  const [team,hist,biz,live,ch,wait,brief,cal,kpis,month]=await Promise.all([window.PVTeam?window.PVTeam().catch(()=>null):null,window.PVData?window.PVData().catch(()=>null):null,get("/api/business"),get("/api/live?days=30"),get("/api/channels","channels"),get("/api/pulse/waiting","waiting chats"),get("/api/briefing","suggestions"),get(`/api/calendar?from=${t}T00:00&to=${t}T23:59`,"today's calendar"),get("/api/kpis?days=30"),get(`/api/calendar?from=${day(new Date(new Date().getFullYear(),new Date().getMonth()-1,1))}T00:00&to=${t}T23:59`)]);
   if(!biz||!live){$("#tdA").innerHTML=U.card({title:"Today",span:12,state:"critical",body:U.error("today's numbers","reload")});return}
-  draw({biz,live,ch,wait:wait||{items:[]},brief:brief||{items:[]},cal:cal||{bookings:[],timeOff:[]},kpis:Array.isArray(kpis)?kpis:[],month:month?.bookings||[],hist:hist||{all:[],past:[],cust:[]},team:team||[]})}
+  draw({failed,biz,live,ch,wait:wait||{items:[]},brief:brief||{items:[]},cal:cal||{bookings:[],timeOff:[]},kpis:Array.isArray(kpis)?kpis:[],month:month?.bookings||[],hist:hist||{all:[],past:[],cust:[]},team:team||[]})}
 
-function openNow(biz){const d=new Date(),m=d.getHours()*60+d.getMinutes(),r=(biz.hours?.[d.getDay()]||[]).map(([a,z])=>[mins(a),mins(z)]);
+function openNow(biz){const d=now(),m=d.getHours()*60+d.getMinutes(),r=(biz.hours?.[d.getDay()]||[]).map(([a,z])=>[mins(a),mins(z)]);
   const cur=r.find(([a,z])=>m>=a&&m<z);if(cur)return `Open now · until ${clock(cur[1])}`;const nx=r.find(([a])=>a>m);return nx?`Opens today at ${clock(nx[0])}`:"Closed today"}
 
 // free stretches of at least 30 minutes inside today's opening hours, between the day's bookings and blocked time
-function gaps(biz,cal){const d=new Date(),open=(biz.hours?.[d.getDay()]||[]).map(([a,z])=>[mins(a),mins(z)]);
+function gaps(biz,cal){const d=now(),open=(biz.hours?.[d.getDay()]||[]).map(([a,z])=>[mins(a),mins(z)]);
   const busy=[...(cal.bookings||[]).filter(b=>!/cancel|no_show/.test(b.status||"")),...(cal.timeOff||[])].map(b=>[mins(hm(b.start)),mins(hm(b.end))]).sort((a,b)=>a[0]-b[0]);
   const now=d.getHours()*60+d.getMinutes(),out=[];
   for(const [a,z] of open){let c=Math.max(a,now);for(const [s,f] of busy){if(f<=c||s>=z)continue;if(s-c>=30)out.push([c,s]);c=Math.max(c,f)}if(z-c>=30)out.push([c,z])}
@@ -130,8 +132,8 @@ function busy(past){const H=[10,11,12,13,14,15,16,17,18,19],D=[1,2,3,4,5,6,0],g=
   past.forEach(b=>{const t=new Date(b.start),r=D.indexOf(t.getDay()),c=H.indexOf(t.getHours());if(r>=0&&c>=0)g[r][c]++});
   return U.heat(g,D.map(x=>DOW[x].slice(0,3)),H.map(h=>h%2?"":String(h)))}
 
-function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team}=x;
-  const now=live.now||{},d=new Date(),h=d.getHours(),ai=live.ai||{};
+function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team,failed:notLoaded=[]}=x;
+  const now=live.now||{},d=window.bizNow?bizNow():(typeof bizNow==="function"?bizNow():new Date()),h=d.getHours(),ai=live.ai||{};
   // header
   const logo=$("#tdLogo");logo.style.backgroundImage=biz.logo_url?`url("${biz.logo_url}")`:"";logo.textContent=biz.logo_url?"":([...biz.name][0]||"").toUpperCase();
   $("#tdDate").textContent=`${DOW[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]} · ${openNow(biz)}`;
@@ -140,13 +142,14 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team}=
   // band 1 · needs your attention (with the recommended action on top) beside what was earned
   const need=[],n=k=>(wait.items||[]).filter(x=>x.kind===k).length;
   if(now.waiting)need.push(["critical",`${now.waiting} chat${now.waiting>1?"s":""} waiting for a person`,`${nora()} handed them to you`,"Reply","p:inbox:1"]);
+  if(notLoaded.length)need.push(["critical","Some of today's checks didn't load",`Not checked: ${notLoaded.join(", ")}`,"Reload","reload"]);
   if(ai.ok===false)need.push(["critical",`${nora()} is not answering`,"Clients get a fallback message","Check","p:pulse:0"]);
   const failed=(live.h24||[]).reduce((a,x)=>a+(x.failed||0),0);if(failed)need.push(["critical",`${failed} repl${failed>1?"ies":"y"} failed to send today`,"Clients may not have seen the answer","Check","p:inbox:0"]);
   if(n("request"))need.push(["warning",`${n("request")} request${n("request")>1?"s":""} to move or cancel`,"Waiting for your OK","Review","p:calendar:1"]);
-  if(n("question")||now.unsure){const q=n("question")||now.unsure;need.push(["warning",`${q} question${q>1?"s":""} ${nora()} couldn't answer`,"Answer once and it remembers","Teach","p:pulse:0"])}
-  if(n("agent"))need.push(["warning",`${n("agent")} offer${n("agent")>1?"s":""} ready to send`,"Prepared by your growth automations","Review","p:growth:5"]);
+  if(n("question")||now.unsure){const q=n("question")||now.unsure;need.push(["warning",`${q} question${q>1?"s":""} ${nora()} couldn't answer`,"Answer once and it remembers","Answer","p:pulse:Answers"])}
+  if(n("agent"))need.push(["warning",`${n("agent")} offer${n("agent")>1?"s":""} ready to send`,"Prepared by your auto-messages","Review","p:growth:Automations"]);
   if(n("lesson"))need.push(["neutral",`${n("lesson")} suggested rule${n("lesson")>1?"s":""}`,`${nora()} learned something from a chat`,"Review","p:pulse:0"]);
-  const wa=ch?.whatsapp?.configured&&biz.wa_phone_number_id;if(!wa)need.push(["warning","WhatsApp is not connected","Clients can't reach you there yet","Connect","p:settings:0"]);
+  const wa=ch?.whatsapp?.configured&&biz.wa_phone_number_id;if(!wa)need.push(["warning","WhatsApp is not connected","Clients can't reach you there yet","Connect","p:settings:Channels"]);
   const pending=(live.setup||[]).filter(s=>!s.done);
   const worst=need.some(x=>x[0]==="critical")?"critical":need.some(x=>x[0]==="warning")?"warning":"healthy";
   let rec=null;const b0=(brief.items||[])[0];
@@ -164,7 +167,7 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team}=
   const tiles=(team||[]).map((m,k)=>{const t=m.tasks[0],tn=window.PVTeam?.tone?.[t?.tone];
     return `<button type="button" class="tm-tile" data-tm="${k}"><span class="tm-who"><i class="tm-av" style="background:${m.color}">${e(m.name[0])}</i><span><b>${e(m.name)}</b><small>${e(m.role)}</small></span>${m.open?U.chip(`${m.open} open`,tn?.[1]||"warning"):U.chip("All clear","healthy")}</span>
       <p class="tm-say">${e(m.advice||"")}</p>${t?`<span class="tm-next">Next: ${e(t.title)}</span>`:""}</button>`}).join("");
-  const needCard=U.card({title:"Your team today",span:5,size:"wide",state:open?worst:"healthy",meta:open?`${open} open`:"all clear",link:U.link("Board","p:growth:5"),
+  const needCard=U.card({title:"Your helpers today",span:5,size:"wide",state:notLoaded.length?"critical":open?worst:"healthy",meta:notLoaded.length?"not all checked":open?`${open} open`:"all clear",link:U.link("Auto-messages","p:growth:Automations"),
     body:sys.map(([,t,sub,btn,go])=>`<div class="tm-alert"><b>${e(t)}</b>${U.button(btn,go)}</div>`).join("")+(tiles?`<div class="tm-grid">${tiles}</div>`:`<div class="mx-list">${need.slice(0,5).map(([s,t,sub,btn,go])=>U.row({dot:s,title:t,sub,action:U.button(btn,go)})).join("")}</div>`)});
   const nowT=Date.now(),next=(hist.all||[]).filter(b=>+new Date(b.start)>nowT&&!/cancel/.test(b.status||"")).sort((a,b)=>new Date(a.start)-new Date(b.start)).slice(0,3);
   const upNext=next.length?`<div class="tm-next-up"><small>Coming up next</small>${next.map(b=>`<div><b>${hm(b.start)}</b><span>${e(b.customer||"Client")}</span><em>${e(b.service||"")}</em></div>`).join("")}</div>`:"";
@@ -174,7 +177,7 @@ function draw(x){last=x;const {biz,live,ch,wait,brief,cal,kpis,month,hist,team}=
   const d0=new Date(d.toDateString());
   const bookCard=bookingsCard(hist);
   const sum=f=>kpis.reduce((a,x)=>a+(f(x)||0),0),chats=sum(x=>x.chats),handled=sum(x=>x.handled),ms=kpis.filter(x=>x.reply_ms!=null),avg=ms.length?ms.reduce((a,x)=>a+x.reply_ms,0)/ms.length:null;
-  const aiCard=U.card({title:`${nora()}, your front desk`,span:6,size:"wide",link:U.link("AI Control","p:pulse:0"),
+  const aiCard=U.card({title:`${nora()}, your front desk`,span:6,size:"wide",link:U.link(nora(),"p:pulse:0"),
     body:`<div class="mx-tiles"><div><b>${chats?Math.round(handled/chats*100)+"%":"–"}</b><span>answered alone</span></div><div><b>${avg?(avg/1000).toFixed(1)+"s":"–"}</b><span>average reply</span></div><div><b>${money(now.ai_value||0)}</b><span>booked by ${e(nora())}</span></div><div><b>${now.replies_today||0}</b><span>replies today</span></div></div>
       <p class="mx-ctx" style="margin:6px 0 0">Busiest hours, last 6 months</p>${busy(hist.past||[])}`});
   $("#tdB").innerHTML=bookCard+aiCard;
@@ -223,6 +226,7 @@ async function since(){const el=$("#tdSince");if(!el)return;let c;try{c=await re
 
 // every button goes to the right place: p:page:tab, c:conversation, or a named action
 function go(where){
+  if(where==="reload")return location.reload();
   if(where.startsWith("p:")){const [,id,i]=where.split(":");return window.P10?.go(id,isNaN(+i)?i:+i)} // a tab by number or by name
   if(where.startsWith("c:")){window.P10?.go("inbox",0);setTimeout(()=>window.PulseInbox?.openChat(where.slice(2)),500);return}
   if(where==="ask")return window.P10?window.P10.go("pulse",1):document.getElementById("hxAsk")?.click();
