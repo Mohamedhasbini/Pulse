@@ -44,6 +44,7 @@ import { startReminders, runReminders, fill } from './reminders.js';
 import { setSenders, startAutopilot, offerWaitlist } from './autopilot.js';
 import { mountHQ } from './hq.js';
 import { mountUpgrades, pendingFor } from './upgrades.js';
+import { mountControls } from './controls.js';
 import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
 import { compress, fingerprint, rememberUser, recallUser, forgetUser, requestLog, CSP } from './web.js';
 
@@ -713,6 +714,7 @@ mountLive(app, () => BIZ());
 mountLab(app, () => BIZ());
 mountHQ(app, adminOnly, wrap, audit, aiHealth);
 mountUpgrades(app, { adminOnly, wrap, audit, BIZ });
+mountControls(app, { adminOnly, wrap, audit });
 mountAgents(app, () => BIZ(), { sendWhatsApp, sendTelegram, notify, audit });
 // a PREVIEW_ONLY copy on the real data must never send: Autopilot only runs in the live app
 setSenders({ sendWhatsApp, sendTelegram }); if (!process.env.PREVIEW_ONLY) startAutopilot();

@@ -8,6 +8,12 @@ window.PulseIntegrations = (() => {
 
   function card(p) {
     const [st, cls] = ST[p.status] || ST.off, isOpen = open === p.id;
+    // not allowed for this business yet: the Lab decides; the owner can ask for it
+    if (p.allowed === false) {
+      const M = typeof me !== 'undefined' ? me : null, admin = M?.user?.role === 'admin' && !M?.view_as;
+      return `<article class="ig-c locked" data-p="${p.id}" data-key="${esc(p.key)}"><header><div><b>${esc(p.name)}</b><small>${esc(p.does)}</small></div><span class="ig-st">Needs approval</span></header>
+        <footer>${admin ? '<span class="ig-ok">Allow it for this business in Lab › Controls</span>' : `<button type="button" class="ig-req" ${p.requested ? 'disabled' : ''}>${p.requested ? 'Requested' : 'Request'}</button>`}</footer></article>`;
+    }
     return `<article class="ig-c ${p.connected ? 'on' : ''}" data-p="${p.id}"><header><div><b>${esc(p.name)}</b><small>${esc(p.does)}</small></div><span class="ig-st ${cls}">${st}</span></header>
       ${p.error ? `<p class="ig-err">${esc(p.error)}</p>` : p.checked_at ? `<p class="ig-ok">Checked ${ago(p.checked_at)}</p>` : ''}
       ${isOpen ? `<form class="ig-f">${p.fields.map(f => `<label>${esc(f.label)}<input name="${f.k}" ${f.secret ? 'type="password" autocomplete="new-password"' : 'autocomplete="off"'} value="${esc(p.values[f.k] || '')}" placeholder="${esc(f.hint || '')}"></label>`).join('')}
@@ -46,6 +52,8 @@ window.PulseIntegrations = (() => {
     const c = e.target.closest('[data-p]'), id = c?.dataset.p;
     if (e.target.closest('.ig-edit')) { open = id; draw(); return root.querySelector(`[data-p="${id}"] input`)?.focus(); }
     if (e.target.closest('.ig-x')) { open = null; return draw(); }
+    if (e.target.closest('.ig-req')) { if (typeof me !== 'undefined' && me?.view_as) return window.toast?.('This is what the owner sees. Their requests come to your Lab.');
+      try { await req('/api/upgrade-requests', 'POST', { feature: c.dataset.key }); window.toast?.("Request sent. You'll get a notification when it's allowed."); } catch (err) { window.toast?.(err.message); } return load(); }
     if (e.target.closest('.ig-test')) { e.target.disabled = true; await test(id).catch(err => window.toast?.(err.message)); return load(); }
     if (e.target.closest('.ig-del')) { if (!confirm('Disconnect this account? Its saved key is deleted.')) return; await req(`/api/integrations/${id}`, 'DELETE'); open = null; return load(); }
     if (e.target.closest('.ig-new')) {

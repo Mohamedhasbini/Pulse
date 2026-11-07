@@ -3,6 +3,7 @@
 // from the dashboard (TELEGRAM_BOT_TOKEN in .env is only used once, to connect TELEGRAM_BUSINESS_ID).
 import { seal, unseal, fingerprint } from './ops.js';
 import { q, one } from './db.js';
+import { allowedFor } from './switches.js';
 import { handleMessage } from './brain.js';
 import { unify } from './customers.js';
 
@@ -16,6 +17,7 @@ export const telegramStatus = bizId => { const b = bots.get(+bizId); return b ? 
 const plain = t => String(t || '').replace(/\*([^*\n]+)\*/g, '$1');
 
 export async function sendTelegram(chatId, text, bizId, options = []) {
+  if (!(await allowedFor(bizId || null, 'channel:telegram'))) return { ok: false, reason: 'Telegram is switched off in the Lab' };
   const token = bots.get(+bizId)?.token;
   if (!token || !chatId) return { ok: false, reason: 'Telegram not connected' };
   try {

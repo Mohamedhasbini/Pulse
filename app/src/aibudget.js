@@ -6,6 +6,7 @@
 import { q, one } from './db.js';
 import { hasFeature } from './features.js';
 import { alertAdmin } from './ops.js';
+import { allowedFor } from './switches.js';
 
 // US dollars per million tokens: input, output, cache read. An unknown model counts at Opus prices, so a budget is
 // never under-counted.
@@ -22,7 +23,7 @@ export const monthSpend = async biz => +(await one(`SELECT COALESCE(sum(cost_usd
 
 // Which Claude this business may use right now: { key, model, own } or null (then the free AI answers).
 export async function claudeFor(biz, own) {
-  if (!biz || !(await hasFeature(biz, 'assistant_pro'))) return null;
+  if (!biz || !(await hasFeature(biz, 'assistant_pro')) || !(await allowedFor(biz, 'ai:anthropic'))) return null;
   if (own?.api_key) return { key: own.api_key, model: own.model || null, own: true };
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null;

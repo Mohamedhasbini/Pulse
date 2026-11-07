@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import { one } from './db.js';
+import { allowedFor } from './switches.js';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 // Kapso (kapso.ai) mirrors Meta's Cloud API: same message body, different base URL and key. Used when KAPSO_API_KEY is set.
@@ -17,6 +19,9 @@ export function waBody(text, options = []) {
 }
 
 export async function sendWhatsApp(phoneNumberId, to, text, options = []) {
+  // switched off in the Lab: for every business, or for the business that owns this number
+  const owner = phoneNumberId ? (await one('SELECT id FROM businesses WHERE wa_phone_number_id=$1 LIMIT 1', [String(phoneNumberId)]).catch(() => null))?.id : null;
+  if (!(await allowedFor(owner, 'channel:whatsapp'))) return { ok: false, reason: 'WhatsApp is switched off in the Lab' };
   const kapso = process.env.KAPSO_API_KEY, token = process.env.WA_ACCESS_TOKEN;
   if ((!kapso && !token) || !phoneNumberId) { console.warn('WhatsApp not configured; message not sent'); return { ok: false, reason: 'WhatsApp not connected' }; }
   const post = msg => fetch(`${kapso ? KAPSO : GRAPH}/${phoneNumberId}/messages`, {

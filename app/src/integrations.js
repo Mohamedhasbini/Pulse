@@ -7,6 +7,7 @@
 import crypto from 'node:crypto';
 import { q, one } from './db.js';
 import { seal, unseal } from './ops.js';
+import { allowedFor, keyOfProvider } from './switches.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const T = 8000; // every outside call gives up after 8 seconds
@@ -61,7 +62,13 @@ async function load(B, provider) {
   return { ...r, config: c };
 }
 // the decrypted config of a connected provider, for the rest of the app (MXAi Assistant, messaging, payments)
-export async function credentials(B, provider) { const r = await load(B, provider); return r && r.status !== 'off' ? r.config : null; }
+// Blocked in the Lab (for everyone, or for this business) = treated as not connected, wherever it is used.
+export async function credentials(B, provider) {
+  if (!(await allowedFor(B, keyOfProvider(provider)))) return null;
+  const r = await load(B, provider); return r && r.status !== 'off' ? r.config : null;
+}
+const blocked = async (B, p) => !(await allowedFor(B, keyOfProvider(p)));
+const BLOCKED = { error: 'Not available for this business yet. Ask MXAi to allow it (owners can press Request).', locked: 'connector' };
 
 function post(c, payload) {
   const body = JSON.stringify(payload), sig = crypto.createHmac('sha256', c.secret || '').update(body).digest('hex');
@@ -79,14 +86,18 @@ export function mountIntegrations(app, BIZ) {
   app.get('/api/integrations', wrap(async (_req, res) => {
     const rows = await q('SELECT provider, config, status, checked_at, error, updated_at FROM integrations WHERE business_id=$1', [BIZ()]);
     const saved = Object.fromEntries(rows.map(r => [r.provider, r]));
+    const allowed = Object.fromEntries(await Promise.all(Object.keys(PROVIDERS).map(async id => [id, await allowedFor(BIZ(), keyOfProvider(id))])));
+    const { pendingFor } = await import('./upgrades.js'), asked = new Set(await pendingFor(BIZ()));
     res.json({ providers: Object.entries(PROVIDERS).map(([id, p]) => {
       const s = saved[id], c = {}; if (s) for (const f of p.fields) c[f.k] = f.secret ? mask(unseal(s.config?.[f.k])) : s.config?.[f.k] || '';
       return { id, group: p.group, name: p.name, does: p.does, fields: p.fields.map(({ k, label, secret, hint }) => ({ k, label, secret: !!secret, hint })),
+        allowed: allowed[id], key: keyOfProvider(id), requested: asked.has(keyOfProvider(id)),
         connected: !!s, status: s?.status || 'off', checked_at: s?.checked_at, error: s?.error, values: c };
     }), keys: await q('SELECT id, name, prefix, created_at, last_used_at FROM api_keys WHERE business_id=$1 ORDER BY id DESC', [BIZ()]) });
   }));
   app.put('/api/integrations/:p', wrap(async (req, res) => {
     const p = PROVIDERS[req.params.p]; if (!p) return res.sendStatus(404);
+    if (await blocked(BIZ(), req.params.p)) return res.status(403).json({ ...BLOCKED, key: keyOfProvider(req.params.p) });
     const old = (await load(BIZ(), req.params.p))?.config || {}, cfg = {};
     for (const f of p.fields) {
       let v = String(req.body?.[f.k] ?? '').trim();
@@ -108,6 +119,7 @@ export function mountIntegrations(app, BIZ) {
   }));
   app.post('/api/integrations/:p/test', wrap(async (req, res) => {
     const p = PROVIDERS[req.params.p], r = p && await load(BIZ(), req.params.p); if (!r) return res.status(404).json({ error: 'Save it first.' });
+    if (await blocked(BIZ(), req.params.p)) return res.status(403).json({ ...BLOCKED, key: keyOfProvider(req.params.p) });
     try { const msg = await p.test(r.config, BIZ()); await q(`UPDATE integrations SET status='connected', checked_at=now(), error=NULL WHERE business_id=$1 AND provider=$2`, [BIZ(), req.params.p]); res.json({ ok: true, message: msg }); }
     catch (e) { const m = e.name === 'TimeoutError' ? 'No answer within 8 seconds.' : String(e.message || e).slice(0, 200); await q(`UPDATE integrations SET status='error', checked_at=now(), error=$3 WHERE business_id=$1 AND provider=$2`, [BIZ(), req.params.p, m]); res.json({ ok: false, message: m }); }
   }));

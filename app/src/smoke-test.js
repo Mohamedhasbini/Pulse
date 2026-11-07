@@ -204,6 +204,31 @@ try {
   const { isPlayground: fresh } = await import('./playground.js?again'); // own cache, sees the change
   say('A test business is a playground: nothing it sends reaches real people', await fresh(r.id));
   await q('UPDATE businesses SET is_demo=false WHERE id=$1', [r.id]);
+  // ---- Lab › Controls: platform switches and per-business allow/block
+  const ctl = await fetch(BASE + '/api/admin/controls', { headers: as(admin) }).then(r => r.json());
+  say('Controls list channels, connectors and AI providers', ['channel:whatsapp', 'integration:stripe', 'integration:webhook', 'ai:gemini'].every(k => ctl.items.some(i => i.key === k)));
+  say('Only the admin can use Controls', (await fetch(BASE + '/api/admin/controls/platform', { method: 'PUT', headers: { ...as(owner), 'Content-Type': 'application/json' }, body: '{"key":"ai:cerebras","on":false}' })).status === 403);
+  const hook = () => fetch(BASE + '/api/integrations/webhook', { method: 'PUT', headers: { ...as(owner), 'Content-Type': 'application/json' }, body: JSON.stringify({ url: 'https://example.test/hook' }) });
+  const h1 = await hook();
+  say('A connector is blocked until the Lab allows it', h1.status === 403 && (await h1.json()).locked === 'connector');
+  const igList = await fetch(BASE + '/api/integrations', { headers: as(owner) }).then(r => r.json());
+  say('The owner sees it needs approval', igList.providers.find(p => p.id === 'webhook')?.allowed === false && igList.providers.find(p => p.id === 'instagram')?.allowed === true);
+  await fetch(BASE + '/api/upgrade-requests', { method: 'POST', headers: { ...as(owner), 'Content-Type': 'application/json' }, body: JSON.stringify({ feature: 'integration:webhook' }) });
+  const cr = await one(`SELECT id FROM upgrade_requests WHERE business_id=$1 AND feature='integration:webhook' AND status='pending'`, [r.id]);
+  await fetch(BASE + `/api/admin/upgrade-requests/${cr?.id}`, { method: 'POST', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: '{"approve":true}' });
+  say('Approving a connector request lets the owner connect it', !!cr && (await hook()).status === 200);
+  await fetch(BASE + `/api/admin/controls/business/${r.id}`, { method: 'PUT', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'integration:webhook', value: false }) });
+  const { credentials } = await import('./integrations.js'), sw = await import('./switches.js');
+  say('Blocked again: the connector is treated as not connected', (await credentials(r.id, 'webhook')) === null);
+  await fetch(BASE + `/api/admin/controls/business/${r.id}`, { method: 'PUT', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'channel:telegram', value: false }) });
+  sw.forget();
+  say('A channel can be blocked for one business', !(await sw.allowedFor(r.id, 'channel:telegram')) && await sw.allowedFor(r.id, 'channel:whatsapp'));
+  const off = await fetch(BASE + '/api/admin/controls/platform', { method: 'PUT', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: '{"key":"ai:cerebras","on":false}' });
+  sw.forget();
+  say('A platform switch turns an AI provider off for everyone', off.status === 200 && !(await sw.platformOn('ai:cerebras')) && !(await sw.allowedFor(r.id, 'ai:cerebras')));
+  await fetch(BASE + '/api/admin/controls/platform', { method: 'PUT', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: '{"key":"ai:cerebras","on":true}' });
+  await q(`DELETE FROM platform_switches WHERE key='ai:cerebras'`); // back to how it was
+  say('Every switch is in the audit log', !!(await one(`SELECT 1 FROM audit_log WHERE action='platform_switch' AND detail LIKE 'ai:cerebras%'`)) && !!(await one(`SELECT 1 FROM audit_log WHERE action='business_switch' AND business_id=$1`, [r.id])));
   // the admin with no business opened is in the Lab: platform pages only
   const me0 = await fetch(BASE + '/api/me', { headers: as(admin) }).then(r => r.json());
   say('Admin signs in to the Lab, not a business', me0.lab === true && !me0.business);

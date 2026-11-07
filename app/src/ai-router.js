@@ -10,6 +10,7 @@
 // AI_PRIMARY=<route id> puts that provider first and, in brain.js, in front of the n8n workflow: the whole platform moves
 // to a new model by changing one line in .env, with every other provider still behind it as a fallback.
 import { credentials } from './integrations.js';
+import { platformOn } from './switches.js';
 
 const T = 20000;
 const openai = (url, model) => async (key, prompt, json) => {
@@ -88,6 +89,7 @@ export async function complete(prompt, { json = true, business } = {}) {
   const errors = [];
   for (const r of ROUTES) {
     if ((cool.get(r.id) || 0) > Date.now()) continue;
+    if (!(await platformOn('ai:' + r.biz))) continue; // switched off in Lab › Controls
     const key = (business && (await credentials(business, r.biz).catch(() => null))?.api_key) || process.env[r.key];
     if (!key) continue;
     try { const text = await r.call(key, r.id === 'anthropic' ? prompt : flatten(prompt), json); if (!text) throw new Error('empty answer'); note(r.id, true); return { text, provider: r.id }; }

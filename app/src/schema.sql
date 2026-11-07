@@ -496,3 +496,6 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS ai_budget_warned text;
 CREATE TABLE IF NOT EXISTS upgrade_requests (id serial PRIMARY KEY, business_id int REFERENCES businesses(id) ON DELETE CASCADE, feature text NOT NULL, note text,
   status text NOT NULL DEFAULT 'pending', requested_by int, at timestamptz NOT NULL DEFAULT now(), decided_at timestamptz, decided_by text);
 CREATE UNIQUE INDEX IF NOT EXISTS upgrade_requests_one_open ON upgrade_requests (business_id, feature) WHERE status='pending';
+-- The Lab's switches (switches.js): one per channel, connector and AI provider for the whole platform, and per business
+CREATE TABLE IF NOT EXISTS platform_switches (key text PRIMARY KEY, enabled boolean NOT NULL DEFAULT true, updated_at timestamptz DEFAULT now(), updated_by text);
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS connector_allow JSONB DEFAULT '{}';

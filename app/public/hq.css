@@ -246,3 +246,9 @@ html body .pl-t:not(#_) tbody tr:hover{background:color-mix(in srgb,var(--pv-ink
 html.sb-rail .viewAs{display:none}
 /* sidebar: pages and tabs the plan doesn't include are greyed (they open the lock card with Request) */
 nav button.p10.locked,.p10-sub button.locked{opacity:.5}
+/* Lab › Controls */
+.ccmain.ctl-on>*:not(#ccCtl){display:none!important}
+.ctl-bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin:0 0 14px}.ctl-bar label{display:flex;gap:8px;align-items:center;font-weight:600}
+.ctl-c{margin-bottom:14px}.ctl-t td small{display:block;color:var(--pv-muted,var(--muted));font-size:12px;margin-top:2px;max-width:46ch}
+.ctl-t select{min-height:30px}
+.ig-c.locked{opacity:.75}.ig-c.locked .ig-st{border-style:dashed}

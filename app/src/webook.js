@@ -8,6 +8,7 @@ import { handleMessage, loadBusiness } from './brain.js';
 
 import { VERTICALS } from './verticals.js';
 import { hasFeature } from './features.js';
+import { allowedFor } from './switches.js';
 
 const PUBLIC = fileURLToPath(new URL('../public', import.meta.url));
 const KEY = crypto.createHmac('sha256', process.env.ADMIN_PASSWORD || 'webook').update('webook-session').digest();
@@ -160,6 +161,7 @@ export function mountWeBook(app) {
   app.post('/api/webook/send', wrap(async (req, res) => {
     const s = await sessionOf(req);
     if (!s) return res.status(401).json({ error: 'Please start again.' });
+    if (!(await allowedFor(s.businessId, 'channel:webook'))) return res.status(503).json({ error: 'Chat with this business is paused right now. Please call them or try again later.' });
     if (limited(req, 'send' + s.customerId, 40, 10 * 60000)) return res.status(429).json({ error: 'You are sending messages very fast. Please wait a moment.' });
     const text = String(req.body.text || '').trim().slice(0, 1500);
     if (!text) return res.status(400).json({ error: 'Write a message first.' });
