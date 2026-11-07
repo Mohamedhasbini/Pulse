@@ -5,7 +5,7 @@ x-logging: &logs
 
 services:
   db:
-    image: postgres:16-alpine
+    build: ./db # postgres:16-alpine + pgvector (db/Dockerfile, docs/repos.md)
     restart: unless-stopped
     logging: *logs
     environment:

@@ -56,6 +56,7 @@ Roles: `admin` (platform), `owner`, `staff` (permissions per section). Plans and
 | New client onboarding | `.claude/skills/new-client/` |
 | Server setup / restore | `scripts/` (`restore.sh <backup>`) |
 | CI | `.github/workflows/test.yml` |
+| Open-source tools we install (inbox, booking, crawling, voice…) | `docs/repos.md`: **update it whenever a repo is installed, upgraded or removed**; each tool lives in `C:\Users\Mohamad\mxai-stack\<name>\` with its own compose file |
 
 ## Tests (must pass before every commit)
 Tests need the database, so they run inside the container:

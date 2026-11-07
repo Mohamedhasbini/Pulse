@@ -1,3 +1,6 @@
+-- pgvector: search by meaning (similar companies, knowledge, chats). The db image includes it (db/Dockerfile).
+CREATE EXTENSION IF NOT EXISTS vector;
+
 CREATE TABLE IF NOT EXISTS businesses (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
