@@ -33,7 +33,7 @@ services:
       - "127.0.0.1:3100:3100" # this PC only; the Cloudflare tunnel connects locally
     volumes:
       - uploads:/data/uploads
-      - ./backups:/backups:ro
+      - ./backups:/backups # the app writes backups/closed (a copy of a closed client, kept 30 days)
     extra_hosts:
       - "host.docker.internal:host-gateway"
     # node gets SIGTERM properly (init) and 20 s to finish messages being answered before Docker stops it

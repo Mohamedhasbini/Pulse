@@ -26,6 +26,7 @@ const toMin = t => { const [h, m] = String(t).split(':').map(Number); return h *
 const CATEGORY = { salon: 'Beauty', barber: 'Barbers', clinic: 'Health', dental: 'Health', spa: 'Spa & wellness', gym: 'Fitness', restaurant: 'Food & drinks', car: 'Car care', tutoring: 'Learning' };
 
 const hits = new Map();
+setInterval(() => { const now = Date.now(); for (const [k, h] of hits) if (!h.length || now - h[h.length - 1] > 3600e3) hits.delete(k); }, 600e3).unref();
 function limited(req, key, max, ms) {
   const k = (req.get('cf-connecting-ip') || req.ip) + key, now = Date.now();
   const h = (hits.get(k) || []).filter(t => now - t < ms); h.push(now); hits.set(k, h);
@@ -127,7 +128,7 @@ export function mountWeBook(app) {
   app.post('/api/webook/session', wrap(async (req, res) => {
     if (limited(req, 'session', 10, 60 * 60000)) return res.status(429).json({ error: 'Too many tries. Please wait a little.' });
     const biz = await loadBusiness(+req.body.business_id);
-    if (!biz) return res.status(404).json({ error: 'Business not found.' });
+    if (!biz || !biz.listed || !(biz.is_demo || await hasFeature(biz.id, 'webook_listing'))) return res.status(404).json({ error: 'Business not found.' });
     const name = String(req.body.name || '').trim().slice(0, 60), phone = String(req.body.phone || '').replace(/[^\d+]/g, '');
     if (name.length < 2) return res.status(400).json({ error: 'Please enter your name.' });
     if (phone.replace(/\D/g, '').length < 7) return res.status(400).json({ error: 'Please enter a valid phone number.' });
@@ -162,6 +163,7 @@ export function mountWeBook(app) {
     const s = await sessionOf(req);
     if (!s) return res.status(401).json({ error: 'Please start again.' });
     if (!(await allowedFor(s.businessId, 'channel:webook'))) return res.status(503).json({ error: 'Chat with this business is paused right now. Please call them or try again later.' });
+    if (limited(req, 'send-ip', 120, 60 * 60000)) return res.status(429).json({ error: 'You are sending messages very fast. Please wait a moment.' });
     if (limited(req, 'send' + s.customerId, 40, 10 * 60000)) return res.status(429).json({ error: 'You are sending messages very fast. Please wait a moment.' });
     const text = String(req.body.text || '').trim().slice(0, 1500);
     if (!text) return res.status(400).json({ error: 'Write a message first.' });

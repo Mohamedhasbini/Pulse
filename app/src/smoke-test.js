@@ -348,6 +348,55 @@ try {
   const pv = await fetch(BASE + '/privacy').then(x => x.text());
   say('The privacy page names every provider and has no blanks', !/\{\{/.test(pv) && ['Groq', 'Anthropic', 'Resend', 'OneDrive'].every(w => pv.includes(w)));
   say('The language switch is public', (await fetch(BASE + '/site-i18n.js', { redirect: 'manual' })).status === 200);
+  // ---- missing tests from the audit: bookings, webhooks, sign-out, public token, API keys, support, WeBook, Lab
+  {
+  const owJ = { ...as(owner), 'Content-Type': 'application/json' };
+  const nextTue = (() => { const d = new Date(Date.now() + 86400e3); while (d.getUTCDay() !== 2) d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); })();
+  const bk = await fetch(BASE + '/api/bookings', { method: 'POST', headers: owJ, body: JSON.stringify({ name: 'Test Booking', phone: 'test-bk-1', service_id: svc0.id, start: `${nextTue}T11:00`, force: true }) });
+  const bkJ = await bk.json().catch(() => ({}));
+  const bkId = bkJ.id || bkJ.booking?.id || (await one(`SELECT b.id FROM bookings b JOIN customers c ON c.id=b.customer_id WHERE c.phone='test-bk-1' AND b.business_id=$1 ORDER BY b.id DESC LIMIT 1`, [r.id]))?.id;
+  say('Staff can add a booking', bk.status === 200 && !!bkId, bk.status);
+  const mv = await fetch(BASE + `/api/bookings/${bkId}`, { method: 'PATCH', headers: owJ, body: JSON.stringify({ start: `${nextTue}T13:00`, force: true }) });
+  const moved = await one(`SELECT to_char(starts_at AT TIME ZONE 'Asia/Beirut','HH24:MI') AS t, reminder_sent_at FROM bookings WHERE id=$1`, [bkId]);
+  say('Moving a booking changes its time', mv.status === 200 && moved?.t === '13:00', moved?.t);
+  const cx = await fetch(BASE + `/api/bookings/${bkId}`, { method: 'PATCH', headers: owJ, body: '{"status":"cancelled"}' });
+  say('Cancelling a booking marks it cancelled', cx.status === 200 && (await one('SELECT status FROM bookings WHERE id=$1', [bkId]))?.status === 'cancelled');
+  say('Another business cannot touch this booking', (await fetch(BASE + `/api/bookings/${bkId}`, { method: 'PATCH', headers: { ...as(await one('SELECT id, session_version FROM users WHERE role=$1 AND business_id IS NOT NULL AND business_id<>$2 LIMIT 1', ['owner', r.id])), 'Content-Type': 'application/json' }, body: '{"status":"confirmed"}' })).status === 404);
+  // channel webhooks refuse anything not signed by the channel
+  const waU = await fetch(BASE + '/webhook/whatsapp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"entry":[]}' });
+  const kpU = await fetch(BASE + '/webhook/kapso', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-webhook-signature': 'bad' }, body: '{}' });
+  const igU = await fetch(BASE + '/webhook/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-hub-signature-256': 'sha256=bad' }, body: JSON.stringify({ object: 'instagram', entry: [{ id: '999000999', messaging: [{ sender: { id: '1' }, message: { mid: 'm1', text: 'hi' } }] }] }) });
+  say('Unsigned channel webhooks are refused', [401, 503].includes(waU.status) && kpU.status === 401 && igU.status === 401, `${waU.status}/${kpU.status}/${igU.status}`);
+  // Sign out ends that session on the server: a copied cookie stops working, other devices stay signed in
+  const tok = signSession(owner.id, owner.session_version), copy = { cookie: `rb_session=${tok}`, origin: BASE };
+  say('A session works before sign-out', (await fetch(BASE + '/api/me', { headers: copy })).status === 200);
+  await fetch(BASE + '/api/logout', { method: 'POST', headers: { ...copy, 'Content-Type': 'application/json' } });
+  say('After sign-out, a copy of that cookie no longer works', (await fetch(BASE + '/api/me', { headers: copy })).status === 401);
+  say('Signing out one device leaves the others signed in', (await fetch(BASE + '/api/me', { headers: as(owner) })).status === 200);
+  say('A wrong public booking link finds nothing', (await fetch(BASE + '/api/public/booking/not-a-real-token')).status === 404);
+  // the public read API: a key works for its own business only, and stops working when deleted
+  const key = (await fetch(BASE + '/api/integration-keys', { method: 'POST', headers: owJ, body: '{"name":"Smoke key"}' }).then(x => x.json())).key;
+  const api = k => fetch(BASE + '/api/v1/summary', { headers: k ? { authorization: `Bearer ${k}` } : {} });
+  say('The public API needs a key', (await api(null)).status === 401 && (await api(key)).status === 200);
+  const kid = (await one(`SELECT id FROM api_keys WHERE business_id=$1 AND name='Smoke key'`, [r.id]))?.id;
+  await fetch(BASE + `/api/integration-keys/${kid}`, { method: 'DELETE', headers: owJ });
+  say('A deleted API key stops working', (await api(key)).status === 401);
+  // support access: extend and end
+  const sup2 = await openBiz({ reason: 'Smoke extend' });
+  const ext = await fetch(BASE + '/api/admin/support/extend', { method: 'POST', headers: { ...sup2, 'Content-Type': 'application/json' } }).then(x => x.json());
+  say('Support access can be extended by 30 minutes', ext.seconds_left > 80 * 60);
+  await fetch(BASE + '/api/admin/support/end', { method: 'POST', headers: { ...sup2, 'Content-Type': 'application/json' } });
+  say('Ending support access closes the business', (await fetch(BASE + '/api/business', { headers: sup2 })).status === 409);
+  // WeBook chat only for businesses listed there
+  await q('UPDATE businesses SET listed=false WHERE id=$1', [r.id]);
+  say('WeBook chat is closed for a business not listed there', (await fetch(BASE + '/api/webook/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ business_id: r.id, name: 'Someone', phone: '+34600777888' }) })).status === 404);
+  // Lab: deleting an add-on that clients have asks first
+  await q(`INSERT INTO addons (key, name, price, features) VALUES ('smoke_addon','Smoke add-on',1,'[]') ON CONFLICT DO NOTHING`);
+  await q(`UPDATE businesses SET addons = COALESCE(addons,'[]'::jsonb) || '["smoke_addon"]' WHERE id=$1`, [r.id]);
+  const del1 = await fetch(BASE + '/api/admin/plans/smoke_addon?kind=addon', { method: 'DELETE', headers: as(admin) });
+  say('Deleting an add-on that clients have asks first', del1.status === 409 && (await del1.json()).count === 1);
+  await fetch(BASE + '/api/admin/plans/smoke_addon?kind=addon&force=1', { method: 'DELETE', headers: as(admin) });
+  }
   // the admin with no business opened is in the Lab: platform pages only
   const me0 = await fetch(BASE + '/api/me', { headers: as(admin) }).then(r => r.json());
   say('Admin signs in to the Lab, not a business', me0.lab === true && !me0.business);
@@ -363,6 +412,9 @@ try {
   x = await fetch(BASE + `/api/admin/businesses/${r.id}`, { method: 'DELETE', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: JSON.stringify({ confirm: 'Smoke test restaurant' }) });
   const gone = !(await one('SELECT 1 FROM businesses WHERE id=$1', [r.id])) && !(await one('SELECT 1 FROM users WHERE business_id=$1', [r.id]));
   say('Close deletes the business and its logins', x.status === 200 && gone);
+  { const fs = await import('node:fs'), dir = '/backups/closed', mine = (fs.existsSync(dir) ? fs.readdirSync(dir) : []).filter(n => n.startsWith(`closed-${r.id}-`));
+    say('Closing a client keeps a copy of its data first', mine.length === 1);
+    for (const n of mine) fs.unlinkSync(`${dir}/${n}`); }
   await new Promise(s => setTimeout(s, 300));
   say('Closing removes its photos', (await fetch(BASE + `/media/${r.id}/` + String(ex.business.logo_url).split('/').pop())).status === 404);
 } catch (e) {

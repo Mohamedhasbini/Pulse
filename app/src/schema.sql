@@ -520,6 +520,10 @@ CREATE TABLE IF NOT EXISTS support_sessions (id serial PRIMARY KEY, admin_id int
 CREATE INDEX IF NOT EXISTS support_sessions_biz ON support_sessions (business_id, started_at DESC);
 -- Privacy (privacy.js): how many months each business keeps chats (empty = keep)
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS retention_months int;
+-- sessions ended by "Sign out" (hash of the cookie) until they would have expired anyway
+CREATE TABLE IF NOT EXISTS revoked_sessions (sig text PRIMARY KEY, until timestamptz NOT NULL);
+-- who switched the AI off: 'emergency' (Pause for every client) is the only kind "Resume for every client" undoes
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS ai_mode_by text;
 -- rows of businesses that no longer exist are removed, and these tables now follow their business when it is closed
 DO $$ BEGIN
   DELETE FROM ai_queue WHERE business_id NOT IN (SELECT id FROM businesses);

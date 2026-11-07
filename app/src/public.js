@@ -19,6 +19,7 @@ const DAYS_AHEAD = 30;
 
 // Simple per-IP limit so nobody can flood the calendar with fake bookings.
 const hits = new Map();
+setInterval(() => { const now = Date.now(); for (const [k, h] of hits) if (!h.length || now - h[h.length - 1] > 3600e3) hits.delete(k); }, 600e3).unref();
 function limited(req, max, windowMs) {
   const ip = req.get('cf-connecting-ip') || req.ip, key = ip + req.path.split('/')[3], now = Date.now();
   const h = (hits.get(key) || []).filter(t => now - t < windowMs);

@@ -72,7 +72,8 @@ function loadPlans(){const card=(p,kind)=>`<div class="card glass" data-k="${esc
   $("#plList").innerHTML=cat.plans.map(p=>card(p,"plan")).join("")+cat.addons.map(a=>card(a,"addon")).join("");
   $("#plList").querySelectorAll("[data-k]").forEach(c=>{const kind=c.dataset.kind==="addon"?"?kind=addon":"";
     c.querySelector(".pSave").onclick=async()=>{try{await req(`/api/admin/plans/${encodeURIComponent(c.dataset.k)}${kind}`,"PUT",{name:c.querySelector(".pN").value,price:+c.querySelector(".pP").value,currency:c.querySelector(".pC").value.toUpperCase(),features:[...c.querySelectorAll(".pF:checked")].map(x=>x.value)});toast("Saved. Every business on it updates instantly.");loadMe()}catch(err){toast(err.message)}};
-    c.querySelector(".pDel").onclick=async()=>{if(!confirm("Delete this?"))return;try{await req(`/api/admin/plans/${encodeURIComponent(c.dataset.k)}${kind}`,"DELETE");loadAdmin()}catch(err){toast(err.message)}}})}
+    c.querySelector(".pDel").onclick=async()=>{if(!confirm("Delete this?"))return;const u=`/api/admin/plans/${encodeURIComponent(c.dataset.k)}${kind}`;
+      try{await req(u,"DELETE");loadAdmin()}catch(err){if(err.status===409&&confirm(err.message+" Delete it anyway?")){try{await req(u+(u.includes("?")?"&":"?")+"force=1","DELETE");loadAdmin()}catch(e2){toast(e2.message)}}else toast(err.message)}}})}
 const newPlan=kind=>async()=>{const name=prompt(kind==="addon"?"Add-on name":"Plan name");if(!name)return;const key=name.toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
   try{await req(`/api/admin/plans/${key}${kind==="addon"?"?kind=addon":""}`,"PUT",{name,price:0,currency:"USD",features:[],create:true});loadAdmin()}catch(err){toast(err.message)}};
 $("#plNew").onclick=newPlan("plan");$("#adNew").onclick=newPlan("addon");

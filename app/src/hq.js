@@ -11,7 +11,8 @@ const INFRA = () => +process.env.INFRA_MONTHLY || 0; // servers, domains, tools 
 export function mountHQ(app, adminOnly, wrap, audit, aiHealth) {
   app.get('/api/admin/hq', adminOnly, wrap(async (req, res) => {
     const days = [7, 30, 90, 365].includes(+req.query.days) ? +req.query.days : 30;
-    const [plans, addons] = await Promise.all([q('SELECT key, name, price::float FROM plans ORDER BY sort'), q('SELECT key, name, price::float FROM addons ORDER BY sort')]);
+    const FX = { USD: 1, EUR: +process.env.FX_EUR_USD || 1.08 }, usd = (v, c) => (+v || 0) * (FX[String(c || 'USD').toUpperCase()] || 1);
+    const [plans, addons] = await Promise.all([q('SELECT key, name, price::float, currency FROM plans ORDER BY sort'), q('SELECT key, name, price::float, currency FROM addons ORDER BY sort')]);
     const P = Object.fromEntries(plans.map(p => [p.key, p])), A = Object.fromEntries(addons.map(a => [a.key, a]));
     const [bizRows, value, use, leads, clicks, newPerMonth, daily, providers, ai, queue, db] = await Promise.all([
       q(`SELECT b.id, b.name, b.vertical, b.country, b.currency, b.plan_key, b.plan_status, b.addons, b.is_demo, b.ai_mode, b.created_at,
@@ -46,13 +47,13 @@ export function mountHQ(app, adminOnly, wrap, audit, aiHealth) {
     const SP = Object.fromEntries((await spendByBusiness()).map(s => [s.business_id, s])); // Claude this month, real cost
     const clients = bizRows.map(b => {
       const plan = P[b.plan_key] || { price: 0, name: b.plan_key }, adds = (b.addons || []).map(k => A[k]).filter(Boolean);
-      const price = plan.price + adds.reduce((s, a) => s + a.price, 0), v = V[b.id] || {}, u = U[b.id] || {};
+      const price = Math.round((usd(plan.price, plan.currency) + adds.reduce((s, a) => s + usd(a.price, a.currency), 0)) * 100) / 100, v = V[b.id] || {}, u = U[b.id] || {};
       const paying = b.plan_status === 'active' && !b.is_demo, sp = SP[b.id] || { spent: 0, budget: 5, calls: 0 };
       return { id: b.id, name: b.name, vertical: b.vertical, country: b.country, currency: b.currency, demo: b.is_demo, status: b.plan_status, trial_days_left: b.trial_days_left,
         plan: plan.name, plan_key: b.plan_key, addons: adds.map(a => a.name), price, mrr: paying ? price : 0, ai_mode: b.ai_mode || 'on', logins: b.logins,
-        created: b.created_at, last_activity: b.last_activity, bookings: v.bookings || 0, ai_bookings: v.ai_bookings || 0, ai_value: v.ai_value || 0,
+        created: b.created_at, last_activity: b.last_activity, bookings: v.bookings || 0, ai_bookings: v.ai_bookings || 0, ai_value: Math.round(usd(v.ai_value || 0, b.currency)),
         messages: u.customer_messages ?? 0, ai_replies: u.ai_replies || 0, cost: u.est_cost || 0,
-        roi: price ? Math.round((v.ai_value || 0) / (price * days / 30) * 10) / 10 : null,
+        roi: price ? Math.round(usd(v.ai_value || 0, b.currency) / (price * days / 30) * 10) / 10 : null,
         // what this client really costs this month (Claude; the free AI costs nothing) against what it pays a month
         claude_spent: Math.round(sp.spent * 100) / 100, claude_budget: sp.budget, claude_calls: sp.calls,
         margin: Math.round(((paying ? price : 0) - sp.spent) * 100) / 100, over: sp.spent > 0 && sp.spent > (paying ? price : 0) };
@@ -77,7 +78,11 @@ export function mountHQ(app, adminOnly, wrap, audit, aiHealth) {
   // control: switch the AI on or off for one client, or for every client at once (an emergency stop)
   app.put('/api/admin/ai-mode', adminOnly, wrap(async (req, res) => {
     const mode = req.body.mode === 'off' ? 'off' : 'on', id = req.body.business_id ? +req.body.business_id : null;
-    const rows = await q(`UPDATE businesses SET ai_mode=$1, ai_mode_at=now() WHERE ($2::int IS NULL OR id=$2) AND NOT is_demo RETURNING id, name`, [mode, id]);
+    // one client: exactly what was asked. Every client: "pause" stops those that were on (marked as emergency), and
+    // "resume" restarts only those, never a client you had switched off on purpose
+    const rows = id ? await q(`UPDATE businesses SET ai_mode=$1, ai_mode_at=now(), ai_mode_by=CASE WHEN $1='off' THEN 'admin' END WHERE id=$2 AND NOT is_demo RETURNING id, name`, [mode, id])
+      : mode === 'off' ? await q(`UPDATE businesses SET ai_mode='off', ai_mode_at=now(), ai_mode_by='emergency' WHERE COALESCE(ai_mode,'on') <> 'off' AND NOT is_demo RETURNING id, name`)
+      : await q(`UPDATE businesses SET ai_mode='on', ai_mode_at=now(), ai_mode_by=NULL WHERE ai_mode_by='emergency' AND NOT is_demo RETURNING id, name`);
     if (mode === 'on') await q(`UPDATE conversations SET needs_attention=false, attention_reason=NULL WHERE ($1::int IS NULL OR business_id=$1) AND attention_reason LIKE 'AI is off%'`, [id]);
     await audit(req, 'ai_mode', `${mode} for ${id ? rows[0]?.name : 'every client'}`, id);
     res.json({ ok: true, mode, changed: rows.length });

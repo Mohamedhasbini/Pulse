@@ -3,6 +3,8 @@ import * as metrics from './metrics.js';
 import express from 'express';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import zlib from 'node:zlib';
 import { AsyncLocalStorage } from 'node:async_hooks';
 const ctx = new AsyncLocalStorage();
 import { hashPassword, checkPassword, newPassword, signSession, readSession, signTicket, readTicket, newTotpSecret, checkTotp, totpUrl, newEmailCode, hashCode, weakPassword, ensureAdmin, createBusiness } from './accounts.js';
@@ -163,7 +165,8 @@ It works for 10 minutes. If you didn't try to ${why}, change your password and t
 async function emailCodeOk(u, code) {
   const r = await one('SELECT email_code_hash, email_code_exp > now() AS live, email_code_tries FROM users WHERE id=$1', [u.id]);
   if (!r?.email_code_hash || !r.live || r.email_code_tries >= 5) return false;
-  if (r.email_code_hash !== hashCode(u.id, code)) { await q('UPDATE users SET email_code_tries=email_code_tries+1 WHERE id=$1', [u.id]); return false; }
+  const want = Buffer.from(String(r.email_code_hash || '')), got = Buffer.from(String(hashCode(u.id, code)));
+  if (want.length !== got.length || !crypto.timingSafeEqual(want, got)) { await q('UPDATE users SET email_code_tries=email_code_tries+1 WHERE id=$1', [u.id]); return false; }
   await q('UPDATE users SET email_code_hash=NULL, email_code_exp=NULL WHERE id=$1', [u.id]);
   return true;
 }
@@ -231,7 +234,15 @@ app.post('/api/login/email-code', wrap(async (req, res) => {
   if (!r.ok) return res.status(400).json({ error: r.reason });
   res.json({ ok: true, email: maskEmail(u.email) });
 }));
-app.post('/api/logout', (req, res) => { res.set('Set-Cookie', `rb_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`).json({ ok: true }); });
+const sessionToken = req => /(?:^|;\s*)rb_session=([^;]+)/.exec(req.get('cookie') || '')?.[1] || null;
+const tokenHash = t => crypto.createHash('sha256').update(String(t)).digest('hex');
+const revoked = new Set(); // sessions ended by Sign out, kept until they expire
+q(`DELETE FROM revoked_sessions WHERE until < now()`).then(() => q('SELECT sig FROM revoked_sessions')).then(rows => rows.forEach(r => revoked.add(r.sig))).catch(() => {});
+app.post('/api/logout', wrap(async (req, res) => {
+  const t = sessionToken(req), exp = +String(t || '').split('.')[2];
+  if (t && exp > Date.now()) { revoked.add(tokenHash(t)); await q(`INSERT INTO revoked_sessions (sig, until) VALUES ($1, to_timestamp($2 / 1000.0)) ON CONFLICT DO NOTHING`, [tokenHash(t), exp]); }
+  res.set('Set-Cookie', `rb_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`).json({ ok: true });
+}));
 
 // The public API authenticates with a business API key, so it sits before the session check.
 mountPublicApi(app);
@@ -254,7 +265,7 @@ app.use(wrap(async (req, res, next) => {
   const s = readSession(req.get('cookie'));
   let user = s && recallUser(s.uid);
   if (s && !user) { user = await one('SELECT id, email, name, role, business_id, permissions, totp_enabled, email_2fa, session_version FROM users WHERE id=$1 AND NOT disabled', [s.uid]); if (user) rememberUser(s.uid, user); }
-  if (!user || user.session_version !== s.version || !doorAllows(surfaceOf(req), user.role)) {
+  if (!user || user.session_version !== s.version || !doorAllows(surfaceOf(req), user.role) || (revoked.size && revoked.has(tokenHash(sessionToken(req))))) {
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Please sign in again.' });
     return res.redirect('/login');
   }
@@ -345,6 +356,10 @@ app.delete('/api/admin/businesses/:id', adminOnly, wrap(async (req, res) => {
   if (!b) return res.status(404).json({ error: 'Business not found.' });
   if (String(req.body?.confirm || '').trim() !== b.name) return res.status(400).json({ error: `Type the business name exactly (${b.name}) to confirm.` });
   stopBot(id);
+  // a copy of everything first, so a mistaken close can be undone for 30 days (privacy.js removes it after that)
+  try { const dir = '/backups/closed'; fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(`${dir}/closed-${id}-${new Date().toISOString().slice(0, 10)}.json.gz`, zlib.gzipSync(JSON.stringify(await exportBusiness(id)))); }
+  catch (e) { return res.status(500).json({ error: 'Could not save a copy before closing, so nothing was deleted: ' + e.message }); }
   await closeBusiness(id);
   await audit(req, 'business_closed', b.name, null);
   res.json({ ok: true });
@@ -470,6 +485,10 @@ app.put('/api/admin/plans/:key', adminOnly, wrap(async (req, res) => {
 app.delete('/api/admin/plans/:key', adminOnly, wrap(async (req, res) => {
   const table = req.query.kind === 'addon' ? 'addons' : 'plans';
   if (table === 'plans' && await one('SELECT 1 FROM businesses WHERE plan_key=$1', [req.params.key])) return res.status(400).json({ error: 'Move the businesses on this plan to another plan first.' });
+  if (table === 'addons' && req.query.force !== '1') {
+    const n = (await one(`SELECT count(*)::int AS n FROM businesses WHERE COALESCE(addons,'[]'::jsonb) ? $1`, [req.params.key])).n;
+    if (n) return res.status(409).json({ error: `${n} client${n === 1 ? ' has' : 's have'} this add-on. Deleting it removes it from them and lowers their bill.`, count: n });
+  }
   await q(`DELETE FROM ${table} WHERE key=$1`, [req.params.key]);
   if (table === 'addons') await q(`UPDATE businesses SET addons = addons - $1`, [req.params.key]);
   await audit(req, table === 'plans' ? 'plan_deleted' : 'addon_deleted', req.params.key, 0);

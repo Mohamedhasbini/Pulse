@@ -197,6 +197,13 @@
       $$(`.p10-sub[data-for="${id}"] [data-k]`).forEach(b => { const t = tabs[+b.dataset.k]; b.classList.toggle('locked', !!(t && lockOf(id, t[0], t[1]))) });
     }
   }
+  // shortcuts the assistant saved use the page names and tab numbers it was given (team.js PAGE_TABS): translated
+  // here into today's pages and tab names, so an old shortcut never lands on the wrong tab
+  const OLD_TABS = { inbox: ['inbox', ['Conversations', 'Needs you', 'Messages not sent']], calendar: ['calendar', ['Schedule', 'Requests', 'Booking page']],
+    customers: ['customers', ['Clients', 'Board', 'Win back', 'Reviews']], marketing: ['growth', ['Offers', 'Discount codes', 'Automations', 'Website', 'Website photos', 'Website design', 'Website address']],
+    pulse: ['pulse', ['To review', 'Ask', 'Brief']], train: ['pulse', ['Teach', 'Rules', 'Answers', 'Review replies']], lab: ['pulse', ['Practice chats', 'Test', 'Undo changes']],
+    insights: ['insights', ['AI performance', 'Live flow', 'Topics', 'Business', 'Services', 'Timing', 'Channels']] };
+  function openShortcut(s) { const m = OLD_TABS[s.page], n = +s.tab; if (m && Number.isInteger(n) && m[1][n]) return go(m[0], m[1][n]); return go(s.page, s.tab); }
   async function go(id, i) {
     if (MOVED[id]) [id, i] = MOVED[id](typeof i === 'string' && !/^\d+$/.test(i) ? i : +i || 0);
     const page = PAGES.find(p => p[0] === id); if (!page) return;
@@ -488,7 +495,7 @@
     const t = ev.target;
     if (t.closest('[data-add]')) return window.openPalette?.({ pin: true });
     const x = t.closest('[data-x]'); if (x) { const list = sc.shortcuts.filter((_, k) => k !== +x.dataset.x); try { sc.shortcuts = (await req('/api/shortcuts', 'PUT', { shortcuts: list })).shortcuts } catch {} return drawShortcuts(); }
-    const g = t.closest('[data-i]'); if (g) { const s2 = sc.shortcuts[+g.dataset.i]; if (s2.ask) window.P10.ask(s2.ask); else go(s2.page, s2.tab); }
+    const g = t.closest('[data-i]'); if (g) { const s2 = sc.shortcuts[+g.dataset.i]; if (s2.ask) window.P10.ask(s2.ask); else openShortcut(s2); }
   }
 
 
