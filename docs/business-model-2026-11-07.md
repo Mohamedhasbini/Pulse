@@ -98,7 +98,7 @@ for software.
 
 | Cost | Per client per month |
 |---|---|
-| AI (paid tier, if free limits run out): ~1,000 conversations | about $3–$10 |
+| AI: free tiers only (Gemini, Groq, OpenRouter, Cerebras); no paid fallback | $0 |
 | WhatsApp: replies to messages the client started | free |
 | WhatsApp: reminders/promotions sent outside the 24-hour window | a few cents each, depends on country |
 | Server (once moved off the PC), shared by the first ~50 clients | under $0.50 |
@@ -136,7 +136,7 @@ The Lab already shows usage and health; monthly revenue and activation are missi
 |---|---|---|---|
 | **0. Now** | today | PC hosting. `start-mxai.cmd` starts everything (Docker, n8n, tunnel, home page). Optional: turn auto-start back on at Windows sign-in. Free uptime alert to your phone. Off-site copy of backups (free cloud storage). Lab on its own address. | €0 |
 | **1. First pilot or payment** | first signed client | One small EU server (~€5–€8/month), built and tested on its own link **before** touching the live domain, then switch. The PC stays as a backup. Files are ready: `docker-compose.prod.yml`, `SETUP-GUIDE.md`. | ~€6/month |
-| **2. ~20 clients** | | Paid AI tier with a spending cap, automatic off-site database backups, a staging copy for testing. | ~€30–€60/month |
+| **2. ~20 clients** | | Automatic off-site database backups, a staging copy for testing. AI stays on free tiers. | ~€10–€20/month |
 
 ## 5. Rules and risks
 
@@ -151,8 +151,9 @@ The Lab already shows usage and health; monthly revenue and activation are missi
 - **Spanish e-invoicing (Verifactu)**: start dates were pushed back to 2027. Ask a gestor before invoicing in Spain.
 - **One person, one PC**: today's outage shows it. Stage 1 fixes the PC; written guides (CLAUDE.md, SETUP-GUIDE.md)
   reduce the person risk.
-- **Free AI limits**: fine for demos, risky for paying clients. The AI router already falls back between providers;
-  budget a paid fallback from the first payment.
+- **Free AI limits**: decided 7 Nov: **no paid AI fallback.** The AI router moves between free providers only. If
+  every free limit is used up, the message is kept, retried later, and the owner can answer it from the Inbox.
+  Spread the load by adding more free providers' keys rather than paying.
 
 ## 6. Decisions for you
 

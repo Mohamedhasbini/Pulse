@@ -33,6 +33,9 @@ Playgrounds are where you find what is missing: open one, switch it to "view as 
 
 ## 3. AI: free by default, Claude when a client pays
 
+**Decided 7 Nov: no paid AI fallback.** When free limits run out, MXAi moves to the next *free* provider only; it never
+switches to a paid AI on its own. Claude is used only for a business you have switched it on for (below).
+
 - **Every business starts on Gemini (free tier)** for the receptionist and the basic assistant.
 - **When a client buys**, the admin switches on **Claude (Anthropic)** for that business's MXAi Assistant, using
   **MXAi's own Anthropic key**, with a **monthly budget per business** (e.g. $5) and a usage meter in the Lab.
