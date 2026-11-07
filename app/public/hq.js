@@ -31,7 +31,7 @@
       kpi('Pipeline', money(m.pipeline_mrr), `${m.trials} on trial${m.paused ? ` · ${m.paused} paused` : ''}`),
       kpi('Value created', money(m.value_created), `booked by MXAi for clients · ${D.days} days`),
       kpi('Client return', roi == null ? '—' : roi + '×', 'value created ÷ what they pay'),
-      kpi('Running cost', '$0', `free AI tiers today · at paid Gemini prices it would be about ${money(m.cost_monthly, 2)} / month`),
+      kpi('Running cost', money(m.cost_monthly, 2), `this month: Claude${m.infra_monthly ? ' + servers' : ''}; the free AI costs nothing${m.costing_more ? ` · ${m.costing_more} client${m.costing_more === 1 ? '' : 's'} cost more than they pay` : ''}`),
       kpi('Gross margin', m.gross_margin == null ? '—' : m.gross_margin + '%', m.mrr ? `${money(m.mrr - m.cost_monthly)} a month after costs` : 'starts with the first paying client'),
       kpi('AI replies', (D.ai.ai_real || 0).toLocaleString(), `to real clients · ${(D.ai.ai - D.ai.ai_real).toLocaleString()} more were your own tests`),
     ].join('')}</div>`;

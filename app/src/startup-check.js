@@ -5,6 +5,7 @@ const isPublic = /^https:\/\//.test(url) && !/\/\/(localhost|127\.|\[::1\])/.tes
 const problems = [];
 if (!env.ADMIN_PASSWORD || env.ADMIN_PASSWORD === 'change-me' || env.ADMIN_PASSWORD.length < 12) problems.push('ADMIN_PASSWORD must be set, not "change-me", and at least 12 characters');
 if (!env.DB_PASSWORD || env.DB_PASSWORD === 'change-me') problems.push('DB_PASSWORD must be set and not "change-me"');
+if (!/^[0-9a-f]{64}$/i.test(env.SESSION_SECRET || '')) problems.push('SESSION_SECRET must be 64 hex characters (make one with: openssl rand -hex 32)');
 if (!/^[0-9a-f]{64}$/i.test(env.DATA_KEY || '')) problems.push('DATA_KEY must be 64 hex characters (make one with: openssl rand -hex 32)');
 if (problems.length) {
   const msg = `Unsafe settings in .env:\n  - ${problems.join('\n  - ')}`;

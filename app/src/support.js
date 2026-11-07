@@ -9,7 +9,7 @@ import crypto from 'node:crypto';
 import { q, one } from './db.js';
 import { notify } from './notify.js';
 
-const KEY = crypto.createHmac('sha256', process.env.ADMIN_PASSWORD || 'ringback').update('mxai-support-access').digest();
+const KEY = crypto.createHmac('sha256', process.env.SESSION_SECRET || process.env.ADMIN_PASSWORD || 'ringback').update('mxai-support-access').digest();
 const sig = s => crypto.createHmac('sha256', KEY).update(String(s)).digest('hex').slice(0, 40);
 export const MINUTES = 60, EXTEND = 30, MAX_HOURS = 4;
 export const signSupport = id => `${id}.${sig(id)}`;

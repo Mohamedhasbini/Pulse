@@ -2,7 +2,7 @@
 // the admin approves (the matching add-on is added, or the feature is switched on for that business) or declines.
 // Every step is in the audit log, and the admin's phone is told about each new request.
 import { q, one } from './db.js';
-import { FEATURES } from './features.js';
+import { FEATURES, hasFeature } from './features.js';
 import { alertAdmin } from './ops.js';
 import { registry, KNOWN } from './controls.js';
 import { setBusiness } from './switches.js';
@@ -39,12 +39,14 @@ export function mountUpgrades(app, { adminOnly, wrap, audit, BIZ }) {
   }));
 
   app.post('/api/admin/upgrade-requests/:id', adminOnly, wrap(async (req, res) => {
-    const r = await one(`SELECT * FROM upgrade_requests WHERE id=$1 AND status='pending'`, [+req.params.id]);
-    if (!r) return res.status(404).json({ error: 'That request was already answered.' });
     const approve = req.body.approve === true;
+    const r = await one(`UPDATE upgrade_requests SET status=$2, decided_at=now(), decided_by=$3 WHERE id=$1 AND status='pending' RETURNING *`, [+req.params.id, approve ? 'approved' : 'declined', req.user.email]);
+    if (!r) return res.status(404).json({ error: 'That request was already answered.' });
     if (approve && isConn(r.feature)) {
       await setBusiness(r.business_id, r.feature, true);
       await notify(r.business_id, 'upgrade', `${nameOf(r.feature)} is now available`, 'You can connect it in Settings › Integrations.');
+    } else if (approve && await hasFeature(r.business_id, r.feature)) {
+      await notify(r.business_id, 'upgrade', `${nameOf(r.feature)} is already on`, 'It was already in your plan. Nothing changes on your bill.');
     } else if (approve) {
       // the cheapest add-on that includes it keeps billing right; without one, the feature is switched on for them only
       const addon = await one(`SELECT key FROM addons WHERE features ? $1 ORDER BY price LIMIT 1`, [r.feature]);
@@ -52,7 +54,6 @@ export function mountUpgrades(app, { adminOnly, wrap, audit, BIZ }) {
       else await q(`UPDATE businesses SET feature_overrides = COALESCE(feature_overrides,'{}'::jsonb) || jsonb_build_object($2::text, true) WHERE id=$1`, [r.business_id, r.feature]);
       await notify(r.business_id, 'upgrade', `${FEATURES[r.feature]} is now on`, 'Your upgrade was approved. It works from your next click.');
     }
-    await q(`UPDATE upgrade_requests SET status=$2, decided_at=now(), decided_by=$3 WHERE id=$1`, [r.id, approve ? 'approved' : 'declined', req.user.email]);
     await audit(req, approve ? 'upgrade_approved' : 'upgrade_declined', nameOf(r.feature), r.business_id);
     res.json({ ok: true });
   }));

@@ -18,7 +18,7 @@
     const now = new Date(), from = new Date(now - 180 * 864e5), to = new Date(+now + 14 * 864e5);
     const [cal, live, cust, conv, stats, mk, biz] = await Promise.all([get(`/api/calendar?from=${day(from)}T00:00&to=${day(to)}T00:00`), get('/api/live?days=30'), get('/api/customers'), get('/api/conversations'), get('/api/stats?days=30'), get('/api/marketing/overview?days=90'), get('/api/business')]);
     const raw = cal?.bookings || [], all = raw.filter(b => b.status !== 'cancelled');
-    const T = Date.now(), past = all.filter(b => new Date(b.start) <= T);
+    const T = Date.now(), past = all.filter(b => new Date(b.start) <= T && b.status !== 'no_show');
     return { raw, all, past, live: live || {}, cust: Array.isArray(cust) ? cust : cust?.rows || [], conv: Array.isArray(conv) ? conv : [], stats: stats || {}, mk: mk || {}, biz: biz || {} };
   }
   // a key under a chart: each line drawn the way it appears (solid, dashed or a shaded band) with what it means

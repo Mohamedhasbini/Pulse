@@ -30,7 +30,7 @@ services:
       DATABASE_URL: postgres://ringback:${DB_PASSWORD}@db:5432/ringback
       TZ: ${TIMEZONE:-Asia/Beirut}
     ports:
-      - "3100:3100"
+      - "127.0.0.1:3100:3100" # this PC only; the Cloudflare tunnel connects locally
     volumes:
       - uploads:/data/uploads
       - ./backups:/backups:ro

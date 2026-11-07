@@ -18,10 +18,11 @@ rnd() { openssl rand -hex "$1" 2>/dev/null || node -e "console.log(require('cryp
 # Every setting that could reach a real channel, AI, email or alert. They are left out and set to nothing below.
 OFF='WA_ACCESS_TOKEN|WA_APP_SECRET|WA_VERIFY_TOKEN|TELEGRAM_BOT_TOKEN|KAPSO_API_KEY|KAPSO_WEBHOOK_SECRET|ALERT_BOT_TOKEN|ALERT_CHAT_ID|RESEND_API_KEY|EMAIL_FROM|ANTHROPIC_API_KEY|GEMINI_API_KEY|GROQ_API_KEY|OPENROUTER_API_KEY|CEREBRAS_API_KEY|AI_PRIMARY|N8N_WEBHOOK_URL|COACH_WEBHOOK_URL|ASSISTANT_WEBHOOK_URL'
 {
-  grep -v -E "^(ADMIN_PASSWORD|DB_PASSWORD|DATA_KEY|$OFF)=" .env.example
+  grep -v -E "^(ADMIN_PASSWORD|DB_PASSWORD|DATA_KEY|SESSION_SECRET|$OFF)=" .env.example
   echo "ADMIN_PASSWORD=$(rnd 16)"
   echo "DB_PASSWORD=$(rnd 16)"
   echo "DATA_KEY=$(rnd 32)"
+  echo "SESSION_SECRET=$(rnd 32)"
   for k in $(echo "$OFF" | tr '|' ' '); do case "$k" in N8N_WEBHOOK_URL|WA_VERIFY_TOKEN) ;; *) echo "$k=" ;; esac; done
   # AI calls fail at once (nothing listens on port 9), exactly like on GitHub where no n8n runs
   echo "N8N_WEBHOOK_URL=http://127.0.0.1:9/webhook/ringback"

@@ -68,8 +68,12 @@ async function handle({ businessId, phone, name, text, channel = 'whatsapp', waI
   Object.assign(customer, await unify(businessId, customer.id) || {});
   const conv = await openConversation(businessId, customer.id, channel);
   if (!queued) {
-    if (waId && await one('SELECT 1 FROM messages WHERE wa_id=$1', [waId])) return { duplicate: true };
-    await q('INSERT INTO messages (conversation_id, role, text, wa_id) VALUES ($1,$2,$3,$4)', [conv.id, 'customer', text, waId]);
+    const prev = waId && await one('SELECT id, conversation_id FROM messages WHERE wa_id=$1', [waId]);
+    if (prev) {
+      const answered = await one(`SELECT 1 FROM messages WHERE conversation_id=$1 AND id>$2 AND role IN ('assistant','staff')`, [prev.conversation_id, prev.id]);
+      if (answered) return { duplicate: true }; // a true repeat from the channel
+      // saved before a restart but never answered: carry on and answer it now
+    } else await q('INSERT INTO messages (conversation_id, role, text, wa_id) VALUES ($1,$2,$3,$4)', [conv.id, 'customer', text, waId]);
   }
 
   // Staff took over this chat: the AI stays quiet and the owner is alerted.
@@ -442,9 +446,9 @@ async function createBooking(biz, customer, conv, req, bookings, timeOff) {
 }
 
 export async function checkCoupon(bizId, code) {
-  const c = await one('SELECT * FROM coupons WHERE business_id=$1 AND upper(code)=upper($2)', [bizId, code]);
+  const c = await one('SELECT *, (expires_on IS NOT NULL AND expires_on < $3::date) AS expired FROM coupons WHERE business_id=$1 AND upper(code)=upper($2)', [bizId, code, localDate(new Date())]);
   if (!c || !c.active) return { ok: false, reason: `Sorry, the code ${code} isn't valid.` };
-  if (c.expires_on && new Date(c.expires_on) < new Date(localDate(new Date()))) return { ok: false, reason: `Sorry, the code ${code} has expired.` };
+  if (c.expired) return { ok: false, reason: `Sorry, the code ${code} has expired.` };
   if (c.max_uses && c.uses >= c.max_uses) return { ok: false, reason: `Sorry, the code ${code} has already been fully used.` };
   return { ok: true, coupon: c };
 }
@@ -523,7 +527,7 @@ async function changeBooking(biz, customer, conv, theirs, decision, timeOff) {
       ? `*⏳ تم إرسال طلب تغيير الموعد للموافقة*\n\n• رقم الحجز: ${ref(full.id)}\n• الموعد الحالي: ${label(new Date(full.starts_at))}\n• الموعد المطلوب: ${label(start)}\n\nلأن الموعد بعد أقل من ${h} ساعة، يحتاج التغيير إلى موافقة الإدارة. سنرسل لك الرد هنا.`
       : `*⏳ Time change sent for approval*\n\n• Booking ref: ${ref(full.id)}\n• Current: ${label(new Date(full.starts_at))}\n• Requested: ${label(start)}\n\nBecause it's less than ${h} hours away, the manager needs to approve this. We'll message you here with their answer.` };
   }
-  await q('UPDATE bookings SET starts_at=$1, ends_at=$2 WHERE id=$3', [start, end, full.id]);
+  await q('UPDATE bookings SET starts_at=$1, ends_at=$2, reminder_sent_at=NULL, reminder_status=NULL WHERE id=$3', [start, end, full.id]);
   const booking = { id: full.id, start, end, service: svc, price: Number(full.price), name: customer.name, notes: full.notes };
   return { booking, message: confirmation(biz, booking, decision.reply, true) };
 }

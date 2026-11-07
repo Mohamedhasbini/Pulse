@@ -101,6 +101,24 @@ app.get('/health', async (_req, res) => {
   catch (e) { console.error('Health check:', e.message); res.status(503).set('Cache-Control', 'no-store').json({ ok: false, db: false }); }
 });
 
+// (runs first, so the public site, booking page and client websites get the same headers)
+// ---------- Security basics for every response ----------
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+app.use((req, res, next) => {
+  res.set({ 'X-Frame-Options': 'SAMEORIGIN', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' });
+  // the app pages (dashboard, sign-in) and every Lab page: client websites and the public site have their own needs
+  if (surfaceOf(req) === 'lab' || (surfaceOf(req) !== 'site' && (req.path === '/' || req.path === '/index.html' || req.path === '/login'))) res.set('Content-Security-Policy', CSP);
+  // Requests that change something must come from our own pages, so another website can't act with a signed-in owner's cookie.
+  if (req.method !== 'GET' && req.path.startsWith('/api/') && !req.path.startsWith('/api/public/') && !req.path.startsWith('/api/webook/')) {
+    const origin = req.get('origin');
+    let host = null; try { host = origin && new URL(origin).host; } catch { /* 'null' or malformed origin */ }
+    if (origin && host !== req.get('host')) return res.status(403).json({ error: 'Blocked: request from another website.' });
+  }
+  next();
+});
+
 // Client websites answer on their own domain or subdomain before anything else
 mountClientSites(app, readSession);
 
@@ -110,22 +128,6 @@ mountWeBook(app);
 mountSite(app);
 mountMedia(app);
 
-// ---------- Security basics for every response ----------
-app.disable('x-powered-by');
-app.set('trust proxy', 1);
-app.use((req, res, next) => {
-  res.set({ 'X-Frame-Options': 'SAMEORIGIN', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' });
-  // the app pages (dashboard, sign-in) only: client websites and the public site have their own needs
-  if (req.path === '/' || req.path === '/index.html' || req.path === '/login' || surfaceOf(req) === 'lab') res.set('Content-Security-Policy', CSP);
-  // Requests that change something must come from our own pages, so another website can't act with a signed-in owner's cookie.
-  if (req.method !== 'GET' && req.path.startsWith('/api/') && !req.path.startsWith('/api/public/') && !req.path.startsWith('/api/webook/')) {
-    const origin = req.get('origin');
-    let host = null; try { host = origin && new URL(origin).host; } catch { /* 'null' or malformed origin */ }
-    if (origin && host !== req.get('host')) return res.status(403).json({ error: 'Blocked: request from another website.' });
-  }
-  next();
-});
 
 // ---------- Login: each user has their own account; everything below needs it ----------
 const PUBLIC = fileURLToPath(new URL('../public', import.meta.url));
@@ -225,7 +227,7 @@ app.post('/api/login/email-code', wrap(async (req, res) => {
   if (!r.ok) return res.status(400).json({ error: r.reason });
   res.json({ ok: true, email: maskEmail(u.email) });
 }));
-app.post('/api/logout', (_req, res) => { res.set('Set-Cookie', 'rb_session=; Path=/; Max-Age=0').json({ ok: true }); });
+app.post('/api/logout', (req, res) => { res.set('Set-Cookie', `rb_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureCookie(req)}`).json({ ok: true }); });
 
 // The public API authenticates with a business API key, so it sits before the session check.
 mountPublicApi(app);
@@ -450,6 +452,7 @@ app.put('/api/admin/plans/:key', adminOnly, wrap(async (req, res) => {
   const table = req.query.kind === 'addon' ? 'addons' : 'plans', key = String(req.params.key).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 40);
   const name = String(req.body.name || '').trim().slice(0, 60);
   if (!key || !name) return res.status(400).json({ error: 'Add a name.' });
+  if (req.body.create && await one(`SELECT 1 FROM ${table} WHERE key=$1`, [key])) return res.status(409).json({ error: `"${name}" already exists. Edit it in the list instead.` });
   const features = (Array.isArray(req.body.features) ? req.body.features : []).filter(f => FEATURES[f]);
   await q(`INSERT INTO ${table} (key, name, price, currency, features) VALUES ($1,$2,$3,$4,$5)
       ON CONFLICT (key) DO UPDATE SET name=EXCLUDED.name, price=EXCLUDED.price, currency=EXCLUDED.currency, features=EXCLUDED.features`,
@@ -1219,12 +1222,14 @@ app.get('/api/notifications/settings', wrap(async (_req, res) => {
   res.json({ kinds: KINDS, on: b.alert_kinds || [], telegram_linked: b.linked, bot: telegramStatus(BIZ()).bot || null });
 }));
 app.put('/api/notifications/settings', wrap(async (req, res) => {
+  if (req.user.role === 'staff') return res.status(403).json({ error: 'Only the account owner can change alerts.' });
   const on = (Array.isArray(req.body.on) ? req.body.on : []).filter(k => KINDS[k]);
   await q('UPDATE businesses SET alert_kinds=$1 WHERE id=$2', [JSON.stringify(on), BIZ()]);
   if (req.body.unlink) await q('UPDATE businesses SET owner_telegram_chat=NULL WHERE id=$1', [BIZ()]);
   res.json({ ok: true });
 }));
-app.post('/api/notifications/link-telegram', wrap(async (_req, res) => {
+app.post('/api/notifications/link-telegram', wrap(async (req, res) => {
+  if (req.user.role === 'staff') return res.status(403).json({ error: 'Only the account owner can link alerts.' });
   const bot = telegramStatus(BIZ()).bot;
   if (!bot) return res.status(400).json({ error: "Connect this business's Telegram bot first (Setup, Channels)." });
   res.json({ code: await ownerLinkCode(BIZ()), bot });
@@ -1351,8 +1356,8 @@ app.post('/api/marketing/send', wrap(async (req, res) => {
   res.json({ sent, skipped });
 }));
 app.get('/api/marketing/campaigns', wrap(async (_req, res) => res.json(await q(`SELECT id, name, message, sent, skipped, created_by, ${LOCAL('created_at')} AS at,
-    (SELECT count(DISTINCT b.customer_id) FROM campaign_sends cs JOIN bookings b ON b.customer_id=cs.customer_id AND b.status IN ('confirmed','completed') AND b.created_at BETWEEN cs.at AND cs.at + interval '14 days' WHERE cs.campaign_id=campaigns.id)::int AS booked,
-    (SELECT COALESCE(sum(b.price),0) FROM campaign_sends cs JOIN bookings b ON b.customer_id=cs.customer_id AND b.status IN ('confirmed','completed') AND b.created_at BETWEEN cs.at AND cs.at + interval '14 days' WHERE cs.campaign_id=campaigns.id)::float AS revenue
+    (SELECT count(DISTINCT b.customer_id) FROM campaign_sends cs JOIN bookings b ON b.customer_id=cs.customer_id AND b.status IN ('confirmed','completed') AND b.created_at > cs.at AND b.created_at <= cs.at + interval '14 days' WHERE cs.campaign_id=campaigns.id AND cs.status='sent')::int AS booked,
+    (SELECT COALESCE(sum(b.price),0) FROM campaign_sends cs JOIN bookings b ON b.customer_id=cs.customer_id AND b.status IN ('confirmed','completed') AND b.created_at > cs.at AND b.created_at <= cs.at + interval '14 days' WHERE cs.campaign_id=campaigns.id AND cs.status='sent')::float AS revenue
     FROM campaigns WHERE business_id=$1 ORDER BY id DESC LIMIT 30`, [BIZ()]))));
 app.post('/api/customers/:id/offers', wrap(async (req, res) => {
   await q('UPDATE customers SET marketing_ok=$1, marketing_at=now() WHERE id=$2 AND business_id=$3', [!!req.body.on, +req.params.id, BIZ()]);

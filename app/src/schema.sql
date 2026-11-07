@@ -150,7 +150,9 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS reminders_enabled BOOLEAN DEFAUL
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS reminder_hours INT DEFAULT 24;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS reminder_text TEXT DEFAULT 'Hi {name}, this is a reminder of your {service} at {business} tomorrow, {date} at {time} (ref {ref}). Reply here if you need to change anything. See you soon!';
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
-ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_status TEXT;   -- sent | skipped | not_sent: <reason>
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_status TEXT;
+-- the name typed on the public booking page (shown back to the booker instead of the name the business has on file)
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS booked_name TEXT;   -- sent | skipped | not_sent: <reason>
 
 -- Online booking page is an optional add-on the business can switch on and customise
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS booking_enabled BOOLEAN DEFAULT true;

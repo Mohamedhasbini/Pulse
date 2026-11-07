@@ -5,6 +5,8 @@
 //   GET/POST/DELETE /api/integrations/keys[/:id]     business API keys (shown once, stored as a hash)
 //   GET /api/v1/{summary,bookings,customers}          public read API, "Authorization: Bearer pk_..."
 import crypto from 'node:crypto';
+import dns from 'node:dns/promises';
+import net from 'node:net';
 import { q, one } from './db.js';
 import { seal, unseal } from './ops.js';
 import { allowedFor, keyOfProvider } from './switches.js';
@@ -70,9 +72,21 @@ export async function credentials(B, provider) {
 const blocked = async (B, p) => !(await allowedFor(B, keyOfProvider(p)));
 const BLOCKED = { error: 'Not available for this business yet. Ask MXAi to allow it (owners can press Request).', locked: 'connector' };
 
-function post(c, payload) {
+// a webhook may only go to a public internet address: not this PC, the home network, Docker or cloud metadata
+const PRIVATE = [/^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2\d|3[01])\./, /^169\.254\./, /^0\./, /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./, /^::1$/, /^f[cd]/i, /^fe80/i, /^::ffff:(127|10|192\.168|169\.254)\./i];
+export async function publicUrl(u) {
+  let url; try { url = new URL(u); } catch { throw new Error('That is not a valid web address.'); }
+  if (url.protocol !== 'https:') throw new Error('The webhook URL must start with https://');
+  const host = url.hostname.replace(/^\[|\]$/g, '');
+  const ips = net.isIP(host) ? [host] : (await dns.lookup(host, { all: true }).catch(() => [])).map(a => a.address);
+  if (!ips.length) throw new Error('That address does not exist.');
+  if (ips.some(ip => PRIVATE.some(r => r.test(ip)))) throw new Error('Webhooks can only go to a public internet address.');
+  return url.toString();
+}
+async function post(c, payload) {
+  await publicUrl(c.url);
   const body = JSON.stringify(payload), sig = crypto.createHmac('sha256', c.secret || '').update(body).digest('hex');
-  return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-MXAi-Event': payload.event, 'X-MXAi-Signature': `sha256=${sig}`, 'X-Pulse-Event': payload.event, 'X-Pulse-Signature': `sha256=${sig}` } /* old names kept for receivers set up before the rename */, body, signal: AbortSignal.timeout(T) });
+  return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-MXAi-Event': payload.event, 'X-MXAi-Signature': `sha256=${sig}`, 'X-Pulse-Event': payload.event, 'X-Pulse-Signature': `sha256=${sig}` } /* old names kept for receivers set up before the rename */, body, redirect: 'manual', signal: AbortSignal.timeout(T) });
 }
 // fire-and-forget: a slow or broken webhook never delays a customer reply; the last error shows in Integrations
 export function emitWebhook(B, event, data) {

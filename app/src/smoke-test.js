@@ -14,7 +14,7 @@ import { isPlayground } from './playground.js';
 import { hasFeature } from './features.js';
 const BASE = 'http://localhost:3100', ok = [], say = (n, c, d = '') => { ok.push(c); console.log(`${c ? 'PASS' : 'FAIL'}  ${n}${d ? '  (' + d + ')' : ''}`); };
 const r = await createBusiness({ name: 'Smoke test restaurant', vertical: 'restaurant', owner_email: `smoke-${Date.now()}@example.test`, timezone: 'Asia/Beirut', currency: 'USD' });
-const owner = await one('SELECT id, session_version FROM users WHERE business_id=$1', [r.id]), admin = await one(`SELECT id, session_version FROM users WHERE role='admin' LIMIT 1`);
+const owner = await one('SELECT id, session_version FROM users WHERE business_id=$1', [r.id]), admin = await one(`INSERT INTO users (email, name, role, password_hash) VALUES ($1,'Smoke admin','admin','x') RETURNING id, session_version`, [`smoke-admin-${Date.now()}@example.test`]);
 const as = u => ({ cookie: `rb_session=${signSession(u.id, u.session_version)}`, origin: BASE });
 try {
   const hz = await fetch(BASE + '/health'); const hj = await hz.json();
@@ -203,7 +203,7 @@ try {
   say('Over its monthly budget, it goes back to the free AI', (await claudeFor(r.id, null)) === null);
   if (keep === undefined) delete process.env.ANTHROPIC_API_KEY; else process.env.ANTHROPIC_API_KEY = keep;
   const hqD = await fetch(BASE + '/api/admin/hq?days=30', { headers: as(admin) }).then(r => r.json()), me2 = hqD.clients.find(c => c.id === r.id);
-  say('HQ shows its AI cost against what it pays', me2 && me2.claude_spent === 24 && me2.over === (me2.price < 24));
+  say('HQ shows its AI cost against what it pays', me2 && me2.claude_spent === 24 && me2.over === true && me2.margin === -24 /* on trial it pays nothing yet */);
   say('A normal business is not a playground', !(await isPlayground(r.id)));
   await q('UPDATE businesses SET is_demo=true WHERE id=$1', [r.id]);
   const { isPlayground: fresh } = await import('./playground.js?again'); // own cache, sees the change
@@ -228,11 +228,13 @@ try {
   await fetch(BASE + `/api/admin/controls/business/${r.id}`, { method: 'PUT', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'channel:telegram', value: false }) });
   sw.forget();
   say('A channel can be blocked for one business', !(await sw.allowedFor(r.id, 'channel:telegram')) && await sw.allowedFor(r.id, 'channel:whatsapp'));
+  const before = await one(`SELECT enabled FROM platform_switches WHERE key='ai:cerebras'`);
+  try {
   const off = await fetch(BASE + '/api/admin/controls/platform', { method: 'PUT', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: '{"key":"ai:cerebras","on":false}' });
   sw.forget();
   say('A platform switch turns an AI provider off for everyone', off.status === 200 && !(await sw.platformOn('ai:cerebras')) && !(await sw.allowedFor(r.id, 'ai:cerebras')));
   await fetch(BASE + '/api/admin/controls/platform', { method: 'PUT', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: '{"key":"ai:cerebras","on":true}' });
-  await q(`DELETE FROM platform_switches WHERE key='ai:cerebras'`); // back to how it was
+  } finally { if (before) await q(`UPDATE platform_switches SET enabled=$1 WHERE key='ai:cerebras'`, [before.enabled]); else await q(`DELETE FROM platform_switches WHERE key='ai:cerebras'`); } // back to how it was
   say('Every switch is in the audit log', !!(await one(`SELECT 1 FROM audit_log WHERE action='platform_switch' AND detail LIKE 'ai:cerebras%'`)) && !!(await one(`SELECT 1 FROM audit_log WHERE action='business_switch' AND business_id=$1`, [r.id])));
   // ---- separate doors: the Lab only at lab.nexfoyz.dev for the admin, dashboards at app.nexfoyz.dev for clients
   const raw = (method, path, host, headers = {}, body) => new Promise((ok, no) => { const d = body ? JSON.stringify(body) : null;
@@ -273,6 +275,25 @@ try {
   say('Expired support access no longer opens the business', (await fetch(BASE + '/api/business', { headers: sup })).status === 409);
   say('A forged support cookie opens nothing', (await fetch(BASE + '/api/business', { headers: { ...as(admin), cookie: as(admin).cookie + '; rb_support=999999.' + 'a'.repeat(40) } })).status === 409);
   say('The old open-business cookie opens nothing', (await fetch(BASE + '/api/business', { headers: { ...as(admin), cookie: as(admin).cookie + `; rb_biz=${r.id}` } })).status === 409);
+  // ---- audit fixes (7 Nov): each one a regression test
+  say('A faked X-Forwarded-Host cannot turn the app address into this PC', (await raw('GET', '/api/me', 'app.nexfoyz.dev', { cookie: as(admin).cookie, 'x-forwarded-host': 'localhost' })).status === 401);
+  say('A request through Cloudflare never counts as this PC', (await raw('GET', '/api/admin/hq?days=7', 'localhost', { cookie: as(admin).cookie, 'cf-ray': 'test-1' })).status === 401);
+  const { publicUrl } = await import('./integrations.js');
+  const refused = async u => { try { await publicUrl(u); return false; } catch { return true; } };
+  say('Webhooks cannot point inside the network', await refused('https://127.0.0.1/x') && await refused('https://localhost/x') && await refused('https://192.168.1.10/x') && await refused('http://example.com/x'));
+  const staff = await one(`INSERT INTO users (email, name, role, business_id, password_hash, permissions) VALUES ($1,'Smoke staff','staff',$2,'x','[]') RETURNING id, session_version`, [`smoke-staff-${Date.now()}@example.test`, r.id]);
+  say("Staff cannot take over the owner's alerts", (await fetch(BASE + '/api/notifications/link-telegram', { method: 'POST', headers: { ...as(staff), 'Content-Type': 'application/json' } })).status === 403
+    && (await fetch(BASE + '/api/notifications/settings', { method: 'PUT', headers: { ...as(staff), 'Content-Type': 'application/json' }, body: '{"on":[],"unlink":true}' })).status === 403);
+  await q('DELETE FROM users WHERE id=$1', [staff.id]);
+  say('A new plan cannot overwrite an existing one', (await fetch(BASE + '/api/admin/plans/pro', { method: 'PUT', headers: { ...as(admin), 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Pro', price: 0, features: [], create: true }) })).status === 409
+    && (await one(`SELECT price::float AS p FROM plans WHERE key='pro'`)).p > 0);
+  const { checkCoupon } = await import('./brain.js');
+  const today = await one(`SELECT to_char(now() AT TIME ZONE 'Asia/Beirut','YYYY-MM-DD') AS d`);
+  await q(`INSERT INTO coupons (business_id, code, kind, value, expires_on, active) VALUES ($1,'LASTDAY','percent',10,$2::date,true)`, [r.id, today.d]);
+  say('A coupon still works on its last day', (await inZone('Asia/Beirut', () => checkCoupon(r.id, 'LASTDAY'))).ok === true);
+  say('The website animation file is public', (await fetch(BASE + '/stream.js', { redirect: 'manual' })).status === 200);
+  const pub = await raw('GET', '/pulse', 'app.nexfoyz.dev');
+  say('The public website gets the security headers', !!pub.headers['x-frame-options'] && !!pub.headers['x-content-type-options']);
   // the admin with no business opened is in the Lab: platform pages only
   const me0 = await fetch(BASE + '/api/me', { headers: as(admin) }).then(r => r.json());
   say('Admin signs in to the Lab, not a business', me0.lab === true && !me0.business);
@@ -294,5 +315,7 @@ try {
   say("Smoke test crashed", false, e.message); // a crash is a failure, never a silent pass
 } finally {
   await q('DELETE FROM businesses WHERE id=$1', [r.id]).catch(() => {});
+  await q('DELETE FROM support_sessions WHERE admin_id=$1', [admin.id]).catch(() => {});
+  await q('DELETE FROM users WHERE id=$1', [admin.id]).catch(() => {});
   console.log(`\n${ok.filter(Boolean).length} passed, ${ok.filter(c => !c).length} failed`); await pool.end(); process.exit(ok.every(Boolean) ? 0 : 1);
 }

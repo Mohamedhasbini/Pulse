@@ -6,6 +6,7 @@
 import { q, one } from './db.js';
 import { tzOf, wall, dayStart } from './clock.js';
 import { isPlayground, PLAYGROUND_SKIP } from './playground.js';
+import { hasFeature } from './features.js';
 
 const wrap = fn => (req, res, next) => fn(req, res, next).catch(next);
 const first = n => String(n || '').trim().split(/\s+/)[0] || 'there';
@@ -112,6 +113,7 @@ export const AGENTS = {
 // sends one agent's messages to the chosen clients (manual Send and the 11:00 autopilot share this)
 export async function sendAgent(B, agentId, ids, edits, manual, { sendWhatsApp, sendTelegram }) {
   const a = AGENTS[agentId], found = await a.find(B.id, B), list = Array.isArray(found) ? found : [];
+  if (a.promo && !(await hasFeature(B.id, 'marketing'))) return { sent: 0, skipped: ids.length, error: 'Promotional messages need the Marketing add-on.' };
   const pick = new Set(ids.map(Number)), play = await isPlayground(B.id); let sent = 0, skipped = 0;
     for (const c of list.filter(x => pick.has(x.id))) {
       let text = String(edits[c.id] || c.message).slice(0, 900);

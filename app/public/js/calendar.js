@@ -60,7 +60,8 @@ async function saveBooking(force){const start=`${$("#bDate").value}T${$("#bTime"
     $("#bModal").hidden=true;toast(editing?"Booking updated.":"Booking added.");loadCal();refresh()}
   catch(err){$("#bErr").textContent=err.message;$("#bErr").hidden=false;$("#bForce").hidden=err.status!==409}}
 $("#bForm").onsubmit=e=>{e.preventDefault();saveBooking(false)};$("#bForce").onclick=()=>saveBooking(true);
-$("#bCancel").onclick=async()=>{await req(`/api/bookings/${editing.id}`,"PATCH",{status:"cancelled"});$("#bModal").hidden=true;toast("Booking cancelled. The time is free again.");loadCal();refresh()};
+$("#bCancel").onclick=async()=>{if(!confirm("Cancel this booking? The time becomes free and waiting clients may be offered it."))return;
+  try{await req(`/api/bookings/${editing.id}`,"PATCH",{status:"cancelled"});$("#bModal").hidden=true;toast("Booking cancelled. The time is free again.");loadCal();refresh()}catch(err){toast(err.message)}};
 $("#bChat").onclick=()=>{$("#bModal").hidden=true;openConv(editing.conversation_id)};
 $("#bClose").onclick=()=>$("#bModal").hidden=true;
 
@@ -70,7 +71,8 @@ function openOff(t){editingOff=t;$("#oErr").hidden=true;const n=bizNow();n.setMi
   $("#oStart").disabled=$("#oEnd").disabled=$("#oReason").disabled=!!t;$("#oSave").hidden=!!t;$("#oDelete").hidden=!t;$("#oTitle").textContent=t?"Blocked time":"Block time";$("#oModal").hidden=false}
 $("#oForm").onsubmit=async e=>{e.preventDefault();try{await req("/api/time-off","POST",{start:$("#oStart").value,end:$("#oEnd").value,reason:$("#oReason").value.trim()});
   $("#oModal").hidden=true;toast("Time blocked. The AI won't offer it.");loadCal()}catch(err){$("#oErr").textContent=err.message;$("#oErr").hidden=false}};
-$("#oDelete").onclick=async()=>{await req(`/api/time-off/${editingOff.id}`,"DELETE");$("#oModal").hidden=true;toast("Block removed.");loadCal()};
+$("#oDelete").onclick=async()=>{if(!confirm("Remove this blocked time? The AI can offer it again."))return;
+  try{await req(`/api/time-off/${editingOff.id}`,"DELETE");$("#oModal").hidden=true;toast("Block removed.");loadCal()}catch(err){toast(err.message)}};
 $("#oClose").onclick=()=>$("#oModal").hidden=true;
 
 

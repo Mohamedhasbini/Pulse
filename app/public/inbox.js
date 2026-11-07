@@ -104,8 +104,11 @@ window.PulseInbox = (() => {
       catch (err) { sv.disabled = false; window.toast?.(err.message || 'Not saved.'); }
     });
     read.querySelector('#ibReply').addEventListener('submit', async ev => {
-      ev.preventDefault(); const t = ev.target.t.value.trim(); if (!t) return;
-      try { await req(`/api/conversations/${id}/reply`, 'POST', { text: t }); ev.target.t.value = ''; await load(); open(id); } catch (err) { window.toast?.(err.message || 'Not sent.'); }
+      ev.preventDefault(); const t = ev.target.t.value.trim(), btn = ev.target.querySelector('button[type="submit"],button:not([type])'); if (!t || ev.target.dataset.busy) return;
+      ev.target.dataset.busy = '1'; if (btn) btn.disabled = true;
+      try { const r = await req(`/api/conversations/${id}/reply`, 'POST', { text: t }); ev.target.t.value = ''; if (r?.warning) window.toast?.(r.warning); await load(); open(id); }
+      catch (err) { window.toast?.(err.message || 'Not sent.'); }
+      finally { delete ev.target.dataset.busy; if (btn) btn.disabled = false; }
     });
   }
 

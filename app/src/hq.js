@@ -55,14 +55,16 @@ export function mountHQ(app, adminOnly, wrap, audit, aiHealth) {
         roi: price ? Math.round((v.ai_value || 0) / (price * days / 30) * 10) / 10 : null,
         // what this client really costs this month (Claude; the free AI costs nothing) against what it pays a month
         claude_spent: Math.round(sp.spent * 100) / 100, claude_budget: sp.budget, claude_calls: sp.calls,
-        margin: Math.round((price - sp.spent) * 100) / 100, over: sp.spent > price };
+        margin: Math.round(((paying ? price : 0) - sp.spent) * 100) / 100, over: sp.spent > 0 && sp.spent > (paying ? price : 0) };
     });
     const real = clients.filter(c => !c.demo), mrr = real.reduce((s, c) => s + c.mrr, 0), paying = real.filter(c => c.mrr).length;
-    const aiCost = real.reduce((s, c) => s + c.cost, 0) * 30 / days, infra = INFRA(), costMonthly = Math.round((aiCost + infra) * 100) / 100;
+    // estimate of what the free AI would cost at paid prices (shown as an estimate only) and the real monthly cost
+    const aiCost = real.reduce((s, c) => s + c.cost, 0) * 30 / days, infra = INFRA(), claude = real.reduce((s, c) => s + c.claude_spent, 0);
+    const costMonthly = Math.round((claude + infra) * 100) / 100;
     const mix = {}; real.forEach(c => { if (c.status === 'active') mix[c.plan] = (mix[c.plan] || 0) + c.price; });
     res.json({
       days, generated: new Date().toISOString(), plans, addons,
-      money: { mrr, arr: mrr * 12, pipeline_mrr: real.filter(c => c.status === 'trial').reduce((s, c) => s + c.price, 0), paying,
+      money: { mrr, arr: mrr * 12, pipeline_mrr: real.filter(c => c.status === 'trial' && c.trial_days_left > 0).reduce((s, c) => s + c.price, 0), paying,
         trials: real.filter(c => c.status === 'trial').length, paused: real.filter(c => c.status === 'paused').length, clients: real.length,
         arpa: paying ? Math.round(mrr / paying) : 0, cost_monthly: costMonthly, claude_month: Math.round(real.reduce((s, c) => s + c.claude_spent, 0) * 100) / 100, costing_more: real.filter(c => c.over).length, ai_cost_monthly: Math.round(aiCost * 100) / 100, infra_monthly: infra,
         gross_margin: mrr ? Math.round((mrr - costMonthly) / mrr * 100) : null, value_created: Math.round(real.reduce((s, c) => s + c.ai_value, 0)), mix },

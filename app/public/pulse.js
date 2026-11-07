@@ -497,6 +497,6 @@
   addEventListener('load', () => {
     const t = setInterval(() => { if (draw()) { clearInterval(t); if (window.LAB) return; go('today', 0); poll(); setInterval(() => { if (!document.documentElement.classList.contains('live-on')) poll(); }, 60000); setInterval(poll, 300000); setTimeout(loadShortcuts, 600); } }, 200);
     // a change pushed by the server: fresh numbers on the page that is open, no timer involved
-    let bump = 0; addEventListener('mxai:change', () => { clearTimeout(bump); bump = setTimeout(() => { if (document.hidden || !current) return; window.PVInvalidate?.(); poll(); go(current[0], current[1]); }, 400); });
+    let bump = 0; addEventListener('mxai:change', () => { clearTimeout(bump); bump = setTimeout(() => { if (document.hidden || !current) return; window.PVInvalidate?.(); poll(); if (current[0] === 'inbox' && window.PulseInbox?.refresh) window.PulseInbox.refresh(); else go(current[0], current[1]); }, 400); });
   });
 })();
