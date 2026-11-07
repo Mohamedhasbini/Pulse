@@ -1,0 +1,47 @@
+/* Light mode, once and for all (7 Nov 2026). Loaded last, so it is the one place light mode is decided.
+   Why the old light mode looked poor: white cards (#f7f7f7) on a white page (#fff), 1.07:1, and every card's edge and
+   shadow removed, so the page read as one white sheet; lime on white; a white sidebar.
+   Now: "graphite mist". A cool mist canvas, cards one step lighter with a 1px outline and a soft shadow (the same
+   structure as dark mode), the sidebar one step darker, graphite as the accent, lime only where it stays readable.
+   No photo and no glass on content cards: they cost readability and speed in a dashboard used all day.
+   Contrast on cards (#f6f7f9): text 16.4:1, secondary 9:1, muted 5.6:1; on the canvas muted is 5.1:1. */
+:root[data-theme="light"]:not(#_):not(#__):not(#___):not(#____),
+:root[data-theme="light"]:not(#_):not(#__):not(#___):not(#____) body{
+  --fu-canvas:#e7eaed;--fu-side:#dfe3e7;--fu-surf:#f6f7f9;--fu-raise:#fbfcfd;--fu-line:#d2d7dc;--fu-line2:#b3bac2;
+  --fu-ink:#14181b;--fu-ink2:#3d454c;--fu-mute:#58616a;--fu-chip:#14181b;--fu-c2:#8a929a;--fu-c3:#4b535b;--gp-nest2:#e6e9ec;
+  --grid:rgba(20,24,27,.09);--gl-grid:rgba(20,24,27,.09);--bn-dot:rgba(20,24,27,.085);--bn-glow:rgba(20,24,27,.05);--bn-rim:rgba(255,255,255,.8);
+  --lt-shadow:0 0 0 1px var(--fu-line),0 1px 2px rgba(20,24,27,.06),0 10px 24px -18px rgba(20,24,27,.24);
+  --lt-shadow-hi:0 0 0 1px var(--fu-line2),0 1px 2px rgba(20,24,27,.07),0 12px 28px -18px rgba(20,24,27,.28);
+  --mx-shadow:var(--lt-shadow);
+  /* chart marks: the lead series is a deep green that passes 3:1 on the cards (lime itself is 1.5:1 on light) */
+  --mx-s1:#5b8f0b;--mx-s2:#2563eb;--mx-s3:#9333ea;--mx-s4:#db2777;--mx-s5:#b7791f;--pv-track:#dde1e5}
+
+/* cards and panels: one look everywhere, the outline drawn as a shadow (no layout shift on hover) */
+:root[data-theme="light"]:not(#_):not(#__):not(#___):not(#____) main :is(.card,.pv-c,.td-card,.mk-card,.kpi,.td-stat,.cc-card,.mx-card),
+:root[data-theme="light"] .ib:not(#_):not(#__):not(#___)>:is(.ib-folders,.ib-list,.ib-read),
+:root[data-theme="light"] .gc:not(#_):not(#__):not(#___) :is(.gc-side,.gc-main){
+  background:var(--fu-surf)!important;border:0!important;border-radius:16px!important;box-shadow:var(--lt-shadow)!important}
+:root[data-theme="light"]:not(#_):not(#__):not(#___):not(#____) main :is(.card,.pv-c,.td-card,.mk-card,.mx-card):hover{box-shadow:var(--lt-shadow-hi)!important}
+:root[data-theme="light"] .mx-strip>div:not(#_){border-color:var(--fu-line)!important}
+:root[data-theme="light"] .mx-rings .tr:not(#_){stroke:#dde1e5}
+:root[data-theme="light"] .mx-area .l:not(#_){stroke:var(--mx-s1)!important}
+:root[data-theme="light"] .gc:not(#_):not(#__):not(#___) .btn.gc-off{background:var(--fu-raise)!important}
+:root[data-theme="light"] .hx-ask:not(#_):not(#__):not(#___){background:var(--fu-surf)!important;box-shadow:var(--lt-shadow)!important}
+
+/* sidebar and top bar: one step darker than the page; the current place is lifted like a card */
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______),
+:root[data-theme="light"]:not(#_):not(#__):not(#___) :is(.topbar,header.top,#top,.p10-top,body>header){
+  background:var(--fu-side)!important;border-color:var(--fu-line)!important;box-shadow:none!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______) :is(button,a,span,kbd,b,small):not([class*="badge"]):not([class*="count"]):not(.n){color:var(--fu-ink2)!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______) :is(button,a){border-color:transparent!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______) :is(button,a):hover{background-color:rgba(20,24,27,.06)!important;color:var(--fu-ink)!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______) :is(.p10.on,[aria-current="page"],[aria-current="true"],.on){background-color:var(--fu-surf)!important;color:var(--fu-ink)!important;box-shadow:0 0 0 1px var(--fu-line),0 1px 2px rgba(20,24,27,.08)!important}
+:root[data-theme="light"] body nav[aria-label="Main"]:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______) :is(input,[class*="search"],[class*="ask"],[class*="cmd"]){background-color:var(--fu-surf)!important;box-shadow:0 0 0 1px var(--fu-line)!important}
+
+/* page banners (Today greeting, page headings) sit on the card surface with the same edge */
+:root[data-theme="light"] html body main:not(#_):not(#__):not(#___) :is(.tdh,.mxh){background:var(--fu-surf)!important;box-shadow:var(--lt-shadow),inset 0 1px 0 var(--bn-rim)!important}
+
+/* the support-access bar keeps a frosted look (it floats over content), with a solid fallback */
+:root[data-theme="light"] .sup-bar:not(#_){background:rgba(246,247,249,.86);box-shadow:var(--lt-shadow);-webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){:root[data-theme="light"] .sup-bar:not(#_){background:var(--fu-surf)}}
+@media (prefers-reduced-transparency:reduce){:root[data-theme="light"] .sup-bar:not(#_){background:var(--fu-surf);backdrop-filter:none;-webkit-backdrop-filter:none}}
